@@ -331,18 +331,36 @@ export const homeContentDefaults: HomeContent = {
     heading: "公开更新与重点议题",
     moreLabel: "进入新闻中心",
     moreHref: "/news",
+    // Real articles from tuidang.org rather than invented copy: the previous
+    // defaults described CMS work ("迁移、检索与 CMS 管理能力") which would have
+    // read as organisation news to a visitor.
     lead: {
       tag: "Feature",
-      title: "系统升级：迁移、检索与 CMS 管理能力同步完成",
-      body: "完成内容迁移、搜索双读策略和统一后台整合，支撑后续规模化运营。",
-      meta: "2026-08-12",
-      href: "/news",
-      image: ""
+      title: "全球退党中心：三退大潮宣告镇压破产 制止中共跨国迫害",
+      body: "全球退党服务中心在华盛顿集会上发言，呼吁制止中共对法轮功的迫害及其对中国人民系统性的人权侵害。",
+      meta: "2026-09-27",
+      href: "https://www.tuidang.org/2026/09/27/706011/",
+      image: "https://www.tuidang.org/wp-content/uploads/2026/09/id14856852-WSY9416-scaled.jpg"
     },
     items: [
-      { title: "公开声明年度统计：新增登记持续增长", date: "2026-08-01", href: "/news", image: "" },
-      { title: "北美服务点新增周末值班时段公告", date: "2026-07-24", href: "/news", image: "" },
-      { title: "证书核验系统升级说明与兼容策略", date: "2026-07-14", href: "/news", image: "" }
+      {
+        title: "一场泥石流 照出百万军人沉默抗命与中南海分裂",
+        date: "2026-09-26",
+        href: "https://www.tuidang.org/2026/09/26/705931/",
+        image: "https://www.tuidang.org/wp-content/uploads/2026/09/news_0926-555.jpg"
+      },
+      {
+        title: "出入境新规——正在成形的数字柏林墙",
+        date: "2026-09-26",
+        href: "https://www.tuidang.org/2026/09/26/705923/",
+        image: "https://www.tuidang.org/wp-content/uploads/2026/09/news_0926-333.jpg"
+      },
+      {
+        title: "8月115万人「三退」：从苦难与谎言中觉醒",
+        date: "2026-09-23",
+        href: "https://www.tuidang.org/2026/09/23/705880/",
+        image: "https://www.tuidang.org/wp-content/uploads/2026/09/news_0926-222.jpg"
+      }
     ]
   },
   channels: {
@@ -394,10 +412,27 @@ export const homeContentDefaults: HomeContent = {
     heading: "多平台分发，统一元数据管理",
     moreLabel: "查看视频库",
     moreHref: "/videos",
+    // Thumbnails are real tuidang.org images; the titles remain placeholders
+    // until cms_videos holds actual video metadata.
     items: [
-      { title: "视频专题 1", meta: "YouTube / GanJingWorld", href: "/videos", image: "" },
-      { title: "视频专题 2", meta: "YouTube / GanJingWorld", href: "/videos", image: "" },
-      { title: "视频专题 3", meta: "YouTube / GanJingWorld", href: "/videos", image: "" }
+      {
+        title: "视频专题 1",
+        meta: "YouTube / GanJingWorld",
+        href: "/videos",
+        image: "https://www.tuidang.org/wp-content/uploads/2026/09/news_0926-111.jpg"
+      },
+      {
+        title: "视频专题 2",
+        meta: "YouTube / GanJingWorld",
+        href: "/videos",
+        image: "https://www.tuidang.org/wp-content/uploads/2026/09/news_0926.jpg"
+      },
+      {
+        title: "视频专题 3",
+        meta: "YouTube / GanJingWorld",
+        href: "/videos",
+        image: "https://www.tuidang.org/wp-content/uploads/2026/09/20260922.png"
+      }
     ]
   },
   voices: {
