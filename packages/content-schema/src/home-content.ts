@@ -597,7 +597,9 @@ export const homeContentDefaults: HomeContent = {
     ]
   },
   resources: {
-    enabled: true,
+    // Off on the homepage: the same links live under /resources, and the row
+    // was repeating them. Re-tick 在首页显示 in the admin to bring it back.
+    enabled: false,
     variant: "grid",
     eyebrow: "资源馆",
     heading: "工具、指南与公开文档",

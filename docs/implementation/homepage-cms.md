@@ -176,6 +176,14 @@ are given explicit dimensions, otherwise the row shrinks to a sliver.
   `466,772,019` and there is an XML feed for it — see
   [services-link-out-map.md](./services-link-out-map.md) rows 14-15
 
+## Sections hidden on the homepage
+
+`资源馆`（工具、指南与公开文档）is `enabled: false` — on the homepage only. The
+same links live under `/resources`, which is untouched and still linked from the
+navigation; the homepage row was repeating them. The default in
+`homeContentDefaults` is off too, so a re-seed does not restore it. Re-tick
+「在首页显示」 in the admin to bring it back.
+
 ## 曙光 (Dawn) — the merged 实时登记册 + 我们的服务 band
 
 Implements `docs/prototypes/home-quit-ccp-bright-html` ("合并方案 G · 曙光"). The two
