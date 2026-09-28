@@ -4,7 +4,7 @@ import { externalLinkProps } from "@/lib/external-services";
 /**
  * 曙光 — the merged 实时登记册 + 我们的服务 band.
  *
- * Implements `docs/prototypes/quit-ccp-bright-html`. The two sections used to
+ * Implements `docs/prototypes/home-quit-ccp-bright-html`. The two sections used to
  * sit apart with a large dead gap between them; here they share one dawn
  * gradient, with the white service cards straddling its lower edge so the band
  * resolves into the page rather than stopping abruptly.

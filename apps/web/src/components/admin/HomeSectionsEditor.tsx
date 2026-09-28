@@ -57,7 +57,10 @@ const FIELD_LABELS: Record<string, string> = {
   listTitle: "侧栏标题",
   listTitleEn: "侧栏英文标签",
   listMoreLabel: "侧栏底部链接文字",
-  listMoreHref: "侧栏底部链接地址"
+  listMoreHref: "侧栏底部链接地址",
+  latestLabel: "卡片区标题",
+  footNote: "底部说明",
+  footMark: "底部标记"
 };
 
 /** Render order per section. Anything unlisted follows, alphabetically. */
@@ -78,7 +81,19 @@ const FIELD_ORDER: Record<string, string[]> = {
     "items"
   ],
   channels: ["heading", "cards"],
-  video: ["eyebrow", "heading", "moreLabel", "moreHref", "items"],
+  video: [
+    "eyebrow",
+    "heading",
+    "lede",
+    "moreLabel",
+    "moreHref",
+    "series",
+    "featured",
+    "latestLabel",
+    "items",
+    "footNote",
+    "footMark"
+  ],
   voices: ["eyebrow", "heading", "lede", "moreLabel", "moreHref", "items"],
   network: ["eyebrow", "heading", "body", "buttonLabel", "buttonHref", "citiesLabel", "cities"],
   resources: ["eyebrow", "heading", "moreLabel", "moreHref", "items"],
@@ -114,10 +129,26 @@ const LINK_FIELDS = new Set([
 interface RowField {
   key: string;
   label: string;
-  kind?: "text" | "area" | "image" | "video-flag";
+  kind?: "text" | "area" | "image" | "video-flag" | "flag" | "list";
 }
 
 const OBJECT_EDITORS: Record<string, { label: string; fields: RowField[] }> = {
+  "video.featured": {
+    label: "本期推荐",
+    fields: [
+      { key: "image", label: "封面图", kind: "image" },
+      { key: "tag", label: "角标（如「本期推荐」）" },
+      { key: "title", label: "标题", kind: "area" },
+      { key: "body", label: "简介", kind: "area" },
+      { key: "href", label: "播放链接" },
+      { key: "duration", label: "时长角标（如 58:00，留空则不显示）" },
+      { key: "meta", label: "标签（每行一个）", kind: "list" },
+      { key: "primaryLabel", label: "主按钮文字" },
+      { key: "primaryHref", label: "主按钮链接" },
+      { key: "secondaryLabel", label: "次按钮文字" },
+      { key: "secondaryHref", label: "次按钮链接" }
+    ]
+  },
   "news.lead": {
     label: "头条文章",
     fields: [
@@ -168,12 +199,23 @@ const ROW_EDITORS: Record<string, { label: string; blank: Record<string, string>
   },
   "video.items": {
     label: "视频",
-    blank: { title: "", meta: "", href: "/videos", image: "" },
+    blank: { title: "", meta: "", href: "/videos", image: "", duration: "", badge: "" },
     fields: [
       { key: "image", label: "封面", kind: "image" },
       { key: "title", label: "标题", kind: "area" },
-      { key: "meta", label: "来源／说明" },
-      { key: "href", label: "链接" }
+      { key: "meta", label: "系列与类型（如「三退前线 · 现场纪录」）" },
+      { key: "href", label: "链接" },
+      { key: "duration", label: "时长角标（如 11:05，留空则不显示）" },
+      { key: "badge", label: "角标（如 NEW，留空则不显示）" }
+    ]
+  },
+  "video.series": {
+    label: "系列标签",
+    blank: { label: "", href: "/videos" },
+    fields: [
+      { key: "label", label: "名称" },
+      { key: "href", label: "链接" },
+      { key: "active", label: "高亮显示（白底）", kind: "flag" }
     ]
   }
 };
@@ -483,6 +525,44 @@ export function HomeSectionsEditor({
               <span style={{ display: "block", marginBottom: 4 }}>{field.label}</span>
               {imageField(path, `${label} · ${field.label}`, current, true)}
             </div>
+          );
+        }
+        if (field.kind === "flag") {
+          return (
+            <label key={field.key} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <input
+                type="checkbox"
+                checked={row[field.key] === true}
+                onChange={(event) => updateField(path, event.target.checked)}
+              />
+              {field.label}
+            </label>
+          );
+        }
+        if (field.kind === "list") {
+          const entries = Array.isArray(row[field.key])
+            ? (row[field.key] as unknown[]).map((entry) => String(entry))
+            : [];
+          return (
+            <label key={field.key}>
+              {field.label}
+              <textarea
+                className="admin-textarea"
+                style={{ minHeight: 64 }}
+                value={entries.join("\n")}
+                onChange={(event) =>
+                  updateField(
+                    path,
+                    event.target.value
+                      .split("\n")
+                      .map((entry) => entry.trim())
+                      // Blank lines would render as empty pills; a trailing
+                      // newline while typing is the common case.
+                      .filter((entry) => entry.length > 0)
+                  )
+                }
+              />
+            </label>
           );
         }
         if (field.kind === "video-flag") {

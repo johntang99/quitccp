@@ -178,7 +178,7 @@ are given explicit dimensions, otherwise the row shrinks to a sliver.
 
 ## 曙光 (Dawn) — the merged 实时登记册 + 我们的服务 band
 
-Implements `docs/prototypes/quit-ccp-bright-html` ("合并方案 G · 曙光"). The two
+Implements `docs/prototypes/home-quit-ccp-bright-html` ("合并方案 G · 曙光"). The two
 sections previously sat apart with a large dead gap between them; the redesign
 puts them on one dawn gradient with the white service cards straddling its
 lower edge, so the band resolves into the page instead of stopping abruptly.
@@ -228,7 +228,7 @@ dot respects `prefers-reduced-motion`.
 
 ## 报刊头版 (Broadsheet) — the merged 新闻与报告 + 专题栏目 band
 
-Implements `docs/prototypes/news-html` ("新闻方案 J · 报刊头版"). The news list
+Implements `docs/prototypes/home-news-section-html` ("新闻方案 J · 报刊头版"). The news list
 and the four 栏目卡片 previously read as two unrelated blocks; the redesign sets
 them on one newsprint page — masthead rules, a lead story against a numbered
 最新发布 column, then the category cards under a rule-flanked band title.
@@ -279,3 +279,57 @@ a server component.
 with an image picker, add / delete / reorder, and Chinese field labels — see
 `OBJECT_EDITORS` and `ROW_EDITORS` in `HomeSectionsEditor.tsx`. Anything not
 listed there still falls back to the JSON textarea.
+
+## 放映室 (Screening) — the video section as an auditorium
+
+Implements `docs/prototypes/home-video-section-html` ("视频方案 M · 放映室").
+The section was a flat row of three thumbnails; the redesign gives it a dark
+auditorium band: series pill nav beside the heading, one large featured poster
+with its copy alongside, the latest films underneath, and a footer line.
+
+**Turned on by setting 视频资源 → 版式 → 「放映室（深色影院）」.**
+
+Unlike 曙光 and 报刊头版 this variant does not absorb another section — it only
+restyles 视频资源.
+
+Component: `components/templates/ScreeningBand.tsx`. Styling: `.screening-*` at
+the end of `globals.css`, carrying the mockup's values — gradient
+(`170deg #2E2670 → #251F5C 60% → #211A52`), gold `#F2D38A`, poster radius 12 with
+`0 40px 80px -40px rgba(0,0,0,.6)`, 96px play button with a 12px ring.
+
+> **Specificity trap:** `site.css` already styles this band as `#video { background; color }`.
+> An id outranks a class, so `.screening` alone could not replace either — the
+> base rule is written `#video.screening, .screening`. Any future rule here that
+> overrides one of those two properties needs the same treatment.
+
+New content fields:
+
+| field | purpose |
+|---|---|
+| `video.lede` | intro paragraph under the heading |
+| `video.series[]` | the pill nav — `{ label, href, active }`; `active` gives the filled white pill |
+| `video.featured` | poster + copy: `tag`, `title`, `body`, `image`, `href`, `duration`, `meta[]`, and the two buttons |
+| `video.latestLabel` | heading of the card row, 「最新上线」 |
+| `video.items[].duration` / `badge` | the corner chips; blank hides each |
+| `video.footNote` / `footMark` | the two ends of the footer line |
+
+### Content
+
+The 视频专题 1/2/3 placeholders are gone. The featured film and the four cards
+are now real films with their real links, series, and durations, taken from
+`pages/videos-index.json` — so the homepage and `/videos` agree rather than each
+carrying its own copy. The eight series pills point at the `/videos/*` pages that
+already exist.
+
+Two deliberate departures from that source:
+
+- `四万人的觉醒` does not use its thumbnail from `videos-index.json`: that image is
+  already on the card beside it, and two identical thumbs in a row of four read
+  as a rendering bug.
+- The secondary button is 「查看全部调查影像」 → `/videos/ironclad` rather than the
+  mockup's 「阅读文字报告」, which had no destination on this site.
+
+Thumbnails across the video pages are stand-in photographs from the tuidang.org
+media library, not frames from the films themselves. `cms_videos` is still empty;
+when it is populated, this section should read from it rather than from
+`pages/home.json`.

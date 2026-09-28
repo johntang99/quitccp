@@ -4,7 +4,7 @@ import { externalLinkProps } from "@/lib/external-services";
 /**
  * 报刊头版 — the merged 新闻与报告 + 专题栏目 band.
  *
- * Implements `docs/prototypes/news-html`. The two sections used to read as
+ * Implements `docs/prototypes/home-news-section-html`. The two sections used to read as
  * unrelated blocks; here they share one broadsheet page: masthead rules, a
  * lead story set against a numbered 最新发布 column, then the four 专题栏目
  * cards under a rule-flanked band title.

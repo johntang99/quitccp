@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<title>视频方案 M · 放映室</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;900&amp;family=Noto+Sans+SC:wght@400;500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;background:#251F5C}
+a{color:#3B3190}a:hover{color:#281F6E}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1340px; box-sizing: border-box; padding: 96px; background: linear-gradient(170deg, #2E2670 0%, #251F5C 60%, #211A52 100%); color: #F3F0FA; font-family: 'Noto Sans SC', 'PingFang SC', sans-serif; display: flex; flex-direction: column; gap: 48px; position: relative; overflow: hidden">
+  <div style="position: absolute; left: -200px; top: 380px; width: 900px; height: 700px; border-radius: 50%; background: radial-gradient(closest-side, rgba(242,211,138,0.12), rgba(242,211,138,0) 100%)"></div>
+
+  <div style="display: flex; flex-direction: column; gap: 16px; position: relative">
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.22em; color: {{gold}}">视频资源 · VIDEO</span>
+    <div style="display: flex; align-items: center; gap: 40px">
+      <h2 style="margin: 0; flex-shrink: 0; font-family: 'Noto Serif SC', 'Songti SC', serif; font-weight: 900; font-size: 52px">影音节目</h2>
+      <nav aria-label="视频系列" style="display: flex; flex-wrap: wrap; gap: 6px; padding-left: 40px; border-left: 1px solid rgba(255,255,255,0.2)">
+        <sc-for list="{{menu}}" as="m" hint-placeholder-count="8">
+          <sc-if value="{{m.active}}" hint-placeholder-val="{{ false }}">
+            <a href="#" style="background: #FFFFFF; color: #2E2670; font-size: 15px; font-weight: 500; text-decoration: none; padding: 10px 18px; border-radius: 999px">{{m.name}}</a>
+          </sc-if>
+          <sc-if value="{{m.idle}}" hint-placeholder-val="{{ true }}">
+            <a href="#" style="color: #E6E1F8; font-size: 15px; text-decoration: none; padding: 10px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.16)">{{m.name}}</a>
+          </sc-if>
+        </sc-for>
+      </nav>
+    </div>
+    <p style="margin: 0; font-size: 17px; line-height: 1.8; color: #CFC9EA">现场纪录、当事人访谈、调查影像与系列专题。全部节目可自由下载、转载与再制作。</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 48px; align-items: center; position: relative">
+    <a href="#" aria-label="播放本期推荐" style="position: relative; display: block; height: 500px; border-radius: 12px; overflow: hidden; box-shadow: 0 40px 80px -40px rgba(0,0,0,0.6)">
+      <img src="{{featured.img}}" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover">
+      <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,15,50,0) 55%, rgba(20,15,50,0.55) 100%)"></div>
+      <span style="position: absolute; left: 50%; top: 50%; width: 96px; height: 96px; margin: -48px 0 0 -48px; border-radius: 50%; background: rgba(255,255,255,0.95); color: #2E2670; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 0 0 12px rgba(255,255,255,0.18)">▶</span>
+      <span style="position: absolute; right: 20px; bottom: 20px; background: rgba(0,0,0,0.7); color: #FFFFFF; font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 5px 10px; border-radius: 4px">58:00</span>
+    </a>
+    <div style="display: flex; flex-direction: column; gap: 20px">
+      <span style="align-self: flex-start; background: {{gold}}; color: #211A52; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.18em; padding: 6px 12px; border-radius: 3px">本期推荐</span>
+      <h3 style="margin: 0; font-family: 'Noto Serif SC', 'Songti SC', serif; font-weight: 900; font-size: 32px; line-height: 1.45">{{featured.t}}</h3>
+      <p style="margin: 0; font-size: 16px; line-height: 1.85; color: #CFC9EA">{{featured.d}}</p>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <sc-for list="{{featured.meta}}" as="m" hint-placeholder-count="3">
+          <span style="font-size: 13px; color: #E6E1F8; border: 1px solid rgba(255,255,255,0.22); border-radius: 999px; padding: 6px 14px">{{m}}</span>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 14px; margin-top: 8px">
+        <a href="#" style="background: {{gold}}; color: #211A52; font-weight: 500; font-size: 15px; text-decoration: none; padding: 14px 26px; border-radius: 4px">▶ 立即观看</a>
+        <a href="#" style="color: #F3F0FA; font-size: 15px; text-decoration: none; padding: 14px 22px; border: 1px solid rgba(255,255,255,0.35); border-radius: 4px">阅读文字报告</a>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 28px; padding-top: 40px; border-top: 1px solid rgba(255,255,255,0.12); position: relative">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <span style="display: flex; align-items: center; gap: 12px; font-family: 'Noto Serif SC', serif; font-weight: 900; font-size: 26px"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{gold}}; box-shadow: 0 0 0 5px rgba(242,211,138,0.2)"></span>最新上线</span>
+      <a href="#" style="color: {{gold}}; font-size: 15px; text-decoration: none; padding: 12px 0">进入视频库 →</a>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px">
+      <sc-for list="{{latest}}" as="v" hint-placeholder-count="4">
+        <a href="#" style="display: flex; flex-direction: column; gap: 12px; color: #F3F0FA; text-decoration: none">
+          <div style="position: relative; height: 176px; border-radius: 10px; overflow: hidden">
+            <img src="{{v.img}}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block">
+            <span style="position: absolute; left: 12px; bottom: 12px; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.9); color: #2E2670; display: flex; align-items: center; justify-content: center; font-size: 12px">▶</span>
+            <span style="position: absolute; right: 10px; bottom: 12px; background: rgba(0,0,0,0.72); color: #FFFFFF; font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 4px 8px; border-radius: 4px">{{v.dur}}</span>
+            <span style="position: absolute; left: 12px; top: 12px; background: {{gold}}; color: #211A52; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.14em; padding: 3px 7px; border-radius: 3px">NEW</span>
+          </div>
+          <span style="font-size: 13px; color: {{gold}}">{{v.series}} · {{v.k}}</span>
+          <span style="font-family: 'Noto Serif SC', 'Songti SC', serif; font-weight: 600; font-size: 18px; line-height: 1.55">{{v.t}}</span>
+        </a>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: #B7B0D6; position: relative">
+    <span>同步发布于 YouTube · GanJingWorld</span>
+    <span style="font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em">FREE TO DOWNLOAD &amp; SHARE</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"gold":{"editor":"color","default":"#F2D38A","options":["#F2D38A","#D9BA72","#E8C56A"]},"$preview":{"width":1440,"height":1340}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const I = { V1: './assets/ac614ddf0f635d5bb1cc2cc0afeb86dd.jpg', V2: './assets/c0535535c268cf690a35008de99afca2.jpg', V3: './assets/affcd851f0270d0675bfe264484fc9fb.jpg', C1: './assets/8c70e23792dd4a405a4d6dac20de63d0.jpg', C2: './assets/cc7e5ab803a985a89e8648ebc5d3c300.jpg', C3: './assets/f1fd31a10298ceb30f6195cf97ae7c2f.jpg', C4: './assets/a9a9fa1afbf6953a50cdde45be619721.jpg', N1: './assets/b8cf5c4f16a6055a3927d15be3acc392.jpg', N2: './assets/3dac61357bc8044bb4b68f854360eafb.jpg', N3: './assets/956065d9a1e6aa1ea4931984d925c789.jpg', F: './assets/59b85cad3ab08a848fb48d5e32a135ed.jpg' };
+    const featured = { img: I.C1, t: '《铁证如山》：中共活体摘取法轮功学员器官罪恶追查', d: '追查迫害法轮功国际组织公布的系列调查，含录音取证、证人陈述与责任人名单。附完整文字版报告。', meta: ['调查片', '58 分', '中英文字幕'] };
+    const series = [
+      { key: 'frontline', n: '01', name: '三退前线', d: '服务点现场、义工纪实与当事人访谈。', v: [
+        { img: I.C4, t: '济州岛服务点的一天：义工在码头前轮班守候', k: '义工纪实', dur: '11:05' },
+        { img: I.C3, t: '纽约中领馆前烛光夜悼，十七名华人现场声明三退', k: '现场纪录', dur: '4:12' },
+        { img: I.C2, t: '台北车站前的真相点：十年如一日', k: '义工纪实', dur: '18:30' } ] },
+      { key: 'party', n: '02', name: '破除党文化', d: '解析党文化如何进入语言、教育与日常生活。', v: [
+        { img: I.V1, t: '第一集：被改造的语言', k: '系列专题', dur: '24:00' },
+        { img: I.N2, t: '第二集：从课本到思维方式', k: '系列专题', dur: '27:00' },
+        { img: I.V3, t: '第三集：斗争哲学的日常痕迹', k: '系列专题', dur: '22:00' } ] },
+      { key: 'jiuping', n: '03', name: '九评系列', d: '含《九评共产党》《魔鬼在统治着我们的世界》《共产主义的终极目的》视频版与播报版。', v: [
+        { img: I.N3, t: '《九评共产党》系列导读 · 第一集', k: '视频版', dur: '26:40' },
+        { img: I.V2, t: '《魔鬼在统治着我们的世界》 · 第一章', k: '播报版', dur: '41:00' },
+        { img: I.N1, t: '《共产主义的终极目的》 · 序言', k: '播报版', dur: '33:00' } ] },
+      { key: 'ironclad', n: '04', name: '铁证如山', d: '追查国际系列调查的影像版本。', v: [
+        { img: I.C1, t: '《铁证如山》完整版', k: '调查片', dur: '58:00' },
+        { img: I.F, t: '录音取证片段与说明', k: '调查片', dur: '16:00' },
+        { img: I.V2, t: '证人陈述汇编', k: '调查片', dur: '29:00' } ] },
+      { key: 'awakening', n: '05', name: '觉醒之旅', d: '长期跟踪拍摄的纪录系列。', v: [
+        { img: I.V3, t: '第一部：从怀疑开始', k: '纪录片', dur: '47:00' },
+        { img: I.C2, t: '第二部：走出来的人', k: '纪录片', dur: '52:00' },
+        { img: I.N3, t: '四万人的觉醒', k: '纪录片', dur: '38:00' } ] }
+    ];
+
+    const pick = (si, vi) => ({ ...series[si].v[vi], series: series[si].name });
+    const names = ['全部', '三退前线', '破除党文化', '退一步海阔天空', '九评系列', '铁证如山', '觉醒之旅', '其它系列'];
+    return {
+      featured: featured,
+      menu: names.map((n, i) => ({ name: n, active: i === 0, idle: i !== 0 })),
+      latest: [pick(0, 0), pick(0, 1), pick(1, 2), pick(4, 2)],
+      gold: this.props.gold ?? '#F2D38A'
+    };
+  }
+}
+</script>
+</body>
+</html>

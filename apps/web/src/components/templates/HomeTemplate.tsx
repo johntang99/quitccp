@@ -2,6 +2,7 @@ import { getHomepageHeroContent } from "@/lib/public-settings";
 import { HeroGallery, HeroVideo } from "@/components/public/HeroMedia";
 import { DawnBand } from "./DawnBand";
 import { BroadsheetBand } from "./BroadsheetBand";
+import { ScreeningBand } from "./ScreeningBand";
 import { externalLinkProps } from "@/lib/external-services";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString } from "./content-utils";
@@ -386,7 +387,9 @@ export async function HomeTemplate({ content }: TemplatePageData) {
         </section>
       ) : null}
 
-      {video.enabled ? (
+      {video.enabled && video.variant === "screening" ? <ScreeningBand video={video} /> : null}
+
+      {video.enabled && video.variant !== "screening" ? (
         <section id="video" className="sec">
           <div className="wrap">
             <SectionHead

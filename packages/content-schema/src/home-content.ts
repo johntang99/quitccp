@@ -71,6 +71,7 @@ export const HOME_SECTION_VARIANTS: Record<HomeSectionKey, { value: string; labe
   ],
   video: [
     { value: "grid3", label: "三栏（默认）" },
+    { value: "screening", label: "放映室（深色影院）" },
     { value: "grid4", label: "四栏" },
     { value: "list", label: "列表" }
   ],
@@ -190,9 +191,43 @@ export interface HomeContent {
   video: HomeSectionMeta & {
     eyebrow: string;
     heading: string;
+    /** Intro paragraph under the heading; 放映室 only. */
+    lede: string;
     moreLabel: string;
     moreHref: string;
-    items: { title: string; meta: string; href: string; image: string }[];
+    /** Series pill nav; `active` gives one the filled state. 放映室 only. */
+    series: { label: string; href: string; active?: boolean }[];
+    /** The large poster and its copy; 放映室 only. */
+    featured: {
+      tag: string;
+      title: string;
+      body: string;
+      image: string;
+      href: string;
+      /** Corner chip on the poster, e.g. 58:00; blank hides it. */
+      duration: string;
+      /** Outlined pills under the copy, e.g. 调查片 / 中英文字幕. */
+      meta: string[];
+      primaryLabel: string;
+      primaryHref: string;
+      secondaryLabel: string;
+      secondaryHref: string;
+    };
+    /** Heading of the card row, e.g. 最新上线. 放映室 only. */
+    latestLabel: string;
+    items: {
+      title: string;
+      meta: string;
+      href: string;
+      image: string;
+      /** Corner chip, e.g. 11:05; blank hides it. */
+      duration?: string;
+      /** Corner flag, e.g. NEW; blank hides it. */
+      badge?: string;
+    }[];
+    /** Footer line of the band; 放映室 only. */
+    footNote: string;
+    footMark: string;
   };
   voices: HomeSectionMeta & {
     eyebrow: string;
@@ -439,31 +474,79 @@ export const homeContentDefaults: HomeContent = {
     enabled: true,
     variant: "grid3",
     eyebrow: "视频资源",
-    heading: "多平台分发，统一元数据管理",
-    moreLabel: "查看视频库",
+    heading: "影音节目",
+    lede: "现场纪录、当事人访谈、调查影像与系列专题。全部影片可自由下载、转载与再制作。",
+    moreLabel: "进入视频库",
     moreHref: "/videos",
-    // Thumbnails are real tuidang.org images; the titles remain placeholders
-    // until cms_videos holds actual video metadata.
+    // The eight series pages that already exist under /videos.
+    series: [
+      { label: "全部", href: "/videos", active: true },
+      { label: "三退前线", href: "/videos/frontline" },
+      { label: "破除党文化", href: "/videos/party-culture" },
+      { label: "退一步海阔天空", href: "/videos/step-back" },
+      { label: "九评系列", href: "/videos/jiuping" },
+      { label: "铁证如山", href: "/videos/ironclad" },
+      { label: "觉醒之旅", href: "/videos/awakening" },
+      { label: "其它系列", href: "/videos/others" }
+    ],
+    // Mirrors the 本期推荐 block already published on /videos, so the homepage
+    // and the library agree rather than each carrying its own copy.
+    featured: {
+      tag: "本期推荐",
+      title: "《铁证如山》：中共活体摘取法轮功学员器官罪恶追查",
+      body: "追查迫害法轮功国际组织公布的系列调查，含录音取证、证人陈述与责任人名单。附完整文字版报告。",
+      image: "https://www.tuidang.org/wp-content/uploads/2026/07/id14813875-LD108599-1-scaled.jpg",
+      href: "https://www.zhuichaguoji.org/media_files/tzrs/tzrs_cn_trailer_revised.mp4",
+      duration: "58:00",
+      meta: ["调查片", "58 分", "中英文字幕"],
+      primaryLabel: "立即观看",
+      primaryHref: "https://www.zhuichaguoji.org/media_files/tzrs/tzrs_cn_trailer_revised.mp4",
+      secondaryLabel: "查看全部调查影像",
+      secondaryHref: "/videos/ironclad"
+    },
+    latestLabel: "最新上线",
+    // Real films with their real links, durations and series, taken from
+    // `pages/videos-index.json`. These replaced the 视频专题 1/2/3 placeholders
+    // that stood here while `cms_videos` was empty.
     items: [
       {
-        title: "视频专题 1",
-        meta: "YouTube / GanJingWorld",
-        href: "/videos",
-        image: "https://www.tuidang.org/wp-content/uploads/2026/09/news_0926-111.jpg"
+        title: "纽约中领馆前烛光夜悼，十七名华人现场声明三退",
+        meta: "三退前线 · 现场纪录",
+        href: "https://www.tuidang.org/2026/07/21/705292/",
+        image: "https://www.tuidang.org/wp-content/uploads/2026/07/id14814223-LD109739-scaled.jpg",
+        duration: "4:12",
+        badge: "NEW"
       },
       {
-        title: "视频专题 2",
-        meta: "YouTube / GanJingWorld",
-        href: "/videos",
-        image: "https://www.tuidang.org/wp-content/uploads/2026/09/news_0926.jpg"
+        title: "济州岛服务点的一天：义工在码头前轮班守候",
+        meta: "三退前线 · 义工纪实",
+        href: "https://www.youtube.com/watch?v=TZhgjCsLsGU",
+        image: "https://www.tuidang.org/wp-content/uploads/2026/06/2026.06.10-J.jpg",
+        duration: "11:05",
+        badge: ""
       },
       {
-        title: "视频专题 3",
-        meta: "YouTube / GanJingWorld",
-        href: "/videos",
-        image: "https://www.tuidang.org/wp-content/uploads/2026/09/20260922.png"
+        title: "第三集：斗争哲学的日常痕迹",
+        meta: "破除党文化 · 系列专题",
+        href: "https://www.youtube.com/watch?v=wxYJYCAHuVY",
+        image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.23-P.png",
+        duration: "22:00",
+        badge: ""
+      },
+      {
+        title: "四万人的觉醒",
+        meta: "觉醒之旅 · 纪录片",
+        href: "https://www.tuidang.org/2023/12/27/696470/",
+        // Not the thumbnail `videos-index.json` carries: that one is already
+        // used by the card beside it, and two identical thumbs in a row of
+        // four read as a rendering bug.
+        image: "https://www.tuidang.org/wp-content/uploads/2026/09/news_0926.jpg",
+        duration: "38:00",
+        badge: ""
       }
-    ]
+    ],
+    footNote: "同步发布于 YouTube · GanJingWorld",
+    footMark: "FREE TO DOWNLOAD & SHARE"
   },
   voices: {
     enabled: true,

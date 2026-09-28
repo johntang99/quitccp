@@ -96,8 +96,21 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
     title: asString(row.title),
     meta: asString(row.meta),
     href: asString(row.href, "/videos"),
-    image: asString(row.image)
+    image: asString(row.image),
+    duration: asString(row.duration),
+    badge: asString(row.badge)
   }));
+
+  const videoSeries = asObjectArray(videoRow.series).map((row) => ({
+    label: asString(row.label),
+    href: asString(row.href, "/videos"),
+    active: asBool(row.active, false)
+  }));
+
+  const videoFeatured = asRecord(videoRow.featured);
+  // Blank entries would render as empty pills, so they are dropped rather than
+  // kept; an editor clearing the list falls back to the default below.
+  const featuredMeta = asStringArray(videoFeatured.meta).filter((entry) => entry.trim().length > 0);
 
   const voiceItems = asObjectArray(voicesRow.items).map((row) => ({
     quote: asString(row.quote),
@@ -201,9 +214,29 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
       ...meta(videoRow, d.video),
       eyebrow: asString(videoRow.eyebrow, d.video.eyebrow),
       heading: asString(videoRow.heading, d.video.heading),
+      lede: asString(videoRow.lede, d.video.lede),
       moreLabel: asString(videoRow.moreLabel, d.video.moreLabel),
       moreHref: asString(videoRow.moreHref, d.video.moreHref),
-      items: videoItems.length > 0 ? videoItems : d.video.items
+      series: videoSeries.length > 0 ? videoSeries : d.video.series,
+      featured: {
+        tag: asString(videoFeatured.tag, d.video.featured.tag),
+        title: asString(videoFeatured.title, d.video.featured.title),
+        body: asString(videoFeatured.body, d.video.featured.body),
+        image: asString(videoFeatured.image, d.video.featured.image),
+        href: asString(videoFeatured.href, d.video.featured.href),
+        // Chip text: clearing it should hide the chip, not resurrect a
+        // runtime the video may no longer have.
+        duration: asString(videoFeatured.duration),
+        meta: featuredMeta.length > 0 ? featuredMeta : d.video.featured.meta,
+        primaryLabel: asString(videoFeatured.primaryLabel, d.video.featured.primaryLabel),
+        primaryHref: asString(videoFeatured.primaryHref, d.video.featured.primaryHref),
+        secondaryLabel: asString(videoFeatured.secondaryLabel, d.video.featured.secondaryLabel),
+        secondaryHref: asString(videoFeatured.secondaryHref, d.video.featured.secondaryHref)
+      },
+      latestLabel: asString(videoRow.latestLabel, d.video.latestLabel),
+      items: videoItems.length > 0 ? videoItems : d.video.items,
+      footNote: asString(videoRow.footNote, d.video.footNote),
+      footMark: asString(videoRow.footMark, d.video.footMark)
     },
     voices: {
       ...meta(voicesRow, d.voices),
