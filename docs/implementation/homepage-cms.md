@@ -84,7 +84,7 @@ live region announces "第 N 张，共 M 张".
 
 ### full-bleed is a Card overlay
 
-The photo is a band of fixed height (`--hero-photo-h`, 620px desktop) running
+The photo is a band of fixed height (`--hero-photo-h`, 780px desktop / 420px mobile) running
 full width at its **natural brightness — no dark cover**; `.hero-scrim` is
 hidden entirely. The copy sits in a **translucent** card whose top edge starts at **60% of the
 photo height** — 6 parts photo
@@ -92,22 +92,29 @@ above the card, 4 alongside — and which then **carries on past the photo's
 bottom edge** onto the page background. The card straddles that edge rather
 than sitting inside the image.
 
-Measured on the shipped copy: photo 620px, card top at 372px (6.0 : 4.0), 248px
-of card over the photo and 228px below it.
+Measured on the shipped copy: photo 780px, card top at 468px (6.0 : 4.0).
 
-**Card transparency.** `rgba(255,255,255,.82)` with
-`backdrop-filter: blur(16px) saturate(1.15)`, so the photograph reads through
-the card instead of being blanked out. 0.82 is the level the text survives:
-measured against the worst realistic case (a near-black photo behind the card),
-h1 lands at **11.3:1** and body at **5.25:1**, both clear of WCAG AA's 4.5.
-Going much lower fails over dark frames. The blur is what makes it read as
-frosted glass rather than a washed-out panel — without it busy detail shows
-through and fights the text. Browsers without `backdrop-filter` get 0.93 via
-`@supports not`.
+**Card transparency.** `rgba(255,255,255,.74)` with
+`backdrop-filter: blur(8px) saturate(1.1)`, so the photograph is still legible
+behind the card rather than merely tinting it.
 
-The eyebrow had to change colour for this: `--muted` measured **2.38:1** on the
-translucent card (it was already under AA on solid white), so in this variant it
-uses `--ink-soft`, which measures 5.25:1 and stays visually secondary.
+> **The blur mattered more than the opacity.** A first pass used 0.82 with a
+> 16px blur and still looked solid white, because 16px dissolves the photo into
+> a flat wash — over a light scene there is then nothing left to see through.
+> Dropping to 8px keeps recognisable shapes, which is what makes the card read
+> as transparent.
+
+Opacity can sit as low as 0.74 only because the text is darkened to `--ink` in
+this variant. Measured against the worst realistic case — a near-black photo
+behind the card — h1 and body land at **9.11:1** and the eyebrow at **4.82:1**,
+all clear of WCAG AA's 4.5. With the original `--ink-soft` body colour, 0.74
+would have measured about 3.5:1 and failed.
+
+The eyebrow keeps its visual hierarchy through `opacity: .72` on `--ink` rather
+than a lighter colour; `--muted` measured 2.38:1 here and was already under AA
+even on a solid white card.
+
+Browsers without `backdrop-filter` get 0.88 via `@supports not`.
 
 Two things this needs that the base hero does not:
 

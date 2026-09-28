@@ -1603,7 +1603,7 @@
    photo's bottom edge onto the page background. So the card straddles that
    edge rather than sitting inside the image. */
 .hero--full-bleed {
-  --hero-photo-h: 620px;
+  --hero-photo-h: 780px;
   /* Below the photo the page background shows through, not the hero gradient. */
   background: var(--paper);
   /* site.css clips the hero; the card has to be able to hang past the photo. */
@@ -1626,15 +1626,16 @@
   /* Wide enough that the Chinese headline breaks on a phrase rather than
      mid-compound; narrow enough that the photograph still reads. */
   max-width: 62ch;
-  /* Translucent so the photograph carries through the card instead of being
-     blanked out. 0.82 is the level that still clears WCAG AA for body text over
-     a dark frame: the composite lands around #D7D7D7 at worst, ~5.3:1 against
-     --ink-soft. Much lower and dark photos start failing.
-     The blur is what makes it read as frosted glass rather than a washed-out
-     panel -- without it, busy detail shows through and fights the text. */
-  background: rgba(255, 255, 255, .82);
-  -webkit-backdrop-filter: blur(16px) saturate(1.15);
-  backdrop-filter: blur(16px) saturate(1.15);
+  /* Genuinely see-through: the photograph should still be legible behind the
+     card, not merely tint it.
+     A heavy blur was the real culprit before -- at 16px the photo dissolved
+     into a flat wash, so an 0.82 card over a light scene looked solid white.
+     8px keeps recognisable shapes. The opacity then drops to 0.74, which the
+     text can afford only because it is darkened to --ink below: measured over a
+     near-black photo that is ~8.5:1, well clear of WCAG AA. */
+  background: rgba(255, 255, 255, .74);
+  -webkit-backdrop-filter: blur(8px) saturate(1.1);
+  backdrop-filter: blur(8px) saturate(1.1);
   border: 1px solid rgba(255, 255, 255, .55);
   border-radius: 3px;
   padding: 36px 38px 34px;
@@ -1644,22 +1645,22 @@
 /* Without backdrop-filter the photo behind would make the text hard work, so
    those browsers get a more opaque card instead. */
 @supports not (backdrop-filter: blur(1px)) {
-  .hero--full-bleed .hero-copy { background: rgba(255, 255, 255, .93); }
+  .hero--full-bleed .hero-copy { background: rgba(255, 255, 255, .88); }
 }
 
 /* Inside the card the surface is light, so every colour the hero set for a dark
    background has to flip. */
-/* --muted is too light to sit on a translucent card: at 0.82 over a dark frame
-   it measures ~2.4:1, and it was already under AA on solid white. --ink-soft
-   keeps the label visually secondary while staying legible. */
+/* At 0.74 the card is thin enough that only --ink clears AA over a dark photo
+   (--ink-soft would need ~0.78, --muted fails outright). Hierarchy is carried
+   by size, weight and letter-spacing instead of by colour. */
 .hero--full-bleed .hero-copy .eyebrow,
-.hero--full-bleed .hero-copy .eyebrow--onink { color: var(--ink-soft); }
+.hero--full-bleed .hero-copy .eyebrow--onink { color: var(--ink); opacity: .72; }
 .hero--full-bleed .hero-copy h1 {
   color: var(--ink);
   text-shadow: none;
   font-size: clamp(28px, 3.2vw, 40px);
 }
-.hero--full-bleed .hero-copy p { color: var(--ink-soft); }
+.hero--full-bleed .hero-copy p { color: var(--ink); }
 
 /* `btn--line-light` is drawn for a dark ground and would all but vanish on the
    card; give it the same treatment as `btn--line`. */
@@ -1681,7 +1682,7 @@
   }
   /* On a phone the photo shrinks and the card sits just below it rather than
      overlapping by much, so the headline is never pushed off the fold. */
-  .hero--full-bleed { --hero-photo-h: 320px; }
+  .hero--full-bleed { --hero-photo-h: 420px; }
   .hero--full-bleed .hero-grid {
     padding: calc(var(--hero-photo-h) * 0.72) 0 40px;
   }
