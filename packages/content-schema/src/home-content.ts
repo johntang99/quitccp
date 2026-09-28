@@ -475,7 +475,10 @@ export const homeContentDefaults: HomeContent = {
     variant: "grid3",
     eyebrow: "视频资源",
     heading: "影音节目",
-    lede: "现场纪录、当事人访谈、调查影像与系列专题。全部影片可自由下载、转载与再制作。",
+    // Blank by design: the band is tall enough without an intro paragraph, and
+    // the reuse terms are stated properly on the /videos pages themselves.
+    // Filling it back in restores the paragraph under the heading.
+    lede: "",
     moreLabel: "进入视频库",
     moreHref: "/videos",
     // The eight series pages that already exist under /videos.
@@ -545,8 +548,9 @@ export const homeContentDefaults: HomeContent = {
         badge: ""
       }
     ],
-    footNote: "同步发布于 YouTube · GanJingWorld",
-    footMark: "FREE TO DOWNLOAD & SHARE"
+    // Blank hides the footer line entirely; see `lede` above.
+    footNote: "",
+    footMark: ""
   },
   voices: {
     enabled: true,

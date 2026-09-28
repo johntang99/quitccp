@@ -306,12 +306,12 @@ New content fields:
 
 | field | purpose |
 |---|---|
-| `video.lede` | intro paragraph under the heading |
+| `video.lede` | intro paragraph under the heading; **blank by default** |
 | `video.series[]` | the pill nav — `{ label, href, active }`; `active` gives the filled white pill |
 | `video.featured` | poster + copy: `tag`, `title`, `body`, `image`, `href`, `duration`, `meta[]`, and the two buttons |
 | `video.latestLabel` | heading of the card row, 「最新上线」 |
 | `video.items[].duration` / `badge` | the corner chips; blank hides each |
-| `video.footNote` / `footMark` | the two ends of the footer line |
+| `video.footNote` / `footMark` | the two ends of the footer line; **both blank by default** |
 
 ### Content
 
@@ -328,6 +328,12 @@ Two deliberate departures from that source:
   as a rendering bug.
 - The secondary button is 「查看全部调查影像」 → `/videos/ironclad` rather than the
   mockup's 「阅读文字报告」, which had no destination on this site.
+
+The mockup's intro paragraph and its footer line (「同步发布于 YouTube · GanJingWorld」
+/ FREE TO DOWNLOAD & SHARE) are **not shown**: the band is tall enough without
+them, and the reuse terms are already stated properly on the `/videos` pages.
+The fields remain -- typing text back into 导语, 底部说明 or 底部标记 brings each
+element back -- but they default to blank so a re-seed does not restore them.
 
 Thumbnails across the video pages are stand-in photographs from the tuidang.org
 media library, not frames from the films themselves. `cms_videos` is still empty;
