@@ -197,12 +197,39 @@ lower edge, so the band resolves into the page instead of stopping abruptly.
 
 **Turned on by setting 实时登记册 → 版式 → 「曙光 · 与「我们的服务」合并」.**
 
-> **Coupling worth knowing:** this is the one variant that spans two sections.
-> While `registry.variant === "dawn"`, the standalone 我们的服务 section is
-> suppressed and its content is rendered inside the band instead. Switching
-> registry back to any other variant restores both sections independently.
-> Content still lives under the existing `registry` and `services` keys, so
-> nothing had to be migrated.
+> **Coupling worth knowing:** this variant spans three sections. While
+> `registry.variant === "dawn"`, the standalone 我们的服务 **and** 见证者 sections
+> are suppressed and their content is rendered inside the band instead.
+> Switching registry back to any other variant restores all three independently.
+> Content still lives under the existing `registry`, `services` and `voices`
+> keys, so nothing had to be migrated.
+
+### The fourth card: 见证
+
+A later revision of the mockup takes the card row from three columns to four and
+makes the fourth a 见证 card: one statement at a time, with a row of portraits to
+switch between them. It renders `voices` — the same eyebrow, heading, lede, items
+and 更多见证 link the standalone 见证者 section used, so again nothing moved.
+
+The card appears only when 见证者 is enabled and has at least one item; without it
+the row stays the three cards it was, at the roomier padding they were drawn with
+(`.dawn-cards--4` carries the tighter values the fourth column needs).
+
+The switcher is the band's only client component,
+`components/public/WitnessCard.tsx`. The portraits are real `<button>`s labelled
+with the speaker's name and carrying `aria-pressed` — a portrait alone says
+nothing about who it selects, so it would be unusable from the keyboard or a
+screen reader otherwise.
+
+`voices.lede` was shortened to 「来自曾经身处体制之内的人，陈述被完整保存并公开。」
+The previous two-sentence version pushed the card — and with it the whole row —
+taller than the service cards beside it.
+
+> **Fixed alongside:** `.dawn-inner` re-declares `padding` and had it at
+> `88px 0 96px`, which overrode `.wrap`'s `0 32px` and ran the entire band
+> edge-to-edge on any viewport under ~1264px, cards touching the screen. It is
+> now `88px 32px 96px`. Any rule that sets `padding` on a `.wrap` element has to
+> repeat the side padding.
 
 Component: `components/templates/DawnBand.tsx`. Styling: `.dawn-*` at the end of
 `globals.css`, carrying the mockup's values verbatim — gradient stops
@@ -298,16 +325,18 @@ image, and add / delete / 上移 / 下移:
 | 新闻与报告 | `lead` (object) and `items[]` |
 | 栏目卡片 | `cards[]`, with the video badge as a checkbox |
 | 视频资源 | `featured` (object, with its tag pills one-per-line), `series[]`, `items[]` |
+| 见证者 | `items[]`, with the portrait picker |
 
 They are declared in `OBJECT_EDITORS`, `ROW_EDITORS` and `NUMBER_FIELDS` in
 `HomeSectionsEditor.tsx`, keyed `<section>.<field>` because the field names
 repeat across sections (`items`, `cards`) with different shapes. Anything not
-listed there still falls back to the JSON textarea — that is what 见证者,
-全球网络, 关于我们 and 参与我们 still use.
+listed there still falls back to the JSON textarea — that is what 全球网络,
+资源馆, 关于我们 and 参与我们 still use.
 
 Both merged variants say so inline, in both directions: 实时登记册 and 新闻与报告
-note which section they have absorbed, and 我们的服务 and 栏目卡片 note that they
-are being absorbed and that their own 版式 choice has stopped mattering.
+note which sections they have absorbed, and 我们的服务, 见证者 and 栏目卡片 note
+that they are being absorbed and that their own 版式 choice has stopped
+mattering.
 
 ## 放映室 (Screening) — the video section as an auditorium
 

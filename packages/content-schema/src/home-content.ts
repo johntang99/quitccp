@@ -557,7 +557,9 @@ export const homeContentDefaults: HomeContent = {
     variant: "grid3",
     eyebrow: "见证者",
     heading: "他们为什么选择公开声明",
-    lede: "数亿份声明中，有一部分来自曾经身处体制之内的人。他们的陈述被完整保存并公开。",
+    // Short enough to sit in the 曙光 band's fourth card without pushing the
+    // whole row taller than the service cards beside it.
+    lede: "来自曾经身处体制之内的人，陈述被完整保存并公开。",
     moreLabel: "更多见证 →",
     moreHref: "/involve/stories",
     items: [

@@ -1,5 +1,6 @@
 import type { HomeContent } from "@quitccp/content-schema";
 import { externalLinkProps } from "@/lib/external-services";
+import { WitnessCard } from "@/components/public/WitnessCard";
 
 /**
  * 曙光 — the merged 实时登记册 + 我们的服务 band.
@@ -16,11 +17,16 @@ import { externalLinkProps } from "@/lib/external-services";
 interface DawnBandProps {
   registry: HomeContent["registry"];
   services: HomeContent["services"];
+  /** 见证者; rendered as the band's fourth card. Omitted when hidden. */
+  voices: HomeContent["voices"];
   /** Declaration rows for the feed; only the first `feedCount` are shown. */
   feed: { region: string; name: string; text: string; at: string }[];
 }
 
-export function DawnBand({ registry, services, feed }: DawnBandProps) {
+export function DawnBand({ registry, services, voices, feed }: DawnBandProps) {
+  // The 见证 card only appears when there is something to show in it; without
+  // it the row stays the three cards it was.
+  const showWitness = voices.enabled && voices.items.length > 0;
   // The design is a row of receding cards, so the row is filled to `feedCount`
   // by cycling whatever entries exist -- the mockup does the same, showing one
   // statement three times. Once the santui feed is wired there will be more
@@ -123,7 +129,7 @@ export function DawnBand({ registry, services, feed }: DawnBandProps) {
           </a>
         </div>
 
-        <div className="dawn-cards">
+        <div className={`dawn-cards${showWitness ? " dawn-cards--4" : ""}`}>
           {services.cards.map((card, index) => (
             <article key={card.title} className="dawn-card">
               <div className="dawn-card-top">
@@ -157,6 +163,24 @@ export function DawnBand({ registry, services, feed }: DawnBandProps) {
               ) : null}
             </article>
           ))}
+
+          {showWitness ? (
+            <article className="dawn-card dawn-card--witness">
+              <div className="dawn-card-top">
+                <span className="dawn-card-tag">
+                  {String(services.cards.length + 1).padStart(2, "0")} · {voices.eyebrow}
+                </span>
+                <span className="dawn-card-rule" aria-hidden="true" />
+              </div>
+              <h3>{voices.heading}</h3>
+              <p className="dawn-card-desc dawn-card-desc--quiet">{voices.lede}</p>
+              <WitnessCard
+                items={voices.items}
+                moreLabel={voices.moreLabel}
+                moreHref={voices.moreHref}
+              />
+            </article>
+          ) : null}
         </div>
       </div>
     </section>

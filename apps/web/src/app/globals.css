@@ -1848,7 +1848,10 @@
 .dawn-inner {
   position: relative;
   z-index: 1;
-  padding: 88px 0 96px;
+  /* The side padding repeats `.wrap`'s: this rule overrides the shorthand, so
+     leaving it at 0 ran the whole band edge-to-edge on any viewport under
+     ~1264px, with the cards touching the screen. */
+  padding: 88px 32px 96px;
   display: flex;
   flex-direction: column;
   gap: 48px;
@@ -2094,16 +2097,101 @@
 }
 .dawn-card-cta:hover { background: #281F6E; color: #fff; }
 
+/* --- 曙光 fourth card: 见证 --------------------------------------------- */
+/* The design tightens the cards when a fourth one joins the row; at three they
+   keep the roomier setting they were drawn with. */
+.dawn-cards--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.dawn-cards--4 .dawn-card { padding: 32px 28px 26px; }
+.dawn-cards--4 .dawn-card h3 { font-size: clamp(20px, 1.9vw, 25px); }
+.dawn-cards--4 .dawn-card-desc { min-height: 112px; }
+.dawn-cards--4 .dawn-card-desc--quiet { min-height: 0; }
+
+.dawn-card-desc--quiet { font-size: 14px; line-height: 1.8; color: #6B6578; }
+
+.dawn-wit {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 6px;
+  background: #F5F2FB;
+  /* Grows so the card's foot lines up with the other cards' CTAs. */
+  flex-grow: 1;
+}
+.dawn-wit-mark {
+  font-family: var(--serif);
+  font-weight: 900;
+  font-size: 48px;
+  line-height: .5;
+  height: 20px;
+  color: #C9A04E;
+}
+.dawn-wit blockquote {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: 1.85;
+  color: #1E1A2E;
+  flex-grow: 1;
+}
+.dawn-wit figcaption { display: flex; align-items: center; gap: 12px; }
+.dawn-wit figcaption img,
+.dawn-wit-blank {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #E4DFD4;
+}
+.dawn-wit-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dawn-wit-name { font-weight: 500; font-size: 15px; color: #1E1A2E; }
+.dawn-wit-role { display: flex; flex-direction: column; font-size: 12px; line-height: 1.5; color: #6B6578; }
+
+.dawn-wit-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid #E4DFD4;
+}
+.dawn-wit-picks { display: flex; gap: 8px; }
+.dawn-wit-picks button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  border: 0;
+  overflow: hidden;
+  cursor: pointer;
+  background: transparent;
+  opacity: .55;
+  transition: opacity .25s ease, box-shadow .25s ease;
+}
+.dawn-wit-picks button:hover { opacity: .85; }
+.dawn-wit-picks button.is-active {
+  opacity: 1;
+  box-shadow: 0 0 0 2px #FFFEFA, 0 0 0 4px var(--dawn-accent);
+}
+.dawn-wit-picks img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dawn-wit-more { font-size: 14px; color: var(--dawn-accent); white-space: nowrap; }
+.dawn-wit-more:hover { color: #281F6E; }
+
 @media (max-width: 1080px) {
-  .dawn-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dawn-cards,
+  .dawn-cards--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 860px) {
   .dawn-sky { height: 56%; }
-  .dawn-inner { padding: 56px 0 64px; gap: 36px; }
+  .dawn-inner { padding: 56px 32px 64px; gap: 36px; }
   .dawn-head { grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: start; }
   .dawn-feed-card { flex-basis: 280px; width: 280px; }
-  .dawn-cards { grid-template-columns: minmax(0, 1fr); }
-  .dawn-card-desc { min-height: 0; }
+  .dawn-cards,
+  .dawn-cards--4 { grid-template-columns: minmax(0, 1fr); }
+  .dawn-card-desc,
+  .dawn-cards--4 .dawn-card-desc { min-height: 0; }
   .dawn-services-head { flex-direction: column; align-items: flex-start; gap: 12px; }
 }
 

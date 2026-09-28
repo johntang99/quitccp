@@ -257,6 +257,16 @@ const ROW_EDITORS: Record<
       { key: "ctaHref", label: "底部按钮链接" }
     ]
   },
+  "voices.items": {
+    label: "见证",
+    blank: { quote: "", name: "", role: "", image: "" },
+    fields: [
+      { key: "image", label: "头像", kind: "image" },
+      { key: "quote", label: "引述", kind: "area" },
+      { key: "name", label: "姓名" },
+      { key: "role", label: "身份（可换行）", kind: "area" }
+    ]
+  },
   "video.series": {
     label: "系列标签",
     blank: { label: "", href: "/videos" },
@@ -297,11 +307,14 @@ function couplingNote(sectionKey: string, data: Record<string, unknown>): string
   if (sectionKey === "channels" && variantOf("news") === "broadsheet") {
     return "「新闻与报告」正在使用「报刊头版」版式，本区块已并入其中显示：内容仍然生效，但这里的「版式」选择不起作用。";
   }
-  if (sectionKey === "services" && variantOf("registry") === "dawn") {
+  if (
+    (sectionKey === "services" || sectionKey === "voices") &&
+    variantOf("registry") === "dawn"
+  ) {
     return "「实时登记册」正在使用「曙光」版式，本区块已并入其中显示：内容仍然生效，但这里的「版式」选择不起作用。";
   }
   if (sectionKey === "registry" && variantOf("registry") === "dawn") {
-    return "「曙光」版式把「我们的服务」并入本区块一起显示；服务卡片仍在「我们的服务」里编辑。本版式使用「实时标签」而不是「滚动区标题」。";
+    return "「曙光」版式把「我们的服务」与「见证者」并入本区块一起显示，共四张卡片；两者的内容仍在各自区块里编辑。本版式使用「实时标签」而不是「滚动区标题」。";
   }
   if (sectionKey === "news" && variantOf("news") === "broadsheet") {
     return "「报刊头版」版式把「栏目卡片（专题栏目）」并入本区块一起显示；栏目卡片仍在该区块里编辑。";
