@@ -2842,6 +2842,12 @@
   -webkit-mask-image: linear-gradient(90deg, transparent 40%, #000 100%);
   mask-image: linear-gradient(90deg, transparent 40%, #000 100%);
 }
+/* 放映室 and 可检验 are both dark, so where they meet the two bands read as one
+   block with a seam through it. A strip of paper between them makes the section
+   boundary visible. Scoped to that adjacency: against a light section above,
+   this band needs no extra space. */
+.screening + .verified { margin-top: 72px; }
+
 .verified-inner {
   position: relative;
   z-index: 1;

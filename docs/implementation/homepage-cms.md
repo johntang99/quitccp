@@ -445,6 +445,11 @@ Two things the band derives rather than storing:
 column is ~600px and ours is ~530, where the first authored line (11 glyphs) had
 been overflowing and wrapping mid-phrase.
 
+> **Adjacency:** 放映室 sits immediately above this band and is also dark, so the
+> two read as one block with a seam through them. `.screening + .verified` puts
+> 72px of paper between them. It is scoped to that pair on purpose — against a
+> light section above, this band needs no extra space.
+
 ### Admin
 
 关于我们 and 参与我们 join the sections with no JSON left in the form.
