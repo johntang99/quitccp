@@ -1726,11 +1726,23 @@
 }
 /* `.item` / `.lead` are the grid containers in site.css, so their anchors use
    display:contents and add no box of their own. */
-.news .thumb img { width: 96px; height: 68px; object-fit: cover; display: block; }
+/* Double the prototype's 96x68 list thumb -- at that size the photo was too
+   small to read. The grid column has to grow with it, or the image would
+   overflow its track. Scoped to `.news` so other `.item` lists are untouched. */
+.news .item { grid-template-columns: 192px minmax(0, 1fr); gap: 20px; }
+.news .thumb img { width: 192px; height: 136px; object-fit: cover; display: block; }
 /* Placeholder thumbs (no image set yet) must still occupy the slot, otherwise
    the row collapses to a sliver. */
-.news .item .thumb .sectionCard { width: 96px; height: 68px; margin: 0; padding: 0; }
+.news .item .thumb .sectionCard { width: 192px; height: 136px; margin: 0; padding: 0; }
 .news--feature .news .thumb img { width: 100%; }
+
+@media (max-width: 980px) {
+  /* Below this the right column is too narrow to give 192px to the thumb and
+     still leave a readable measure for the headline. */
+  .news .item { grid-template-columns: 120px minmax(0, 1fr); gap: 14px; }
+  .news .thumb img,
+  .news .item .thumb .sectionCard { width: 120px; height: 85px; }
+}
 
 /* 频道卡片 */
 .chan--grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
