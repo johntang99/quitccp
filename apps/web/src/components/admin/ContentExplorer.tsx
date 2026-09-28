@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { HOME_SECTION_VARIANTS } from "@quitccp/content-schema";
+import { HomeSectionsEditor } from "@/components/admin/HomeSectionsEditor";
 import { ImagePickerModal } from "@/components/admin/ImagePickerModal";
 
 interface ContentFileItem {
@@ -98,49 +98,6 @@ function fileDisplayLabel(file: { label: string; section: string }): string {
     ? `${display}/${file.label.slice(file.section.length + 1)}`
     : file.label;
 }
-
-/** Section keys in render order, with the label an editor sees. */
-const HOME_SECTIONS: { key: string; label: string; note?: string }[] = [
-  { key: "hero", label: "首屏 Hero" },
-  {
-    key: "registry",
-    label: "实时登记册",
-    note: "声明内容来自三退网站的数据，不在此编辑；这里只调整版式与说明文字。"
-  },
-  { key: "services", label: "我们的服务" },
-  { key: "news", label: "新闻与报告（公开更新与重点议题）" },
-  { key: "channels", label: "栏目卡片" },
-  { key: "video", label: "视频资源" },
-  { key: "voices", label: "见证者" },
-  { key: "network", label: "全球网络" },
-  { key: "resources", label: "资源馆" },
-  { key: "about", label: "关于我们" },
-  { key: "involve", label: "参与我们" }
-];
-
-/** Friendly labels for the plain-text fields inside a section. */
-const HOME_FIELD_LABELS: Record<string, string> = {
-  eyebrow: "小标题（eyebrow）",
-  title: "标题",
-  heading: "区块标题",
-  body: "正文",
-  lede: "导语",
-  count: "登记数字",
-  countLabel: "数字说明",
-  noteLabel: "数字注释链接文字",
-  noteHref: "数字注释链接地址",
-  streamHeading: "滚动区标题",
-  moreLabel: "更多链接文字",
-  moreHref: "更多链接地址",
-  buttonLabel: "按钮文字",
-  buttonHref: "按钮链接",
-  citiesLabel: "城市列表标题",
-  image: "图片地址（左文右图／通栏大图）",
-  imageAlt: "图片说明"
-};
-
-/** Text fields that hold an image URL and therefore get a picker button. */
-const HOME_IMAGE_FIELDS = new Set(["image", "poster", "backgroundImage"]);
 
 const ABOUT_INDEX_PATH = "pages/about-index.json";
 const ABOUT_BLOCK_KEYS = ["intro", "numbersBand", "network", "accountability", "team", "history"] as const;
@@ -544,14 +501,17 @@ function guessPreviewPath(path: string): string | null {
 
 function setAtPath(input: Record<string, unknown>, keyPath: string[], value: unknown): Record<string, unknown> {
   const draft = structuredClone(input);
-  let cursor: Record<string, unknown> = draft;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let cursor: any = draft;
   for (let i = 0; i < keyPath.length - 1; i += 1) {
     const key = keyPath[i];
     const current = cursor[key];
-    if (typeof current !== "object" || current === null || Array.isArray(current)) {
-      cursor[key] = {};
+    // Arrays must survive traversal: writing ["hero","gallery","0","src"] used
+    // to replace the gallery array with {} and lose every item.
+    if (typeof current !== "object" || current === null) {
+      cursor[key] = /^\d+$/.test(keyPath[i + 1] ?? "") ? [] : {};
     }
-    cursor = cursor[key] as Record<string, unknown>;
+    cursor = cursor[key];
   }
   cursor[keyPath[keyPath.length - 1]] = value;
   return draft;
@@ -1051,154 +1011,17 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
               ) : !activeDataMatchesPath ? (
                 <p>正在加载页面内容...</p>
               ) : isHomeEditor ? (
-                <>
-                  <p style={{ margin: 0, color: "#666" }}>
-                    首页按区块编辑。每个区块可以单独显示／隐藏，并选择版式；文字字段直接编辑，
-                    列表类字段为 JSON。
-                  </p>
-                  {HOME_SECTIONS.map((section) => {
-                    const sectionValue =
-                      typeof activeData[section.key] === "object" && activeData[section.key] !== null
-                        ? (activeData[section.key] as Record<string, unknown>)
-                        : {};
-                    const variants = HOME_SECTION_VARIANTS[
-                      section.key as keyof typeof HOME_SECTION_VARIANTS
-                    ] ?? [];
-                    const enabled = sectionValue.enabled !== false;
-                    const textKeys = Object.keys(sectionValue).filter(
-                      (key) => key !== "enabled" && key !== "variant" && typeof sectionValue[key] === "string"
-                    );
-                    const jsonKeys = Object.keys(sectionValue).filter(
-                      (key) => key !== "enabled" && key !== "variant" && typeof sectionValue[key] !== "string"
-                    );
-                    return (
-                      <details
-                        key={section.key}
-                        style={{ border: "1px solid #ececec", borderRadius: 4, padding: "10px 12px" }}
-                      >
-                        <summary style={{ cursor: "pointer", fontWeight: 600 }}>
-                          {section.label}
-                          {!enabled ? <span style={{ color: "#b42318" }}>（已隐藏）</span> : null}
-                        </summary>
-                        <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
-                          {section.note ? (
-                            <p style={{ margin: 0, color: "#8a6d1f", fontSize: 13 }}>{section.note}</p>
-                          ) : null}
-                          <div className="admin-toolbar" style={{ margin: 0 }}>
-                            <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                              <input
-                                type="checkbox"
-                                checked={enabled}
-                                onChange={(event) =>
-                                  updateField([section.key, "enabled"], event.target.checked)
-                                }
-                              />
-                              在首页显示
-                            </label>
-                            {variants.length > 0 ? (
-                              <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                版式
-                                <select
-                                  className="admin-select"
-                                  value={String(sectionValue.variant ?? variants[0].value)}
-                                  onChange={(event) =>
-                                    updateField([section.key, "variant"], event.target.value)
-                                  }
-                                >
-                                  {variants.map((variant) => (
-                                    <option key={variant.value} value={variant.value}>
-                                      {variant.label}
-                                    </option>
-                                  ))}
-                                </select>
-                              </label>
-                            ) : null}
-                          </div>
-                          {textKeys.map((key) => {
-                            const isImage = HOME_IMAGE_FIELDS.has(key);
-                            const value = String(sectionValue[key] ?? "");
-                            return (
-                              <label key={key}>
-                                {HOME_FIELD_LABELS[key] ?? key}
-                                <textarea
-                                  className="admin-textarea"
-                                  style={{ minHeight: isImage ? 44 : 60 }}
-                                  value={value}
-                                  onChange={(event) =>
-                                    updateField([section.key, key], event.target.value)
-                                  }
-                                />
-                                {isImage ? (
-                                  <span
-                                    style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}
-                                  >
-                                    <button
-                                      className="admin-btn"
-                                      type="button"
-                                      onClick={() => {
-                                        setImagePickerField([section.key, key]);
-                                        setImagePickerLabel(
-                                          `${section.label} · ${HOME_FIELD_LABELS[key] ?? key}`
-                                        );
-                                      }}
-                                    >
-                                      选择图片…
-                                    </button>
-                                    {value ? (
-                                      <>
-                                        <img
-                                          src={value}
-                                          alt=""
-                                          style={{
-                                            width: 72,
-                                            height: 54,
-                                            objectFit: "cover",
-                                            border: "1px solid #ececec"
-                                          }}
-                                        />
-                                        <button
-                                          className="admin-btn"
-                                          type="button"
-                                          onClick={() => updateField([section.key, key], "")}
-                                        >
-                                          清除
-                                        </button>
-                                      </>
-                                    ) : null}
-                                  </span>
-                                ) : null}
-                              </label>
-                            );
-                          })}
-                          {jsonKeys.map((key) => (
-                            <label key={key}>
-                              {key}（JSON）
-                              <textarea
-                                className="admin-textarea"
-                                style={{
-                                  minHeight: 150,
-                                  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
-                                }}
-                                value={
-                                  homeJsonDrafts[`${section.key}.${key}`] ??
-                                  JSON.stringify(sectionValue[key], null, 2)
-                                }
-                                onChange={(event) =>
-                                  updateHomeJsonDraft(section.key, key, event.target.value)
-                                }
-                              />
-                              {homeJsonErrors[`${section.key}.${key}`] ? (
-                                <span style={{ color: "#b42318", fontSize: 12 }}>
-                                  {homeJsonErrors[`${section.key}.${key}`]}
-                                </span>
-                              ) : null}
-                            </label>
-                          ))}
-                        </div>
-                      </details>
-                    );
-                  })}
-                </>
+                <HomeSectionsEditor
+                  data={activeData}
+                  updateField={updateField}
+                  jsonDrafts={homeJsonDrafts}
+                  jsonErrors={homeJsonErrors}
+                  onJsonDraft={updateHomeJsonDraft}
+                  onPickImage={(keyPath, label) => {
+                    setImagePickerField(keyPath);
+                    setImagePickerLabel(label);
+                  }}
+                />
               ) : isAboutBlockEditor ? (
                 <>
                   <label>

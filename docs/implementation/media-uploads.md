@@ -58,7 +58,14 @@ Any homepage text field named `image`, `poster` or `backgroundImage`
 (`HOME_IMAGE_FIELDS` in `ContentExplorer`) gets a 选择图片… button plus a
 thumbnail and a 清除 button.
 
-Images nested inside JSON fields — `hero.gallery[].src`, `news.lead.image`,
-`video.items[].image`, `channels.cards[].image` — are still edited as JSON.
-Giving those a picker means rendering per-item rows instead of one textarea;
-worth doing next if editors hit it.
+`hero.gallery[]` and `hero.video` have purpose-built editors (see
+`HomeSectionsEditor`), so the picker reaches those too.
+
+Still JSON-only: `news.lead.image`, `news.items[].image`,
+`video.items[].image`, `channels.cards[].image`, `voices.items[].image`. Those
+need the same per-item row treatment the gallery got.
+
+> **Bug this depended on:** `setAtPath` replaced any array it traversed with
+> `{}`, so writing `["hero","gallery","0","src"]` destroyed the whole gallery.
+> It now creates an array when the next path segment is a numeric index and
+> leaves existing arrays alone. Nothing could edit an array item before this.
