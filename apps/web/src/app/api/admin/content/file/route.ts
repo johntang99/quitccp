@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
+import { contentPathToRoutes } from "@/lib/content-paths";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { deleteContentFile, getContentFileByPath, upsertContentFile } from "@/lib/admin/content-repository";
 
@@ -58,7 +60,21 @@ export async function PUT(request: Request) {
     if (!path) return NextResponse.json({ error: "Missing path" }, { status: 400 });
     const data = parseData(body.content);
     const row = await upsertContentFile(locale, path, data, user.email, body.note?.trim() || undefined);
-    return NextResponse.json({ row });
+
+    // Drop the cached HTML for the page(s) this entry renders, so the edit is
+    // live on the next request instead of waiting for the revalidate window.
+    // Never let a cache miss fail the save itself.
+    const revalidated: string[] = [];
+    for (const route of contentPathToRoutes(path)) {
+      try {
+        if (route === "/layout") revalidatePath("/", "layout");
+        else revalidatePath(route);
+        revalidated.push(route);
+      } catch {
+        // ignore
+      }
+    }
+    return NextResponse.json({ row, revalidated });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to save content file" },
