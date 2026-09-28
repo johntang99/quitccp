@@ -89,6 +89,7 @@ export const HOME_SECTION_VARIANTS: Record<HomeSectionKey, { value: string; labe
   ],
   about: [
     { value: "cells3", label: "三栏（默认）" },
+    { value: "verified", label: "可检验 · 与「参与我们」合并" },
     { value: "stacked", label: "纵向排列" }
   ],
   involve: [
@@ -269,7 +270,19 @@ export interface HomeContent {
   involve: HomeSectionMeta & {
     eyebrow: string;
     heading: string;
-    items: { title: string; body: string; href: string }[];
+    /** Line beside the heading; 可检验 only. */
+    lede: string;
+    items: {
+      title: string;
+      body: string;
+      href: string;
+      /** Text of the card's action; falls back to the title when blank. */
+      ctaLabel?: string;
+      /** Single character in the card's badge, e.g. 退. Blank hides the badge. */
+      glyph?: string;
+      /** One card can be the primary one: gold top rule and a filled button. */
+      primary?: boolean;
+    }[];
   };
 }
 
@@ -622,26 +635,27 @@ export const homeContentDefaults: HomeContent = {
   about: {
     enabled: true,
     variant: "cells3",
-    eyebrow: "关于我们",
-    heading: "我们是谁，以及如何被检验",
+    eyebrow: "关于我们 · 参与我们",
+    heading: "每一分钱、每一个数字，\n都可以被检验。",
     lede: "全球退党服务中心成立于二〇〇五年，是在美国注册的非营利组织，总部设于纽约。财务报表、治理结构与统计方法全部公开。",
-    moreLabel: "年度报告 →",
+    moreLabel: "阅读年度报告 →",
     moreHref: "/about/accountability",
     cells: [
       {
-        heading: "注册与法律地位",
-        value: "501(c)(3)",
-        body: "在美国注册的非营利组织，捐款可依法抵税。年度 Form 990 公开可查。"
-      },
-      {
-        heading: "资金使用（上一财年）",
-        value: "",
-        body: "经独立会计师事务所审计，报表全文可下载。",
+        // Leads in 可检验: the figure is the point the band is making.
+        heading: "上一财年用于项目支出",
+        value: "84%",
+        body: "行政 10% · 筹款 6% · 经独立会计师事务所审计",
         bars: [
           { label: "项目支出 84%", percent: 84 },
           { label: "行政 10%", percent: 10 },
           { label: "筹款 6%", percent: 6 }
         ]
+      },
+      {
+        heading: "注册与法律地位",
+        value: "501(c)(3)",
+        body: "在美国注册的非营利组织，捐款可依法抵税。年度 Form 990 公开可查。"
       },
       {
         heading: "统计与安全",
@@ -655,11 +669,37 @@ export const homeContentDefaults: HomeContent = {
     variant: "grid4",
     eyebrow: "参与我们",
     heading: "四种参与方式",
+    lede: "选择任何一种，都是在帮助更多人。",
     items: [
-      { title: "声明三退", body: "可匿名提交，几分钟完成，随后可申请证明。", href: SANTUI },
-      { title: "成为义工", body: "在你所在的城市协助服务点，或参与线上翻译与整理。", href: "/involve/volunteer" },
-      { title: "参与联署", body: "加入 End CCP 公开联署，向各国政府表达立场。", href: "/involve/endccp" },
-      { title: "下载资料", body: "展板、传单、手举牌与影音素材，可自由使用。", href: "https://www.tuidang.org/td_promo/" }
+      {
+        title: "声明三退",
+        body: "可匿名提交，几分钟完成，随后可申请证明。",
+        href: SANTUI,
+        ctaLabel: "立即声明",
+        glyph: "退",
+        primary: true
+      },
+      {
+        title: "成为义工",
+        body: "在你所在的城市协助服务点，或参与线上翻译与整理。",
+        href: "/involve/volunteer",
+        ctaLabel: "报名义工",
+        glyph: "义"
+      },
+      {
+        title: "参与联署",
+        body: "加入 End CCP 公开联署，向各国政府表达立场。",
+        href: "/involve/endccp",
+        ctaLabel: "参与联署",
+        glyph: "署"
+      },
+      {
+        title: "下载资料",
+        body: "展板、传单、手举牌与影音素材，可自由使用。",
+        href: "https://www.tuidang.org/td_promo/",
+        ctaLabel: "前往下载",
+        glyph: "载"
+      }
     ]
   }
 };

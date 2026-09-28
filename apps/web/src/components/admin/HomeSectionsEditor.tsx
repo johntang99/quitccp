@@ -109,7 +109,7 @@ const FIELD_ORDER: Record<string, string[]> = {
   network: ["eyebrow", "heading", "body", "buttonLabel", "buttonHref", "citiesLabel", "cities"],
   resources: ["eyebrow", "heading", "moreLabel", "moreHref", "items"],
   about: ["eyebrow", "heading", "lede", "moreLabel", "moreHref", "cells"],
-  involve: ["eyebrow", "heading", "items"]
+  involve: ["eyebrow", "heading", "lede", "items"]
 };
 
 /** Plain-text fields that hold an image URL. */
@@ -140,7 +140,7 @@ const LINK_FIELDS = new Set([
 interface RowField {
   key: string;
   label: string;
-  kind?: "text" | "area" | "image" | "video-flag" | "flag" | "list" | "links";
+  kind?: "text" | "area" | "image" | "video-flag" | "flag" | "list" | "links" | "bars";
 }
 
 /**
@@ -257,6 +257,28 @@ const ROW_EDITORS: Record<
       { key: "ctaHref", label: "底部按钮链接" }
     ]
   },
+  "about.cells": {
+    label: "指标",
+    blank: { heading: "", value: "", body: "" },
+    fields: [
+      { key: "value", label: "主数字／标题（左栏）" },
+      { key: "heading", label: "小标题（只在有分段条时显示）" },
+      { key: "body", label: "说明", kind: "area" },
+      { key: "bars", label: "分段条", kind: "bars" }
+    ]
+  },
+  "involve.items": {
+    label: "参与方式",
+    blank: { title: "", body: "", href: "#", ctaLabel: "", glyph: "" },
+    fields: [
+      { key: "title", label: "标题" },
+      { key: "body", label: "说明", kind: "area" },
+      { key: "href", label: "链接" },
+      { key: "ctaLabel", label: "按钮文字（留空则用标题）" },
+      { key: "glyph", label: "圆形徽标文字（一个字，留空则不显示）" },
+      { key: "primary", label: "作为主推卡片（金色顶线与实心按钮）", kind: "flag" }
+    ]
+  },
   "voices.items": {
     label: "见证",
     blank: { quote: "", name: "", role: "", image: "" },
@@ -315,6 +337,12 @@ function couplingNote(sectionKey: string, data: Record<string, unknown>): string
   }
   if (sectionKey === "registry" && variantOf("registry") === "dawn") {
     return "「曙光」版式把「我们的服务」与「见证者」并入本区块一起显示，共四张卡片；两者的内容仍在各自区块里编辑。本版式使用「实时标签」而不是「滚动区标题」。";
+  }
+  if (sectionKey === "involve" && variantOf("about") === "verified") {
+    return "「关于我们」正在使用「可检验」版式，本区块已并入其中显示：内容仍然生效，但这里的「版式」选择不起作用。";
+  }
+  if (sectionKey === "about" && variantOf("about") === "verified") {
+    return "「可检验」版式把「参与我们」并入本区块一起显示；参与方式仍在「参与我们」里编辑。左栏为拉丁文字时用等宽字体，中文用衬线字体，无需另设。";
   }
   if (sectionKey === "news" && variantOf("news") === "broadsheet") {
     return "「报刊头版」版式把「栏目卡片（专题栏目）」并入本区块一起显示；栏目卡片仍在该区块里编辑。";
@@ -604,6 +632,73 @@ export function HomeSectionsEditor({
               />
               {field.label}
             </label>
+          );
+        }
+        if (field.kind === "bars") {
+          const rows = asRows(row[field.key]);
+          const write = (next: Record<string, unknown>[]) => updateField(path, next);
+          const total = rows.reduce((sum, bar) => sum + (Number(bar.percent) || 0), 0);
+          return (
+            <div key={field.key} style={{ display: "grid", gap: 8 }}>
+              <span>{field.label}</span>
+              {rows.map((bar, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(0, 1fr) 90px auto",
+                    gap: 8,
+                    alignItems: "center"
+                  }}
+                >
+                  <input
+                    className="admin-input"
+                    placeholder="名称"
+                    value={String(bar.label ?? "")}
+                    onChange={(event) =>
+                      write(rows.map((r, i) => (i === index ? { ...r, label: event.target.value } : r)))
+                    }
+                  />
+                  <input
+                    className="admin-input"
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={Number(bar.percent) || 0}
+                    onChange={(event) =>
+                      write(
+                        rows.map((r, i) =>
+                          i === index
+                            ? { ...r, percent: Math.max(0, Math.min(100, Number(event.target.value) || 0)) }
+                            : r
+                        )
+                      )
+                    }
+                  />
+                  <button
+                    className="admin-btn"
+                    type="button"
+                    onClick={() => write(rows.filter((_, i) => i !== index))}
+                  >
+                    删除
+                  </button>
+                </div>
+              ))}
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <button
+                  className="admin-btn"
+                  type="button"
+                  onClick={() => write([...rows, { label: "", percent: 0 }])}
+                >
+                  + 添加分段
+                </button>
+                {rows.length > 0 ? (
+                  <span style={{ fontSize: 12, color: total === 100 ? "#777" : "#b42318" }}>
+                    合计 {total}%{total === 100 ? "" : "（应为 100%）"}
+                  </span>
+                ) : null}
+              </div>
+            </div>
           );
         }
         if (field.kind === "links") {

@@ -138,7 +138,10 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
   const involveItems = asObjectArray(involveRow.items).map((row) => ({
     title: asString(row.title),
     body: asString(row.body),
-    href: asString(row.href, "#")
+    href: asString(row.href, "#"),
+    ctaLabel: asString(row.ctaLabel),
+    glyph: asString(row.glyph),
+    primary: asBool(row.primary, false)
   }));
 
   const substats = asObjectArray(registryRow.substats).map((row) => ({
@@ -278,6 +281,7 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
       ...meta(involveRow, d.involve),
       eyebrow: asString(involveRow.eyebrow, d.involve.eyebrow),
       heading: asString(involveRow.heading, d.involve.heading),
+      lede: asString(involveRow.lede, d.involve.lede),
       items: involveItems.length > 0 ? involveItems : d.involve.items
     }
   };

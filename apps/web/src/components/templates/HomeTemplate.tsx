@@ -3,6 +3,7 @@ import { HeroGallery, HeroVideo } from "@/components/public/HeroMedia";
 import { DawnBand } from "./DawnBand";
 import { BroadsheetBand } from "./BroadsheetBand";
 import { ScreeningBand } from "./ScreeningBand";
+import { VerifiedBand } from "./VerifiedBand";
 import { externalLinkProps } from "@/lib/external-services";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString } from "./content-utils";
@@ -513,7 +514,12 @@ export async function HomeTemplate({ content }: TemplatePageData) {
         </section>
       ) : null}
 
-      {about.enabled ? (
+      {/* 可检验 absorbs 参与我们, the way 曙光 absorbs 我们的服务 and 见证者. */}
+      {about.enabled && about.variant === "verified" ? (
+        <VerifiedBand about={about} involve={involve} />
+      ) : null}
+
+      {about.enabled && about.variant !== "verified" ? (
         <section className="sec">
           <div className="wrap">
             <SectionHead
@@ -552,7 +558,7 @@ export async function HomeTemplate({ content }: TemplatePageData) {
         </section>
       ) : null}
 
-      {involve.enabled ? (
+      {involve.enabled && !(about.enabled && about.variant === "verified") ? (
         <section className="sec">
           <div className="wrap">
             <SectionHead eyebrow={involve.eyebrow} heading={involve.heading} />

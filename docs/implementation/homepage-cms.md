@@ -397,3 +397,58 @@ Thumbnails across the video pages are stand-in photographs from the tuidang.org
 media library, not frames from the films themselves. `cms_videos` is still empty;
 when it is populated, this section should read from it rather than from
 `pages/home.json`.
+
+## 可检验 (Verified) — the merged 关于我们 + 参与我们 band
+
+Implements `docs/prototypes/non-profit-join-html` ("方案 T · 可检验"). The
+accountability figures and the four ways to take part were two pale sections at
+the foot of the page; the redesign puts them on one dark panel with the
+participation cards straddling its lower edge, so the page closes on an action
+instead of trailing off.
+
+**Turned on by setting 关于我们 → 版式 → 「可检验 · 与「参与我们」合并」.**
+
+> **Coupling worth knowing:** the third variant that spans two sections. While
+> `about.variant === "verified"`, the standalone 参与我们 section is suppressed
+> and its cards render inside the band. Switching about back to 三栏 restores
+> both. No content moved — it reads the existing `about` and `involve` keys.
+
+Component: `components/templates/VerifiedBand.tsx`. Styling: `.verified-*` at the
+end of `globals.css` — panel gradient `160deg #2C2470 → #3A2F8C 55% → #4B3EA3`,
+gold `#F2D38A`, gold glow and a dot grid masked in from 40% across. The panel's
+height is a **percentage** (70%) rather than the mockup's 700 of 1000px, so the
+cards keep straddling its edge as the content reflows; the breakpoints retune it
+(76% at ≤1080 where the two halves stack, 62% at ≤860).
+
+Content changes to the existing sections:
+
+| field | change |
+|---|---|
+| `about.eyebrow` | 「关于我们 · 参与我们」 — the band covers both |
+| `about.heading` | 「每一分钱、每一个数字，\n都可以被检验。」 — `\n` is an authored line break |
+| `about.moreLabel` | 「阅读年度报告 →」 |
+| `about.cells` | reordered so the 84% figure leads; its `heading` became 「上一财年用于项目支出」, the line that labels the bar |
+| `involve.lede` | new — the line beside 四种参与方式 |
+| `involve.items[]` | new `ctaLabel`, `glyph` (the circled character) and `primary` (gold top rule + filled button) |
+
+Two things the band derives rather than storing:
+
+- **Which typeface a figure takes.** `501(c)(3)` is set in the mono face and
+  公开方法 in the serif — that follows from the script, so `isLatin()` decides it
+  rather than a field an editor has to remember. A row carrying `bars` overrides
+  both and takes the large gold treatment.
+- **Whether the lead line shows.** `cell.heading` only prints when the row has a
+  bar, because that is the line labelling it; on the other rows `heading` is the
+  小标题 the 三栏 variant prints above the value, and the design has no room for it.
+
+`about.heading` was sized down from the mockup's 50px to a 44px cap: the mockup's
+column is ~600px and ours is ~530, where the first authored line (11 glyphs) had
+been overflowing and wrapping mid-phrase.
+
+### Admin
+
+关于我们 and 参与我们 join the sections with no JSON left in the form.
+`about.cells` gets an editor whose 分段条 rows are label + percent with a running
+total that turns red away from 100%; `involve.items` gets 标题 / 说明 / 链接 /
+按钮文字 / 圆形徽标 and a 主推卡片 checkbox. Both sections state the coupling
+inline, in both directions.
