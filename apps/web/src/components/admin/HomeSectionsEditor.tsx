@@ -16,6 +16,8 @@ export interface HomeSectionDef {
   key: string;
   label: string;
   note?: string;
+  /** Shown only while the section is hidden: why it was turned off. */
+  hiddenNote?: string;
 }
 
 export const HOME_SECTIONS: HomeSectionDef[] = [
@@ -28,10 +30,22 @@ export const HOME_SECTIONS: HomeSectionDef[] = [
   { key: "services", label: "我们的服务" },
   { key: "news", label: "新闻与报告（公开更新与重点议题）" },
   { key: "channels", label: "栏目卡片（专题栏目）" },
-  { key: "video", label: "视频资源" },
+  {
+    key: "video",
+    label: "视频资源",
+    note: "「导语」「底部说明」「底部标记」留空即不显示；填上文字就会出现。"
+  },
   { key: "voices", label: "见证者" },
-  { key: "network", label: "全球网络" },
-  { key: "resources", label: "资源馆" },
+  {
+    key: "network",
+    label: "全球网络",
+    hiddenNote: "已从首页移除。服务点查找仍在 /about/network，并从「关于我们」与「服务」页面链接过去。"
+  },
+  {
+    key: "resources",
+    label: "资源馆",
+    hiddenNote: "已从首页移除：同样的链接在 /resources 页面上，首页这一排是重复的。"
+  },
   { key: "about", label: "关于我们" },
   { key: "involve", label: "参与我们" }
 ];
@@ -157,6 +171,15 @@ const NUMBER_FIELDS: Record<string, { label: string; min: number; max: number; h
   }
 };
 
+/**
+ * Section fields that hold a plain list of strings, keyed `<section>.<field>`.
+ * One per line beats a JSON array of quoted strings for something like a list
+ * of city names.
+ */
+const STRING_LIST_FIELDS: Record<string, { label: string; hint?: string }> = {
+  "network.cities": { label: "城市（每行一个）", hint: "按填写顺序显示。" }
+};
+
 const OBJECT_EDITORS: Record<string, { label: string; fields: RowField[] }> = {
   "video.featured": {
     label: "本期推荐",
@@ -279,6 +302,15 @@ const ROW_EDITORS: Record<
       { key: "primary", label: "作为主推卡片（金色顶线与实心按钮）", kind: "flag" }
     ]
   },
+  "resources.items": {
+    label: "资源",
+    blank: { label: "", tag: "", href: "#" },
+    fields: [
+      { key: "label", label: "名称" },
+      { key: "tag", label: "分类标签" },
+      { key: "href", label: "链接" }
+    ]
+  },
   "voices.items": {
     label: "见证",
     blank: { quote: "", name: "", role: "", image: "" },
@@ -339,7 +371,7 @@ function couplingNote(sectionKey: string, data: Record<string, unknown>): string
     return "「曙光」版式把「我们的服务」与「见证者」并入本区块一起显示，共四张卡片；两者的内容仍在各自区块里编辑。本版式使用「实时标签」而不是「滚动区标题」。";
   }
   if (sectionKey === "involve" && variantOf("about") === "verified") {
-    return "「关于我们」正在使用「可检验」版式，本区块已并入其中显示：内容仍然生效，但这里的「版式」选择不起作用。";
+    return "「关于我们」正在使用「可检验」版式，本区块已并入其中显示：内容仍然生效，但这里的「版式」与「小标题」不起作用（合并后的小标题在「关于我们」里设置）。";
   }
   if (sectionKey === "about" && variantOf("about") === "verified") {
     return "「可检验」版式把「参与我们」并入本区块一起显示；参与方式仍在「参与我们」里编辑。左栏为拉丁文字时用等宽字体，中文用衬线字体，无需另设。";
@@ -438,24 +470,37 @@ export function HomeSectionsEditor({
             padding: 8
           }}
         >
-          <button
-            type="button"
-            onClick={() => onPickImage([sectionKey, "gallery", String(index), "src"], `${label} · 第 ${index + 1} 张`)}
-            style={{ padding: 0, border: "1px solid #ececec", background: "none", cursor: "pointer", lineHeight: 0 }}
-            title="更换图片"
-          >
-            {String(item.src ?? "") ? (
-              <img
-                src={String(item.src)}
-                alt=""
-                style={{ width: 90, height: 68, objectFit: "cover", display: "block" }}
-              />
-            ) : (
-              <span style={{ display: "grid", placeItems: "center", width: 90, height: 68, fontSize: 12, color: "#999" }}>
-                选择图片
-              </span>
-            )}
-          </button>
+          {/* Thumbnail and an explicit button do the same thing: a filled
+              thumbnail alone gave no sign it was clickable, and every other
+              image field in this editor is picked from a labelled button. */}
+          <div style={{ display: "grid", gap: 4 }}>
+            <button
+              type="button"
+              onClick={() => onPickImage([sectionKey, "gallery", String(index), "src"], `${label} · 第 ${index + 1} 张`)}
+              style={{ padding: 0, border: "1px solid #ececec", background: "none", cursor: "pointer", lineHeight: 0 }}
+              title="更换图片"
+            >
+              {String(item.src ?? "") ? (
+                <img
+                  src={String(item.src)}
+                  alt=""
+                  style={{ width: 90, height: 68, objectFit: "cover", display: "block" }}
+                />
+              ) : (
+                <span style={{ display: "grid", placeItems: "center", width: 90, height: 68, fontSize: 12, color: "#999" }}>
+                  未设置
+                </span>
+              )}
+            </button>
+            <button
+              className="admin-btn"
+              type="button"
+              style={{ padding: "2px 6px", fontSize: 12 }}
+              onClick={() => onPickImage([sectionKey, "gallery", String(index), "src"], `${label} · 第 ${index + 1} 张`)}
+            >
+              选择图片…
+            </button>
+          </div>
           <div style={{ display: "grid", gap: 6 }}>
             <input
               className="admin-input"
@@ -914,8 +959,8 @@ export function HomeSectionsEditor({
   return (
     <>
       <p style={{ margin: 0, color: "#666" }}>
-        首页按区块编辑。每个区块可单独显示／隐藏并选择版式；文字与图片可直接编辑，
-        其余列表字段为 JSON。
+        首页按区块编辑。每个区块可单独显示／隐藏并选择版式；文字、图片与列表都可
+        直接编辑。个别区块的版式会把相邻区块并入显示，遇到时区块内会有黄色提示。
       </p>
 
       {HOME_SECTIONS.map((section) => {
@@ -939,9 +984,41 @@ export function HomeSectionsEditor({
           (k) => ROW_EDITORS[`${section.key}.${k}`] || OBJECT_EDITORS[`${section.key}.${k}`]
         );
         const numberKeys = otherKeys.filter((k) => NUMBER_FIELDS[`${section.key}.${k}`]);
+        const listKeys = otherKeys.filter((k) => STRING_LIST_FIELDS[`${section.key}.${k}`]);
         const jsonKeys = otherKeys.filter(
-          (k) => !STRUCTURED.has(k) && !richKeys.includes(k) && !numberKeys.includes(k)
+          (k) =>
+            !STRUCTURED.has(k) &&
+            !richKeys.includes(k) &&
+            !numberKeys.includes(k) &&
+            !listKeys.includes(k)
         );
+
+        const renderStringList = (key: string) => {
+          const spec = STRING_LIST_FIELDS[`${section.key}.${key}`];
+          const entries = Array.isArray(value[key])
+            ? (value[key] as unknown[]).map((entry) => String(entry))
+            : [];
+          return (
+            <label key={key}>
+              {spec.label}
+              <textarea
+                className="admin-textarea"
+                style={{ minHeight: 120 }}
+                value={entries.join("\n")}
+                onChange={(event) =>
+                  updateField(
+                    [section.key, key],
+                    event.target.value
+                      .split("\n")
+                      .map((entry) => entry.trim())
+                      .filter((entry) => entry.length > 0)
+                  )
+                }
+              />
+              {spec.hint ? <span style={{ color: "#777", fontSize: 12 }}>{spec.hint}</span> : null}
+            </label>
+          );
+        };
 
         const renderNumber = (key: string) => {
           const spec = NUMBER_FIELDS[`${section.key}.${key}`];
@@ -1004,6 +1081,9 @@ export function HomeSectionsEditor({
               {section.note ? (
                 <p style={{ margin: 0, color: "#8a6d1f", fontSize: 13 }}>{section.note}</p>
               ) : null}
+              {!enabled && section.hiddenNote ? (
+                <p style={{ margin: 0, color: "#8a6d1f", fontSize: 13 }}>{section.hiddenNote}</p>
+              ) : null}
               {couplingNote(section.key, data) ? (
                 <p style={{ margin: 0, color: "#8a6d1f", fontSize: 13 }}>
                   {couplingNote(section.key, data)}
@@ -1040,11 +1120,12 @@ export function HomeSectionsEditor({
                 ) : null}
               </div>
 
-              {textBlock.length > 0 || numberKeys.length > 0 ? (
+              {textBlock.length > 0 || numberKeys.length > 0 || listKeys.length > 0 ? (
                 <fieldset style={fieldset}>
                   <legend style={legend}>文字</legend>
                   {textBlock.map(renderText)}
                   {numberKeys.map(renderNumber)}
+                  {listKeys.map(renderStringList)}
                 </fieldset>
               ) : null}
 

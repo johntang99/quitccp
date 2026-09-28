@@ -326,12 +326,21 @@ image, and add / delete / 上移 / 下移:
 | 栏目卡片 | `cards[]`, with the video badge as a checkbox |
 | 视频资源 | `featured` (object, with its tag pills one-per-line), `series[]`, `items[]` |
 | 见证者 | `items[]`, with the portrait picker |
+| 关于我们 | `cells[]`, whose 分段条 rows are label + percent with a running total |
+| 参与我们 | `items[]`, with CTA text, the circled glyph and a 主推卡片 flag |
+| 全球网络 | `cities` as one name per line |
+| 资源馆 | `items[]` |
 
-They are declared in `OBJECT_EDITORS`, `ROW_EDITORS` and `NUMBER_FIELDS` in
-`HomeSectionsEditor.tsx`, keyed `<section>.<field>` because the field names
-repeat across sections (`items`, `cards`) with different shapes. Anything not
-listed there still falls back to the JSON textarea — that is what 全球网络,
-资源馆, 关于我们 and 参与我们 still use.
+They are declared in `OBJECT_EDITORS`, `ROW_EDITORS`, `NUMBER_FIELDS` and
+`STRING_LIST_FIELDS` in `HomeSectionsEditor.tsx`, keyed `<section>.<field>`
+because the field names repeat across sections (`items`, `cards`) with different
+shapes. **No section on the homepage falls back to the JSON textarea any more**;
+anything added later that is not declared there still will.
+
+Every section states its own situation inline: the two hidden ones say why they
+were turned off (and only while they are off), 视频资源 says which of its fields
+disappear when left blank, and the merged variants explain themselves in both
+directions.
 
 Both merged variants say so inline, in both directions: 实时登记册 and 新闻与报告
 note which sections they have absorbed, and 我们的服务, 见证者 and 栏目卡片 note
