@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { HOME_SECTION_VARIANTS } from "@quitccp/content-schema";
+import { ImagePickerModal } from "@/components/admin/ImagePickerModal";
 
 interface ContentFileItem {
   path: string;
@@ -137,6 +138,9 @@ const HOME_FIELD_LABELS: Record<string, string> = {
   image: "图片地址（左文右图／通栏大图）",
   imageAlt: "图片说明"
 };
+
+/** Text fields that hold an image URL and therefore get a picker button. */
+const HOME_IMAGE_FIELDS = new Set(["image", "poster", "backgroundImage"]);
 
 const ABOUT_INDEX_PATH = "pages/about-index.json";
 const ABOUT_BLOCK_KEYS = ["intro", "numbersBand", "network", "accountability", "team", "history"] as const;
@@ -555,6 +559,8 @@ function setAtPath(input: Record<string, unknown>, keyPath: string[], value: unk
 
 export function ContentExplorer({ initialLocale = "zh", initialPath }: { initialLocale?: string; initialPath?: string }) {
   const [locale, setLocale] = useState(initialLocale);
+  const [imagePickerField, setImagePickerField] = useState<string[] | null>(null);
+  const [imagePickerLabel, setImagePickerLabel] = useState("");
   const [homeJsonDrafts, setHomeJsonDrafts] = useState<Record<string, string>>({});
   const [homeJsonErrors, setHomeJsonErrors] = useState<Record<string, string>>({});
   const [files, setFiles] = useState<ContentFileItem[]>([]);
@@ -1108,19 +1114,62 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
                               </label>
                             ) : null}
                           </div>
-                          {textKeys.map((key) => (
-                            <label key={key}>
-                              {HOME_FIELD_LABELS[key] ?? key}
-                              <textarea
-                                className="admin-textarea"
-                                style={{ minHeight: 60 }}
-                                value={String(sectionValue[key] ?? "")}
-                                onChange={(event) =>
-                                  updateField([section.key, key], event.target.value)
-                                }
-                              />
-                            </label>
-                          ))}
+                          {textKeys.map((key) => {
+                            const isImage = HOME_IMAGE_FIELDS.has(key);
+                            const value = String(sectionValue[key] ?? "");
+                            return (
+                              <label key={key}>
+                                {HOME_FIELD_LABELS[key] ?? key}
+                                <textarea
+                                  className="admin-textarea"
+                                  style={{ minHeight: isImage ? 44 : 60 }}
+                                  value={value}
+                                  onChange={(event) =>
+                                    updateField([section.key, key], event.target.value)
+                                  }
+                                />
+                                {isImage ? (
+                                  <span
+                                    style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}
+                                  >
+                                    <button
+                                      className="admin-btn"
+                                      type="button"
+                                      onClick={() => {
+                                        setImagePickerField([section.key, key]);
+                                        setImagePickerLabel(
+                                          `${section.label} · ${HOME_FIELD_LABELS[key] ?? key}`
+                                        );
+                                      }}
+                                    >
+                                      选择图片…
+                                    </button>
+                                    {value ? (
+                                      <>
+                                        <img
+                                          src={value}
+                                          alt=""
+                                          style={{
+                                            width: 72,
+                                            height: 54,
+                                            objectFit: "cover",
+                                            border: "1px solid #ececec"
+                                          }}
+                                        />
+                                        <button
+                                          className="admin-btn"
+                                          type="button"
+                                          onClick={() => updateField([section.key, key], "")}
+                                        >
+                                          清除
+                                        </button>
+                                      </>
+                                    ) : null}
+                                  </span>
+                                ) : null}
+                              </label>
+                            );
+                          })}
                           {jsonKeys.map((key) => (
                             <label key={key}>
                               {key}（JSON）
@@ -1309,6 +1358,16 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
           ) : null}
         </article>
       </section>
+
+      <ImagePickerModal
+        open={imagePickerField !== null}
+        fieldLabel={imagePickerLabel}
+        onClose={() => setImagePickerField(null)}
+        onSelect={(url) => {
+          if (imagePickerField) updateField(imagePickerField, url);
+          setImagePickerField(null);
+        }}
+      />
     </div>
   );
 }
