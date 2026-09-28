@@ -1,26 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface GalleryItem {
   src: string;
   alt: string;
 }
 
+/** Auto-advance interval. */
+const ROTATE_MS = 5000;
+
 /**
- * Hero gallery: one large image with a thumbnail strip underneath.
+ * Hero gallery: one large image with a thumbnail strip underneath, advancing
+ * on its own.
  *
- * Deliberately not auto-advancing. The hero is the first thing a reader sees,
- * and motion there competes with the headline; it also makes the page harder to
- * use for anyone who needs time to read.
+ * Three things keep the motion from becoming a nuisance:
+ * - it pauses while the pointer or keyboard focus is inside the gallery, so it
+ *   cannot swap the image out from under someone who is looking at it;
+ * - picking a thumbnail restarts the clock rather than advancing a moment later;
+ * - `prefers-reduced-motion` stops it entirely.
  */
 export function HeroGallery({ items }: { items: GalleryItem[] }) {
   const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+  // Bumped on manual selection to restart the interval from that moment.
+  const [restart, setRestart] = useState(0);
+  const count = items.length;
+  const reduceMotion = useRef(false);
+
+  useEffect(() => {
+    reduceMotion.current =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }, []);
+
+  useEffect(() => {
+    if (count < 2 || paused || reduceMotion.current) return;
+    const timer = window.setInterval(() => {
+      setActive((current) => (current + 1) % count);
+    }, ROTATE_MS);
+    return () => window.clearInterval(timer);
+  }, [count, paused, restart]);
+
+  const select = (index: number) => {
+    setActive(index);
+    setRestart((n) => n + 1);
+  };
+
   const shown = items[active] ?? items[0];
   if (!shown) return null;
 
   return (
-    <div className="hero-gallery">
+    <div
+      className="hero-gallery"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={() => setPaused(false)}
+    >
       <div className="hero-gallery-main">
         <img src={shown.src} alt={shown.alt} />
       </div>
@@ -34,7 +71,7 @@ export function HeroGallery({ items }: { items: GalleryItem[] }) {
               aria-selected={index === active}
               aria-label={item.alt || `图片 ${index + 1}`}
               className={index === active ? "is-active" : undefined}
-              onClick={() => setActive(index)}
+              onClick={() => select(index)}
             >
               <img src={item.src} alt="" />
             </button>
@@ -42,6 +79,9 @@ export function HeroGallery({ items }: { items: GalleryItem[] }) {
         </div>
       ) : null}
       {shown.alt ? <p className="hero-media-caption">{shown.alt}</p> : null}
+      <span className="sr-only" aria-live="polite">
+        第 {active + 1} 张，共 {count} 张
+      </span>
     </div>
   );
 }

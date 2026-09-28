@@ -23,7 +23,7 @@ Payload merge: `apps/web/src/components/templates/home-content.ts`.
 
 | section | variants (first = current design) |
 |---|---|
-| 首屏 Hero | 居中大标题 · 左文右图 · 左文右图集 · 左文右视频 · 通栏大图＋文字卡片 |
+| 首屏 Hero | 居中大标题 · 左文右图 · 左文右图集 · 左文右视频 · 卡片叠加（Card overlay） |
 | 实时登记册 | 左数字右滚动 · 上下堆叠 · 仅数字 · 仅滚动声明 |
 | 我们的服务 | 三栏卡片 · 两栏卡片 · 列表 |
 | 新闻与报告 | 左主图右列表 · **大图头条（突出）** · 等分网格 |
@@ -60,9 +60,16 @@ readers inside mainland China) cannot stall the homepage, because only the
 poster renders. With `src` empty the poster shows and the play control is
 hidden.
 
-The gallery deliberately does **not** auto-advance. Motion in the hero competes
-with the headline and takes the page away from anyone who needs time to read.
-Thumbnails are a `tablist` with proper `aria-selected`.
+The gallery auto-advances every **5s**, with a 0.45s crossfade. Three things
+keep the motion from becoming a nuisance:
+
+- it **pauses while the pointer or keyboard focus is inside the gallery**, so it
+  cannot swap the image out from under someone who is looking at it;
+- picking a thumbnail **restarts the clock** rather than advancing a moment later;
+- **`prefers-reduced-motion` stops it entirely**.
+
+Thumbnails are a `tablist` with proper `aria-selected`, and a visually-hidden
+live region announces "第 N 张，共 M 张".
 
 > **Two collisions with `site.css` worth knowing about**, both found by testing:
 >
@@ -75,18 +82,32 @@ Thumbnails are a `tablist` with proper `aria-selected`.
 >    `.hero-media img`. Fine for an abstract texture, wrong for a photograph —
 >    signage in the image renders backwards. Both are undone for `full-bleed`.
 
-### full-bleed is an overlay card
+### full-bleed is a Card overlay
 
 The photo is a band of fixed height (`--hero-photo-h`, 620px desktop) running
 full width at its **natural brightness — no dark cover**; `.hero-scrim` is
-hidden entirely. The copy sits in a light card (`--card` on `--rule`, soft
-shadow) whose top edge starts at **60% of the photo height** — 6 parts photo
+hidden entirely. The copy sits in a **translucent** card whose top edge starts at **60% of the
+photo height** — 6 parts photo
 above the card, 4 alongside — and which then **carries on past the photo's
 bottom edge** onto the page background. The card straddles that edge rather
 than sitting inside the image.
 
 Measured on the shipped copy: photo 620px, card top at 372px (6.0 : 4.0), 248px
 of card over the photo and 228px below it.
+
+**Card transparency.** `rgba(255,255,255,.82)` with
+`backdrop-filter: blur(16px) saturate(1.15)`, so the photograph reads through
+the card instead of being blanked out. 0.82 is the level the text survives:
+measured against the worst realistic case (a near-black photo behind the card),
+h1 lands at **11.3:1** and body at **5.25:1**, both clear of WCAG AA's 4.5.
+Going much lower fails over dark frames. The blur is what makes it read as
+frosted glass rather than a washed-out panel — without it busy detail shows
+through and fights the text. Browsers without `backdrop-filter` get 0.93 via
+`@supports not`.
+
+The eyebrow had to change colour for this: `--muted` measured **2.38:1** on the
+translucent card (it was already under AA on solid white), so in this variant it
+uses `--ink-soft`, which measures 5.25:1 and stays visually secondary.
 
 Two things this needs that the base hero does not:
 

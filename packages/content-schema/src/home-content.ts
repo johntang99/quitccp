@@ -45,7 +45,7 @@ export const HOME_SECTION_VARIANTS: Record<HomeSectionKey, { value: string; labe
     { value: "photo-split", label: "左文右图（对半）" },
     { value: "gallery-split", label: "左文右图集（对半）" },
     { value: "video-split", label: "左文右视频（对半）" },
-    { value: "full-bleed", label: "通栏大图＋文字卡片（overlay）" }
+    { value: "full-bleed", label: "卡片叠加（Card overlay）" }
   ],
   registry: [
     { value: "split", label: "左数字右滚动（默认）" },
