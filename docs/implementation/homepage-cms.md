@@ -178,11 +178,15 @@ are given explicit dimensions, otherwise the row shrinks to a sliver.
 
 ## Sections hidden on the homepage
 
-`资源馆`（工具、指南与公开文档）is `enabled: false` — on the homepage only. The
-same links live under `/resources`, which is untouched and still linked from the
-navigation; the homepage row was repeating them. The default in
-`homeContentDefaults` is off too, so a re-seed does not restore it. Re-tick
-「在首页显示」 in the admin to bring it back.
+Two sections are `enabled: false` — on the homepage only, and in
+`homeContentDefaults` as well so a re-seed does not restore them. Re-tick
+「在首页显示」 in the admin to bring either back.
+
+- `资源馆`（工具、指南与公开文档）— the same links live under `/resources`, which
+  is untouched and still in the navigation; the homepage row repeated them.
+- `全球网络`（一百多个服务点，由志愿者维持运转）— `/about/network` still carries the
+  service-point finder and is linked from `/about` and `/services`, so hiding the
+  homepage band orphans nothing.
 
 ## 曙光 (Dawn) — the merged 实时登记册 + 我们的服务 band
 

@@ -582,7 +582,10 @@ export const homeContentDefaults: HomeContent = {
     ]
   },
   network: {
-    enabled: true,
+    // Off on the homepage. /about/network still carries the service-point
+    // finder and is linked from /about and /services, so nothing is orphaned.
+    // Re-tick 在首页显示 in the admin to bring it back.
+    enabled: false,
     variant: "split",
     eyebrow: "全球网络",
     heading: "一百多个服务点，\n由志愿者维持运转。",
