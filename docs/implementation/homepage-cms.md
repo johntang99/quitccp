@@ -282,11 +282,28 @@ a server component.
 
 ### Admin
 
-新闻与报告 and 栏目卡片 no longer edit their lists as raw JSON. `news.lead`,
-`news.items`, `channels.cards` and `video.items` each get a purpose-built editor
-with an image picker, add / delete / reorder, and Chinese field labels — see
-`OBJECT_EDITORS` and `ROW_EDITORS` in `HomeSectionsEditor.tsx`. Anything not
-listed there still falls back to the JSON textarea.
+The five redesigned sections — 实时登记册, 我们的服务, 新闻与报告, 栏目卡片,
+视频资源 — no longer edit anything as raw JSON. Every list and nested object has
+a purpose-built editor with Chinese labels, an image picker where there is an
+image, and add / delete / 上移 / 下移:
+
+| section | structured fields |
+|---|---|
+| 实时登记册 | `substats[]`, plus `feedCount` as a 1–20 number input |
+| 我们的服务 | `cards[]` including each card's nested `links[]` and its CTA |
+| 新闻与报告 | `lead` (object) and `items[]` |
+| 栏目卡片 | `cards[]`, with the video badge as a checkbox |
+| 视频资源 | `featured` (object, with its tag pills one-per-line), `series[]`, `items[]` |
+
+They are declared in `OBJECT_EDITORS`, `ROW_EDITORS` and `NUMBER_FIELDS` in
+`HomeSectionsEditor.tsx`, keyed `<section>.<field>` because the field names
+repeat across sections (`items`, `cards`) with different shapes. Anything not
+listed there still falls back to the JSON textarea — that is what 见证者,
+全球网络, 关于我们 and 参与我们 still use.
+
+Both merged variants say so inline, in both directions: 实时登记册 and 新闻与报告
+note which section they have absorbed, and 我们的服务 and 栏目卡片 note that they
+are being absorbed and that their own 版式 choice has stopped mattering.
 
 ## 放映室 (Screening) — the video section as an auditorium
 

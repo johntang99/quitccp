@@ -49,6 +49,7 @@ const FIELD_LABELS: Record<string, string> = {
   noteLabel: "数字注释链接文字",
   noteHref: "数字注释链接地址",
   streamHeading: "滚动区标题",
+  liveLabel: "实时标签（如「实时登记册 · LIVE」）",
   moreLabel: "更多链接文字",
   moreHref: "更多链接地址",
   buttonLabel: "按钮文字",
@@ -66,7 +67,17 @@ const FIELD_LABELS: Record<string, string> = {
 /** Render order per section. Anything unlisted follows, alphabetically. */
 const FIELD_ORDER: Record<string, string[]> = {
   hero: ["eyebrow", "title", "body", "image", "imageAlt", "gallery", "video", "actions"],
-  registry: ["eyebrow", "count", "countLabel", "noteLabel", "noteHref", "streamHeading", "substats"],
+  registry: [
+    "eyebrow",
+    "count",
+    "countLabel",
+    "liveLabel",
+    "streamHeading",
+    "feedCount",
+    "noteLabel",
+    "noteHref",
+    "substats"
+  ],
   services: ["eyebrow", "heading", "moreLabel", "moreHref", "cards"],
   news: [
     "eyebrow",
@@ -129,8 +140,22 @@ const LINK_FIELDS = new Set([
 interface RowField {
   key: string;
   label: string;
-  kind?: "text" | "area" | "image" | "video-flag" | "flag" | "list";
+  kind?: "text" | "area" | "image" | "video-flag" | "flag" | "list" | "links";
 }
+
+/**
+ * Numeric section settings, keyed `<section>.<field>`. Without this they fall
+ * to the JSON textarea, where a count reads as a data structure rather than the
+ * dial it is. Ranges mirror what `resolveHomeContent` clamps to.
+ */
+const NUMBER_FIELDS: Record<string, { label: string; min: number; max: number; hint?: string }> = {
+  "registry.feedCount": {
+    label: "滚动条数",
+    min: 1,
+    max: 20,
+    hint: "滚动带里显示多少条声明；声明不足时会循环填满。"
+  }
+};
 
 const OBJECT_EDITORS: Record<string, { label: string; fields: RowField[] }> = {
   "video.featured": {
@@ -163,7 +188,10 @@ const OBJECT_EDITORS: Record<string, { label: string; fields: RowField[] }> = {
   }
 };
 
-const ROW_EDITORS: Record<string, { label: string; blank: Record<string, string>; fields: RowField[] }> = {
+const ROW_EDITORS: Record<
+  string,
+  { label: string; blank: Record<string, unknown>; fields: RowField[] }
+> = {
   "news.items": {
     label: "最新发布",
     blank: { title: "", date: "", href: "/news", image: "" },
@@ -209,6 +237,26 @@ const ROW_EDITORS: Record<string, { label: string; blank: Record<string, string>
       { key: "badge", label: "角标（如 NEW，留空则不显示）" }
     ]
   },
+  "registry.substats": {
+    label: "小数据",
+    blank: { value: "", label: "" },
+    fields: [
+      { key: "value", label: "数字" },
+      { key: "label", label: "说明" }
+    ]
+  },
+  "services.cards": {
+    label: "服务卡片",
+    blank: { tag: "", title: "", body: "", links: [], ctaLabel: "", ctaHref: "" },
+    fields: [
+      { key: "tag", label: "分类标签" },
+      { key: "title", label: "标题", kind: "area" },
+      { key: "body", label: "说明", kind: "area" },
+      { key: "links", label: "卡片内链接", kind: "links" },
+      { key: "ctaLabel", label: "底部按钮文字（留空则不显示）" },
+      { key: "ctaHref", label: "底部按钮链接" }
+    ]
+  },
   "video.series": {
     label: "系列标签",
     blank: { label: "", href: "/videos" },
@@ -251,6 +299,12 @@ function couplingNote(sectionKey: string, data: Record<string, unknown>): string
   }
   if (sectionKey === "services" && variantOf("registry") === "dawn") {
     return "「实时登记册」正在使用「曙光」版式，本区块已并入其中显示：内容仍然生效，但这里的「版式」选择不起作用。";
+  }
+  if (sectionKey === "registry" && variantOf("registry") === "dawn") {
+    return "「曙光」版式把「我们的服务」并入本区块一起显示；服务卡片仍在「我们的服务」里编辑。本版式使用「实时标签」而不是「滚动区标题」。";
+  }
+  if (sectionKey === "news" && variantOf("news") === "broadsheet") {
+    return "「报刊头版」版式把「栏目卡片（专题栏目）」并入本区块一起显示；栏目卡片仍在该区块里编辑。";
   }
   return null;
 }
@@ -539,6 +593,66 @@ export function HomeSectionsEditor({
             </label>
           );
         }
+        if (field.kind === "links") {
+          const rows = asRows(row[field.key]);
+          const write = (next: Record<string, unknown>[]) => updateField(path, next);
+          return (
+            <div key={field.key} style={{ display: "grid", gap: 8 }}>
+              <span>{field.label}</span>
+              {rows.length === 0 ? (
+                <span style={{ color: "#777", fontSize: 13 }}>还没有链接。</span>
+              ) : null}
+              {rows.map((link, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.4fr) auto",
+                    gap: 8,
+                    alignItems: "center"
+                  }}
+                >
+                  <input
+                    className="admin-input"
+                    placeholder="文字"
+                    value={String(link.label ?? "")}
+                    onChange={(event) =>
+                      write(
+                        rows.map((r, i) => (i === index ? { ...r, label: event.target.value } : r))
+                      )
+                    }
+                  />
+                  <input
+                    className="admin-input"
+                    placeholder="链接"
+                    value={String(link.href ?? "")}
+                    onChange={(event) =>
+                      write(
+                        rows.map((r, i) => (i === index ? { ...r, href: event.target.value } : r))
+                      )
+                    }
+                  />
+                  <button
+                    className="admin-btn"
+                    type="button"
+                    onClick={() => write(rows.filter((_, i) => i !== index))}
+                  >
+                    删除
+                  </button>
+                </div>
+              ))}
+              <div>
+                <button
+                  className="admin-btn"
+                  type="button"
+                  onClick={() => write([...rows, { label: "", href: "" }])}
+                >
+                  + 添加链接
+                </button>
+              </div>
+            </div>
+          );
+        }
         if (field.kind === "list") {
           const entries = Array.isArray(row[field.key])
             ? (row[field.key] as unknown[]).map((entry) => String(entry))
@@ -598,7 +712,7 @@ export function HomeSectionsEditor({
   const rowsEditor = (
     sectionKey: string,
     fieldKey: string,
-    spec: { label: string; blank: Record<string, string>; fields: RowField[] },
+    spec: { label: string; blank: Record<string, unknown>; fields: RowField[] },
     rows: Record<string, unknown>[]
   ) => {
     const write = (next: Record<string, unknown>[]) => updateField([sectionKey, fieldKey], next);
@@ -660,7 +774,9 @@ export function HomeSectionsEditor({
           <button
             className="admin-btn"
             type="button"
-            onClick={() => write([...rows, { ...spec.blank }])}
+            // structuredClone, not spread: a nested `links: []` in the blank
+            // would otherwise be the same array on every card added.
+            onClick={() => write([...rows, structuredClone(spec.blank)])}
           >
             + 添加{spec.label}
           </button>
@@ -714,9 +830,39 @@ export function HomeSectionsEditor({
         const richKeys = otherKeys.filter(
           (k) => ROW_EDITORS[`${section.key}.${k}`] || OBJECT_EDITORS[`${section.key}.${k}`]
         );
+        const numberKeys = otherKeys.filter((k) => NUMBER_FIELDS[`${section.key}.${k}`]);
         const jsonKeys = otherKeys.filter(
-          (k) => !STRUCTURED.has(k) && !richKeys.includes(k)
+          (k) => !STRUCTURED.has(k) && !richKeys.includes(k) && !numberKeys.includes(k)
         );
+
+        const renderNumber = (key: string) => {
+          const spec = NUMBER_FIELDS[`${section.key}.${key}`];
+          const current = Number(value[key]);
+          return (
+            <label key={key}>
+              {spec.label}
+              <input
+                className="admin-input"
+                type="number"
+                min={spec.min}
+                max={spec.max}
+                style={{ width: 120, display: "block" }}
+                value={Number.isFinite(current) ? current : spec.min}
+                onChange={(event) => {
+                  const next = Number(event.target.value);
+                  if (!Number.isFinite(next)) return;
+                  updateField(
+                    [section.key, key],
+                    Math.max(spec.min, Math.min(spec.max, Math.round(next)))
+                  );
+                }}
+              />
+              {spec.hint ? (
+                <span style={{ color: "#777", fontSize: 12 }}>{spec.hint}</span>
+              ) : null}
+            </label>
+          );
+        };
 
         const renderText = (key: string) =>
           IMAGE_FIELDS.has(key) ? (
@@ -786,10 +932,11 @@ export function HomeSectionsEditor({
                 ) : null}
               </div>
 
-              {textBlock.length > 0 ? (
+              {textBlock.length > 0 || numberKeys.length > 0 ? (
                 <fieldset style={fieldset}>
                   <legend style={legend}>文字</legend>
                   {textBlock.map(renderText)}
+                  {numberKeys.map(renderNumber)}
                 </fieldset>
               ) : null}
 
