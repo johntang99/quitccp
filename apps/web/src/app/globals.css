@@ -2106,3 +2106,295 @@
   .dawn-card-desc { min-height: 0; }
   .dawn-services-head { flex-direction: column; align-items: flex-start; gap: 12px; }
 }
+
+/* ==========================================================================
+   报刊头版 (broadsheet) -- the merged 新闻与报告 + 专题栏目 band.
+   Implements docs/prototypes/news-html. Rendered by BroadsheetBand.tsx.
+
+   The mockup's palette is a warmer, violet-inked cousin of the site's, so the
+   few values that differ are scoped here rather than pushed into :root: an
+   off-white newsprint card, four weights of rule, and the gold used for the
+   列表 numerals. The accent stays var(--seal) so links match the rest of the
+   page.
+   ========================================================================== */
+.bsheet {
+  --bs-ink: #1A1726;
+  --bs-muted: #6B6578;
+  --bs-body: #45404F;
+  --bs-gold: #B8913A;
+  --bs-rule: #CFC8BA;
+  --bs-rule-soft: #D9D2C4;
+  --bs-card: #FFFEFA;
+  --bs-card-rule: #E3DCCE;
+  --bs-card-rule-soft: #EAE4D8;
+  color: var(--bs-ink);
+}
+
+/* --- masthead ------------------------------------------------------------ */
+.bsheet-brow { height: 4px; background: var(--bs-ink); }
+.bsheet-masthead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 32px;
+  padding: 28px 0 24px;
+}
+.bsheet-title { display: flex; flex-direction: column; gap: 12px; }
+.bsheet-eyebrow {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.22em;
+  color: var(--seal);
+}
+.bsheet-masthead h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 900;
+  font-size: clamp(30px, 4vw, 54px);
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+.bsheet-masthead-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  text-align: right;
+}
+.bsheet-dateline { font-family: var(--mono); font-size: 13px; color: var(--bs-muted); }
+.bsheet-more {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--seal);
+  border-bottom: 1px solid currentColor;
+  padding: 10px 0 4px;
+  white-space: nowrap;
+}
+.bsheet-more:hover { color: var(--seal-deep); }
+/* The 1px / 3px / 1px double rule under the masthead. */
+.bsheet-double {
+  height: 3px;
+  border-top: 1px solid var(--bs-ink);
+  border-bottom: 1px solid var(--bs-ink);
+}
+
+/* --- lead story + 最新发布 column ----------------------------------------- */
+.bsheet-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 400px);
+  gap: 40px;
+  padding-top: 40px;
+}
+.bsheet-gutter { background: var(--bs-rule); }
+
+.bsheet-lead { display: flex; flex-direction: column; gap: 22px; color: var(--bs-ink); }
+.bsheet-lead img {
+  width: 100%;
+  height: clamp(280px, 33vw, 470px);
+  object-fit: cover;
+}
+.bsheet-lead-meta {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  color: var(--bs-muted);
+}
+.bsheet-chip { background: var(--seal); color: #fff; padding: 5px 10px; letter-spacing: 0.12em; }
+.bsheet-lead h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 900;
+  font-size: clamp(24px, 2.9vw, 40px);
+  line-height: 1.35;
+}
+.bsheet-lead p {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 18px;
+  line-height: 1.9;
+  color: var(--bs-body);
+  column-count: 2;
+  column-gap: 40px;
+}
+.bsheet-lead:hover h3 { color: var(--seal); }
+
+.bsheet-latest { display: flex; flex-direction: column; }
+.bsheet-latest-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--bs-ink);
+}
+.bsheet-latest-title { font-family: var(--serif); font-weight: 900; font-size: 22px; }
+.bsheet-latest-en {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: var(--bs-muted);
+}
+.bsheet-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 128px;
+  gap: 16px;
+  align-items: start;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--bs-rule-soft);
+  color: var(--bs-ink);
+}
+.bsheet-row-num {
+  font-family: var(--serif);
+  font-weight: 900;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--bs-gold);
+}
+.bsheet-row-text { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.bsheet-row-date { font-family: var(--mono); font-size: 12px; color: var(--bs-muted); }
+.bsheet-row-title {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 1.55;
+}
+.bsheet-row:hover .bsheet-row-title { color: var(--seal); }
+.bsheet-row img,
+.bsheet-row-blank {
+  width: 128px;
+  height: 92px;
+  object-fit: cover;
+  background: var(--bs-card-rule-soft);
+}
+.bsheet-latest-more {
+  margin-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--bs-ink);
+  color: var(--bs-ink);
+  font-size: 15px;
+  font-weight: 500;
+}
+.bsheet-latest-more:hover { background: var(--bs-ink); color: var(--paper); }
+
+/* --- 专题栏目 ------------------------------------------------------------- */
+.bsheet-band {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 64px 0 36px;
+}
+.bsheet-band-rule { flex: 1 1 auto; height: 1px; background: var(--bs-ink); }
+.bsheet-band h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 900;
+  font-size: clamp(20px, 2vw, 26px);
+  letter-spacing: 0.3em;
+  /* letter-spacing adds a trailing gap after the last glyph; pull it back so
+     the title sits centred between its two rules. */
+  text-indent: 0.3em;
+}
+.bsheet-cats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+}
+.bsheet-cat {
+  display: flex;
+  flex-direction: column;
+  background: var(--bs-card);
+  border: 1px solid var(--bs-card-rule);
+  border-top: 2px solid var(--seal);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(26, 23, 38, 0.04), 0 14px 32px -20px rgba(26, 23, 38, 0.22);
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.35s ease,
+    border-color 0.35s ease;
+}
+.bsheet-cat:hover,
+.bsheet-cat:focus-within {
+  transform: translateY(-6px);
+  border-color: #D3CAB8;
+  box-shadow: 0 2px 4px rgba(26, 23, 38, 0.05), 0 28px 48px -24px rgba(26, 23, 38, 0.32);
+}
+.bsheet-cat-head { display: flex; flex-direction: column; gap: 4px; padding: 22px 24px 18px; }
+.bsheet-cat-en {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--seal);
+}
+.bsheet-cat-name { font-family: var(--serif); font-weight: 900; font-size: 22px; }
+.bsheet-cat-thumb { position: relative; display: block; overflow: hidden; }
+.bsheet-cat-thumb img,
+.bsheet-cat-thumb > span:first-child {
+  display: block;
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  background: var(--bs-card-rule-soft);
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.bsheet-cat:hover .bsheet-cat-thumb img { transform: scale(1.05); }
+.bsheet-cat-video {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  background: rgba(26, 23, 38, 0.85);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  padding: 5px 9px;
+  border-radius: 3px;
+}
+.bsheet-cat-lead {
+  display: block;
+  padding: 20px 24px 0;
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--bs-ink);
+  min-height: 88px;
+}
+.bsheet-cat-lead:hover { color: var(--seal); }
+.bsheet-cat-foot {
+  /* Pushes the foot to the bottom of the card so all four rules line up even
+     when one 导读 title runs to three lines. */
+  margin: 16px 24px 8px;
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--bs-card-rule-soft);
+  font-size: 14px;
+  color: var(--seal);
+}
+.bsheet-cat-foot span:last-child { transition: transform 0.35s ease; }
+.bsheet-cat:hover .bsheet-cat-foot span:last-child { transform: translateX(4px); }
+
+@media (max-width: 1080px) {
+  .bsheet-cats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bsheet-body { grid-template-columns: minmax(0, 1fr) 1px minmax(0, 320px); gap: 28px; }
+  .bsheet-row { grid-template-columns: 30px minmax(0, 1fr) 96px; }
+  .bsheet-row img, .bsheet-row-blank { width: 96px; height: 70px; }
+}
+@media (max-width: 860px) {
+  .bsheet-masthead { flex-direction: column; align-items: flex-start; gap: 20px; }
+  .bsheet-masthead-aside { align-items: flex-start; text-align: left; }
+  .bsheet-body { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+  /* The 1px gutter would draw a stray hairline once the columns stack. */
+  .bsheet-gutter { display: none; }
+  .bsheet-lead p { column-count: 1; }
+  .bsheet-band { padding: 48px 0 28px; }
+  .bsheet-cats { grid-template-columns: minmax(0, 1fr); }
+  .bsheet-cat-lead { min-height: 0; }
+}

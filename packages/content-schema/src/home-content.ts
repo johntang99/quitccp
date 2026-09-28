@@ -61,6 +61,7 @@ export const HOME_SECTION_VARIANTS: Record<HomeSectionKey, { value: string; labe
   ],
   news: [
     { value: "lead-list", label: "左主图右列表（默认）" },
+    { value: "broadsheet", label: "报刊头版 · 与「专题栏目」合并" },
     { value: "feature", label: "大图头条（突出）" },
     { value: "grid", label: "等分网格" }
   ],
@@ -153,12 +154,31 @@ export interface HomeContent {
     heading: string;
     moreLabel: string;
     moreHref: string;
-    lead: { tag: string; title: string; body: string; meta: string; href: string; image: string };
+    /** Heading of the right-hand column in the 报刊头版 variant. */
+    listTitle: string;
+    /** Latin sub-label beside it, e.g. LATEST. */
+    listTitleEn: string;
+    listMoreLabel: string;
+    listMoreHref: string;
+    lead: {
+      tag: string;
+      title: string;
+      body: string;
+      meta: string;
+      href: string;
+      image: string;
+      /** Latin kicker printed before `meta` in the 报刊头版 variant. */
+      kicker?: string;
+    };
     items: { title: string; date: string; href: string; image: string }[];
   };
   channels: HomeSectionMeta & {
+    /** Rule-flanked band title; shown by the 报刊头版 variant. */
+    heading: string;
     cards: {
       title: string;
+      /** Latin category label, e.g. INVESTIGATIONS. */
+      en?: string;
       leadTitle: string;
       leadHref: string;
       image: string;
@@ -331,11 +351,16 @@ export const homeContentDefaults: HomeContent = {
     heading: "公开更新与重点议题",
     moreLabel: "进入新闻中心",
     moreHref: "/news",
+    listTitle: "最新发布",
+    listTitleEn: "LATEST",
+    listMoreLabel: "浏览全部最新发布",
+    listMoreHref: "/news",
     // Real articles from tuidang.org rather than invented copy: the previous
     // defaults described CMS work ("迁移、检索与 CMS 管理能力") which would have
     // read as organisation news to a visitor.
     lead: {
-      tag: "Feature",
+      tag: "头条",
+      kicker: "FEATURE",
       title: "全球退党中心：三退大潮宣告镇压破产 制止中共跨国迫害",
       body: "全球退党服务中心在华盛顿集会上发言，呼吁制止中共对法轮功的迫害及其对中国人民系统性的人权侵害。",
       meta: "2026-09-27",
@@ -366,9 +391,11 @@ export const homeContentDefaults: HomeContent = {
   channels: {
     enabled: true,
     variant: "grid4",
+    heading: "专题栏目",
     cards: [
       {
         title: "追查国际调查报告",
+        en: "INVESTIGATIONS",
         leadTitle: "《铁证如山》：中共活体摘取法轮功学员器官罪恶追查",
         leadHref: "/news/investigations",
         image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.23-P.png",
@@ -378,6 +405,7 @@ export const homeContentDefaults: HomeContent = {
       },
       {
         title: "专题报导与时政评论",
+        en: "FEATURES & COMMENTARY",
         leadTitle: "专题：被改写的七十年——从大饥荒到今天的官方叙事",
         leadHref: "/news/commentary",
         image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.29-P.png",
@@ -387,6 +415,7 @@ export const homeContentDefaults: HomeContent = {
       },
       {
         title: "国际声援行动",
+        en: "INTERNATIONAL SUPPORT",
         leadTitle: "美国国会议员联署声明，表彰退出中共运动并载入《国会议事录》",
         leadHref: "/news/solidarity",
         image: "https://www.tuidang.org/wp-content/uploads/2026/07/signal-2026-07-22-11-53-42-724.jpg",
@@ -396,6 +425,7 @@ export const homeContentDefaults: HomeContent = {
       },
       {
         title: "三退新闻",
+        en: "TUIDANG NEWS",
         leadTitle: "济州岛服务点重启，义工在码头与免税店前轮班守候",
         leadHref: "/news/stories",
         image: "https://www.tuidang.org/wp-content/uploads/2026/06/2026.06.10-J.jpg",

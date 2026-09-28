@@ -1,6 +1,7 @@
 import { getHomepageHeroContent } from "@/lib/public-settings";
 import { HeroGallery, HeroVideo } from "@/components/public/HeroMedia";
 import { DawnBand } from "./DawnBand";
+import { BroadsheetBand } from "./BroadsheetBand";
 import { externalLinkProps } from "@/lib/external-services";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString } from "./content-utils";
@@ -308,7 +309,12 @@ export async function HomeTemplate({ content }: TemplatePageData) {
         </section>
       ) : null}
 
-      {news.enabled ? (
+      {/* 报刊头版 absorbs 专题栏目, the way 曙光 absorbs 我们的服务. */}
+      {news.enabled && news.variant === "broadsheet" ? (
+        <BroadsheetBand news={news} channels={channels} />
+      ) : null}
+
+      {news.enabled && news.variant !== "broadsheet" ? (
         <section className="sec">
           <div className="wrap">
             <SectionHead
@@ -353,7 +359,7 @@ export async function HomeTemplate({ content }: TemplatePageData) {
         </section>
       ) : null}
 
-      {channels.enabled ? (
+      {channels.enabled && !(news.enabled && news.variant === "broadsheet") ? (
         <section className="sec">
           <div className="wrap">
             <div className={`chan chan--${channels.variant}`}>

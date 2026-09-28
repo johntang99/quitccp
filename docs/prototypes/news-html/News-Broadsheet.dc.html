@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<title>新闻方案 J · 报刊头版</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;900&amp;family=Noto+Sans+SC:wght@400;500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0;background:#F4F1EA}
+a{color:#3B3190}a:hover{color:#281F6E}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1740px; box-sizing: border-box; padding: 88px 96px; background: #F4F1EA; color: #1A1726; font-family: 'Noto Sans SC', 'PingFang SC', sans-serif; display: flex; flex-direction: column; gap: 0">
+  <div style="height: 4px; background: #1A1726"></div>
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; padding: 28px 0 24px">
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.22em; color: {{accent}}">新闻与报告 · NEWS &amp; REPORTS</span>
+      <h2 style="margin: 0; font-family: 'Noto Serif SC', 'Songti SC', serif; font-weight: 900; font-size: 60px; letter-spacing: 0.02em; line-height: 1.1">公开更新与重点议题</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #6B6578">2026年9月28日 · 星期一</span>
+      <a href="#" style="font-size: 15px; font-weight: 500; text-decoration: none; border-bottom: 1px solid currentColor; padding: 10px 0 4px">进入新闻中心 →</a>
+    </div>
+  </div>
+  <div style="height: 1px; background: #1A1726"></div>
+  <div style="height: 3px"></div>
+  <div style="height: 1px; background: #1A1726"></div>
+
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) 1px 400px; gap: 40px; padding-top: 40px">
+    <a href="#" style="display: flex; flex-direction: column; gap: 22px; color: #1A1726; text-decoration: none">
+      <img src="{{F}}" alt="全球退党中心在华盛顿集会上发言" style="width: 100%; height: 470px; object-fit: cover; display: block">
+      <div style="display: flex; gap: 14px; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.2em">
+        <span style="background: {{accent}}; color: #FFFFFF; padding: 5px 10px">头条</span>
+        <span style="color: #6B6578">FEATURE · 2026-09-27</span>
+      </div>
+      <h3 style="margin: 0; font-family: 'Noto Serif SC', 'Songti SC', serif; font-weight: 900; font-size: 42px; line-height: 1.35">全球退党中心：三退大潮宣告镇压破产，制止中共跨国迫害</h3>
+      <p style="margin: 0; font-family: 'Noto Serif SC', 'Songti SC', serif; font-size: 18px; line-height: 1.9; color: #45404F; column-count: 2; column-gap: 40px">全球退党服务中心在华盛顿集会上发言，呼吁制止中共对法轮功的迫害及其对中国人民系统性的人权侵害。</p>
+    </a>
+    <div style="background: #CFC8BA"></div>
+    <div style="display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 2px solid #1A1726">
+        <span style="font-family: 'Noto Serif SC', serif; font-weight: 900; font-size: 22px">最新发布</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.18em; color: #6B6578">LATEST</span>
+      </div>
+      <sc-for list="{{news}}" as="n" hint-placeholder-count="3">
+        <a href="#" style="display: grid; grid-template-columns: 34px minmax(0, 1fr) 128px; gap: 16px; padding: 24px 0; border-bottom: 1px solid #D9D2C4; color: #1A1726; text-decoration: none; align-items: start">
+          <span style="font-family: 'Noto Serif SC', serif; font-weight: 900; font-size: 28px; color: {{gold}}; line-height: 1">{{n.n}}</span>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6B6578">{{n.date}}</span>
+            <span style="font-family: 'Noto Serif SC', 'Songti SC', serif; font-weight: 600; font-size: 19px; line-height: 1.55">{{n.t}}</span>
+          </div>
+          <img src="{{n.img}}" alt="" style="width: 128px; height: 92px; object-fit: cover; display: block">
+        </a>
+      </sc-for>
+      <a href="#" style="margin-top: 24px; font-size: 15px; font-weight: 500; text-decoration: none; display: flex; justify-content: space-between; padding: 16px 20px; border: 1px solid #1A1726; color: #1A1726">浏览全部最新发布<span>→</span></a>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 24px; padding: 64px 0 36px">
+    <div style="flex-grow: 1; height: 1px; background: #1A1726"></div>
+    <span style="font-family: 'Noto Serif SC', serif; font-weight: 900; font-size: 26px; letter-spacing: 0.3em">专题栏目</span>
+    <div style="flex-grow: 1; height: 1px; background: #1A1726"></div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px">
+    <sc-for list="{{cats}}" as="c" hint-placeholder-count="4">
+      <div onMouseEnter="{{c.enter}}" onMouseLeave="{{c.leave}}" style="display: flex; flex-direction: column; background: #FFFEFA; border: 1px solid {{c.border}}; border-top: 2px solid {{accent}}; border-radius: 6px; overflow: hidden; box-shadow: {{c.shadow}}; transform: {{c.lift}}; transition: transform 0.35s cubic-bezier(.2,.7,.2,1), box-shadow 0.35s ease, border-color 0.35s ease">
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 22px 24px 18px">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.18em; color: {{accent}}">{{c.en}}</span>
+          <span style="font-family: 'Noto Serif SC', serif; font-weight: 900; font-size: 22px">{{c.cat}}</span>
+        </div>
+        <div style="position: relative; overflow: hidden">
+          <img src="{{c.img}}" alt="" style="width: 100%; height: 180px; object-fit: cover; display: block; transform: {{c.zoom}}; transition: transform 0.6s cubic-bezier(.2,.7,.2,1)">
+          <sc-if value="{{c.video}}" hint-placeholder-val="{{ false }}">
+            <span style="position: absolute; left: 12px; bottom: 12px; background: rgba(26,23,38,0.85); color: #FFFFFF; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; padding: 5px 9px; border-radius: 3px">▶ 视频</span>
+          </sc-if>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 16px; padding: 20px 24px 8px; flex-grow: 1">
+          <a href="#" style="font-family: 'Noto Serif SC', 'Songti SC', serif; font-weight: 600; font-size: 18px; line-height: 1.6; color: #1A1726; text-decoration: none; min-height: 88px">{{c.t}}</a>
+          <a href="#" style="margin-top: auto; display: flex; justify-content: space-between; font-size: 14px; text-decoration: none; padding: 14px 0; border-top: 1px solid #EAE4D8"><span>{{c.more}}</span><span style="transform: {{c.nudge}}; transition: transform 0.35s ease">→</span></a>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#3B3190","options":["#3B3190","#4A3E96","#8E1F2B"]},"gold":{"editor":"color","default":"#B8913A","options":["#B8913A","#C9A04E","#3B3190"]},"$preview":{"width":1440,"height":1740}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const F = './assets/59b85cad3ab08a848fb48d5e32a135ed.jpg';
+    const news = [
+      { img: './assets/b8cf5c4f16a6055a3927d15be3acc392.jpg', date: '2026-09-26', d: '26', m: '09', t: '一场泥石流 照出百万军人沉默抗命与中南海分裂', n: '01' },
+      { img: './assets/3dac61357bc8044bb4b68f854360eafb.jpg', date: '2026-09-26', d: '26', m: '09', t: '出入境新规——正在成形的数字柏林墙', n: '02' },
+      { img: './assets/956065d9a1e6aa1ea4931984d925c789.jpg', date: '2026-09-23', d: '23', m: '09', t: '8月115万人「三退」：从苦难与谎言中觉醒', n: '03' }
+    ];
+    const cats = [
+      { img: './assets/8c70e23792dd4a405a4d6dac20de63d0.jpg', cat: '追查国际调查报告', en: 'INVESTIGATIONS', t: '《铁证如山》：中共活体摘取法轮功学员器官罪恶追查', more: '全部调查报告', video: true, n: '01' },
+      { img: './assets/cc7e5ab803a985a89e8648ebc5d3c300.jpg', cat: '专题报导与时政评论', en: 'FEATURES & COMMENTARY', t: '专题：被改写的七十年——从大饥荒到今天的官方叙事', more: '全部专题与评论', video: false, n: '02' },
+      { img: './assets/f1fd31a10298ceb30f6195cf97ae7c2f.jpg', cat: '国际声援行动', en: 'INTERNATIONAL SUPPORT', t: '美国国会议员联署声明，表彰退出中共运动并载入《国会议事录》', more: '全部声援行动', video: false, n: '03' },
+      { img: './assets/a9a9fa1afbf6953a50cdde45be619721.jpg', cat: '三退新闻', en: 'TUIDANG NEWS', t: '济州岛服务点重启，义工在码头与免税店前轮班守候', more: '全部三退新闻', video: true, n: '04' }
+    ];
+
+    const hov = this.state ? this.state.hov : -1;
+    const cards = cats.map((c, i) => {
+      const on = hov === i;
+      return { ...c,
+        enter: () => this.setState({ hov: i }),
+        leave: () => this.setState({ hov: -1 }),
+        lift: on ? 'translateY(-6px)' : 'translateY(0)',
+        shadow: on ? '0 2px 4px rgba(26,23,38,0.05), 0 28px 48px -24px rgba(26,23,38,0.32)' : '0 1px 2px rgba(26,23,38,0.04), 0 14px 32px -20px rgba(26,23,38,0.22)',
+        border: on ? '#D3CAB8' : '#E3DCCE',
+        zoom: on ? 'scale(1.05)' : 'scale(1)',
+        nudge: on ? 'translateX(4px)' : 'translateX(0)'
+      };
+    });
+    return { F: F, news: news, cats: cards, accent: this.props.accent ?? '#3B3190', gold: this.props.gold ?? '#B8913A' };
+  }
+}
+</script>
+</body>
+</html>

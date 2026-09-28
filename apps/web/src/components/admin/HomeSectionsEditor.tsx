@@ -27,7 +27,7 @@ export const HOME_SECTIONS: HomeSectionDef[] = [
   },
   { key: "services", label: "我们的服务" },
   { key: "news", label: "新闻与报告（公开更新与重点议题）" },
-  { key: "channels", label: "栏目卡片" },
+  { key: "channels", label: "栏目卡片（专题栏目）" },
   { key: "video", label: "视频资源" },
   { key: "voices", label: "见证者" },
   { key: "network", label: "全球网络" },
@@ -53,7 +53,11 @@ const FIELD_LABELS: Record<string, string> = {
   moreHref: "更多链接地址",
   buttonLabel: "按钮文字",
   buttonHref: "按钮链接",
-  citiesLabel: "城市列表标题"
+  citiesLabel: "城市列表标题",
+  listTitle: "侧栏标题",
+  listTitleEn: "侧栏英文标签",
+  listMoreLabel: "侧栏底部链接文字",
+  listMoreHref: "侧栏底部链接地址"
 };
 
 /** Render order per section. Anything unlisted follows, alphabetically. */
@@ -61,8 +65,19 @@ const FIELD_ORDER: Record<string, string[]> = {
   hero: ["eyebrow", "title", "body", "image", "imageAlt", "gallery", "video", "actions"],
   registry: ["eyebrow", "count", "countLabel", "noteLabel", "noteHref", "streamHeading", "substats"],
   services: ["eyebrow", "heading", "moreLabel", "moreHref", "cards"],
-  news: ["eyebrow", "heading", "moreLabel", "moreHref", "lead", "items"],
-  channels: ["cards"],
+  news: [
+    "eyebrow",
+    "heading",
+    "moreLabel",
+    "moreHref",
+    "listTitle",
+    "listTitleEn",
+    "listMoreLabel",
+    "listMoreHref",
+    "lead",
+    "items"
+  ],
+  channels: ["heading", "cards"],
   video: ["eyebrow", "heading", "moreLabel", "moreHref", "items"],
   voices: ["eyebrow", "heading", "lede", "moreLabel", "moreHref", "items"],
   network: ["eyebrow", "heading", "body", "buttonLabel", "buttonHref", "citiesLabel", "cities"],
@@ -78,7 +93,90 @@ const IMAGE_FIELDS = new Set(["image", "poster", "backgroundImage"]);
 const STRUCTURED = new Set(["gallery", "video", "actions"]);
 
 const MEDIA_FIELDS = new Set(["image", "imageAlt", "gallery", "video"]);
-const LINK_FIELDS = new Set(["actions", "moreLabel", "moreHref", "buttonLabel", "buttonHref"]);
+const LINK_FIELDS = new Set([
+  "actions",
+  "moreLabel",
+  "moreHref",
+  "buttonLabel",
+  "buttonHref",
+  "listMoreLabel",
+  "listMoreHref"
+]);
+
+/**
+ * Per-field editors for the news and media sections.
+ *
+ * These lists used to be raw JSON textareas, which made the images
+ * uneditable in practice -- an operator had to paste a URL into a string
+ * inside a blob. Keyed `<section>.<field>` because the field names repeat
+ * across sections (`items`, `cards`) with different shapes.
+ */
+interface RowField {
+  key: string;
+  label: string;
+  kind?: "text" | "area" | "image" | "video-flag";
+}
+
+const OBJECT_EDITORS: Record<string, { label: string; fields: RowField[] }> = {
+  "news.lead": {
+    label: "头条文章",
+    fields: [
+      { key: "image", label: "图片", kind: "image" },
+      { key: "tag", label: "角标（如「头条」）" },
+      { key: "kicker", label: "英文前缀（如 FEATURE）" },
+      { key: "title", label: "标题", kind: "area" },
+      { key: "body", label: "摘要", kind: "area" },
+      { key: "meta", label: "日期" },
+      { key: "href", label: "链接" }
+    ]
+  }
+};
+
+const ROW_EDITORS: Record<string, { label: string; blank: Record<string, string>; fields: RowField[] }> = {
+  "news.items": {
+    label: "最新发布",
+    blank: { title: "", date: "", href: "/news", image: "" },
+    fields: [
+      { key: "image", label: "图片", kind: "image" },
+      { key: "title", label: "标题", kind: "area" },
+      { key: "date", label: "日期" },
+      { key: "href", label: "链接" }
+    ]
+  },
+  "channels.cards": {
+    label: "专题栏目",
+    blank: {
+      title: "",
+      en: "",
+      leadTitle: "",
+      leadHref: "/news",
+      image: "",
+      badge: "",
+      footLabel: "",
+      footHref: "/news"
+    },
+    fields: [
+      { key: "image", label: "图片", kind: "image" },
+      { key: "title", label: "栏目名称" },
+      { key: "en", label: "英文标签（如 INVESTIGATIONS）" },
+      { key: "badge", label: "视频", kind: "video-flag" },
+      { key: "leadTitle", label: "导读标题", kind: "area" },
+      { key: "leadHref", label: "导读链接" },
+      { key: "footLabel", label: "底部链接文字" },
+      { key: "footHref", label: "底部链接地址" }
+    ]
+  },
+  "video.items": {
+    label: "视频",
+    blank: { title: "", meta: "", href: "/videos", image: "" },
+    fields: [
+      { key: "image", label: "封面", kind: "image" },
+      { key: "title", label: "标题", kind: "area" },
+      { key: "meta", label: "来源／说明" },
+      { key: "href", label: "链接" }
+    ]
+  }
+};
 
 function orderFields(sectionKey: string, keys: string[]): string[] {
   const order = FIELD_ORDER[sectionKey] ?? [];
@@ -96,6 +194,23 @@ function asRow(value: unknown): Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+/**
+ * Two sections are absorbed by another section's variant: 「曙光」 pulls
+ * 我们的服务 into 实时登记册, and 「报刊头版」 pulls 栏目卡片 into 新闻与报告.
+ * Their content still renders, but their own 版式 choice stops mattering --
+ * which is invisible from inside the absorbed section without saying so.
+ */
+function couplingNote(sectionKey: string, data: Record<string, unknown>): string | null {
+  const variantOf = (key: string) => String(asRow(data[key]).variant ?? "");
+  if (sectionKey === "channels" && variantOf("news") === "broadsheet") {
+    return "「新闻与报告」正在使用「报刊头版」版式，本区块已并入其中显示：内容仍然生效，但这里的「版式」选择不起作用。";
+  }
+  if (sectionKey === "services" && variantOf("registry") === "dawn") {
+    return "「实时登记册」正在使用「曙光」版式，本区块已并入其中显示：内容仍然生效，但这里的「版式」选择不起作用。";
+  }
+  return null;
 }
 
 function asRows(value: unknown): Record<string, unknown>[] {
@@ -351,6 +466,129 @@ export function HomeSectionsEditor({
     </div>
   );
 
+  /** One record's fields, used for both `news.lead` and each list row. */
+  const recordFields = (
+    keyPath: string[],
+    label: string,
+    row: Record<string, unknown>,
+    fields: RowField[]
+  ) => (
+    <div style={{ display: "grid", gap: 10 }}>
+      {fields.map((field) => {
+        const path = [...keyPath, field.key];
+        const current = String(row[field.key] ?? "");
+        if (field.kind === "image") {
+          return (
+            <div key={field.key}>
+              <span style={{ display: "block", marginBottom: 4 }}>{field.label}</span>
+              {imageField(path, `${label} · ${field.label}`, current, true)}
+            </div>
+          );
+        }
+        if (field.kind === "video-flag") {
+          return (
+            <label key={field.key} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <input
+                type="checkbox"
+                checked={current.trim().length > 0}
+                // The badge doubles as the "this is a video" flag in every
+                // channels variant; the play glyph is what the other layouts
+                // print, so keep writing it rather than a boolean.
+                onChange={(event) => updateField(path, event.target.checked ? "▶" : "")}
+              />
+              {field.label}
+            </label>
+          );
+        }
+        return (
+          <label key={field.key}>
+            {field.label}
+            <textarea
+              className="admin-textarea"
+              style={{ minHeight: field.kind === "area" ? 64 : 42 }}
+              value={current}
+              onChange={(event) => updateField(path, event.target.value)}
+            />
+          </label>
+        );
+      })}
+    </div>
+  );
+
+  const rowsEditor = (
+    sectionKey: string,
+    fieldKey: string,
+    spec: { label: string; blank: Record<string, string>; fields: RowField[] },
+    rows: Record<string, unknown>[]
+  ) => {
+    const write = (next: Record<string, unknown>[]) => updateField([sectionKey, fieldKey], next);
+    const move = (index: number, delta: number) => {
+      const target = index + delta;
+      if (target < 0 || target >= rows.length) return;
+      const next = [...rows];
+      [next[index], next[target]] = [next[target], next[index]];
+      write(next);
+    };
+    return (
+      <div style={{ display: "grid", gap: 12 }}>
+        {rows.length === 0 ? (
+          <p style={{ margin: 0, color: "#777", fontSize: 13 }}>还没有条目。</p>
+        ) : null}
+        {rows.map((row, index) => (
+          <div
+            key={index}
+            style={{ border: "1px solid #f0f0f0", borderRadius: 4, padding: 10, display: "grid", gap: 10 }}
+          >
+            <div className="admin-toolbar" style={{ margin: 0, padding: 0 }}>
+              <strong style={{ fontSize: 13 }}>
+                {spec.label} {index + 1}
+              </strong>
+              <button
+                className="admin-btn"
+                type="button"
+                disabled={index === 0}
+                onClick={() => move(index, -1)}
+              >
+                上移
+              </button>
+              <button
+                className="admin-btn"
+                type="button"
+                disabled={index === rows.length - 1}
+                onClick={() => move(index, 1)}
+              >
+                下移
+              </button>
+              <button
+                className="admin-btn"
+                type="button"
+                style={{ marginLeft: "auto" }}
+                onClick={() => write(rows.filter((_, i) => i !== index))}
+              >
+                删除
+              </button>
+            </div>
+            {recordFields(
+              [sectionKey, fieldKey, String(index)],
+              `${spec.label} ${index + 1}`,
+              row,
+              spec.fields
+            )}
+          </div>
+        ))}
+        <div>
+          <button
+            className="admin-btn"
+            type="button"
+            onClick={() => write([...rows, { ...spec.blank }])}
+          >
+            + 添加{spec.label}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const jsonField = (sectionKey: string, key: string, value: unknown) => {
     const draftKey = `${sectionKey}.${key}`;
     return (
@@ -393,7 +631,12 @@ export function HomeSectionsEditor({
         const linkText = textKeys.filter((k) => LINK_FIELDS.has(k));
 
         const structuredKeys = otherKeys.filter((k) => STRUCTURED.has(k));
-        const jsonKeys = otherKeys.filter((k) => !STRUCTURED.has(k));
+        const richKeys = otherKeys.filter(
+          (k) => ROW_EDITORS[`${section.key}.${k}`] || OBJECT_EDITORS[`${section.key}.${k}`]
+        );
+        const jsonKeys = otherKeys.filter(
+          (k) => !STRUCTURED.has(k) && !richKeys.includes(k)
+        );
 
         const renderText = (key: string) =>
           IMAGE_FIELDS.has(key) ? (
@@ -426,6 +669,11 @@ export function HomeSectionsEditor({
             <div style={{ display: "grid", gap: 14, marginTop: 12 }}>
               {section.note ? (
                 <p style={{ margin: 0, color: "#8a6d1f", fontSize: 13 }}>{section.note}</p>
+              ) : null}
+              {couplingNote(section.key, data) ? (
+                <p style={{ margin: 0, color: "#8a6d1f", fontSize: 13 }}>
+                  {couplingNote(section.key, data)}
+                </p>
               ) : null}
 
               <div
@@ -491,6 +739,31 @@ export function HomeSectionsEditor({
                   {structuredKeys.includes("actions")
                     ? actionsEditor(section.key, asRows(value.actions))
                     : null}
+                </fieldset>
+              ) : null}
+
+              {richKeys.length > 0 ? (
+                <fieldset style={fieldset}>
+                  <legend style={legend}>内容条目</legend>
+                  {richKeys.map((key) => {
+                    const objectSpec = OBJECT_EDITORS[`${section.key}.${key}`];
+                    const rowSpec = ROW_EDITORS[`${section.key}.${key}`];
+                    return (
+                      <div key={key} style={{ display: "grid", gap: 8 }}>
+                        <span style={{ fontWeight: 600 }}>
+                          {(objectSpec ?? rowSpec).label}
+                        </span>
+                        {objectSpec
+                          ? recordFields(
+                              [section.key, key],
+                              `${section.label} · ${objectSpec.label}`,
+                              asRow(value[key]),
+                              objectSpec.fields
+                            )
+                          : rowsEditor(section.key, key, rowSpec, asRows(value[key]))}
+                      </div>
+                    );
+                  })}
                 </fieldset>
               ) : null}
 

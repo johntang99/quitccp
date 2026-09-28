@@ -83,6 +83,7 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
 
   const channelCards = asObjectArray(channelsRow.cards).map((row) => ({
     title: asString(row.title),
+    en: asString(row.en),
     leadTitle: asString(row.leadTitle),
     leadHref: asString(row.leadHref, "/news"),
     image: asString(row.image),
@@ -176,18 +177,24 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
       heading: asString(newsRow.heading, d.news.heading),
       moreLabel: asString(newsRow.moreLabel, d.news.moreLabel),
       moreHref: asString(newsRow.moreHref, d.news.moreHref),
+      listTitle: asString(newsRow.listTitle, d.news.listTitle),
+      listTitleEn: asString(newsRow.listTitleEn, d.news.listTitleEn),
+      listMoreLabel: asString(newsRow.listMoreLabel, d.news.listMoreLabel),
+      listMoreHref: asString(newsRow.listMoreHref, d.news.listMoreHref),
       lead: {
         tag: asString(newsLead.tag, d.news.lead.tag),
         title: asString(newsLead.title, d.news.lead.title),
         body: asString(newsLead.body, d.news.lead.body),
         meta: asString(newsLead.meta, d.news.lead.meta),
         href: asString(newsLead.href, d.news.lead.href),
-        image: asString(newsLead.image, d.news.lead.image)
+        image: asString(newsLead.image, d.news.lead.image),
+        kicker: asString(newsLead.kicker, d.news.lead.kicker)
       },
       items: newsItems.length > 0 ? newsItems : d.news.items
     },
     channels: {
       ...meta(channelsRow, d.channels),
+      heading: asString(channelsRow.heading, d.channels.heading),
       cards: channelCards.length > 0 ? channelCards : d.channels.cards
     },
     video: {

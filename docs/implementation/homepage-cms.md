@@ -225,3 +225,57 @@ cycling if fewer declarations are available.
 
 The sun glow, rings and grid overlay are `aria-hidden` decoration. The pulsing
 dot respects `prefers-reduced-motion`.
+
+## 报刊头版 (Broadsheet) — the merged 新闻与报告 + 专题栏目 band
+
+Implements `docs/prototypes/news-html` ("新闻方案 J · 报刊头版"). The news list
+and the four 栏目卡片 previously read as two unrelated blocks; the redesign sets
+them on one newsprint page — masthead rules, a lead story against a numbered
+最新发布 column, then the category cards under a rule-flanked band title.
+
+**Turned on by setting 新闻与报告 → 版式 → 「报刊头版 · 与「专题栏目」合并」.**
+
+> **Coupling worth knowing:** like 曙光, this variant spans two sections. While
+> `news.variant === "broadsheet"`, the standalone 栏目卡片 section is suppressed
+> and its cards are rendered inside the band. Its own 版式 dropdown stops
+> mattering — the admin says so inline. Switching news back to any other variant
+> restores both sections independently; no content is migrated either way.
+
+Component: `components/templates/BroadsheetBand.tsx`. Styling: `.bsheet-*` at the
+end of `globals.css`. The mockup's palette is a warmer, violet-inked cousin of
+the site's, so its off-palette values are scoped to `.bsheet` as local custom
+properties rather than pushed into `:root`: newsprint card `#FFFEFA`, rules
+`#CFC8BA` / `#D9D2C4` / `#E3DCCE` / `#EAE4D8`, muted `#6B6578`, body `#45404F`,
+numeral gold `#B8913A`. The accent stays `var(--seal)` so links match the rest of
+the page. Type sizes are `clamp()`-ed: the mockup is a 1440px artboard, the site
+wraps at 1200px.
+
+New content fields:
+
+| field | purpose |
+|---|---|
+| `news.listTitle` / `listTitleEn` | the 最新发布 column heading and its latin sub-label |
+| `news.listMoreLabel` / `listMoreHref` | the boxed link under that column |
+| `news.lead.kicker` | latin kicker printed before the date, e.g. `FEATURE` |
+| `channels.heading` | the rule-flanked band title, 「专题栏目」 |
+| `channels.cards[].en` | latin category label, e.g. `INVESTIGATIONS` |
+
+`channels.cards[].badge` keeps its existing meaning — "this item is a video" —
+and becomes the corner 「▶ 视频」 pill here; the admin edits it as a checkbox.
+
+The masthead dateline is **computed, not edited**: a broadsheet dateline is
+today's date, and a stored one would go stale silently. It is formatted in
+`America/New_York`, the clock the service centre stamps its own article dates
+with — those dates are printed a few centimetres away in the same band. The
+homepage revalidates every 5 minutes, so it turns over shortly after midnight.
+
+All hover states (card lift, image zoom, arrow nudge) are CSS, so the band stays
+a server component.
+
+### Admin
+
+新闻与报告 and 栏目卡片 no longer edit their lists as raw JSON. `news.lead`,
+`news.items`, `channels.cards` and `video.items` each get a purpose-built editor
+with an image picker, add / delete / reorder, and Chinese field labels — see
+`OBJECT_EDITORS` and `ROW_EDITORS` in `HomeSectionsEditor.tsx`. Anything not
+listed there still falls back to the JSON textarea.
