@@ -16,8 +16,8 @@ git commit -m "Update: describe your changes"
 git push
 ```
 
-
-
+admin123
+admin@quitccp.org
 This repository contains the full implementation for the QuitCCP dynamic platform:
 
 - `apps/web` - Unified Next.js app:
