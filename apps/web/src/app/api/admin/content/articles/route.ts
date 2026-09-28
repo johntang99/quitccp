@@ -1,0 +1,85 @@
+import { NextResponse } from "next/server";
+import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
+import { listArticles, upsertArticleRecord } from "@/lib/admin/repository";
+
+export async function GET(request: Request) {
+  const user = await getAdminSessionUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { searchParams } = new URL(request.url);
+  const page = Number(searchParams.get("page") ?? "1");
+  const pageSize = Number(searchParams.get("pageSize") ?? "20");
+  const status = searchParams.get("status");
+  const locale = searchParams.get("locale");
+  const category = searchParams.get("category");
+  const cursor = searchParams.get("cursor");
+  const q = searchParams.get("q")?.toLowerCase();
+
+  const result = await listArticles(
+    {
+      page,
+      pageSize,
+      status: status ?? undefined,
+      locale: locale ?? undefined,
+      category: category ?? undefined,
+      q: q ?? undefined,
+      cursor: cursor ?? undefined
+    },
+    user.email
+  );
+  return NextResponse.json(result);
+}
+
+export async function POST(request: Request) {
+  const user = await getAdminSessionUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!adminCanWrite(user)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  requireAdminMfa(user);
+
+  const formData = await request.formData();
+  const id = String(formData.get("id") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  const title = String(formData.get("title") ?? "");
+  const section = String(formData.get("section") ?? "news");
+  const locale = String(formData.get("locale") ?? "zh");
+  const status = String(formData.get("status") ?? "draft") as
+    | "draft"
+    | "review"
+    | "published"
+    | "archived";
+  const category = String(formData.get("category") ?? "news");
+  const tags = String(formData.get("tags") ?? "")
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+  const bodyMarkdown = String(formData.get("bodyMarkdown") ?? "");
+  const bodyPlain = bodyMarkdown.replace(/[#>*_`-]/g, " ").replace(/\s+/g, " ").trim();
+  const legacyUrlRaw = String(formData.get("legacyUrl") ?? "");
+  const legacyIdRaw = String(formData.get("legacyId") ?? "");
+
+  if ((status === "published" || status === "archived") && !canBulkPublish(user)) {
+    return NextResponse.json(
+      { error: "Only super_admin/content_admin can publish or archive directly" },
+      { status: 403 }
+    );
+  }
+
+  await upsertArticleRecord(
+    {
+      id,
+      slug,
+      title,
+      section,
+      locale,
+      status,
+      bodyMarkdown,
+      bodyPlain,
+      category,
+      tags,
+      legacyUrl: legacyUrlRaw || undefined,
+      legacyId: legacyIdRaw ? Number(legacyIdRaw) : undefined
+    },
+    user.email
+  );
+
+  return NextResponse.redirect(new URL("/admin/articles", request.url), 303);
+}

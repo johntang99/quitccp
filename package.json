@@ -1,0 +1,37 @@
+{
+  "name": "quitccp-platform",
+  "private": true,
+  "version": "0.1.0",
+  "description": "QuitCCP unified Next.js app with public, admin, and service APIs.",
+  "workspaces": [
+    "apps/web",
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "dev:web": "npm run dev -w @quitccp/web",
+    "dev": "npm run dev:web",
+    "check:migrations": "npm run check:migrations --workspaces --if-present",
+    "benchmark:search": "tsx scripts/benchmark-search.ts",
+    "benchmark:search:generate": "tsx scripts/generate-search-benchmark-results.ts",
+    "benchmark:search:subset": "tsx scripts/benchmark-search-subset.ts",
+    "benchmark:search:load-locale": "tsx scripts/load-search-benchmark-locale.ts",
+    "search:sync:meili": "tsx scripts/sync-meilisearch.ts",
+    "preflight": "tsx scripts/preflight-check.ts",
+    "migrate:wp": "tsx scripts/migrate-wp-posts.ts",
+    "migrate:import": "tsx scripts/import-normalized-posts.ts",
+    "content:seed:prototype": "tsx scripts/seed-prototype-content.ts",
+    "redirects:build": "tsx scripts/build-redirect-map.ts",
+    "redirects:validate": "tsx scripts/validate-redirects.ts",
+    "redirects:load": "tsx scripts/load-redirects.ts",
+    "content:seed:home": "tsx scripts/seed-home-content.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

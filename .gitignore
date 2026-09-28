@@ -1,0 +1,29 @@
+node_modules
+.next
+dist
+coverage
+.DS_Store
+.env
+.env.local
+.env.*.local
+*.log
+tmp
+
+# Build info
+*.tsbuildinfo
+
+# Benchmark/migration output: 189MB of generated JSON, and the phase5 files
+# contain real admin session JWTs captured during testing.
+artifacts/
+
+# Local tooling output
+.playwright-mcp/
+
+# Stray files from a mistyped npm command
+quitccp-platform@*
+/tsx
+
+# QA screenshots taken during development
+/*.jpeg
+/*.jpg
+/*.png

@@ -1,0 +1,27 @@
+{
+  "name": "@quitccp/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 4020",
+    "build": "next build",
+    "start": "next start -p 4020",
+    "lint": "echo \"ESLint setup pending (non-blocking scaffold)\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "echo \"No tests yet for web\""
+  },
+  "dependencies": {
+    "@quitccp/content-schema": "0.1.0",
+    "@supabase/supabase-js": "^2.112.3",
+    "next": "^15.0.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.8.7",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.6.3"
+  }
+}
