@@ -205,10 +205,23 @@ New content fields:
 | `registry.feedCount` | how many declaration cards the feed row shows (1–6) |
 | `services.cards[].ctaLabel` / `ctaHref` | optional button at the foot of a card; the design puts 我要三退 on card 01 |
 
-The feed row **fills to `feedCount` by cycling** whatever declarations exist —
-there is currently only one stored entry, and the mockup itself repeats a single
-statement three times with decreasing opacity. Once the santui feed is wired the
-cycling never engages.
+The feed is a **continuously moving trail**: 10 records at ~60px/s, rendered
+twice so translating the track -50% loops seamlessly (the copy is `aria-hidden`
+so screen readers do not hear every declaration twice). It pauses on hover and
+focus so a reader can actually read a statement, fades out at both edges via a
+mask, and stops entirely under `prefers-reduced-motion`. Cards use a fixed width
+plus `margin-right` rather than flex + `gap`, because a gap is not duplicated
+across the seam and the loop would visibly jump.
+
+`feedCount` (1–20) sets how many records the trail carries; the row fills by
+cycling if fewer declarations are available.
+
+> **⚠ The declarations are placeholders, not real records.** Ten sample entries
+> live in `HomeTemplate.tsx` purely so the trail has something to show. On a
+> public site they read as genuine declarations by real people, which they are
+> not. Wire the santui feed
+> (`santui.tuidang.org/index/showpage/type/1`) before launch — see
+> [services-link-out-map.md](./services-link-out-map.md) row 15.
 
 The sun glow, rings and grid overlay are `aria-hidden` decoration. The pulsing
 dot respects `prefers-reduced-motion`.

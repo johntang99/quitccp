@@ -9,9 +9,13 @@ import { resolveHomeContent } from "./home-content";
 /**
  * Declaration entries shown in the 实时登记册 ticker.
  *
- * Content is deliberately NOT editable in the CMS: these are real declarations
- * and belong to the santui feed, not to an editor. Only the section's layout is
- * configurable. Until the feed is wired these sample rows stand in.
+ * !! THESE ARE PLACEHOLDERS, NOT REAL DECLARATIONS. !!
+ * They exist so the trail has something to show; on a public site they read as
+ * genuine records of real people, which they are not. Replace them by wiring
+ * the santui feed (santui.tuidang.org/index/showpage/type/1) before launch.
+ *
+ * Content is deliberately NOT editable in the CMS: real declarations belong to
+ * the feed, not to an editor. Only the section's layout is configurable.
  */
 const streamEntries = [
   {
@@ -21,9 +25,57 @@ const streamEntries = [
     at: "2026-08-08"
   },
   {
-    region: "No. 464,374,201",
+    region: "No. 464,375,380",
     name: "陈＊ · 日本",
     text: "出国后看到了国内看不到的报道，才明白过去所受的教育是怎么回事。郑重声明退出党、团、队。",
+    at: "2026-08-08"
+  },
+  {
+    region: "No. 464,375,379",
+    name: "李＊明 · 中国大陆",
+    text: "少年时入队，读书时入团，从未认真想过那意味着什么。今天想清楚了，声明全部退出。",
+    at: "2026-08-08"
+  },
+  {
+    region: "No. 464,375,378",
+    name: "一个北方人 · 中国大陆",
+    text: "看过《九评》之后想了很久。我不愿再与这个组织有任何牵连，特此声明三退。",
+    at: "2026-08-07"
+  },
+  {
+    region: "No. 464,375,377",
+    name: "王＊ · 加拿大",
+    text: "移民后办理身份时才重新面对这段经历。郑重声明退出曾经加入的少先队与共青团。",
+    at: "2026-08-07"
+  },
+  {
+    region: "No. 464,375,376",
+    name: "张＊华 · 台湾",
+    text: "亲友在大陆的遭遇让我无法沉默。声明退出中共的一切组织，与其彻底划清界限。",
+    at: "2026-08-07"
+  },
+  {
+    region: "No. 464,375,375",
+    name: "刘＊ · 中国大陆",
+    text: "在体制内工作多年，见过太多不该发生的事。今日声明退党，只求心里干净。",
+    at: "2026-08-06"
+  },
+  {
+    region: "No. 464,375,374",
+    name: "小＊ · 香港",
+    text: "这几年发生的事让我看清了很多。特此声明退出曾经加入过的共青团与少先队。",
+    at: "2026-08-06"
+  },
+  {
+    region: "No. 464,375,373",
+    name: "赵＊ · 欧洲",
+    text: "在海外生活多年，回头再看那段经历，只想把它彻底了断。郑重声明三退。",
+    at: "2026-08-06"
+  },
+  {
+    region: "No. 464,375,372",
+    name: "一位退休教师 · 中国大陆",
+    text: "教了一辈子书，最后明白有些话不能再替它说。声明退出中共党、团、队组织。",
     at: "2026-08-05"
   }
 ];

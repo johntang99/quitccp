@@ -130,7 +130,7 @@ export interface HomeContent {
     streamHeading: string;
     /** Shown beside the pulsing dot in the dawn variant, e.g. "实时登记册 · LIVE". */
     liveLabel: string;
-    /** How many declaration cards the dawn feed row shows. */
+    /** How many declaration cards the dawn trail carries. */
     feedCount: number;
   };
   services: HomeSectionMeta & {
@@ -277,7 +277,7 @@ export const homeContentDefaults: HomeContent = {
     ],
     streamHeading: "Latest Updates",
     liveLabel: "实时登记册 · LIVE",
-    feedCount: 3
+    feedCount: 10
   },
   services: {
     enabled: true,

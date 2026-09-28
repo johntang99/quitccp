@@ -76,23 +76,36 @@ export function DawnBand({ registry, services, feed }: DawnBandProps) {
         </div>
 
         {rows.length > 0 ? (
+          // The track holds the list twice so translating it -50% loops
+          // seamlessly. aria-hidden on the copy keeps screen readers from
+          // hearing every declaration a second time.
           <div className="dawn-feed">
-            {rows.map((entry, index) => (
-              <article
-                key={`${entry.region}-${index}`}
-                className="dawn-feed-card"
-                // The design fades successive cards back, so the row reads as a
-                // stream receding rather than three equal items.
-                style={{ opacity: 1 - index * 0.3 }}
-              >
-                <div className="dawn-feed-top">
-                  <span>{entry.region}</span>
-                  <span>{entry.at}</span>
-                </div>
-                <p>{entry.text}</p>
-                <span className="dawn-feed-who">退 · {entry.name}</span>
-              </article>
-            ))}
+            <div className="dawn-feed-track">
+              {rows.map((entry, index) => (
+                <article key={`a-${entry.region}-${index}`} className="dawn-feed-card">
+                  <div className="dawn-feed-top">
+                    <span>{entry.region}</span>
+                    <span>{entry.at}</span>
+                  </div>
+                  <p>{entry.text}</p>
+                  <span className="dawn-feed-who">退 · {entry.name}</span>
+                </article>
+              ))}
+              {rows.map((entry, index) => (
+                <article
+                  key={`b-${entry.region}-${index}`}
+                  className="dawn-feed-card"
+                  aria-hidden="true"
+                >
+                  <div className="dawn-feed-top">
+                    <span>{entry.region}</span>
+                    <span>{entry.at}</span>
+                  </div>
+                  <p>{entry.text}</p>
+                  <span className="dawn-feed-who">退 · {entry.name}</span>
+                </article>
+              ))}
+            </div>
           </div>
         ) : null}
 

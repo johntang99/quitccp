@@ -1924,11 +1924,38 @@
 }
 .dawn-note:hover { color: #FFF0C8; }
 
-/* ---- declaration feed ---- */
-.dawn-feed { display: flex; gap: 16px; align-items: stretch; }
+/* ---- declaration feed: a continuously moving trail ---- */
+.dawn-feed {
+  overflow: hidden;
+  /* Cards fade out at both edges instead of being cut off mid-word. */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+}
+.dawn-feed-track {
+  display: flex;
+  width: max-content;
+  /* ~60px/s. The list is rendered twice, so -50% lands exactly where the copy
+     began and the loop is seamless. */
+  animation: dawn-trail 62s linear infinite;
+}
+@keyframes dawn-trail {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+/* Let a reader stop the trail to actually read a statement. */
+.dawn-feed:hover .dawn-feed-track,
+.dawn-feed:focus-within .dawn-feed-track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .dawn-feed-track { animation: none; }
+}
+
 .dawn-feed-card {
-  flex: 1 1 0;
-  min-width: 0;
+  /* Fixed width with a right margin rather than flex + gap: the gap would not
+     be duplicated across the seam and the loop would jump. */
+  flex: 0 0 360px;
+  width: 360px;
+  margin-right: 16px;
+  box-sizing: border-box;
   border: 1px solid rgba(255, 255, 255, .22);
   background: rgba(255, 255, 255, .07);
   border-radius: 6px;
@@ -2057,14 +2084,12 @@
 
 @media (max-width: 1080px) {
   .dawn-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .dawn-feed > :nth-child(n + 3) { display: none; }
 }
 @media (max-width: 860px) {
   .dawn-sky { height: 56%; }
   .dawn-inner { padding: 56px 0 64px; gap: 36px; }
   .dawn-head { grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: start; }
-  .dawn-feed { flex-direction: column; }
-  .dawn-feed > :nth-child(n + 2) { display: none; }
+  .dawn-feed-card { flex-basis: 280px; width: 280px; }
   .dawn-cards { grid-template-columns: minmax(0, 1fr); }
   .dawn-card-desc { min-height: 0; }
   .dawn-services-head { flex-direction: column; align-items: flex-start; gap: 12px; }

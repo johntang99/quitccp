@@ -160,7 +160,7 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
       substats: substats.length > 0 ? substats : d.registry.substats,
       streamHeading: asString(registryRow.streamHeading, d.registry.streamHeading),
       liveLabel: asString(registryRow.liveLabel, d.registry.liveLabel),
-      feedCount: Math.max(1, Math.min(6, asNumber(registryRow.feedCount, d.registry.feedCount)))
+      feedCount: Math.max(1, Math.min(20, asNumber(registryRow.feedCount, d.registry.feedCount)))
     },
     services: {
       ...meta(servicesRow, d.services),
