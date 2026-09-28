@@ -68,7 +68,9 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
     tag: asString(row.tag),
     title: asString(row.title),
     body: asString(row.body),
-    links: links(row.links, [])
+    links: links(row.links, []),
+    ctaLabel: asString(row.ctaLabel),
+    ctaHref: asString(row.ctaHref)
   }));
 
   const newsLead = asRecord(newsRow.lead);
@@ -156,7 +158,9 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
       noteLabel: asString(registryRow.noteLabel, d.registry.noteLabel),
       noteHref: asString(registryRow.noteHref, d.registry.noteHref),
       substats: substats.length > 0 ? substats : d.registry.substats,
-      streamHeading: asString(registryRow.streamHeading, d.registry.streamHeading)
+      streamHeading: asString(registryRow.streamHeading, d.registry.streamHeading),
+      liveLabel: asString(registryRow.liveLabel, d.registry.liveLabel),
+      feedCount: Math.max(1, Math.min(6, asNumber(registryRow.feedCount, d.registry.feedCount)))
     },
     services: {
       ...meta(servicesRow, d.services),

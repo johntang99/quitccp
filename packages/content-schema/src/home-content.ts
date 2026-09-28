@@ -49,6 +49,7 @@ export const HOME_SECTION_VARIANTS: Record<HomeSectionKey, { value: string; labe
   ],
   registry: [
     { value: "split", label: "左数字右滚动（默认）" },
+    { value: "dawn", label: "曙光 · 与「我们的服务」合并" },
     { value: "stacked", label: "上下堆叠" },
     { value: "count-only", label: "仅显示数字" },
     { value: "stream-only", label: "仅显示滚动声明" }
@@ -127,13 +128,25 @@ export interface HomeContent {
     noteHref: string;
     substats: { value: string; label: string }[];
     streamHeading: string;
+    /** Shown beside the pulsing dot in the dawn variant, e.g. "实时登记册 · LIVE". */
+    liveLabel: string;
+    /** How many declaration cards the dawn feed row shows. */
+    feedCount: number;
   };
   services: HomeSectionMeta & {
     eyebrow: string;
     heading: string;
     moreLabel: string;
     moreHref: string;
-    cards: { tag: string; title: string; body: string; links: LinkItem[] }[];
+    cards: {
+      tag: string;
+      title: string;
+      body: string;
+      links: LinkItem[];
+      /** Optional button at the foot of the card; blank label hides it. */
+      ctaLabel?: string;
+      ctaHref?: string;
+    }[];
   };
   news: HomeSectionMeta & {
     eyebrow: string;
@@ -262,7 +275,9 @@ export const homeContentDefaults: HomeContent = {
       { value: "100%", label: "审计留痕覆盖" },
       { value: "10k+", label: "历史内容可检索" }
     ],
-    streamHeading: "Latest Updates"
+    streamHeading: "Latest Updates",
+    liveLabel: "实时登记册 · LIVE",
+    feedCount: 3
   },
   services: {
     enabled: true,
@@ -281,7 +296,9 @@ export const homeContentDefaults: HomeContent = {
           { label: "办理退党证明", href: CERT_APPLY },
           { label: "查询与验证证明", href: CERT_VERIFY },
           { label: "证明与移民申请问答", href: DOC_IMMIGRATION }
-        ]
+        ],
+        ctaLabel: "我要三退 →",
+        ctaHref: SANTUI
       },
       {
         tag: "传播",

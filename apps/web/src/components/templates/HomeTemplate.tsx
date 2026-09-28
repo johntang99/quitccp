@@ -1,5 +1,6 @@
 import { getHomepageHeroContent } from "@/lib/public-settings";
 import { HeroGallery, HeroVideo } from "@/components/public/HeroMedia";
+import { DawnBand } from "./DawnBand";
 import { externalLinkProps } from "@/lib/external-services";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString } from "./content-utils";
@@ -208,7 +209,13 @@ export async function HomeTemplate({ content }: TemplatePageData) {
         </section>
       ) : null}
 
-      {registry.enabled ? (
+      {/* The dawn variant merges 实时登记册 with 我们的服务 into one band, so the
+          standalone services section below is suppressed while it is active. */}
+      {registry.enabled && registry.variant === "dawn" ? (
+        <DawnBand registry={registry} services={services} feed={streamRows} />
+      ) : null}
+
+      {registry.enabled && registry.variant !== "dawn" ? (
         <section className={`sec reg-sec reg-sec--${registry.variant}`}>
           <div className="wrap reg">
             {registry.variant !== "stream-only" ? registryCount : null}
@@ -217,7 +224,7 @@ export async function HomeTemplate({ content }: TemplatePageData) {
         </section>
       ) : null}
 
-      {services.enabled ? (
+      {services.enabled && !(registry.enabled && registry.variant === "dawn") ? (
         <section className="sec">
           <div className="wrap">
             <SectionHead

@@ -1763,3 +1763,309 @@
 
 /* 参与我们 */
 .act--list { grid-template-columns: minmax(0, 1fr); }
+
+/* ==========================================================================
+   曙光 — merged 实时登记册 + 我们的服务 band
+   Implements docs/prototypes/quit-ccp-bright-html. Values (gradient stops,
+   gold, shadows, type scale) are taken from that mockup's inline styles.
+   ========================================================================== */
+
+.dawn {
+  --dawn-gold: #F2D38A;
+  --dawn-accent: #3B3190;
+  --dawn-paper: #F3F0EA;
+  --dawn-onink: #EDE9F7;
+  --dawn-onink-dim: #DDD7F5;
+  position: relative;
+  background: var(--dawn-paper);
+  color: #1E1A2E;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* The sky stops partway down so the white cards straddle its lower edge. */
+.dawn-sky {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 68%;
+  overflow: hidden;
+  background: linear-gradient(180deg, #3F3592 0%, #4C40A4 45%, #6A56B6 78%, #A583B4 100%);
+  z-index: 0;
+}
+
+.dawn-sun {
+  position: absolute;
+  left: 50%;
+  bottom: -52%;
+  width: 1400px;
+  max-width: 190vw;
+  aspect-ratio: 1.4 / 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 222, 150, .75),
+    rgba(255, 200, 140, .28) 45%,
+    rgba(255, 200, 140, 0) 100%
+  );
+}
+
+.dawn-ring {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  aspect-ratio: 1;
+}
+.dawn-ring--1 { bottom: -350px; width: 700px;  border: 1px solid rgba(255,232,190,.12); }
+.dawn-ring--2 { bottom: -500px; width: 1000px; border: 1px solid rgba(255,232,190,.08); }
+.dawn-ring--3 { bottom: -660px; width: 1320px; border: 1px solid rgba(255,232,190,.05); }
+.dawn-ring--4 { bottom: -840px; width: 1680px; border: 1px solid rgba(255,232,190,.035); }
+.dawn-ring--5 { bottom: -1040px; width: 2080px; border: 1px solid rgba(255,232,190,.02); }
+
+.dawn-grid {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, rgba(255,255,255,.014) 0 1px, transparent 1px 120px);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 70%);
+  mask-image: linear-gradient(180deg, #000 0%, transparent 70%);
+}
+
+.dawn-inner {
+  position: relative;
+  z-index: 1;
+  padding: 88px 0 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+/* ---- registry ---- */
+.dawn-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 64px;
+  align-items: end;
+  color: var(--dawn-onink);
+}
+.dawn-count { display: flex; flex-direction: column; gap: 20px; }
+
+.dawn-live {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: .18em;
+  color: var(--dawn-gold);
+}
+.dawn-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--dawn-gold);
+  box-shadow: 0 0 0 6px rgba(242, 211, 138, .25);
+  animation: dawn-pulse 2.4s ease-in-out infinite;
+}
+@keyframes dawn-pulse {
+  0%, 100% { box-shadow: 0 0 0 6px rgba(242,211,138,.25); }
+  50%      { box-shadow: 0 0 0 10px rgba(242,211,138,.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dawn-dot { animation: none; }
+}
+
+.dawn-figure {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 900;
+  line-height: .9;
+}
+.dawn-figure-num {
+  font-size: clamp(72px, 13.9vw, 200px);
+  letter-spacing: -.03em;
+  color: #F6F3FC;
+}
+.dawn-figure-unit {
+  font-size: clamp(64px, 12.2vw, 176px);
+  color: var(--dawn-gold);
+}
+.dawn-count-label {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(20px, 2.1vw, 30px);
+  line-height: 1.5;
+}
+
+.dawn-aside { display: flex; flex-direction: column; gap: 22px; padding-bottom: 10px; }
+.dawn-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  border-top: 1px solid rgba(255, 255, 255, .28);
+  padding-top: 20px;
+}
+.dawn-stats > span { display: flex; flex-direction: column; gap: 6px; }
+.dawn-stats b { font-family: var(--mono); font-size: 24px; font-weight: 400; color: #F6F3FC; }
+.dawn-stats > span > span { font-size: 13px; color: var(--dawn-onink-dim); }
+
+.dawn-note {
+  color: var(--dawn-gold);
+  align-self: flex-start;
+  font-size: 16px;
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+  padding: 10px 0 6px;
+}
+.dawn-note:hover { color: #FFF0C8; }
+
+/* ---- declaration feed ---- */
+.dawn-feed { display: flex; gap: 16px; align-items: stretch; }
+.dawn-feed-card {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, .22);
+  background: rgba(255, 255, 255, .07);
+  border-radius: 6px;
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dawn-feed-top {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: #CFC8EE;
+}
+.dawn-feed-card p {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--dawn-onink);
+  /* The design keeps each card to a single line so the row stays even. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dawn-feed-who { font-size: 13px; color: #E6E1F8; }
+
+/* ---- services header ---- */
+.dawn-services-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  color: var(--dawn-onink);
+  margin-top: 24px;
+}
+.dawn-eyebrow {
+  display: block;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: .18em;
+  color: var(--dawn-onink-dim);
+  margin-bottom: 14px;
+}
+.dawn-services-head h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 900;
+  font-size: clamp(28px, 3.4vw, 44px);
+  color: var(--dawn-onink);
+}
+.dawn-more {
+  color: var(--dawn-onink);
+  font-size: 15px;
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+  padding: 10px 0 6px;
+  white-space: nowrap;
+}
+.dawn-more:hover { color: #fff; }
+
+/* ---- service cards ---- */
+.dawn-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+.dawn-card {
+  background: #FFFEFA;
+  border-radius: 6px;
+  box-shadow: 0 30px 70px -30px rgba(40, 24, 90, .45);
+  padding: 36px 34px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.dawn-card-top { display: flex; justify-content: space-between; align-items: center; }
+.dawn-card-tag {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: .2em;
+  color: var(--dawn-accent);
+}
+.dawn-card-rule { width: 40px; height: 2px; background: var(--dawn-gold); }
+.dawn-card h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 900;
+  font-size: clamp(22px, 2.2vw, 28px);
+  color: #1E1A2E;
+}
+.dawn-card-desc {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.85;
+  color: #4A4458;
+  /* Keeps the three cards' link lists aligned when the copy differs in length. */
+  min-height: 84px;
+}
+.dawn-card-links { display: flex; flex-direction: column; }
+.dawn-card-links a {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid #E4DFD4;
+  color: #1E1A2E;
+  text-decoration: none;
+  font-size: 15px;
+}
+.dawn-card-links a span:last-child { color: var(--dawn-accent); }
+.dawn-card-links a:hover { color: var(--dawn-accent); }
+.dawn-card-cta {
+  margin-top: 6px;
+  background: var(--dawn-accent);
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 16px;
+  padding: 14px;
+  border-radius: 4px;
+}
+.dawn-card-cta:hover { background: #281F6E; color: #fff; }
+
+@media (max-width: 1080px) {
+  .dawn-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dawn-feed > :nth-child(n + 3) { display: none; }
+}
+@media (max-width: 860px) {
+  .dawn-sky { height: 56%; }
+  .dawn-inner { padding: 56px 0 64px; gap: 36px; }
+  .dawn-head { grid-template-columns: minmax(0, 1fr); gap: 28px; align-items: start; }
+  .dawn-feed { flex-direction: column; }
+  .dawn-feed > :nth-child(n + 2) { display: none; }
+  .dawn-cards { grid-template-columns: minmax(0, 1fr); }
+  .dawn-card-desc { min-height: 0; }
+  .dawn-services-head { flex-direction: column; align-items: flex-start; gap: 12px; }
+}

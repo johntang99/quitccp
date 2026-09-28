@@ -175,3 +175,40 @@ are given explicit dimensions, otherwise the row shrinks to a sliver.
 - the registry count `4.64 亿` is a literal string; the live figure is
   `466,772,019` and there is an XML feed for it — see
   [services-link-out-map.md](./services-link-out-map.md) rows 14-15
+
+## 曙光 (Dawn) — the merged 实时登记册 + 我们的服务 band
+
+Implements `docs/prototypes/quit-ccp-bright-html` ("合并方案 G · 曙光"). The two
+sections previously sat apart with a large dead gap between them; the redesign
+puts them on one dawn gradient with the white service cards straddling its
+lower edge, so the band resolves into the page instead of stopping abruptly.
+
+**Turned on by setting 实时登记册 → 版式 → 「曙光 · 与「我们的服务」合并」.**
+
+> **Coupling worth knowing:** this is the one variant that spans two sections.
+> While `registry.variant === "dawn"`, the standalone 我们的服务 section is
+> suppressed and its content is rendered inside the band instead. Switching
+> registry back to any other variant restores both sections independently.
+> Content still lives under the existing `registry` and `services` keys, so
+> nothing had to be migrated.
+
+Component: `components/templates/DawnBand.tsx`. Styling: `.dawn-*` at the end of
+`globals.css`, carrying the mockup's values verbatim — gradient stops
+(`#3F3592 → #4C40A4 45% → #6A56B6 78% → #A583B4`), gold `#F2D38A`, accent
+`#3B3190`, card `#FFFEFA` with `0 30px 70px -30px rgba(40,24,90,.45)`.
+
+New content fields:
+
+| field | purpose |
+|---|---|
+| `registry.liveLabel` | text beside the pulsing dot, e.g. 「实时登记册 · LIVE」 |
+| `registry.feedCount` | how many declaration cards the feed row shows (1–6) |
+| `services.cards[].ctaLabel` / `ctaHref` | optional button at the foot of a card; the design puts 我要三退 on card 01 |
+
+The feed row **fills to `feedCount` by cycling** whatever declarations exist —
+there is currently only one stored entry, and the mockup itself repeats a single
+statement three times with decreasing opacity. Once the santui feed is wired the
+cycling never engages.
+
+The sun glow, rings and grid overlay are `aria-hidden` decoration. The pulsing
+dot respects `prefers-reduced-motion`.

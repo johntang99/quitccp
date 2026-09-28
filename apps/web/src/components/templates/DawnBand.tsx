@@ -1,0 +1,161 @@
+import type { HomeContent } from "@quitccp/content-schema";
+import { externalLinkProps } from "@/lib/external-services";
+
+/**
+ * 曙光 — the merged 实时登记册 + 我们的服务 band.
+ *
+ * Implements `docs/prototypes/quit-ccp-bright-html`. The two sections used to
+ * sit apart with a large dead gap between them; here they share one dawn
+ * gradient, with the white service cards straddling its lower edge so the band
+ * resolves into the page rather than stopping abruptly.
+ *
+ * Design values (gradient stops, gold, card shadow, type scale) are lifted from
+ * the mockup's inline styles and live in `globals.css` under `.dawn-*`.
+ */
+
+interface DawnBandProps {
+  registry: HomeContent["registry"];
+  services: HomeContent["services"];
+  /** Declaration rows for the feed; only the first `feedCount` are shown. */
+  feed: { region: string; name: string; text: string; at: string }[];
+}
+
+export function DawnBand({ registry, services, feed }: DawnBandProps) {
+  // The design is a row of receding cards, so the row is filled to `feedCount`
+  // by cycling whatever entries exist -- the mockup does the same, showing one
+  // statement three times. Once the santui feed is wired there will be more
+  // than enough entries and the cycling never engages.
+  const rows =
+    feed.length === 0
+      ? []
+      : Array.from({ length: registry.feedCount }, (_, i) => feed[i % feed.length]);
+
+  return (
+    <section className="dawn">
+      {/* Decorative sky: gradient, a low sun glow and the concentric rings
+          radiating from it. aria-hidden -- it carries no information. */}
+      <div className="dawn-sky" aria-hidden="true">
+        <span className="dawn-sun" />
+        <span className="dawn-ring dawn-ring--1" />
+        <span className="dawn-ring dawn-ring--2" />
+        <span className="dawn-ring dawn-ring--3" />
+        <span className="dawn-ring dawn-ring--4" />
+        <span className="dawn-ring dawn-ring--5" />
+        <span className="dawn-grid" />
+      </div>
+
+      <div className="wrap dawn-inner">
+        <div className="dawn-head">
+          <div className="dawn-count">
+            <span className="dawn-live">
+              <span className="dawn-dot" aria-hidden="true" />
+              {registry.liveLabel}
+            </span>
+            <p className="dawn-figure">
+              {/* The numeral and its unit are sized differently in the design,
+                  so they are separate spans rather than one string. */}
+              <span className="dawn-figure-num">{splitCount(registry.count).value}</span>
+              <span className="dawn-figure-unit">{splitCount(registry.count).unit}</span>
+            </p>
+            <p className="dawn-count-label">{registry.countLabel}</p>
+          </div>
+
+          <div className="dawn-aside">
+            <div className="dawn-stats">
+              {registry.substats.map((stat) => (
+                <span key={`${stat.value}-${stat.label}`}>
+                  <b>{stat.value}</b>
+                  <span>{stat.label}</span>
+                </span>
+              ))}
+            </div>
+            <a className="dawn-note" href={registry.noteHref} {...externalLinkProps(registry.noteHref)}>
+              {registry.noteLabel}
+            </a>
+          </div>
+        </div>
+
+        {rows.length > 0 ? (
+          <div className="dawn-feed">
+            {rows.map((entry, index) => (
+              <article
+                key={`${entry.region}-${index}`}
+                className="dawn-feed-card"
+                // The design fades successive cards back, so the row reads as a
+                // stream receding rather than three equal items.
+                style={{ opacity: 1 - index * 0.3 }}
+              >
+                <div className="dawn-feed-top">
+                  <span>{entry.region}</span>
+                  <span>{entry.at}</span>
+                </div>
+                <p>{entry.text}</p>
+                <span className="dawn-feed-who">退 · {entry.name}</span>
+              </article>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="dawn-services-head">
+          <div>
+            <span className="dawn-eyebrow">{services.eyebrow}</span>
+            <h2>{services.heading}</h2>
+          </div>
+          <a
+            className="dawn-more"
+            href={services.moreHref}
+            {...externalLinkProps(services.moreHref)}
+          >
+            {services.moreLabel} →
+          </a>
+        </div>
+
+        <div className="dawn-cards">
+          {services.cards.map((card, index) => (
+            <article key={card.title} className="dawn-card">
+              <div className="dawn-card-top">
+                <span className="dawn-card-tag">
+                  {String(index + 1).padStart(2, "0")} · {card.tag}
+                </span>
+                <span className="dawn-card-rule" aria-hidden="true" />
+              </div>
+              <h3>{card.title}</h3>
+              <p className="dawn-card-desc">{card.body}</p>
+              <div className="dawn-card-links">
+                {card.links.map((link) => (
+                  <a
+                    key={`${link.label}-${link.href}`}
+                    href={link.href}
+                    {...externalLinkProps(link.href)}
+                  >
+                    <span>{link.label}</span>
+                    <span aria-hidden="true">→</span>
+                  </a>
+                ))}
+              </div>
+              {card.ctaLabel ? (
+                <a
+                  className="dawn-card-cta"
+                  href={card.ctaHref || "#"}
+                  {...externalLinkProps(card.ctaHref || "")}
+                >
+                  {card.ctaLabel}
+                </a>
+              ) : null}
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Splits "4.64 亿" into the numeral and its unit so each can take the size the
+ * design gives it. Falls back to treating the whole string as the numeral.
+ */
+function splitCount(count: string): { value: string; unit: string } {
+  const match = count.trim().match(/^([\d.,]+)\s*(.*)$/);
+  if (!match) return { value: count, unit: "" };
+  return { value: match[1], unit: match[2] };
+}
