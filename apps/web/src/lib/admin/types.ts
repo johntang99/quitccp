@@ -48,6 +48,8 @@ export interface CategoryRecord {
   slug: string;
   name: string;
   articleCount: number;
+  /** Display order; lower first, name as the tie-break. */
+  sortOrder: number;
 }
 
 export interface VideoRecord {

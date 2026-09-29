@@ -22,6 +22,22 @@ function toSlug(input: string) {
     .replace(/^-+|-+$/g, "") || "untitled";
 }
 
+/**
+ * Category slugs stay latin: they appear in URLs, and a CJK slug would be
+ * percent-encoded into something unreadable and awkward to share. `toSlug`
+ * keeps CJK, so a Chinese name with no slug given would produce one -- hence
+ * the explicit check rather than relying on it.
+ */
+function resolveCategorySlug(name: string, given?: string): string {
+  const explicit = given?.trim().toLowerCase();
+  if (explicit) return explicit;
+  const generated = toSlug(name).toLowerCase();
+  if (!/[a-z0-9]/.test(generated)) {
+    throw new Error("请为中文分类名填写英文 slug（用于网址）。");
+  }
+  return generated;
+}
+
 function resolveTemplateKind(section: string, slug: string) {
   const seed = routeSeeds.find((row) => row.section === section && row.slug === slug);
   return seed?.template ?? "section-home";
@@ -554,12 +570,44 @@ export async function upsertMediaRecord(
   };
 }
 
+/**
+ * True when PostgREST rejected a query because `sort_order` is not there yet.
+ *
+ * `009_category_sort_order.sql` has to be run by hand against the content
+ * database. Until it is, the category admin keeps working without the column
+ * rather than erroring, and starts ordering the moment the column appears.
+ */
+interface CategoryRow {
+  id: string;
+  slug: string;
+  name: string;
+  sort_order?: number;
+}
+
+function isMissingSortOrder(error: unknown): boolean {
+  const text = JSON.stringify(error ?? "");
+  return text.includes("sort_order");
+}
+
 export async function listCategories(actorEmail: string): Promise<CategoryRecord[]> {
   const supabase = createSupabaseAdminClient();
-  const { data: categoryRows, error: categoryError } = await supabase
+  let hasSortOrder = true;
+  const ordered = await supabase
     .from("cms_article_categories")
-    .select("id, slug, name")
+    .select("id, slug, name, sort_order")
+    .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
+  let categoryRows = ordered.data as CategoryRow[] | null;
+  let categoryError: unknown = ordered.error;
+  if (categoryError && isMissingSortOrder(categoryError)) {
+    hasSortOrder = false;
+    const fallback = await supabase
+      .from("cms_article_categories")
+      .select("id, slug, name")
+      .order("name", { ascending: true });
+    categoryRows = fallback.data as CategoryRow[] | null;
+    categoryError = fallback.error;
+  }
   if (categoryError) throw categoryError;
 
   const ids = (categoryRows ?? []).map((row) => row.id);
@@ -581,53 +629,63 @@ export async function listCategories(actorEmail: string): Promise<CategoryRecord
     id: String(row.id),
     slug: String(row.slug),
     name: String(row.name),
-    articleCount: counts.get(String(row.id)) ?? 0
+    articleCount: counts.get(String(row.id)) ?? 0,
+    sortOrder: hasSortOrder ? Number(row.sort_order ?? 0) : 0
   }));
 }
 
 export async function upsertCategoryRecord(
-  input: { id?: string; slug?: string; name: string },
+  input: { id?: string; slug?: string; name: string; sortOrder?: number },
   actorEmail: string
 ): Promise<CategoryRecord> {
   const supabase = createSupabaseAdminClient();
   const normalizedName = input.name.trim();
-  const slug = (input.slug?.trim() || toSlug(normalizedName)).toLowerCase();
+  const slug = resolveCategorySlug(normalizedName, input.slug);
+  const sortOrder = Number.isFinite(input.sortOrder) ? Math.trunc(Number(input.sortOrder)) : undefined;
 
-  if (input.id?.trim()) {
-    const { data, error } = await supabase
-      .from("cms_article_categories")
-      .update({ slug, name: normalizedName })
-      .eq("id", input.id)
-      .select("id, slug, name")
-      .single();
-    if (error) throw error;
-    await createAudit(actorEmail, "category.update", "category", String(data.id), "write", {
-      slug,
-      name: normalizedName
-    });
-    return {
-      id: String(data.id),
-      slug: String(data.slug),
-      name: String(data.name),
-      articleCount: 0
-    };
+  const payload: Record<string, unknown> = { slug, name: normalizedName };
+  const withOrder = sortOrder === undefined ? payload : { ...payload, sort_order: sortOrder };
+
+  const write = async (values: Record<string, unknown>, columns: string) =>
+    input.id?.trim()
+      ? supabase
+          .from("cms_article_categories")
+          .update(values)
+          .eq("id", input.id)
+          .select(columns)
+          .single()
+      : supabase
+          .from("cms_article_categories")
+          .upsert(values, { onConflict: "slug" })
+          .select(columns)
+          .single();
+
+  const first = await write(withOrder, "id, slug, name, sort_order");
+  let row = first.data as CategoryRow | null;
+  let error: unknown = first.error;
+  if (error && isMissingSortOrder(error)) {
+    // Pre-migration: keep the rename working, drop the order silently.
+    const retry = await write(payload, "id, slug, name");
+    row = retry.data as CategoryRow | null;
+    error = retry.error;
   }
-
-  const { data, error } = await supabase
-    .from("cms_article_categories")
-    .upsert({ slug, name: normalizedName }, { onConflict: "slug" })
-    .select("id, slug, name")
-    .single();
   if (error) throw error;
-  await createAudit(actorEmail, "category.upsert", "category", String(data.id), "write", {
-    slug,
-    name: normalizedName
-  });
+  if (!row) throw new Error("Category write returned no row");
+
+  await createAudit(
+    actorEmail,
+    input.id?.trim() ? "category.update" : "category.upsert",
+    "category",
+    String(row.id),
+    "write",
+    { slug, name: normalizedName, sortOrder }
+  );
   return {
-    id: String(data.id),
-    slug: String(data.slug),
-    name: String(data.name),
-    articleCount: 0
+    id: String(row.id),
+    slug: String(row.slug),
+    name: String(row.name),
+    articleCount: 0,
+    sortOrder: Number(row.sort_order ?? sortOrder ?? 0)
   };
 }
 
