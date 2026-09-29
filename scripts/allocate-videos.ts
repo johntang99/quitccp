@@ -34,14 +34,31 @@ interface Row {
 const SERIES_CATEGORIES = ["spjx", "stdc", "xwdl", "tdhl", "9ping", "qtsp", "zxgb"];
 
 const hasPlayer = (row: Row) => /::: video/.test(row.bodyMarkdown || "");
+/** A bare platform link counts too -- it is still a video we can embed. */
+const hasLink = (row: Row) =>
+  /(?:youtube\.com|youtu\.be|ganjing(?:world)?\.com|vimeo\.com)\/\S/i.test(row.bodyMarkdown || "");
+const playable = (row: Row) => hasPlayer(row) || hasLink(row);
 const titledVideo = (row: Row) => /（视频）|\(视频\)|【视频/.test(row.title || "");
 const inSeriesCategory = (row: Row) => row.wpCategories.some((c) => SERIES_CATEGORIES.includes(c));
 
-export type VideoGroup = "series" | "tagged" | "orphan";
+export type VideoGroup = "series" | "tagged" | "rescue" | "orphan";
+
+/**
+ * 破除党文化, 退一步海阔天空 and 觉醒之旅 get nothing from the series or tagged
+ * groups -- they are new sections, not renamed old ones. Rather than opening
+ * them empty, `rescue` pulls in the posts that do play and do belong to one of
+ * those three. It is deliberately narrow: only those three categories, and only
+ * with a working player. Widening it to every orphan would drag several hundred
+ * news reports into the video library.
+ */
+const NEEDS_CONTENT = new Set(["破除党文化", "退一步海阔天空", "觉醒之旅"]);
+
+export type VideoGroup2 = VideoGroup;
 
 export function groupOf(row: Row): VideoGroup | null {
   if (inSeriesCategory(row)) return "series";
   if (titledVideo(row) && hasPlayer(row)) return "tagged";
+  if (playable(row) && NEEDS_CONTENT.has(allocate(row).category)) return "rescue";
   if (titledVideo(row) || hasPlayer(row)) return "orphan";
   return null;
 }
@@ -116,18 +133,19 @@ function main() {
         legacyId: row.legacyId,
         legacyUrl: row.legacyUrl,
         hasPlayer: hasPlayer(row),
+        playable: playable(row),
         oldCategories: row.wpCategories
       };
     });
 
-  for (const group of ["series", "tagged", "orphan"] as VideoGroup[]) {
+  for (const group of ["series", "tagged", "rescue", "orphan"] as VideoGroup[]) {
     const list = assigned.filter((entry) => entry.group === group);
     process.stderr.write(`\n【${group}】${list.length} 篇\n`);
     for (const category of CATEGORY_ORDER) {
       const inCategory = list.filter((entry) => entry.category === category);
       if (inCategory.length === 0) continue;
-      const withPlayer = inCategory.filter((entry) => entry.hasPlayer).length;
-      process.stderr.write(`  ${category.padEnd(8)} ${String(inCategory.length).padStart(4)}  （带播放器 ${withPlayer}）\n`);
+      const withPlayer = inCategory.filter((entry) => entry.playable).length;
+      process.stderr.write(`  ${category.padEnd(8)} ${String(inCategory.length).padStart(4)}  （可播放 ${withPlayer}）\n`);
     }
   }
 
