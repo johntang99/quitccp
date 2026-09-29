@@ -59,7 +59,12 @@ export default async function AdminArticlesPage({ searchParams }: ArticlePagePro
   return (
     <AdminShell user={user}>
       <section className="admin-card">
-        <h2 style={{ marginTop: 0 }}>文章管理</h2>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+          <h2 style={{ margin: 0 }}>文章管理</h2>
+          <a className="admin-btn admin-btn-primary" href="/admin/articles/new" style={{ marginLeft: "auto" }}>
+            ＋ 新建文章
+          </a>
+        </div>
         <form className="admin-toolbar" method="get">
           <input className="admin-input" name="q" placeholder="搜索标题/正文" defaultValue={filters.q ?? ""} />
           <select className="admin-select" name="status" defaultValue={filters.status ?? ""}>
@@ -98,7 +103,14 @@ export default async function AdminArticlesPage({ searchParams }: ArticlePagePro
           <tbody>
             {rows.map((row) => (
               <tr key={row.id}>
-                <td>{row.title}</td>
+                <td>
+                  <a href={`/admin/articles/${row.id}`} style={{ fontWeight: 600 }}>
+                    {row.title}
+                  </a>
+                  {row.subtitle ? (
+                    <div style={{ color: "#8a90a0", fontSize: 12 }}>{row.subtitle}</div>
+                  ) : null}
+                </td>
                 <td>{row.status}</td>
                 <td>{row.category}</td>
                 <td>{row.legacyId ?? "-"}</td>

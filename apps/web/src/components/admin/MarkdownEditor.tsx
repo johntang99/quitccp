@@ -1,0 +1,211 @@
+"use client";
+
+import { useMemo, useRef, useState } from "react";
+
+/**
+ * Markdown editor for article bodies.
+ *
+ * Deliberately not a WYSIWYG: the 15,000 migrated articles are already Markdown,
+ * and a rich-text layer would mean a lossy conversion in both directions. The
+ * toolbar writes Markdown into the textarea and the preview renders it, so what
+ * an editor sees is what is stored.
+ */
+
+type Mode = "edit" | "split" | "preview";
+
+interface MarkdownEditorProps {
+  value: string;
+  onChange: (next: string) => void;
+  /** Opens the shared media library; resolves with the chosen URL. */
+  onPickImage: () => void;
+}
+
+/** Wraps or prefixes the selection, then restores focus and a sane caret. */
+function apply(
+  textarea: HTMLTextAreaElement,
+  kind: "wrap" | "line" | "insert",
+  a: string,
+  b = ""
+): { next: string; caret: number } {
+  const { value, selectionStart: start, selectionEnd: end } = textarea;
+  const selected = value.slice(start, end);
+
+  if (kind === "insert") {
+    return { next: value.slice(0, start) + a + value.slice(end), caret: start + a.length };
+  }
+  if (kind === "wrap") {
+    const body = selected || "文字";
+    return {
+      next: value.slice(0, start) + a + body + b + value.slice(end),
+      caret: start + a.length + body.length
+    };
+  }
+  // line: prefix every selected line, extending to the line start so the
+  // prefix is not dropped into the middle of a sentence.
+  const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+  const block = value.slice(lineStart, end) || "文字";
+  const prefixed = block
+    .split("\n")
+    .map((line, i) => (a === "1. " ? `${i + 1}. ${line}` : a + line))
+    .join("\n");
+  return {
+    next: value.slice(0, lineStart) + prefixed + value.slice(end),
+    caret: lineStart + prefixed.length
+  };
+}
+
+/**
+ * Minimal Markdown rendering for the preview pane.
+ *
+ * Escapes first, so a body containing HTML shows as text rather than executing
+ * -- article bodies come from a WordPress import and are not trusted markup.
+ */
+function renderPreview(md: string): string {
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  const blocks = esc(md).split(/\n{2,}/);
+  return blocks
+    .map((block) => {
+      const t = block.trim();
+      if (!t) return "";
+      if (/^:::\s*video\s+(\S+)/.test(t)) {
+        const caption = t.split("\n").slice(1).filter((l) => l !== ":::").join(" ");
+        return `<div class="md-video">▶ 视频${caption ? ` — ${caption}` : ""}</div>`;
+      }
+      if (/^###\s+/.test(t)) return `<h3>${t.replace(/^###\s+/, "")}</h3>`;
+      if (/^##\s+/.test(t)) return `<h2>${t.replace(/^##\s+/, "")}</h2>`;
+      if (/^&gt;\s?/.test(t)) return `<blockquote>${t.replace(/^&gt;\s?/gm, "")}</blockquote>`;
+      if (/^---+$/.test(t)) return "<hr>";
+      if (/^(-|\*)\s+/m.test(t) && t.split("\n").every((l) => /^(-|\*)\s+/.test(l.trim()))) {
+        return `<ul>${t.split("\n").map((l) => `<li>${l.replace(/^\s*(-|\*)\s+/, "")}</li>`).join("")}</ul>`;
+      }
+      if (t.split("\n").every((l) => /^\d+\.\s+/.test(l.trim()))) {
+        return `<ol>${t.split("\n").map((l) => `<li>${l.replace(/^\s*\d+\.\s+/, "")}</li>`).join("")}</ol>`;
+      }
+      return `<p>${t.replace(/\n/g, "<br>")}</p>`;
+    })
+    .join("\n")
+    .replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, '<img src="$2" alt="$1">')
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>')
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>")
+    .replace(/~~([^~]+)~~/g, "<s>$1</s>");
+}
+
+export function MarkdownEditor({ value, onChange, onPickImage }: MarkdownEditorProps) {
+  const [mode, setMode] = useState<Mode>("split");
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  const run = (kind: "wrap" | "line" | "insert", a: string, b = "") => {
+    const el = ref.current;
+    if (!el) return;
+    const { next, caret } = apply(el, kind, a, b);
+    onChange(next);
+    // The caret is restored after React commits the new value, otherwise it
+    // jumps to the end of the textarea on every toolbar click.
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(caret, caret);
+    });
+  };
+
+  const stats = useMemo(() => {
+    const chars = value.replace(/\s/g, "").length;
+    return {
+      chars,
+      minutes: Math.max(1, Math.round(chars / 350)),
+      images: (value.match(/!\[[^\]]*\]\(/g) ?? []).length,
+      videos: (value.match(/^:::\s*video/gm) ?? []).length,
+      links: (value.match(/(^|[^!])\[[^\]]+\]\(/g) ?? []).length
+    };
+  }, [value]);
+
+  const Btn = ({ title, onClick, children }: { title: string; onClick: () => void; children: React.ReactNode }) => (
+    <button type="button" className="md-tool" title={title} onClick={onClick}>
+      {children}
+    </button>
+  );
+
+  return (
+    <div className="md">
+      <div className="md-bar">
+        <Btn title="二级标题" onClick={() => run("line", "## ")}><b>H2</b></Btn>
+        <Btn title="三级标题" onClick={() => run("line", "### ")}><b>H3</b></Btn>
+        <span className="md-sep" />
+        <Btn title="粗体" onClick={() => run("wrap", "**", "**")}><b>B</b></Btn>
+        <Btn title="斜体" onClick={() => run("wrap", "*", "*")}><i>I</i></Btn>
+        <Btn title="删除线" onClick={() => run("wrap", "~~", "~~")}><s>S</s></Btn>
+        <span className="md-sep" />
+        <Btn title="引用" onClick={() => run("line", "> ")}>❝</Btn>
+        <Btn title="无序列表" onClick={() => run("line", "- ")}>• 列表</Btn>
+        <Btn title="有序列表" onClick={() => run("line", "1. ")}>1. 列表</Btn>
+        <span className="md-sep" />
+        <Btn
+          title="插入链接"
+          onClick={() => {
+            const href = window.prompt("链接地址", "https://");
+            if (href) run("wrap", "[", `](${href})`);
+          }}
+        >
+          🔗 链接
+        </Btn>
+        <Btn title="从媒体库插入图片" onClick={onPickImage}>🖼 图片</Btn>
+        <Btn
+          title="粘贴 YouTube / 干净世界 链接"
+          onClick={() => {
+            const src = window.prompt("视频地址（YouTube / 干净世界 / mp4）", "https://");
+            if (src) run("insert", `\n::: video ${src}\n说明文字\n:::\n`);
+          }}
+        >
+          ▶ 视频
+        </Btn>
+        <Btn
+          title="插入表格"
+          onClick={() => run("insert", "\n| 列一 | 列二 |\n| --- | --- |\n| 内容 | 内容 |\n")}
+        >
+          ▦ 表格
+        </Btn>
+        <span className="md-sep" />
+        <Btn title="分隔线" onClick={() => run("insert", "\n\n---\n\n")}>— 分隔线</Btn>
+        <span className="md-grow">
+          {(["edit", "split", "preview"] as Mode[]).map((m) => (
+            <button
+              key={m}
+              type="button"
+              className={`md-tool md-mode${mode === m ? " is-on" : ""}`}
+              onClick={() => setMode(m)}
+            >
+              {m === "edit" ? "编辑" : m === "split" ? "并排" : "预览"}
+            </button>
+          ))}
+        </span>
+      </div>
+
+      <div className={`md-body md-body--${mode}`}>
+        {mode !== "preview" ? (
+          <textarea
+            ref={ref}
+            spellCheck={false}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder="正文，Markdown 格式。可直接把图片拖进来。"
+          />
+        ) : null}
+        {mode !== "edit" ? (
+          // The source is Markdown the editors themselves write, rendered
+          // through the escaping pass above.
+          <div className="md-prev" dangerouslySetInnerHTML={{ __html: renderPreview(value) }} />
+        ) : null}
+      </div>
+
+      <div className="md-foot">
+        <span>{stats.chars.toLocaleString()} 字</span>
+        <span>约 {stats.minutes} 分钟</span>
+        <span>
+          图片 {stats.images} · 视频 {stats.videos} · 链接 {stats.links}
+        </span>
+      </div>
+    </div>
+  );
+}
