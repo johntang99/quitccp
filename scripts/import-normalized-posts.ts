@@ -39,6 +39,22 @@ async function main() {
   const parsed = JSON.parse(readFileSync(filePath, "utf8")) as InputFile;
   const rows = parsed.rows ?? [];
 
+  // A row with no category means no entry in `taxonomyMap` matched it. There is
+  // deliberately no catch-all any more, so such a row cannot be filed anywhere
+  // -- stop rather than invent a home for it.
+  const uncategorised = rows.filter((row) => !row.category?.trim());
+  if (uncategorised.length > 0) {
+    const sample = uncategorised.slice(0, 5).map((row) => `${row.legacyId} ${row.title.slice(0, 24)}`);
+    throw new Error(
+      [
+        `${uncategorised.length} 篇文章没有匹配到任何分类，导入中止。`,
+        `例如：${sample.join(" / ")}`,
+        "先跑 `npx tsx scripts/check-wp-taxonomy.ts --rest https://www.tuidang.org`，",
+        "把未覆盖的旧分类补进 scripts/migrate-wp-posts.ts 的 taxonomyMap。"
+      ].join("\n")
+    );
+  }
+
   const categorySlugs = Array.from(new Set(rows.map((row) => row.category))).sort();
   const summary = {
     totalRows: rows.length,
@@ -56,15 +72,24 @@ async function main() {
     auth: { persistSession: false }
   });
 
-  // Upsert categories first.
-  const categoryPayload = categorySlugs.map((slug) => ({
-    slug,
-    name: categoryNameFromSlug(slug)
-  }));
-  if (categoryPayload.length > 0) {
+  // Create only the categories that do not exist yet.
+  //
+  // This used to upsert every slug with `categoryNameFromSlug(slug)` as the
+  // name, which is how the categories ended up called "Red Regime Collapse" in
+  // the first place -- and a re-import would have overwritten the Chinese names
+  // an editor has since set. Existing rows are now left alone.
+  const { data: existingCats, error: existingCatError } = await supabase
+    .from("cms_article_categories")
+    .select("slug")
+    .in("slug", categorySlugs);
+  if (existingCatError) throw existingCatError;
+  const known = new Set((existingCats ?? []).map((row) => String(row.slug)));
+  const missing = categorySlugs.filter((slug) => !known.has(slug));
+  if (missing.length > 0) {
+    console.error(`[import] creating ${missing.length} new categories: ${missing.join(", ")}`);
     const { error: categoryError } = await supabase
       .from("cms_article_categories")
-      .upsert(categoryPayload, { onConflict: "slug" });
+      .insert(missing.map((slug) => ({ slug, name: categoryNameFromSlug(slug) })));
     if (categoryError) throw categoryError;
   }
 
