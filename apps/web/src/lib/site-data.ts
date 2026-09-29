@@ -28,12 +28,20 @@ export const pageCatalog: RenderablePage[] = routeSeeds.map((seed) => ({
   content: prototypePageContentSeeds.find((row) => row.section === seed.section && row.slug === seed.slug)?.data ?? {}
 }));
 
+/**
+ * Header navigation. Ordered by what a visitor most often arrives for: what is
+ * new, then what we do, then who we are.
+ *
+ * Overridable from the CMS via the `site.nav` setting; this is the fallback
+ * when that is unset.
+ */
 export const mainNav = [
-  { href: "/about", label: "关于我们" },
-  { href: "/services", label: "我们的服务" },
-  { href: "/involve", label: "参与支持" },
+  { href: "/", label: "首页" },
   { href: "/news", label: "新闻与报告" },
   { href: "/videos", label: "视频" },
+  { href: "/services", label: "我们的服务" },
+  { href: "/about", label: "关于我们" },
+  { href: "/involve", label: "参与支持" },
   { href: "/resources", label: "资源馆" }
 ];
 
