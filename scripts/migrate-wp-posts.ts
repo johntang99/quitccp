@@ -294,6 +294,20 @@ function resolveCategory(
  * Prefers a large-but-not-original size: the full-size files average over half
  * a megabyte, and the 1536px variant is more than enough for a cover.
  */
+/** The image fields, given the attachment record. */
+function featuredImageFromMedia(media: WpMedia): { url: string; alt: string; credit: string } {
+  const sizes = media.media_details?.sizes ?? {};
+  const preferred =
+    sizes["1536x1536"]?.source_url ?? sizes.medium_large?.source_url ?? media.source_url ?? "";
+  const caption = stripHtml(String(media.caption?.rendered ?? ""));
+  const creditMatch = caption.match(/（([^（）]{2,40})）\s*$/);
+  return {
+    url: preferred,
+    alt: String(media.alt_text ?? "").trim() || caption.slice(0, 180),
+    credit: creditMatch?.[1] ?? ""
+  };
+}
+
 function featuredImage(
   post: WpPost,
   mediaById?: Map<number, WpMedia>
@@ -481,7 +495,10 @@ async function fetchAllCategories(baseUrl: string): Promise<Map<number, string>>
 
 export async function runNormalization(baseUrl: string, options: MigrationPullOptions = {}) {
   const normalized: NormalizedArticle[] = [];
-  const collected: WpPost[] = [];
+  // Only the attachment id is held per row, not the raw post. Holding every
+  // WpPost with its full HTML until the media pass ran the heap out of memory
+  // at about 13,400 articles.
+  const mediaIds: number[] = [];
   let pulledPosts = 0;
   const categoryById = await fetchAllCategories(baseUrl);
   let page = 1;
@@ -502,27 +519,34 @@ export async function runNormalization(baseUrl: string, options: MigrationPullOp
     const batch = await fetchPostsPage(url);
     if (batch.length === 0) break;
 
-    collected.push(...batch);
-    pulledPosts += batch.length;
-    if (collected.length >= maxPosts) break;
+    for (const post of batch) {
+      normalized.push(normalizePost(post, categoryById));
+      mediaIds.push(post.featured_media ?? 0);
+      pulledPosts += 1;
+      if (normalized.length >= maxPosts) break;
+    }
+    if (normalized.length >= maxPosts) break;
     // Progress on stderr, so stdout stays a clean JSON document and a stalled
     // or truncated run is visible while it happens.
     if (page % 10 === 0) {
       // `normalized` is filled after the media pass now, so report what has
       // actually been pulled rather than a counter that stays at zero.
-      process.stderr.write(`[fetch] page ${page} · ${collected.length} 篇\n`);
+      process.stderr.write(`[fetch] page ${page} · ${normalized.length} 篇\n`);
     }
     page += 1;
   }
-  process.stderr.write(`[fetch] 取得 ${collected.length} 篇，共 ${page - 1} 页；开始解析特色图\n`);
+  process.stderr.write(`[fetch] 取得 ${normalized.length} 篇，共 ${page - 1} 页；开始解析特色图\n`);
 
-  const mediaById = await fetchMediaByIds(
-    baseUrl,
-    collected.map((post) => post.featured_media ?? 0)
-  );
-  for (const post of collected.slice(0, maxPosts)) {
-    normalized.push(normalizePost(post, categoryById, mediaById));
-  }
+  // Second pass over the normalized rows, which carry no raw HTML.
+  const mediaById = await fetchMediaByIds(baseUrl, mediaIds);
+  normalized.forEach((row, index) => {
+    const media = mediaById.get(mediaIds[index]);
+    if (!media?.source_url) return;
+    const hero = featuredImageFromMedia(media);
+    row.heroImage = hero.url;
+    row.heroImageAlt = hero.alt;
+    row.heroCredit = hero.credit;
+  });
   const withCover = normalized.filter((row) => row.heroImage).length;
   process.stderr.write(
     `[fetch] 完成：${normalized.length} 篇，其中 ${withCover} 篇有封面图\n`
