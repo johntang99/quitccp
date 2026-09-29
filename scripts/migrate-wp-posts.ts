@@ -35,15 +35,50 @@ export type NormalizedArticle = {
   publishedAt: string;
 };
 
-const taxonomyMap: Record<string, { section: "news" | "resources"; category: string }> = {
+type Target = { section: "news" | "resources"; category: string };
+
+/**
+ * Old tuidang.org category -> new category.
+ *
+ * Keyed by the WordPress category *name* (Chinese) as well as its slug, because
+ * the slug is a pinyin abbreviation that is easy to guess wrong: the previous
+ * version of this map guessed four of the seven, and those four never matched a
+ * single post -- which is why 7,785 of 10,000 articles fell through to the
+ * catch-all `news` category.
+ *
+ * Every target below is an existing category slug in `cms_article_categories`.
+ * Run `scripts/check-wp-taxonomy.ts` against the real export before importing:
+ * it reports which of the site's categories this table does not cover.
+ */
+const taxonomyMap: Record<string, Target> = {
+  // --- confirmed by the editor -----------------------------------------
+  "红朝败相": { section: "news", category: "red-regime-collapse" },
+  "三退报道": { section: "news", category: "withdrawal-news" },
+  "名家评述": { section: "news", category: "topics-commentary" },
+  "国际声援": { section: "news", category: "worldwide-supports" },
+  "三退纪实": { section: "news", category: "withdrawal-stories" },
+  // 打倒中共恶魔 is the End CCP petition drive; filed with 三退要闻 for now.
+  "打倒中共恶魔": { section: "news", category: "withdrawal-news" },
+  // Reference material rather than news -- these leave the article stream.
+  "良言善语": { section: "resources", category: "culture" },
+  "文化故事": { section: "resources", category: "culture" },
+
+  // --- proposed, not yet confirmed --------------------------------------
+  "调查报告": { section: "news", category: "worldwide-investigation" },
+  "公告": { section: "news", category: "announcement-claims" },
+
+  // --- pinyin slugs seen in the previous import -------------------------
   hcbx: { section: "news", category: "red-regime-collapse" },
   styw: { section: "news", category: "withdrawal-news" },
   sthsh: { section: "news", category: "withdrawal-stories" },
-  tjbg: { section: "news", category: "investigation-report" },
-  gg: { section: "news", category: "announcements" },
+  tjbg: { section: "news", category: "worldwide-investigation" },
+  gg: { section: "news", category: "announcement-claims" },
   wh: { section: "resources", category: "culture" },
   zy: { section: "resources", category: "resource-downloads" }
 };
+
+export { taxonomyMap };
+export type { Target };
 
 function stripHtml(input: string): string {
   return input
@@ -66,9 +101,11 @@ function htmlToMarkdownLite(input: string): string {
 function resolveCategory(
   legacyPath: string,
   wordpressCategorySlugs: string[] = []
-): { section: "news" | "resources"; category: string } {
-  for (const slug of wordpressCategorySlugs) {
-    if (taxonomyMap[slug]) return taxonomyMap[slug];
+): Target {
+  // Names and slugs are both looked up, so a post resolves whichever the
+  // caller happened to collect.
+  for (const key of wordpressCategorySlugs) {
+    if (taxonomyMap[key]) return taxonomyMap[key];
   }
   const pathBits = legacyPath.split("/").filter(Boolean);
   const first = pathBits[0];
