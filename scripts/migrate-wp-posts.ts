@@ -508,7 +508,9 @@ export async function runNormalization(baseUrl: string, options: MigrationPullOp
     // Progress on stderr, so stdout stays a clean JSON document and a stalled
     // or truncated run is visible while it happens.
     if (page % 10 === 0) {
-      process.stderr.write(`[fetch] page ${page} · ${normalized.length} 篇\n`);
+      // `normalized` is filled after the media pass now, so report what has
+      // actually been pulled rather than a counter that stays at zero.
+      process.stderr.write(`[fetch] page ${page} · ${collected.length} 篇\n`);
     }
     page += 1;
   }
