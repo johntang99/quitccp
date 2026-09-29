@@ -143,14 +143,34 @@ async function main() {
   }
 
   const BATCH = 50;
-  for (let index = 0; index < rows.length; index += BATCH) {
-    const slice = rows.slice(index, index + BATCH);
+
+  // Split into inserts and updates rather than upserting. `legacy_id` is unique
+  // only where it is not null, and PostgREST cannot name a partial index in an
+  // ON CONFLICT clause -- so the lookup happens here instead.
+  const { data: existingRows, error: existingError } = await supabase
+    .from("cms_videos")
+    .select("id, legacy_id")
+    .not("legacy_id", "is", null);
+  if (existingError) throw existingError;
+  const existing = new Map((existingRows ?? []).map((row) => [Number(row.legacy_id), row.id as string]));
+
+  const toInsert = rows.filter((row) => !existing.has(row.record.legacy_id));
+  const toUpdate = rows.filter((row) => existing.has(row.record.legacy_id));
+
+  for (let index = 0; index < toInsert.length; index += BATCH) {
+    const slice = toInsert.slice(index, index + BATCH);
+    const { error } = await supabase.from("cms_videos").insert(slice.map((row) => row.record));
+    if (error) throw error;
+    process.stderr.write(`[videos insert] ${Math.min(index + BATCH, toInsert.length)}/${toInsert.length}\n`);
+  }
+  for (const row of toUpdate) {
     const { error } = await supabase
       .from("cms_videos")
-      .upsert(slice.map((row) => row.record), { onConflict: "legacy_id" });
+      .update(row.record)
+      .eq("id", existing.get(row.record.legacy_id)!);
     if (error) throw error;
-    process.stderr.write(`[videos] ${Math.min(index + BATCH, rows.length)}/${rows.length}\n`);
   }
+  if (toUpdate.length > 0) process.stderr.write(`[videos update] ${toUpdate.length}\n`);
 
   // Map the categories in a second pass: the ids only exist once the rows do.
   const { data: saved, error: savedError } = await supabase
