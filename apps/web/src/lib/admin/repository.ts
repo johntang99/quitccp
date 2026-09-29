@@ -610,19 +610,21 @@ export async function listCategories(actorEmail: string): Promise<CategoryRecord
   }
   if (categoryError) throw categoryError;
 
-  const ids = (categoryRows ?? []).map((row) => row.id);
+  // One HEAD count per category rather than fetching every mapping row and
+  // tallying it here: that pulled the whole map table back through PostgREST,
+  // which caps a response at 1000 rows, so every count past the first thousand
+  // mappings was silently wrong -- 新闻 read 0 when it holds 7785.
   const counts = new Map<string, number>();
-  if (ids.length > 0) {
-    const { data: mapRows, error: mapError } = await supabase
-      .from("cms_article_category_map")
-      .select("category_id")
-      .in("category_id", ids);
-    if (mapError) throw mapError;
-    for (const row of mapRows ?? []) {
-      const key = String((row as any).category_id);
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-  }
+  await Promise.all(
+    (categoryRows ?? []).map(async (row) => {
+      const { count, error } = await supabase
+        .from("cms_article_category_map")
+        .select("article_id", { count: "exact", head: true })
+        .eq("category_id", row.id);
+      if (error) throw error;
+      counts.set(String(row.id), count ?? 0);
+    })
+  );
 
   await createAudit(actorEmail, "category.list", "category", "all", "read");
   return (categoryRows ?? []).map((row) => ({

@@ -24,3 +24,13 @@ Open the files directly, or serve the folder:
 `/admin/articles` today can only list, review and delete. There is **no create
 or edit screen at all** — the write endpoint exists but nothing uses it. So this
 is not a restyle of an existing feature; it is the missing half of it.
+
+## Two things the data turned up
+
+- **Every one of the 10,000 existing article slugs is Chinese**, e.g.
+  `/news/《九评共产党》之九：评中国共产党的流氓本性`. The first draft of this design
+  assumed latin slugs, which would have given the site two incompatible URL
+  styles. `index.html` lays out the three options and the recommendation.
+- **7,785 of 10,001 articles (78%) sit in the catch-all 「新闻」 category**, and the
+  five newly created categories hold nothing. Bulk re-categorisation in tab B is
+  therefore the first real job this admin has to do, not a nice-to-have.
