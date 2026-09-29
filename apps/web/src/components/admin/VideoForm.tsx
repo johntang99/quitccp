@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ImagePickerModal } from "./ImagePickerModal";
+import { MarkdownEditor } from "./MarkdownEditor";
 
 /**
  * The single video form, used for both creating and editing.
@@ -59,6 +60,12 @@ export function toEmbed(url: string): string {
   return value;
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  published: "已发布",
+  draft: "草稿",
+  archived: "已归档"
+};
+
 function platformOf(url: string): string {
   if (!url.trim()) return "";
   if (/youtube\.com|youtu\.be/i.test(url)) return "YouTube";
@@ -70,7 +77,7 @@ function platformOf(url: string): string {
 
 export function VideoForm({ initial, categories, mode }: VideoFormProps) {
   const [value, setValue] = useState<VideoFormValues>(initial);
-  const [picker, setPicker] = useState(false);
+  const [picker, setPicker] = useState<null | "cover" | "body">(null);
   const [error, setError] = useState("");
 
   const set = <K extends keyof VideoFormValues>(key: K, next: VideoFormValues[K]) =>
@@ -241,15 +248,12 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
             </div>
 
             <div className="field">
-              <label htmlFor="bodyMarkdown">正文</label>
-              <textarea
-                className="admin-textarea"
-                id="bodyMarkdown"
-                name="bodyMarkdown"
-                rows={14}
+              <span className="cap">正文</span>
+              <input type="hidden" name="bodyMarkdown" value={value.bodyMarkdown} />
+              <MarkdownEditor
                 value={value.bodyMarkdown}
-                onChange={(event) => set("bodyMarkdown", event.target.value)}
-                style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 13 }}
+                onChange={(next) => set("bodyMarkdown", next)}
+                onPickImage={() => setPicker("body")}
               />
               <span className="hint">
                 支持 Markdown。播放器下方的文字稿放这里——旧站有 174 个集数只有文字稿没有播放器，
@@ -262,20 +266,11 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
         <div className="side">
           <section className="admin-card">
             <h3 style={{ marginTop: 0 }}>发布</h3>
-            <div className="field">
-              <label htmlFor="status">状态</label>
-              <select
-                className="admin-select"
-                id="status"
-                name="status"
-                value={value.status}
-                onChange={(event) => set("status", event.target.value)}
-              >
-                <option value="published">已发布</option>
-                <option value="draft">草稿</option>
-                <option value="archived">已归档</option>
-              </select>
-            </div>
+            {mode === "edit" ? (
+              <p className="muted" style={{ margin: "0 0 10px", fontSize: 13 }}>
+                当前状态：<b>{STATUS_LABEL[value.status] ?? value.status}</b>
+              </p>
+            ) : null}
             <div className="field">
               <label htmlFor="publishedAt">发布时间</label>
               <input
@@ -287,14 +282,28 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                 onChange={(event) => set("publishedAt", event.target.value || null)}
               />
             </div>
-            <div className="row" style={{ marginTop: 10 }}>
-              <button className="admin-btn admin-btn-primary" type="submit">
-                保存
+            {/* The button is the decision. A separate 状态 dropdown next to a
+                generic 保存 meant picking the state and then confirming it, and
+                nothing showed which of the two you had actually done. */}
+            <div className="row" style={{ marginTop: 10, flexWrap: "wrap", gap: 8 }}>
+              <button className="admin-btn admin-btn-primary" type="submit" name="status" value="published">
+                发表
               </button>
+              <button className="admin-btn" type="submit" name="status" value="draft">
+                存草稿
+              </button>
+              {mode === "edit" && value.status !== "archived" ? (
+                <button className="admin-btn" type="submit" name="status" value="archived">
+                  归档
+                </button>
+              ) : null}
               <a className="admin-btn" href="/admin/videos">
                 取消
               </a>
             </div>
+            <span className="hint" style={{ display: "block", marginTop: 6 }}>
+              发表后立即对外可见；存草稿只有后台看得到。
+            </span>
           </section>
 
           <section className="admin-card">
@@ -342,7 +351,7 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
               </div>
             )}
             <div className="row" style={{ marginTop: 8 }}>
-              <button className="admin-btn admin-btn-sm" type="button" onClick={() => setPicker(true)}>
+              <button className="admin-btn admin-btn-sm" type="button" onClick={() => setPicker("cover")}>
                 选择或上传
               </button>
               {value.coverImage ? (
@@ -385,10 +394,14 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
       </div>
 
       <ImagePickerModal
-        open={picker}
-        fieldLabel="封面图"
-        onClose={() => setPicker(false)}
-        onSelect={(url) => set("coverImage", url)}
+        open={picker !== null}
+        fieldLabel={picker === "cover" ? "封面图" : "正文图片"}
+        onClose={() => setPicker(null)}
+        onSelect={(url) => {
+          if (picker === "cover") set("coverImage", url);
+          else set("bodyMarkdown", `${value.bodyMarkdown}\n\n![图片说明](${url})\n`);
+          setPicker(null);
+        }}
       />
     </form>
   );
