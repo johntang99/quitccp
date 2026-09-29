@@ -5,6 +5,13 @@
  * - Emits normalized records suitable for cms_articles import
  */
 
+type WpMedia = {
+  source_url?: string;
+  alt_text?: string;
+  caption?: { rendered?: string };
+  media_details?: { sizes?: Record<string, { source_url?: string; width?: number }> };
+};
+
 type WpPost = {
   id: number;
   slug: string;
@@ -14,6 +21,10 @@ type WpPost = {
   excerpt: { rendered: string };
   content: { rendered: string };
   categories?: number[];
+  featured_media?: number;
+  _embedded?: {
+    "wp:featuredmedia"?: WpMedia[];
+  };
 };
 
 type WpCategory = {
@@ -30,6 +41,10 @@ export type NormalizedArticle = {
   bodyMarkdown: string;
   bodyPlain: string;
   section: "news" | "resources";
+  /** Featured image, and the caption the old site printed beneath it. */
+  heroImage: string;
+  heroImageAlt: string;
+  heroCredit: string;
   /** Empty when no category in `taxonomyMap` matched -- see resolveCategory. */
   category: string;
   /** The post's original WordPress category slugs, kept for auditing. */
@@ -269,10 +284,41 @@ function resolveCategory(
   return null;
 }
 
+/**
+ * Pulls the featured image out of the `_embed` payload.
+ *
+ * `_embed=1` has always been on the request, so every page of the migration
+ * already carried this -- it was simply never read, which is why all 15,513
+ * articles arrived with no cover image.
+ *
+ * Prefers a large-but-not-original size: the full-size files average over half
+ * a megabyte, and the 1536px variant is more than enough for a cover.
+ */
+function featuredImage(post: WpPost): { url: string; alt: string; credit: string } {
+  const media = post._embedded?.["wp:featuredmedia"]?.[0];
+  if (!media?.source_url) return { url: "", alt: "", credit: "" };
+
+  const sizes = media.media_details?.sizes ?? {};
+  const preferred =
+    sizes["1536x1536"]?.source_url ?? sizes.medium_large?.source_url ?? media.source_url;
+
+  // The caption carries the photo credit, e.g. 「…（温圣缘／大纪元）」. It is the
+  // only description these images have -- alt_text is empty across the corpus.
+  const caption = stripHtml(String(media.caption?.rendered ?? ""));
+  const creditMatch = caption.match(/（([^（）]{2,40})）\s*$/);
+
+  return {
+    url: preferred,
+    alt: String(media.alt_text ?? "").trim() || caption.slice(0, 180),
+    credit: creditMatch?.[1] ?? ""
+  };
+}
+
 export function normalizePost(post: WpPost, categorySlugById?: Map<number, string>): NormalizedArticle {
   const postCategorySlugs =
     post.categories?.map((id) => categorySlugById?.get(id)).filter((slug): slug is string => Boolean(slug)) ?? [];
   const resolved = resolveCategory(new URL(post.link).pathname, postCategorySlugs);
+  const hero = featuredImage(post);
   const section = resolved?.section ?? "news";
   const category = resolved?.category ?? "";
   let normalizedSlug = post.slug;
@@ -290,6 +336,9 @@ export function normalizePost(post: WpPost, categorySlugById?: Map<number, strin
     bodyMarkdown: htmlToMarkdownLite(post.content.rendered),
     bodyPlain: stripHtml(post.content.rendered),
     section,
+    heroImage: hero.url,
+    heroImageAlt: hero.alt,
+    heroCredit: hero.credit,
     category,
     // The original categories travel with the row from here on. Losing them was
     // what made the last import impossible to audit or redo.
