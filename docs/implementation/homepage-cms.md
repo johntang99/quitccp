@@ -479,3 +479,39 @@ been overflowing and wrapping mid-phrase.
 total that turns red away from 100%; `involve.items` gets 标题 / 说明 / 链接 /
 按钮文字 / 圆形徽标 and a 主推卡片 checkbox. Both sections state the coupling
 inline, in both directions.
+
+
+## The About page editor
+
+`pages/about-index.json` used to be six raw JSON textareas, one per block. It
+now uses the same form the homepage does:
+`components/admin/AboutSectionsEditor.tsx`, driven by an `ABOUT_BLOCKS`
+declaration — 机构简介 / 数字带 / 全球网络 / 问责与公开 / 团队 / 大事记与联系.
+
+The field renderers themselves moved to `components/admin/section-fields.tsx`
+(`createFieldRenderers`, the `RowField` kinds, the caption styles) so the two
+editors share one implementation rather than drifting apart as copies.
+`HomeSectionsEditor` renders identically after the extraction.
+
+Unlike the homepage these blocks carry no `enabled` or `variant` — the About page
+shows all six, in a fixed order — so there is no toggle row and no coupling note.
+
+> **Safety net:** a key in the stored content that `ABOUT_BLOCKS` does not
+> declare would be invisible in the form and so uneditable, which is worse than a
+> JSON box. Any such key is collected into a 「其它字段 Other（JSON）」 fieldset.
+> Today there are none.
+
+### Still on JSON
+
+The About **sub**-pages — `about-team`, `about-accountability`, `about-history`,
+`about-network`, `about-numbers` — still edit their panels as per-field JSON
+through `ABOUT_STRUCTURED_FORM_FIELDS` in `ContentExplorer.tsx`. They are a
+different shape (named panels rather than page sections) and were not part of
+this pass.
+
+### A write bug found while testing this
+
+`updateField` read `activeData` from its closure, so two writes in the same tick
+both saw the same snapshot and the second discarded the first. A probe that
+appended a paragraph and added a timeline row in one go lost the row. It now
+reads and advances a ref, so successive writes compose.

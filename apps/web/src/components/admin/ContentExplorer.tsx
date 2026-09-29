@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AboutSectionsEditor } from "./AboutSectionsEditor";
 import { HomeSectionsEditor } from "@/components/admin/HomeSectionsEditor";
 import { ImagePickerModal } from "@/components/admin/ImagePickerModal";
 
@@ -526,12 +527,12 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
   const [files, setFiles] = useState<ContentFileItem[]>([]);
   const [activePath, setActivePath] = useState(initialPath || "");
   const [activeData, setActiveData] = useState<Record<string, unknown> | null>(null);
+  // Mirrors `activeData` synchronously so successive writes in one tick compose.
+  const activeDataRef = useRef<Record<string, unknown> | null>(null);
   const [jsonDraft, setJsonDraft] = useState("{}");
   const [status, setStatus] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"form" | "json">("form");
   const [revisions, setRevisions] = useState<ContentRevisionItem[]>([]);
-  const [blockDrafts, setBlockDrafts] = useState<Record<string, string>>({});
-  const [blockErrors, setBlockErrors] = useState<Record<string, string>>({});
   const [aboutFormDrafts, setAboutFormDrafts] = useState<Record<string, string>>({});
   const [aboutFormErrors, setAboutFormErrors] = useState<Record<string, string>>({});
 
@@ -640,30 +641,21 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePath, locale]);
 
+  // Fills in any About block that is missing or still a placeholder, so the
+  // structured editor always has a shape to render rather than an empty box.
   useEffect(() => {
-    if (activePath !== ABOUT_INDEX_PATH || !activeData) {
-      setBlockDrafts({});
-      setBlockErrors({});
-      return;
-    }
+    if (activePath !== ABOUT_INDEX_PATH || !activeData) return;
     let upgradedData: Record<string, unknown> | null = null;
-    const nextDrafts: Record<string, string> = {};
     for (const key of ABOUT_BLOCK_KEYS) {
-      const needsDefault = shouldUseAboutDefaultBlock(key, activeData[key]);
-      const source = needsDefault ? ABOUT_BLOCK_DEFAULTS[key] : activeData[key];
-      if (needsDefault) {
-        if (!upgradedData) upgradedData = { ...activeData };
-        upgradedData[key] = structuredClone(ABOUT_BLOCK_DEFAULTS[key]);
-      }
-      nextDrafts[key] = JSON.stringify(source, null, 2);
+      if (!shouldUseAboutDefaultBlock(key, activeData[key])) continue;
+      if (!upgradedData) upgradedData = { ...activeData };
+      upgradedData[key] = structuredClone(ABOUT_BLOCK_DEFAULTS[key]);
     }
     if (upgradedData) {
       setActiveData(upgradedData);
       setJsonDraft(toPrettyJson(upgradedData));
       setStatus("已自动填充 About 占位区块，请点击保存使其生效。");
     }
-    setBlockDrafts(nextDrafts);
-    setBlockErrors({});
   }, [activePath, activeData]);
 
   useEffect(() => {
@@ -821,9 +813,23 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
     await loadFiles(activePath);
   };
 
+  /**
+   * Writes one field.
+   *
+   * Reads through a ref rather than the `activeData` binding: two writes in the
+   * same tick both saw the same stale snapshot, so the second silently threw
+   * away the first. That is easy to hit -- a control that writes on click while
+   * another is mid-edit, or any handler that touches two fields.
+   */
+  useEffect(() => {
+    activeDataRef.current = activeData;
+  }, [activeData]);
+
   const updateField = (keyPath: string[], value: unknown) => {
-    if (!activeData) return;
-    const next = setAtPath(activeData, keyPath, value);
+    const base = activeDataRef.current;
+    if (!base) return;
+    const next = setAtPath(base, keyPath, value);
+    activeDataRef.current = next;
     setActiveData(next);
     setJsonDraft(toPrettyJson(next));
   };
@@ -848,17 +854,6 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
     } catch {
       setHomeJsonErrors((prev) => ({ ...prev, [draftKey]: "JSON 格式错误，未保存此字段" }));
     }
-  };
-
-  const updateAboutBlockDraft = (key: string, raw: string) => {
-    setBlockDrafts((prev) => ({ ...prev, [key]: raw }));
-    const parsed = parseJsonValue(raw);
-    if (parsed === null) {
-      setBlockErrors((prev) => ({ ...prev, [key]: "JSON 格式错误" }));
-      return;
-    }
-    setBlockErrors((prev) => ({ ...prev, [key]: "" }));
-    updateField([key], parsed);
   };
 
   const updateStructuredFieldDraft = (field: StructuredFormFieldDef, raw: string) => {
@@ -886,12 +881,6 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
       }
       setActiveData(next);
       setJsonDraft(toPrettyJson(next));
-      const nextDrafts: Record<string, string> = {};
-      for (const key of ABOUT_BLOCK_KEYS) {
-        nextDrafts[key] = JSON.stringify(next[key], null, 2);
-      }
-      setBlockDrafts(nextDrafts);
-      setBlockErrors({});
       setStatus("已填充 About 完整默认内容，请点击保存。");
       return;
     }
@@ -1040,23 +1029,17 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
                       onChange={(event) => updateField(["subtitle"], event.target.value)}
                     />
                   </label>
-                  <p style={{ margin: "4px 0 0", color: "#666" }}>
-                    下方为 About 页面的区块级 JSON 编辑（逐块保存到同一页面内容）。
-                  </p>
-                  {ABOUT_BLOCK_KEYS.map((key) => (
-                    <label key={key}>
-                      {key} 区块
-                      <textarea
-                        className="admin-textarea"
-                        style={{ minHeight: 180, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
-                        value={blockDrafts[key] ?? "{}"}
-                        onChange={(event) => updateAboutBlockDraft(key, event.target.value)}
-                      />
-                      {blockErrors[key] ? (
-                        <span style={{ color: "#b42318", fontSize: 12 }}>{blockErrors[key]}</span>
-                      ) : null}
-                    </label>
-                  ))}
+                  <AboutSectionsEditor
+                    data={activeData}
+                    updateField={updateField}
+                    jsonDrafts={homeJsonDrafts}
+                    jsonErrors={homeJsonErrors}
+                    onJsonDraft={updateHomeJsonDraft}
+                    onPickImage={(keyPath, label) => {
+                      setImagePickerField(keyPath);
+                      setImagePickerLabel(label);
+                    }}
+                  />
                 </>
               ) : isStructuredEditor ? (
                 <>
