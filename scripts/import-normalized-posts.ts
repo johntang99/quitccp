@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
-import { categoryNames, taxonomyMap, type NormalizedArticle } from "./migrate-wp-posts";
+import { HOLDING_CATEGORY, categoryNames, type NormalizedArticle } from "./migrate-wp-posts";
 
 interface InputFile {
   rows: NormalizedArticle[];
@@ -40,21 +40,16 @@ async function main() {
   }
 
   const parsed = JSON.parse(readFileSync(filePath, "utf8")) as InputFile;
-  let rows = parsed.rows ?? [];
+  const rows = parsed.rows ?? [];
 
   // A row with no category either sits only in categories we deliberately
   // excluded (视频系列 / 未分类 / temp), or in one the table does not know about.
   // The first is an intended outcome and is simply left out; the second means
   // the table is incomplete and must stop the import.
-  const noCategory = rows.filter((row) => !row.category?.trim());
-  const excluded: NormalizedArticle[] = [];
-  const unknown: NormalizedArticle[] = [];
-  for (const row of noCategory) {
-    const cats = row.wpCategories ?? [];
-    const allKnown = cats.length > 0 && cats.every((slug) => Boolean(taxonomyMap[slug]));
-    (allKnown ? excluded : unknown).push(row);
-  }
-
+  // No category at all means the old category is missing from `taxonomyMap`.
+  // Anything we have consciously decided not to file yet already carries the
+  // holding category, so this is genuinely an incomplete table -- stop.
+  const unknown = rows.filter((row) => !row.category?.trim());
   if (unknown.length > 0) {
     const sample = unknown
       .slice(0, 5)
@@ -68,12 +63,10 @@ async function main() {
     );
   }
 
-  if (excluded.length > 0) {
-    console.error(
-      `[import] 跳过 ${excluded.length} 篇：它们只属于已标记排除的旧分类（视频系列 / 未分类 / temp）。`
-    );
+  const held = rows.filter((row) => row.category === HOLDING_CATEGORY.category).length;
+  if (held > 0) {
+    console.error(`[import] ${held} 篇进入「待归类」，URL 照常可用，之后在后台批量改分类。`);
   }
-  rows = rows.filter((row) => Boolean(row.category?.trim()));
 
   const categorySlugs = Array.from(new Set(rows.map((row) => row.category))).sort();
   const summary = {

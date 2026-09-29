@@ -38,7 +38,18 @@ export type NormalizedArticle = {
   publishedAt: string;
 };
 
-type Target = { section: "news" | "resources"; category: string } | { skip: string };
+type Target = { section: "news" | "resources"; category: string } | { hold: string };
+
+/**
+ * Where an article goes when its old categories have no home yet.
+ *
+ * It is NOT a catch-all: an old category that is missing from `taxonomyMap`
+ * still stops the import. This only collects the ones we have consciously
+ * decided not to file yet -- the 视频系列 groups and the old site's own
+ * 未分类 / 其他 / temp. They are imported rather than dropped because dropping
+ * them would leave 651 old URLs with no redirect, i.e. 404 on launch day.
+ */
+const HOLDING_CATEGORY = { section: "news", category: "unfiled" } as const;
 
 /**
  * 旧站分类 -> 新站分类。Keyed by the WordPress slug, with the Chinese name in a
@@ -101,19 +112,19 @@ const taxonomyMap: Record<string, Target> = {
   stqk:    { section: "resources", category: "resource-downloads" },// 三退期刊 7
   zxyd:    { section: "resources", category: "resource-downloads" },// 真相园地 50
 
-  // ---- 待确认：看起来是视频，不是文章 ----------------------------------
-  spjx:    { skip: "视频精选 245 —— 建议进 cms_videos" },
-  stdc:    { skip: "【视频系列】三退大潮 230 —— 建议进 cms_videos" },
-  xwdl:    { skip: "【视频系列】希望的路 99 —— 建议进 cms_videos" },
-  tdhl:    { skip: "【视频系列】退党洪流 22 —— 建议进 cms_videos" },
-  "9ping": { skip: "【视频系列】九评共产党 9 —— 建议进 cms_videos" },
-  qtsp:    { skip: "其他视频 3 —— 建议进 cms_videos" },
-  zxgb:    { skip: "真相广播 2 —— 音频，建议进 cms_videos" },
+  // ---- 暂不归类：进「待归类」，URL 照常可用 -----------------------------
+  spjx:    { hold: "视频精选 245 —— 视频，稍后进 cms_videos" },
+  stdc:    { hold: "【视频系列】三退大潮 230 —— 视频" },
+  xwdl:    { hold: "【视频系列】希望的路 99 —— 视频" },
+  tdhl:    { hold: "【视频系列】退党洪流 22 —— 视频" },
+  "9ping": { hold: "【视频系列】九评共产党 9 —— 视频" },
+  qtsp:    { hold: "其他视频 3 —— 视频" },
+  zxgb:    { hold: "真相广播 2 —— 音频" },
 
-  // ---- 无意义的旧分类 --------------------------------------------------
-  wfl:     { skip: "未分类 31 —— 按文章的其它分类归；都没有则人工处理" },
-  qita:    { skip: "其他 6 —— 同上" },
-  temp:    { skip: "temp 4 —— 旧站的临时分类" }
+  // ---- 旧站本身就没分好的 ----------------------------------------------
+  wfl:     { hold: "未分类 31 —— 旧站本身就没分类" },
+  qita:    { hold: "其他 6 —— 旧站的杂项" },
+  temp:    { hold: "temp 4 —— 旧站的临时分类" }
 };
 
 /**
@@ -132,10 +143,11 @@ const categoryNames: Record<string, string> = {
   "announcement-claims": "公告与声明",
   "famous-quitccp": "名人退党",
   culture: "中华传统文化",
+  unfiled: "待归类",
   "resource-downloads": "资料下载"
 };
 
-export { taxonomyMap, categoryNames };
+export { taxonomyMap, categoryNames, HOLDING_CATEGORY };
 export type { Target };
 
 function stripHtml(input: string): string {
@@ -163,17 +175,37 @@ function htmlToMarkdownLite(input: string): string {
  * categories are all unmapped has to surface in the coverage report, not be
  * quietly filed somewhere.
  */
+/**
+ * Resolves the first of a post's categories that has a real home.
+ *
+ * Falls back to the holding category when every one of them is a `hold` entry,
+ * and returns `null` only when a category is absent from the table entirely --
+ * that is the case that must stop the import.
+ */
 function resolveCategory(
   legacyPath: string,
   wordpressCategorySlugs: string[] = []
 ): { section: "news" | "resources"; category: string } | null {
-  for (const key of wordpressCategorySlugs) {
-    const hit = taxonomyMap[key];
-    if (hit && !("skip" in hit)) return hit;
-  }
+  const keys = [...wordpressCategorySlugs];
   const first = legacyPath.split("/").filter(Boolean)[0];
-  const byPath = first ? taxonomyMap[first] : undefined;
-  if (byPath && !("skip" in byPath)) return byPath;
+  if (first) keys.push(first);
+
+  let sawHold = false;
+  let sawUnknown = false;
+  for (const key of keys) {
+    const hit = taxonomyMap[key];
+    if (!hit) {
+      sawUnknown = true;
+      continue;
+    }
+    if ("hold" in hit) {
+      sawHold = true;
+      continue;
+    }
+    return hit;
+  }
+  if (sawHold) return HOLDING_CATEGORY;
+  if (sawUnknown || keys.length === 0) return null;
   return null;
 }
 
@@ -211,6 +243,18 @@ export interface MigrationPullOptions {
   perPage?: number;
   maxPages?: number;
   maxPosts?: number;
+  /** ISO date; only posts published after it. */
+  after?: string;
+  /** ISO date; only posts edited after it -- catches corrections to old posts. */
+  modifiedAfter?: string;
+}
+
+/** Appends the incremental filters WordPress understands. */
+function withWindow(url: string, options: MigrationPullOptions): string {
+  const extra: string[] = [];
+  if (options.after) extra.push(`after=${encodeURIComponent(options.after)}`);
+  if (options.modifiedAfter) extra.push(`modified_after=${encodeURIComponent(options.modifiedAfter)}`);
+  return extra.length > 0 ? `${url}&${extra.join("&")}` : url;
 }
 
 export async function fetchAllPosts(baseUrl: string, options: MigrationPullOptions = {}): Promise<WpPost[]> {
@@ -221,7 +265,10 @@ export async function fetchAllPosts(baseUrl: string, options: MigrationPullOptio
   const maxPosts = options.maxPosts ?? Number.POSITIVE_INFINITY;
   while (true) {
     if (page > maxPages || rows.length >= maxPosts) break;
-    const url = `${baseUrl.replace(/\/$/, "")}/wp-json/wp/v2/posts?per_page=${perPage}&page=${page}&_embed=1`;
+    const url = withWindow(
+      `${baseUrl.replace(/\/$/, "")}/wp-json/wp/v2/posts?per_page=${perPage}&page=${page}&_embed=1`,
+      options
+    );
     const batch = await fetchPostsPage(url);
     if (batch.length === 0) break;
     rows.push(...batch);
@@ -295,7 +342,10 @@ export async function runNormalization(baseUrl: string, options: MigrationPullOp
 
   while (true) {
     if (page > maxPages || normalized.length >= maxPosts) break;
-    const url = `${baseUrl.replace(/\/$/, "")}/wp-json/wp/v2/posts?per_page=${perPage}&page=${page}&_embed=1`;
+    const url = withWindow(
+      `${baseUrl.replace(/\/$/, "")}/wp-json/wp/v2/posts?per_page=${perPage}&page=${page}&_embed=1`,
+      options
+    );
     const batch = await fetchPostsPage(url);
     if (batch.length === 0) break;
 
@@ -328,6 +378,8 @@ function parseArgs(argv: string[]) {
     if (arg === "--per-page") options.perPage = Number(next);
     if (arg === "--max-pages") options.maxPages = Number(next);
     if (arg === "--max-posts") options.maxPosts = Number(next);
+    if (arg === "--after") options.after = next;
+    if (arg === "--modified-after") options.modifiedAfter = next;
   }
   return options;
 }
