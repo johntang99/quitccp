@@ -116,7 +116,7 @@ export default async function AdminVideosPage({ searchParams }: PageProps) {
               <th>时长</th>
               <th>状态</th>
               <th>来源</th>
-              <th>更新</th>
+              <th>发布时间</th>
               <th />
             </tr>
           </thead>
@@ -179,7 +179,7 @@ export default async function AdminVideosPage({ searchParams }: PageProps) {
                     )}
                   </td>
                   <td className="muted" style={{ whiteSpace: "nowrap" }}>
-                    {new Date(row.updatedAt).toISOString().slice(0, 10)}
+                    {row.publishedAt ? row.publishedAt.slice(0, 10) : "—"}
                   </td>
                   <td style={{ whiteSpace: "nowrap" }}>
                     <Link className="admin-btn admin-btn-sm" href={`/admin/videos/${row.id}`}>
