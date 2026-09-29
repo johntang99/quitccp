@@ -211,6 +211,10 @@ function encodeArticleCursor(updatedAt: string): string {
 const ARTICLE_EDITORIAL_COLUMNS =
   "subtitle, hero_image, hero_image_alt, hero_credit, author, translator, source_title, source_url, published_at";
 
+function isMissingPosition(error: unknown): boolean {
+  return JSON.stringify(error ?? "").includes("position");
+}
+
 function isMissingEditorialColumn(error: unknown): boolean {
   const text = JSON.stringify(error ?? "");
   return /subtitle|hero_image|hero_credit|source_title|source_url|translator/.test(text);
@@ -377,10 +381,18 @@ export async function listArticles(
   const tagsByArticle = new Map<string, string[]>();
 
   if (ids.length > 0) {
-    const { data: categoryRows } = await supabase
+    let listCategoryResult = await supabase
       .from("cms_article_category_map")
-      .select("article_id, cms_article_categories(name)")
-      .in("article_id", ids);
+      .select("article_id, position, cms_article_categories(name)")
+      .in("article_id", ids)
+      .order("position", { ascending: true });
+    if (listCategoryResult.error && isMissingPosition(listCategoryResult.error)) {
+      listCategoryResult = (await supabase
+        .from("cms_article_category_map")
+        .select("article_id, cms_article_categories(name)")
+        .in("article_id", ids)) as typeof listCategoryResult;
+    }
+    const categoryRows = listCategoryResult.data;
     for (const row of categoryRows ?? []) {
       const categoryName = (row as any).cms_article_categories?.name;
       if (!categoryName) continue;
@@ -476,9 +488,20 @@ async function setArticleTaxonomy(
 
   await supabase.from("cms_article_category_map").delete().eq("article_id", articleId);
   if (ids.length > 0) {
-    await supabase
-      .from("cms_article_category_map")
-      .insert(ids.map((categoryId) => ({ article_id: articleId, category_id: categoryId })));
+    // position 0 is the primary category; see 011_category_map_position.sql.
+    const rows = ids.map((categoryId, index) => ({
+      article_id: articleId,
+      category_id: categoryId,
+      position: index
+    }));
+    const { error } = await supabase.from("cms_article_category_map").insert(rows);
+    if (error && isMissingPosition(error)) {
+      await supabase
+        .from("cms_article_category_map")
+        .insert(rows.map(({ position, ...rest }) => rest));
+    } else if (error) {
+      throw error;
+    }
   }
 
   await supabase.from("cms_article_tag_map").delete().eq("article_id", articleId);
@@ -613,11 +636,20 @@ export async function getArticleById(id: string): Promise<ArticleRecord | null> 
   if (!result.data) return null;
   const data = result.data as unknown as ArticleRow;
 
-  // Insertion order decides which category is primary, matching the list view.
-  const { data: categoryRows } = await supabase
+  // position 0 is the primary category. Before 011 is applied the column does
+  // not exist, so the ordered read is retried without it.
+  let categoryResult = await supabase
     .from("cms_article_category_map")
-    .select("cms_article_categories(name)")
-    .eq("article_id", id);
+    .select("position, cms_article_categories(name)")
+    .eq("article_id", id)
+    .order("position", { ascending: true });
+  if (categoryResult.error && isMissingPosition(categoryResult.error)) {
+    categoryResult = (await supabase
+      .from("cms_article_category_map")
+      .select("cms_article_categories(name)")
+      .eq("article_id", id)) as typeof categoryResult;
+  }
+  const categoryRows = categoryResult.data;
   const names = (categoryRows ?? [])
     .map((row) => (row as any)?.cms_article_categories?.name)
     .filter(Boolean)
