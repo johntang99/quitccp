@@ -152,6 +152,8 @@ export type { Target };
 
 function stripHtml(input: string): string {
   return input
+    .replace(/<!\[CDATA\[/g, " ")
+    .replace(/\]\]>/g, " ")
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ")
     .replace(/\s+/g, " ")
@@ -159,13 +161,21 @@ function stripHtml(input: string): string {
 }
 
 function htmlToMarkdownLite(input: string): string {
-  return input
-    .replace(/<h2[^>]*>(.*?)<\/h2>/gi, "\n## $1\n")
+  return (
+    input
+      // Some old posts wrap their whole body in <![CDATA[ ... ]]>. Once the
+      // inner <p> tags are unwrapped below, the next ">" after "<![CDATA[" is
+      // the one in "]]>", so the tag-stripping regex treated the entire article
+      // as a single tag and deleted it -- 188 bodies came back empty.
+      .replace(/<!\[CDATA\[/g, "")
+      .replace(/\]\]>/g, "")
+      .replace(/<h2[^>]*>(.*?)<\/h2>/gi, "\n## $1\n")
     .replace(/<h3[^>]*>(.*?)<\/h3>/gi, "\n### $1\n")
     .replace(/<p[^>]*>(.*?)<\/p>/gi, "\n$1\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+      .replace(/<[^>]+>/g, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  );
 }
 
 /**
