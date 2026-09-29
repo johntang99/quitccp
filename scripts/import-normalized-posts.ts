@@ -114,6 +114,7 @@ async function main() {
   const categoryBySlug = new Map((categoryRows ?? []).map((row) => [String(row.slug), String(row.id)]));
 
   let imported = 0;
+  const timedOut: string[] = [];
   const articleBySlug = new Map<string, string>();
 
   async function upsertArticlesAdaptive(
@@ -134,6 +135,22 @@ async function main() {
       return;
     }
 
+    // A single row timing out is usually transient load, not a bad row. Halving
+    // has nowhere left to go, so back off and retry before giving up -- one slow
+    // row used to abort the whole import at 3,040 of 15,514.
+    if (code === "57014" && payload.length === 1) {
+      for (const waitMs of [2000, 5000, 15000]) {
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
+        const retry = await supabase
+          .from("cms_articles")
+          .upsert(payload, updateExisting ? { onConflict: "slug,locale" } : { onConflict: "slug,locale", ignoreDuplicates: true });
+        if (!retry.error) return;
+      }
+      timedOut.push(String((payload[0] as { slug?: string }).slug ?? batchStart));
+      console.error(`[import] 跳过超时的一行：${(payload[0] as { slug?: string }).slug}`);
+      return;
+    }
+
     throw new Error(
       JSON.stringify(
         {
@@ -151,6 +168,9 @@ async function main() {
 
   for (let i = 0; i < rows.length; i += batchSize) {
     const batch = rows.slice(i, i + batchSize);
+    // The editorial columns have to be written here too. They were added to the
+    // admin's save path only, so a bulk import produced 15,514 articles with no
+    // cover, no caption and no photo credit even though the data carried them.
     const payload = batch.map((row) => ({
       slug: row.slug,
       locale: row.locale,
@@ -163,7 +183,10 @@ async function main() {
       editorial_status: "published",
       legacy_url: row.legacyUrl,
       legacy_id: row.legacyId,
-      published_at: row.publishedAt
+      published_at: row.publishedAt,
+      hero_image: row.heroImage ?? "",
+      hero_image_alt: row.heroImageAlt ?? "",
+      hero_credit: row.heroCredit ?? ""
     }));
     await upsertArticlesAdaptive(payload, i, i + batch.length - 1);
 
@@ -280,6 +303,11 @@ async function main() {
       // eslint-disable-next-line no-console
       console.error(`[import-progress] category-map-upsert ${Math.min(i + chunk.length, mappingRows.length)}/${mappingRows.length}`);
     }
+  }
+
+  if (timedOut.length > 0) {
+    console.error(`[import] 有 ${timedOut.length} 行因超时被跳过，可重跑本脚本补上：`);
+    for (const slug of timedOut.slice(0, 10)) console.error(`  ${slug}`);
   }
 
   process.stdout.write(
