@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>C · 最新 100 篇 — 文章管理设计稿</title>
+<link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <h1>QuitCCP CMS</h1>
+    <p class="admin-userline">admin@quitccp.org · super_admin</p>
+    <nav>
+      <a href="#">Dashboard</a>
+      <a href="#">页面内容</a>
+      <a href="#">三退声明</a>
+      <a href="./new.html" class="on">文章管理</a>
+      <a href="#">分类管理</a>
+      <a href="#">视频管理</a>
+      <a href="#">媒体资源</a>
+      <a href="#">站点设置</a>
+      <a href="#">审计日志</a>
+      <a href="#">修订历史</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <div class="admin-card" style="padding:14px 16px">
+      <h2 style="margin:0">文章管理 Articles</h2>
+      <p class="muted" style="margin:4px 0 0">设计稿 — 供讨论，尚未实现。</p>
+    </div>
+    <nav class="tabs">
+      <a href="./new.html">A · 新建文章</a>
+      <a href="./update.html">B · 查找与修改</a>
+      <a href="./latest.html" class="on">C · 最新 100 篇</a>
+      <a href="./status.html">D · 文章统计</a>
+      <a href="./index.html">设计说明</a>
+    </nav>
+
+<div class="admin-card">
+  <h3>最新 100 篇</h3>
+  <p class="muted" style="margin:0 0 12px">按发布时间倒序；未发布的按更新时间插入。不需要搜索即可直接浏览与处理。</p>
+  <div class="admin-toolbar">
+    <span class="chips">
+      <span class="chip on">全部</span><span class="chip">三退要闻</span><span class="chip">红朝败象</span>
+      <span class="chip">退党纪实故事</span><span class="chip">新闻</span>
+    </span>
+    <span style="margin-left:auto" class="muted">
+      <label><input type="checkbox"> 只看未发布</label>
+    </span>
+  </div>
+  <table class="admin-table">
+    <thead><tr><th style="width:36px">#</th><th style="width:76px">封面</th>
+<th>标题</th><th>分类</th><th>作者</th><th>状态</th><th>发布时间</th><th>更新时间</th><th>操作</th></tr></thead>
+    <tbody><tr>
+  <td class="muted">1</td>
+  <td><img class="thumb" src="" alt="" onerror="this.outerHTML='&lt;div class=nothumb&gt;无图&lt;/div&gt;'"></td>
+  <td><a href="./edit.html" style="font-weight:600">全球退党中心：三退大潮宣告镇压破产 制止中共跨国迫害</a><div class="muted" style="font-size:12px">集会现场报导</div></td>
+  <td>三退要闻</td><td>本站记者</td>
+  <td><span class="badge b-pub">已发布</span></td>
+  <td class="muted">2026-09-27</td><td class="muted">2026-09-27 14:32</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./edit.html">编辑</a>
+    <button class="admin-btn admin-btn-sm" type="button">预览</button>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+<tr>
+  <td class="muted">2</td>
+  <td><img class="thumb" src="" alt="" onerror="this.outerHTML='&lt;div class=nothumb&gt;无图&lt;/div&gt;'"></td>
+  <td><a href="./edit.html" style="font-weight:600">一场泥石流 照出百万军人沉默抗命与中南海分裂</a></td>
+  <td>红朝败象</td><td>评论员 李明</td>
+  <td><span class="badge b-pub">已发布</span></td>
+  <td class="muted">2026-09-26</td><td class="muted">2026-09-26 21:10</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./edit.html">编辑</a>
+    <button class="admin-btn admin-btn-sm" type="button">预览</button>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+<tr>
+  <td class="muted">3</td>
+  <td><div class="nothumb">无图</div></td>
+  <td><a href="./edit.html" style="font-weight:600">出入境新规——正在成形的数字柏林墙</a></td>
+  <td>红朝败象</td><td>编辑部</td>
+  <td><span class="badge b-review">待审校</span></td>
+  <td class="muted">—</td><td class="muted">2026-09-26 18:44</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./edit.html">编辑</a>
+    <button class="admin-btn admin-btn-sm" type="button">预览</button>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+<tr>
+  <td class="muted">4</td>
+  <td><img class="thumb" src="" alt="" onerror="this.outerHTML='&lt;div class=nothumb&gt;无图&lt;/div&gt;'"></td>
+  <td><a href="./edit.html" style="font-weight:600">8月115万人「三退」：从苦难与谎言中觉醒</a><div class="muted" style="font-size:12px">月度统计</div></td>
+  <td>三退要闻</td><td>编辑部</td>
+  <td><span class="badge b-pub">已发布</span></td>
+  <td class="muted">2026-09-23</td><td class="muted">2026-09-23 09:02</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./edit.html">编辑</a>
+    <button class="admin-btn admin-btn-sm" type="button">预览</button>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+<tr>
+  <td class="muted">5</td>
+  <td><div class="nothumb">无图</div></td>
+  <td><a href="./edit.html" style="font-weight:600">济州岛服务点重启，义工在码头与免税店前轮班守候</a></td>
+  <td>退党纪实故事</td><td>义工 张</td>
+  <td><span class="badge b-draft">草稿</span></td>
+  <td class="muted">—</td><td class="muted">2026-09-22 16:20</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./edit.html">编辑</a>
+    <button class="admin-btn admin-btn-sm" type="button">预览</button>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+    </tbody>
+  </table>
+  <p class="muted" style="margin:12px 0 0">显示 1–5，共 100 篇 · <a href="./update.html">要找更早的文章请用「查找与修改」</a></p>
+</div>
+
+<div class="admin-card">
+  <h3>和 B 有什么不同</h3>
+  <ul style="margin:0;padding-left:20px;color:var(--ink-soft)">
+    <li><b>不用先搜索</b>——打开就是最近的一百篇，日常「刚发的那篇要改一下」直接在这里找。</li>
+    <li>只保留<b>分类快捷筛选</b>与「只看未发布」，没有完整筛选表单。</li>
+    <li>固定一百篇、不分页；要翻更早的内容会引导去 B。</li>
+    <li>行内操作与 B 完全一致，点标题进的是同一个编辑页。</li>
+  </ul>
+</div>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A · 新建文章 — 文章管理设计稿</title>
+<link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <h1>QuitCCP CMS</h1>
+    <p class="admin-userline">admin@quitccp.org · super_admin</p>
+    <nav>
+      <a href="#">Dashboard</a>
+      <a href="#">页面内容</a>
+      <a href="#">三退声明</a>
+      <a href="./new.html" class="on">文章管理</a>
+      <a href="#">分类管理</a>
+      <a href="#">视频管理</a>
+      <a href="#">媒体资源</a>
+      <a href="#">站点设置</a>
+      <a href="#">审计日志</a>
+      <a href="#">修订历史</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <div class="admin-card" style="padding:14px 16px">
+      <h2 style="margin:0">文章管理 Articles</h2>
+      <p class="muted" style="margin:4px 0 0">设计稿 — 供讨论，尚未实现。</p>
+    </div>
+    <nav class="tabs">
+      <a href="./new.html" class="on">A · 新建文章</a>
+      <a href="./update.html">B · 查找与修改</a>
+      <a href="./latest.html">C · 最新 100 篇</a>
+      <a href="./status.html">D · 文章统计</a>
+      <a href="./index.html">设计说明</a>
+    </nav>
+
+<form onsubmit="return false">
+<div class="form-grid">
+
+  <!-- ============ main column ============ -->
+  <div>
+    <div class="admin-card">
+      <div class="field">
+        <label for="t">标题 Title<span class="req">*</span></label>
+        <input class="admin-input" id="t" value="全球退党中心：三退大潮宣告镇压破产 制止中共跨国迫害">
+        <span class="hint">用于列表、搜索与页面 &lt;h1&gt;。</span>
+      </div>
+
+      <div class="field">
+        <label for="st">副标题 Subtitle</label>
+        <input class="admin-input" id="st" placeholder="可留空。显示在标题下方，比摘要短。">
+      </div>
+
+      <div class="field">
+        <label for="sl">网址 Slug<span class="req">*</span></label>
+        <div class="row">
+          <input class="admin-input" id="sl" style="flex:1;font-family:ui-monospace,Menlo,monospace"
+                 value="2026-09-27-quit-ccp-rally-washington">
+          <button class="admin-btn admin-btn-sm" type="button">由标题生成</button>
+        </div>
+        <span class="hint">出现在网址里，请用英文与数字：
+          <code>https://www.tuidang.org/news/<b>2026-09-27-quit-ccp-rally-washington</b></code>。
+          发布后修改会让旧链接失效（系统会自动建立 301 跳转）。</span>
+      </div>
+    </div>
+
+    <!-- ============ markdown editor ============ -->
+    <div class="admin-card">
+      <div class="field" style="margin:0">
+        <span class="cap">正文 Body（Markdown）<span class="req">*</span></span>
+        <div class="md">
+          <div class="md-bar">
+            <button type="button" title="二级标题"><b>H2</b></button>
+            <button type="button" title="三级标题"><b>H3</b></button>
+            <span class="sep"></span>
+            <button type="button" title="粗体"><b>B</b></button>
+            <button type="button" title="斜体"><i>I</i></button>
+            <button type="button" title="删除线"><s>S</s></button>
+            <span class="sep"></span>
+            <button type="button" title="引用">❝</button>
+            <button type="button" title="无序列表">• 列表</button>
+            <button type="button" title="有序列表">1. 列表</button>
+            <span class="sep"></span>
+            <button type="button" title="插入链接">🔗 链接</button>
+            <button type="button" title="从媒体库插入图片，或直接把图片拖进正文">🖼 图片</button>
+            <button type="button" title="粘贴 YouTube / 干净世界 链接，自动转为播放器">▶ 视频</button>
+            <button type="button" title="插入表格">▦ 表格</button>
+            <span class="sep"></span>
+            <button type="button" title="分隔线">— 分隔线</button>
+            <button type="button" title="代码块">&lt;/&gt;</button>
+            <span class="grow">
+              <button type="button" class="mode">编辑</button>
+              <button type="button" class="mode on">并排</button>
+              <button type="button" class="mode">预览</button>
+            </span>
+          </div>
+          <div class="md-body">
+            <textarea spellcheck="false">## 华盛顿集会
+
+全球退党服务中心在华盛顿集会上发言，呼吁制止中共对法轮功的迫害及其对中国人民
+系统性的人权侵害。
+
+![集会现场](https://…/id14856852-WSY9416.jpg "集会现场，2026-09-27")
+
+> 「三退大潮已经宣告了镇压的破产。」
+
+- 到场团体逾 20 个
+- 多位国会议员出席并发言
+
+::: video https://www.youtube.com/watch?v=TZhgjCsLsGU
+现场完整录像
+:::
+</textarea>
+            <div class="md-prev">
+              <h2>华盛顿集会</h2>
+              <p>全球退党服务中心在华盛顿集会上发言，呼吁制止中共对法轮功的迫害及其对中国人民系统性的人权侵害。</p>
+              <div style="background:#eee;height:140px;border-radius:4px;display:grid;place-items:center;color:#999">［图片：集会现场］</div>
+              <blockquote>「三退大潮已经宣告了镇压的破产。」</blockquote>
+              <ul><li>到场团体逾 20 个</li><li>多位国会议员出席并发言</li></ul>
+              <div style="background:#111;height:150px;border-radius:4px;display:grid;place-items:center;color:#fff">▶ ［视频：现场完整录像］</div>
+            </div>
+          </div>
+          <div class="md-foot">
+            <span>1,284 字</span><span>预计阅读 4 分钟</span>
+            <span>图片 1 · 视频 1 · 链接 0</span>
+            <span style="margin-left:auto">草稿已于 14:32 自动保存</span>
+          </div>
+        </div>
+        <span class="hint">支持把图片直接拖进正文自动上传；粘贴 YouTube／干净世界链接会自动转成播放器。</span>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div class="field" style="margin:0">
+        <label for="sum">摘要 Summary</label>
+        <div class="row">
+          <textarea class="admin-textarea" id="sum" style="min-height:70px">全球退党服务中心在华盛顿集会上发言，呼吁制止中共对法轮功的迫害及其对中国人民系统性的人权侵害。</textarea>
+        </div>
+        <div class="row">
+          <button class="admin-btn admin-btn-sm" type="button">从正文首段生成</button>
+          <span class="hint">用于列表卡片、搜索结果与搜索引擎摘要。建议 60–160 字。<b>当前 52 字</b></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ sidebar ============ -->
+  <div class="side">
+
+    <div class="admin-card">
+      <h3>发布 Publish</h3>
+      <div class="field">
+        <label>状态 Status</label>
+        <select class="admin-select">
+          <option>草稿 Draft</option>
+          <option>待审校 Review</option>
+          <option selected>已发布 Published</option>
+          <option>已归档 Archived</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>发布时间 Published at</label>
+        <input class="admin-input" type="datetime-local" value="2026-09-27T09:30">
+        <span class="hint">可回填旧日期（迁移文章常用），也可填未来时间定时发布。</span>
+      </div>
+      <div class="field">
+        <label>语言 Locale</label>
+        <select class="admin-select"><option selected>中文 zh</option><option>English en</option></select>
+      </div>
+      <div class="row" style="gap:8px;flex-wrap:wrap">
+        <button class="admin-btn admin-btn-primary" type="button">发布</button>
+        <button class="admin-btn" type="button">保存草稿</button>
+        <button class="admin-btn" type="button">预览</button>
+      </div>
+      <p class="hint" style="margin:10px 0 0">上次保存：14:32 · 由 admin@quitccp.org</p>
+    </div>
+
+    <div class="admin-card">
+      <h3>分类与标签 Taxonomy</h3>
+      <div class="field">
+        <label>主分类 Primary<span class="req">*</span></label>
+        <select class="admin-select">
+          <option selected>三退要闻</option>
+          <option>红朝败象</option>
+          <option>退党纪实故事</option>
+          <option>新闻</option>
+        </select>
+        <span class="hint">决定文章归属的栏目页与面包屑。</span>
+      </div>
+      <div class="field">
+        <label>副分类 Secondary</label>
+        <div class="chips">
+          <span class="chip on">红朝败象 <button type="button">×</button></span>
+          <span class="chip">＋ 添加</span>
+        </div>
+        <span class="hint">可多选。文章会同时出现在这些栏目页里，但面包屑只用主分类。</span>
+      </div>
+      <div class="field">
+        <label>标签 Tags</label>
+        <div class="chips">
+          <span class="chip on">华盛顿 <button type="button">×</button></span>
+          <span class="chip on">跨国镇压 <button type="button">×</button></span>
+          <span class="chip">＋ 添加</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h3>封面图 Cover</h3>
+      <img class="thumb" style="width:100%;height:150px" src="" alt="" onerror="this.outerHTML='&lt;div class=nothumb style=&quot;width:100%;height:150px&quot;&gt;［封面图预览］&lt;/div&gt;'">
+      <div class="row" style="margin:10px 0">
+        <button class="admin-btn admin-btn-sm" type="button">选择图片…</button>
+        <button class="admin-btn admin-btn-sm" type="button">清除</button>
+      </div>
+      <div class="field">
+        <label>图片说明 Alt<span class="req">*</span></label>
+        <input class="admin-input" value="全球退党服务中心代表在华盛顿集会上发言">
+        <span class="hint">读屏软件会读出这句话；没有它图片对视障读者等于不存在。</span>
+      </div>
+      <div class="field">
+        <label>图片来源 Credit</label>
+        <input class="admin-input" placeholder="如：大纪元 / 摄影者姓名">
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h3>署名与来源 Byline</h3>
+      <div class="field">
+        <label>作者 Author</label>
+        <input class="admin-input" value="本站记者" list="authors">
+        <datalist id="authors"><option>本站记者</option><option>编辑部</option></datalist>
+      </div>
+      <div class="field">
+        <label>译者 Translator</label>
+        <input class="admin-input" placeholder="转译稿件才需要">
+      </div>
+      <fieldset>
+        <legend>转载来源</legend>
+        <div class="field"><label>原文标题</label><input class="admin-input" placeholder="如：大纪元原标题"></div>
+        <div class="field" style="margin:0"><label>原文链接</label><input class="admin-input" placeholder="https://…"></div>
+        <span class="hint">填写后文末会自动加一行「原载于…」并带 rel=canonical，避免被搜索引擎判为抄袭。</span>
+      </fieldset>
+    </div>
+
+    <div class="admin-card">
+      <h3>SEO（可选）</h3>
+      <div class="field"><label>SEO 标题</label><input class="admin-input" placeholder="留空则用文章标题"></div>
+      <div class="field" style="margin:0"><label>SEO 描述</label>
+        <textarea class="admin-textarea" style="min-height:60px" placeholder="留空则用摘要"></textarea></div>
+    </div>
+  </div>
+</div>
+</form>
+
+<div class="admin-card">
+  <h3>这一页的规则</h3>
+  <ol style="margin:0;padding-left:20px;color:var(--ink-soft)">
+    <li><b>标题填完自动生成 slug</b>，之后不再跟着标题变——避免改一个错字就换掉网址。可手动重新生成。</li>
+    <li><b>草稿每 30 秒自动保存一次</b>，离开页面前有未保存改动会拦一下。</li>
+    <li><b>发布前的必填校验</b>：标题、slug、正文、主分类、封面图说明。缺哪项就停在哪项并滚动过去。</li>
+    <li><b>slug 重复</b>时当场提示（同语言下唯一），并给出「改用 …-2」的建议。</li>
+    <li><b>状态与权限</b>：editor 可存草稿与提交审校；只有能发布的角色才能选「已发布／已归档」。</li>
+    <li><b>每次保存写一条修订</b>，可在「修订历史」里比对与回滚。</li>
+  </ol>
+</div>
+  </main>
+</div>
+</body>
+</html>

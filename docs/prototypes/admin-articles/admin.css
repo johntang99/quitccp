@@ -1,0 +1,104 @@
+/* Mockup stylesheet for the article-management redesign.
+   Mirrors the real admin classes in apps/web/src/app/globals.css so these
+   pages look like the product, plus the few new pieces the redesign needs. */
+
+:root{
+  --ink:#1f2330; --ink-soft:#5a6070; --muted:#8a90a0;
+  --line:#e6e6ea; --line-soft:#f0f0f4;
+  --seal:#4a3c96; --seal-deep:#3a2f7a; --seal-tint:#f2f0fb;
+  --gold:#b8913a; --ok:#1f7a4d; --warn:#8a6d1f; --bad:#b42318;
+  --paper:#f8f8f8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:14px/1.6 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+a{color:var(--seal)}
+
+.admin-layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.admin-sidebar{background:#231a52;color:#ddd8f3;padding:18px}
+.admin-sidebar h1{margin:0 0 4px;font-size:20px;color:#fff}
+.admin-userline{margin:0 0 18px;opacity:.85;font-size:13px}
+.admin-sidebar nav{display:grid;gap:6px}
+.admin-sidebar a{padding:8px 10px;border-radius:6px;color:#ddd8f3;text-decoration:none}
+.admin-sidebar a:hover{background:rgba(255,255,255,.12)}
+.admin-sidebar a.on{background:rgba(255,255,255,.18);color:#fff;font-weight:600}
+.admin-main{padding:24px;max-width:1400px}
+
+.admin-card{background:#fff;border:1px solid #e2e2e2;border-radius:8px;padding:16px;margin-bottom:16px}
+.admin-card h2{margin:0 0 4px;font-size:20px}
+.admin-card h3{margin:0 0 10px;font-size:16px}
+.admin-table{width:100%;border-collapse:collapse}
+.admin-table th,.admin-table td{border-bottom:1px solid #ececec;text-align:left;padding:10px;vertical-align:top}
+.admin-table th{font-size:12px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.admin-table tbody tr:hover{background:#fafaff}
+.admin-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.admin-input,.admin-select,.admin-textarea{border:1px solid #d8d8d8;border-radius:6px;padding:8px 10px;font:inherit;background:#fff}
+.admin-textarea{width:100%;min-height:120px}
+.admin-btn{border:1px solid #d8d8d8;border-radius:6px;background:#fff;padding:8px 12px;cursor:pointer;font:inherit}
+.admin-btn:hover{border-color:#b9b9c4}
+.admin-btn-primary{background:var(--seal);color:#fff;border-color:var(--seal)}
+.admin-btn-danger{color:var(--bad);border-color:#f0c9c5}
+.admin-btn-sm{padding:4px 8px;font-size:12px}
+
+/* tabs ---------------------------------------------------------------- */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px;flex-wrap:wrap}
+.tabs a{padding:10px 16px;text-decoration:none;color:var(--ink-soft);border-bottom:2px solid transparent;font-weight:600}
+.tabs a:hover{color:var(--seal)}
+.tabs a.on{color:var(--seal);border-bottom-color:var(--seal)}
+.tabs .count{display:inline-block;margin-left:6px;background:var(--seal-tint);color:var(--seal);
+  border-radius:999px;padding:1px 8px;font-size:12px;font-weight:600}
+
+/* form ---------------------------------------------------------------- */
+.form-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+.field{display:grid;gap:6px;margin-bottom:14px}
+.field>label,.field>.cap{font-weight:600}
+.field .hint{color:var(--muted);font-size:12px}
+.field .row{display:flex;gap:8px;align-items:center}
+.req{color:var(--bad);margin-left:2px}
+.side .admin-card{padding:14px}
+fieldset{border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin:0 0 14px}
+legend{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:0 6px}
+
+/* markdown editor ------------------------------------------------------ */
+.md{border:1px solid #d8d8d8;border-radius:6px;overflow:hidden;background:#fff}
+.md-bar{display:flex;gap:2px;flex-wrap:wrap;padding:6px;border-bottom:1px solid var(--line);background:#fcfcfd}
+.md-bar button{border:0;background:none;padding:6px 9px;border-radius:5px;cursor:pointer;font:inherit;color:var(--ink-soft)}
+.md-bar button:hover{background:var(--seal-tint);color:var(--seal)}
+.md-bar .sep{width:1px;background:var(--line);margin:4px 4px}
+.md-bar .grow{margin-left:auto;display:flex;gap:2px}
+.md-bar .mode.on{background:var(--seal);color:#fff}
+.md-body{display:grid;grid-template-columns:1fr 1fr;min-height:420px}
+.md-body textarea{border:0;outline:none;resize:vertical;padding:14px;font:13px/1.8 ui-monospace,Menlo,monospace;min-height:420px}
+.md-prev{border-left:1px solid var(--line);padding:14px 18px;overflow:auto;background:#fffefb}
+.md-prev h2{font-size:20px;margin:18px 0 8px}
+.md-prev h3{font-size:17px;margin:16px 0 6px}
+.md-prev img{max-width:100%;border-radius:4px}
+.md-prev blockquote{margin:12px 0;padding:6px 14px;border-left:3px solid var(--gold);color:var(--ink-soft)}
+.md-foot{display:flex;gap:16px;padding:6px 12px;border-top:1px solid var(--line);
+  color:var(--muted);font-size:12px;background:#fcfcfd}
+
+/* chips, badges, misc -------------------------------------------------- */
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13px;background:#fff}
+.chip.on{background:var(--seal-tint);border-color:#cfc6ef;color:var(--seal);font-weight:600}
+.chip button{border:0;background:none;cursor:pointer;color:inherit;margin-left:4px}
+.badge{display:inline-block;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:600}
+.b-pub{background:#e7f5ed;color:var(--ok)}
+.b-draft{background:#f1f1f4;color:var(--ink-soft)}
+.b-review{background:#fdf3dc;color:var(--warn)}
+.b-arch{background:#f7e9e7;color:var(--bad)}
+.muted{color:var(--muted)}
+.note{background:#fffbe9;border:1px solid #f2e3b3;border-radius:6px;padding:10px 12px;color:#6b5618;font-size:13px}
+.thumb{width:64px;height:44px;object-fit:cover;border-radius:4px;background:#eee;display:block}
+.nothumb{width:64px;height:44px;border-radius:4px;background:#f1f1f4;display:grid;place-items:center;color:var(--muted);font-size:11px}
+
+/* stats ---------------------------------------------------------------- */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:14px 16px;background:#fff}
+.stat .n{font-size:32px;font-weight:700;line-height:1.1}
+.stat .k{color:var(--muted);font-size:13px;margin-top:2px}
+.bar{height:10px;border-radius:999px;background:var(--line-soft);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--seal)}
+.spark{display:flex;align-items:flex-end;gap:3px;height:60px}
+.spark i{flex:1;background:var(--seal-tint);border-radius:2px 2px 0 0}
+.spark i.hi{background:var(--seal)}

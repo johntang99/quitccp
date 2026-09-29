@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>设计说明 — 文章管理设计稿</title>
+<link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <h1>QuitCCP CMS</h1>
+    <p class="admin-userline">admin@quitccp.org · super_admin</p>
+    <nav>
+      <a href="#">Dashboard</a>
+      <a href="#">页面内容</a>
+      <a href="#">三退声明</a>
+      <a href="./new.html" class="on">文章管理</a>
+      <a href="#">分类管理</a>
+      <a href="#">视频管理</a>
+      <a href="#">媒体资源</a>
+      <a href="#">站点设置</a>
+      <a href="#">审计日志</a>
+      <a href="#">修订历史</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <div class="admin-card" style="padding:14px 16px">
+      <h2 style="margin:0">文章管理 Articles</h2>
+      <p class="muted" style="margin:4px 0 0">设计稿 — 供讨论，尚未实现。</p>
+    </div>
+    <nav class="tabs">
+      <a href="./new.html">A · 新建文章</a>
+      <a href="./update.html">B · 查找与修改</a>
+      <a href="./latest.html">C · 最新 100 篇</a>
+      <a href="./status.html">D · 文章统计</a>
+      <a href="./index.html" class="on">设计说明</a>
+    </nav>
+
+<div class="admin-card">
+  <h2 style="margin-top:0">设计说明与待决问题</h2>
+  <p class="muted" style="margin:0">四个页面：<a href="./new.html">A 新建</a> ·
+    <a href="./update.html">B 查找与修改</a> · <a href="./latest.html">C 最新 100 篇</a> ·
+    <a href="./status.html">D 文章统计</a>，以及 B/C 点进去的 <a href="./edit.html">编辑页</a>。</p>
+</div>
+
+<div class="admin-card">
+  <h3>现状：目前的「文章管理」只能看，不能写</h3>
+  <p>现有 <code>/admin/articles</code> 只有列表、审校下拉与删除——<b>没有任何新建或编辑文章的界面</b>。
+     写入接口 <code>POST /api/admin/content/articles</code> 是有的，但没有页面用它。所以这不是改版，是补上缺的一半。</p>
+  <p class="muted" style="margin:0">现有接口已支持：slug、标题、栏目、语言、状态、单个分类、标签、正文 Markdown、旧站 ID。</p>
+</div>
+
+<div class="admin-card">
+  <h3>需要新增的数据字段</h3>
+  <p>设计稿里有几个字段数据库还没有。它们需要一次迁移
+     （<code>010_article_editorial_fields.sql</code>），和之前的分类排序一样<b>要手工执行</b>。</p>
+  <table class="admin-table">
+    <thead><tr><th>字段</th><th>用途</th><th>现状</th></tr></thead>
+    <tbody>
+      <tr><td><code>subtitle</code></td><td>副标题</td><td>无，需新增</td></tr>
+      <tr><td><code>hero_image</code> / <code>hero_image_alt</code> / <code>hero_credit</code></td><td>封面图与说明</td><td>无，需新增</td></tr>
+      <tr><td><code>author</code> / <code>translator</code></td><td>署名</td><td>无，需新增</td></tr>
+      <tr><td><code>source_title</code> / <code>source_url</code></td><td>转载来源与 canonical</td><td>无，需新增</td></tr>
+      <tr><td><code>published_at</code></td><td>发布时间</td><td><b>表里已有，但写入时没填</b>——需要改代码，不需要迁移</td></tr>
+      <tr><td><code>summary</code></td><td>摘要</td><td>已有，但目前是正文前 240 字自动截断，需改成可人工编辑</td></tr>
+      <tr><td>副分类</td><td>一篇文章归多个栏目</td><td><b>表结构已支持</b>（<code>cms_article_category_map</code> 是多对多），只是代码里写死了一个分类</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="admin-card">
+  <h3>几个我替你做了主的决定，如果不同意请说</h3>
+  <ol style="margin:0;padding-left:20px">
+    <li><b>摘要与副标题分开。</b>副标题给读者看（显示在标题下），摘要给列表卡片和搜索引擎用。合成一个会让两边都别扭。</li>
+    <li><b>slug 只在标题第一次填完时生成，之后不再自动跟着标题变。</b>否则改一个错字就会换掉已发布文章的网址。</li>
+    <li><b>删除默认劝人改用「归档」</b>，并告诉你有多少站内链接会因此断掉。一千多篇迁移文章彼此有互链，误删的代价不小。</li>
+    <li><b>发布时间可回填也可填未来。</b>回填是迁移旧文必需；未来时间即定时发布。</li>
+    <li><b>转载来源会写进 <code>rel=canonical</code></b>，避免转载稿被搜索引擎判成抄袭。</li>
+    <li><b>封面图说明（alt）列为必填。</b>缺了它图片对视障读者等于不存在，而这是一个以「可检验、可公开」为立场的站点。</li>
+    <li><b>正文用 Markdown，不做所见即所得。</b>现有一千多篇迁移内容已经是 Markdown，换富文本会引入一次有损转换。</li>
+  </ol>
+</div>
+
+<div class="admin-card">
+  <h3>请你拍板的问题</h3>
+  <ol style="margin:0;padding-left:20px">
+    <li><b>审校流程要不要真的用？</b>现在有 draft／review／published／archived 四态和一个审校接口。
+        如果实际上只有你一个人发稿，建议简化成「草稿／已发布」，少两次点击。</li>
+    <li><b>作者是自由文本还是一份名单？</b>自由文本上手快但会出现「编辑部」「編輯部」「编辑室」三种写法；
+        名单干净但要先维护一份人员表。设计稿用的是「自由文本 + 历史值提示」的折中。</li>
+    <li><b>要不要定时发布？</b>需要一个定时任务去把到点的文章翻成已发布，Vercel 上用 Cron 即可，但要额外搭。</li>
+    <li><b>英文版怎么处理？</b>现在 locale 字段有 zh/en，但没有「这两篇是同一篇的中英文」的关联。
+        如果计划做多语言，这个关联要现在就设计进去，后补很痛。</li>
+    <li><b>C 页的「最新 100 篇」按发布时间还是更新时间排？</b>设计稿按发布时间，未发布的按更新时间插进来。</li>
+    <li><b>图片上传走哪里？</b>沿用首页那套媒体库（Supabase Storage + <code>cms_media_assets</code>），
+        还是给文章单独开一个空间？建议沿用，图片可跨文章复用。</li>
+  </ol>
+</div>
+
+<div class="admin-card">
+  <h3>实现顺序（确认设计后）</h3>
+  <ol style="margin:0;padding-left:20px;color:var(--ink-soft)">
+    <li>迁移 <code>010_article_editorial_fields.sql</code>（需要你手工执行一次）</li>
+    <li>仓储层：新字段读写、副分类多对多、<code>published_at</code>、人工摘要</li>
+    <li>编辑页与新建页（共用一个表单组件）+ Markdown 编辑器</li>
+    <li>B 查找与修改：筛选、分页、批量操作、删除确认</li>
+    <li>C 最新 100 篇（B 的简化视图，复用同一张表格）</li>
+    <li>D 统计（若干 count 查询 + 数据质量筛选链接）</li>
+  </ol>
+  <p class="muted" style="margin:10px 0 0">前四步做完就已经可以正常发稿；C 和 D 是锦上添花。</p>
+</div>
+  </main>
+</div>
+</body>
+</html>

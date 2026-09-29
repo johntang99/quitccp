@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>B · 查找与修改 — 文章管理设计稿</title>
+<link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <h1>QuitCCP CMS</h1>
+    <p class="admin-userline">admin@quitccp.org · super_admin</p>
+    <nav>
+      <a href="#">Dashboard</a>
+      <a href="#">页面内容</a>
+      <a href="#">三退声明</a>
+      <a href="./new.html" class="on">文章管理</a>
+      <a href="#">分类管理</a>
+      <a href="#">视频管理</a>
+      <a href="#">媒体资源</a>
+      <a href="#">站点设置</a>
+      <a href="#">审计日志</a>
+      <a href="#">修订历史</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <div class="admin-card" style="padding:14px 16px">
+      <h2 style="margin:0">文章管理 Articles</h2>
+      <p class="muted" style="margin:4px 0 0">设计稿 — 供讨论，尚未实现。</p>
+    </div>
+    <nav class="tabs">
+      <a href="./new.html">A · 新建文章</a>
+      <a href="./update.html" class="on">B · 查找与修改</a>
+      <a href="./latest.html">C · 最新 100 篇</a>
+      <a href="./status.html">D · 文章统计</a>
+      <a href="./index.html">设计说明</a>
+    </nav>
+
+<div class="admin-card">
+  <h3>查找 Search</h3>
+  <div class="admin-toolbar">
+    <input class="admin-input" style="flex:1;min-width:260px" placeholder="搜索标题、副标题、正文、slug 或旧站 ID">
+    <button class="admin-btn admin-btn-primary" type="button">搜索</button>
+  </div>
+  <div class="admin-toolbar">
+    <select class="admin-select"><option>全部分类</option><option>三退要闻 (514)</option><option>红朝败象 (486)</option><option>退党纪实故事 (0)</option><option>新闻 (0)</option></select>
+    <select class="admin-select"><option>全部状态</option><option>已发布</option><option>待审校</option><option>草稿</option><option>已归档</option></select>
+    <select class="admin-select"><option>全部作者</option><option>本站记者</option><option>编辑部</option><option>评论员 李明</option></select>
+    <select class="admin-select"><option>全部语言</option><option>中文 zh</option><option>English en</option></select>
+    <label class="muted" style="display:flex;align-items:center;gap:6px">发布于
+      <input class="admin-input" type="date" style="width:150px"> 至
+      <input class="admin-input" type="date" style="width:150px"></label>
+  </div>
+  <div class="admin-toolbar">
+    <span class="chips">
+      <span class="chip on">缺封面图 <button type="button">×</button></span>
+      <span class="chip">缺作者</span><span class="chip">缺摘要</span><span class="chip">未分类</span>
+    </span>
+    <span style="margin-left:auto" class="muted">排序
+      <select class="admin-select admin-btn-sm"><option>更新时间（新→旧）</option><option>发布时间（新→旧）</option><option>标题 A→Z</option></select>
+    </span>
+  </div>
+  <p class="muted" style="margin:0">符合条件 <b>37</b> 篇 · 当前第 1–20 篇 ·
+    <a href="#">清除全部筛选</a> · <a href="#">导出 CSV</a></p>
+</div>
+
+<div class="admin-card">
+  <div class="admin-toolbar" style="margin-bottom:8px">
+    <span><b>已选 2 篇</b></span>
+    <select class="admin-select admin-btn-sm"><option>批量操作…</option><option>发布</option><option>退回草稿</option><option>归档</option><option>改主分类</option><option>加标签</option><option>删除</option></select>
+    <button class="admin-btn admin-btn-sm" type="button">执行</button>
+    <span class="muted">批量删除会二次确认，并逐条写入审计日志。</span>
+  </div>
+  <table class="admin-table">
+    <thead><tr><th style="width:28px"><input type="checkbox"></th><th style="width:76px">封面</th>
+<th>标题</th><th>分类</th><th>作者</th><th>状态</th><th>发布时间</th><th>更新时间</th><th>操作</th></tr></thead>
+    <tbody><tr>
+  <td><input type="checkbox"></td>
+  <td><img class="thumb" src="" alt="" onerror="this.outerHTML='&lt;div class=nothumb&gt;无图&lt;/div&gt;'"></td>
+  <td><a href="./edit.html" style="font-weight:600">全球退党中心：三退大潮宣告镇压破产 制止中共跨国迫害</a><div class="muted" style="font-size:12px">集会现场报导</div></td>
+  <td>三退要闻</td><td>本站记者</td>
+  <td><span class="badge b-pub">已发布</span></td>
+  <td class="muted">2026-09-27</td><td class="muted">2026-09-27 14:32</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./edit.html">编辑</a>
+    <button class="admin-btn admin-btn-sm" type="button">预览</button>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+<tr>
+  <td><input type="checkbox"></td>
+  <td><img class="thumb" src="" alt="" onerror="this.outerHTML='&lt;div class=nothumb&gt;无图&lt;/div&gt;'"></td>
+  <td><a href="./edit.html" style="font-weight:600">一场泥石流 照出百万军人沉默抗命与中南海分裂</a></td>
+  <td>红朝败象</td><td>评论员 李明</td>
+  <td><span class="badge b-pub">已发布</span></td>
+  <td class="muted">2026-09-26</td><td class="muted">2026-09-26 21:10</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./edit.html">编辑</a>
+    <button class="admin-btn admin-btn-sm" type="button">预览</button>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+<tr>
+  <td><input type="checkbox"></td>
+  <td><div class="nothumb">无图</div></td>
+  <td><a href="./edit.html" style="font-weight:600">出入境新规——正在成形的数字柏林墙</a></td>
+  <td>红朝败象</td><td>编辑部</td>
+  <td><span class="badge b-review">待审校</span></td>
+  <td class="muted">—</td><td class="muted">2026-09-26 18:44</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./edit.html">编辑</a>
+    <button class="admin-btn admin-btn-sm" type="button">预览</button>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+<tr>
+  <td><input type="checkbox"></td>
+  <td><img class="thumb" src="" alt="" onerror="this.outerHTML='&lt;div class=nothumb&gt;无图&lt;/div&gt;'"></td>
+  <td><a href="./edit.html" style="font-weight:600">8月115万人「三退」：从苦难与谎言中觉醒</a><div class="muted" style="font-size:12px">月度统计</div></td>
+  <td>三退要闻</td><td>编辑部</td>
+  <td><span class="badge b-pub">已发布</span></td>
+  <td class="muted">2026-09-23</td><td class="muted">2026-09-23 09:02</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./edit.html">编辑</a>
+    <button class="admin-btn admin-btn-sm" type="button">预览</button>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+<tr>
+  <td><input type="checkbox"></td>
+  <td><div class="nothumb">无图</div></td>
+  <td><a href="./edit.html" style="font-weight:600">济州岛服务点重启，义工在码头与免税店前轮班守候</a></td>
+  <td>退党纪实故事</td><td>义工 张</td>
+  <td><span class="badge b-draft">草稿</span></td>
+  <td class="muted">—</td><td class="muted">2026-09-22 16:20</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./edit.html">编辑</a>
+    <button class="admin-btn admin-btn-sm" type="button">预览</button>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr></tbody>
+  </table>
+  <div class="admin-toolbar" style="margin:12px 0 0">
+    <button class="admin-btn" type="button">← 上一页</button>
+    <button class="admin-btn" type="button">下一页 →</button>
+    <span class="muted">每页
+      <select class="admin-select admin-btn-sm"><option>20</option><option>50</option><option>100</option></select> 篇
+    </span>
+  </div>
+</div>
+
+<div class="admin-card">
+  <h3>删除确认（弹窗）</h3>
+  <div style="border:1px solid var(--line);border-radius:8px;padding:16px;max-width:520px;background:#fff">
+    <h3 style="margin:0 0 8px">删除《出入境新规——正在成形的数字柏林墙》？</h3>
+    <p class="muted" style="margin:0 0 6px">这篇文章已发布，删除后原网址会变成 404。</p>
+    <ul class="muted" style="margin:0 0 12px;padding-left:20px;font-size:13px">
+      <li>站内有 <b>3</b> 处链接指向它</li>
+      <li>旧站 ID <b>705923</b> 的跳转规则会一并失效</li>
+    </ul>
+    <p style="margin:0 0 10px">如果只是不想让它继续显示，<b>「归档」更安全</b>——内容与链接都保留。</p>
+    <div class="row" style="gap:8px">
+      <button class="admin-btn" type="button">改为归档</button>
+      <button class="admin-btn admin-btn-danger" type="button">仍然删除</button>
+      <button class="admin-btn" type="button">取消</button>
+    </div>
+  </div>
+</div>
+
+<div class="admin-card">
+  <h3>这一页的规则</h3>
+  <ol style="margin:0;padding-left:20px;color:var(--ink-soft)">
+    <li><b>搜索与筛选都写进网址</b>，可以把某个筛选结果的链接发给同事，也能加书签。</li>
+    <li><b>点标题进编辑页</b>；编辑页保存后回到原来的筛选结果与页码，不会把人甩回第一页。</li>
+    <li><b>删除默认劝阻</b>：已发布的文章先建议归档，并告知有多少站内链接会断。</li>
+    <li><b>数据质量筛选</b>（缺封面／缺作者／缺摘要／未分类）是为迁移进来的一千多篇旧文准备的。</li>
+    <li>列表<b>不做整页刷新</b>：筛选、翻页、删除都只更新表格。</li>
+  </ol>
+</div>
+  </main>
+</div>
+</body>
+</html>

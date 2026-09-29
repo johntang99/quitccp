@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D · 文章统计 — 文章管理设计稿</title>
+<link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <h1>QuitCCP CMS</h1>
+    <p class="admin-userline">admin@quitccp.org · super_admin</p>
+    <nav>
+      <a href="#">Dashboard</a>
+      <a href="#">页面内容</a>
+      <a href="#">三退声明</a>
+      <a href="./new.html" class="on">文章管理</a>
+      <a href="#">分类管理</a>
+      <a href="#">视频管理</a>
+      <a href="#">媒体资源</a>
+      <a href="#">站点设置</a>
+      <a href="#">审计日志</a>
+      <a href="#">修订历史</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <div class="admin-card" style="padding:14px 16px">
+      <h2 style="margin:0">文章管理 Articles</h2>
+      <p class="muted" style="margin:4px 0 0">设计稿 — 供讨论，尚未实现。</p>
+    </div>
+    <nav class="tabs">
+      <a href="./new.html">A · 新建文章</a>
+      <a href="./update.html">B · 查找与修改</a>
+      <a href="./latest.html">C · 最新 100 篇</a>
+      <a href="./status.html" class="on">D · 文章统计</a>
+      <a href="./index.html">设计说明</a>
+    </nav>
+
+<div class="admin-card">
+  <h3>总览</h3>
+  <div class="stat-grid">
+    <div class="stat"><div class="n">1,000</div><div class="k">文章总数</div></div>
+    <div class="stat"><div class="n" style="color:var(--ok)">982</div><div class="k">已发布</div></div>
+    <div class="stat"><div class="n" style="color:var(--warn)">11</div><div class="k">待审校</div></div>
+    <div class="stat"><div class="n">5</div><div class="k">草稿</div></div>
+    <div class="stat"><div class="n" style="color:var(--bad)">2</div><div class="k">已归档</div></div>
+  </div>
+</div>
+
+<div class="admin-card">
+  <h3>按分类 By category</h3>
+  <table class="admin-table">
+    <thead><tr><th>分类</th><th>占比</th><th style="text-align:right">文章数</th><th style="text-align:right">百分比</th><th></th></tr></thead>
+    <tbody><tr>
+  <td><b>三退要闻</b><div class="muted" style="font-size:12px;font-family:ui-monospace,Menlo,monospace">withdrawal-news</div></td>
+  <td style="width:44%"><div class="bar"><i style="width:51%"></i></div></td>
+  <td style="text-align:right"><b>514</b></td>
+  <td style="text-align:right" class="muted">51%</td>
+  <td><a class="admin-btn admin-btn-sm" href="./update.html">查看</a></td>
+</tr><tr>
+  <td><b>红朝败象</b><div class="muted" style="font-size:12px;font-family:ui-monospace,Menlo,monospace">red-regime-collapse</div></td>
+  <td style="width:44%"><div class="bar"><i style="width:49%"></i></div></td>
+  <td style="text-align:right"><b>486</b></td>
+  <td style="text-align:right" class="muted">49%</td>
+  <td><a class="admin-btn admin-btn-sm" href="./update.html">查看</a></td>
+</tr><tr>
+  <td><b>退党纪实故事</b><div class="muted" style="font-size:12px;font-family:ui-monospace,Menlo,monospace">withdrawal-stories</div></td>
+  <td style="width:44%"><div class="bar"><i style="width:0%"></i></div></td>
+  <td style="text-align:right"><b>0</b></td>
+  <td style="text-align:right" class="muted">0%</td>
+  <td><a class="admin-btn admin-btn-sm" href="./update.html">查看</a></td>
+</tr><tr>
+  <td><b>新闻</b><div class="muted" style="font-size:12px;font-family:ui-monospace,Menlo,monospace">news</div></td>
+  <td style="width:44%"><div class="bar"><i style="width:0%"></i></div></td>
+  <td style="text-align:right"><b>0</b></td>
+  <td style="text-align:right" class="muted">0%</td>
+  <td><a class="admin-btn admin-btn-sm" href="./update.html">查看</a></td>
+</tr></tbody>
+    <tfoot><tr><td><b>合计</b></td><td></td><td style="text-align:right"><b>1,000</b></td><td></td><td></td></tr></tfoot>
+  </table>
+  <p class="muted" style="margin:10px 0 0">一篇文章有副分类时，会在每个所属分类里各计一次，因此各分类之和可能大于总数。</p>
+</div>
+
+<div class="admin-card">
+  <h3>最近 30 天发布量</h3>
+  <div class="spark"><i class="" style="height:21%"></i><i class="" style="height:35%"></i><i class="" style="height:14%"></i><i class="hi" style="height:56%"></i><i class="" style="height:42%"></i><i class="" style="height:28%"></i><i class="hi" style="height:63%"></i><i class="hi" style="height:49%"></i><i class="" style="height:21%"></i><i class="" style="height:35%"></i><i class="" style="height:42%"></i><i class="" style="height:14%"></i><i class="" style="height:28%"></i><i class="hi" style="height:56%"></i><i class="" style="height:35%"></i><i class="" style="height:21%"></i><i class="hi" style="height:49%"></i><i class="hi" style="height:63%"></i><i class="" style="height:28%"></i><i class="" style="height:14%"></i><i class="" style="height:42%"></i><i class="" style="height:35%"></i><i class="hi" style="height:56%"></i><i class="" style="height:21%"></i><i class="" style="height:28%"></i><i class="hi" style="height:49%"></i><i class="" style="height:35%"></i><i class="" style="height:42%"></i><i class="" style="height:14%"></i><i class="" style="height:28%"></i></div>
+  <p class="muted" style="margin:8px 0 0">共 157 篇 · 日均 5.2 篇 · 最多的一天 2026-09-26（9 篇）</p>
+</div>
+
+<div class="admin-card">
+  <h3>需要处理 Needs attention</h3>
+  <p class="muted" style="margin:0 0 10px">这些不是错误，是迁移一千多篇旧文之后留下的空缺。每一项都直接链到筛选好的列表。</p>
+  <table class="admin-table">
+    <tbody>
+      <tr><td><b>缺封面图</b></td><td style="text-align:right"><b>318</b></td><td style="width:1%"><a class="admin-btn admin-btn-sm" href="./update.html">去处理</a></td></tr>
+      <tr><td><b>缺作者署名</b></td><td style="text-align:right"><b>742</b></td><td><a class="admin-btn admin-btn-sm" href="./update.html">去处理</a></td></tr>
+      <tr><td><b>摘要由正文截断而来（未人工撰写）</b></td><td style="text-align:right"><b>901</b></td><td><a class="admin-btn admin-btn-sm" href="./update.html">去处理</a></td></tr>
+      <tr><td><b>未分类</b></td><td style="text-align:right"><b>0</b></td><td><span class="muted">—</span></td></tr>
+      <tr><td><b>slug 仍是旧站数字 ID</b></td><td style="text-align:right"><b>66</b></td><td><a class="admin-btn admin-btn-sm" href="./update.html">去处理</a></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="admin-card">
+  <h3>按语言 / 按作者</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <table class="admin-table">
+      <thead><tr><th>语言</th><th style="text-align:right">文章数</th></tr></thead>
+      <tbody><tr><td>中文 zh</td><td style="text-align:right">1,000</td></tr>
+             <tr><td>English en</td><td style="text-align:right">0</td></tr></tbody>
+    </table>
+    <table class="admin-table">
+      <thead><tr><th>作者</th><th style="text-align:right">文章数</th></tr></thead>
+      <tbody><tr><td>编辑部</td><td style="text-align:right">180</td></tr>
+             <tr><td>本站记者</td><td style="text-align:right">64</td></tr>
+             <tr><td class="muted">（未署名）</td><td style="text-align:right">742</td></tr></tbody>
+    </table>
+  </div>
+</div>
+  </main>
+</div>
+</body>
+</html>
