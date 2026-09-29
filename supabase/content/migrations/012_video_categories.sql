@@ -37,7 +37,7 @@ alter table cms_videos
 create index if not exists idx_cms_videos_published_at
   on cms_videos (published_at desc nulls last);
 
--- The seven series the old site organises its videos by. Editors can rename or
+-- The eight series you named. Editors can rename or
 -- reorder these; they exist so the first import has somewhere to land.
 insert into cms_video_categories (slug, name, sort_order) values
   ('frontline',     '三退前线',       10),
@@ -46,5 +46,6 @@ insert into cms_video_categories (slug, name, sort_order) values
   ('jiuping',       '九评系列',       40),
   ('ironclad',      '铁证如山',       50),
   ('awakening',     '觉醒之旅',       60),
-  ('others',        '其它系列',       70)
+  ('hope-road',     '希望的路',       70),
+  ('others',        '其它系列',       80)
 on conflict (slug) do nothing;
