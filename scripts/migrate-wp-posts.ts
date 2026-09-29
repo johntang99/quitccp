@@ -182,6 +182,13 @@ function htmlToMarkdownLite(input: string): string {
       .replace(/-->/g, "")
       // Drop what carries no content before anything else can mangle it.
       .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
+      // Embedded players -- about 9% of articles carry one. Stripped as a plain
+      // tag they vanish silently, and for some posts the iframe IS the article.
+      // `::: video` is the block the admin's Markdown editor already renders.
+      .replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe>|<iframe\b[^>]*\/?>/gi, (tag) => {
+        const src = /\ssrc\s*=\s*["']([^"']+)["']/i.exec(tag)?.[1] ?? "";
+        return src ? `\n\n::: video ${src}\n:::\n\n` : "";
+      })
       // Images and links first: they carry attributes the tag stripper eats.
       .replace(/<img\b[^>]*>/gi, (tag) => {
         const src = /\ssrc\s*=\s*["']([^"']+)["']/i.exec(tag)?.[1] ?? "";
