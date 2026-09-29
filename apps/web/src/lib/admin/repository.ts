@@ -605,6 +605,62 @@ export async function bulkUpdateArticleStatus(ids: string[], status: PageStatus,
   });
 }
 
+/**
+ * Moves a set of articles to a category, replacing their primary one.
+ *
+ * Their secondary categories are left alone: this is the tool for emptying
+ * 待归类 and the migration's catch-all, where the primary is the thing that is
+ * wrong. Written in chunks because the sets are large -- 8,631 articles sit in
+ * one category.
+ */
+export async function bulkSetPrimaryCategory(
+  ids: string[],
+  categoryName: string,
+  actorEmail: string
+): Promise<number> {
+  if (ids.length === 0) return 0;
+  const supabase = createSupabaseAdminClient();
+  const name = categoryName.trim();
+  const slug = toSlug(name);
+
+  const { data: found } = await supabase
+    .from("cms_article_categories")
+    .select("id")
+    .or(`name.eq.${name},slug.eq.${slug}`)
+    .limit(1);
+  if (!found || found.length === 0) throw new Error(`分类不存在：${name}`);
+  const categoryId = String(found[0].id);
+
+  let moved = 0;
+  for (let i = 0; i < ids.length; i += 100) {
+    const chunk = ids.slice(i, i + 100);
+    // Drop whatever currently sits at position 0, then write the new primary.
+    await supabase
+      .from("cms_article_category_map")
+      .delete()
+      .in("article_id", chunk)
+      .eq("position", 0);
+    // An article may already carry this category as a secondary; remove that
+    // copy so the composite key does not collide when it becomes primary.
+    await supabase
+      .from("cms_article_category_map")
+      .delete()
+      .in("article_id", chunk)
+      .eq("category_id", categoryId);
+    const { error } = await supabase
+      .from("cms_article_category_map")
+      .insert(chunk.map((articleId) => ({ article_id: articleId, category_id: categoryId, position: 0 })));
+    if (error) throw error;
+    moved += chunk.length;
+  }
+
+  await createAudit(actorEmail, "article.bulkCategory", "article", "bulk", "write", {
+    count: moved,
+    category: name
+  });
+  return moved;
+}
+
 export async function deleteArticleById(id: string, actorEmail: string) {
   const supabase = createSupabaseAdminClient();
   const article = await getArticleById(id);

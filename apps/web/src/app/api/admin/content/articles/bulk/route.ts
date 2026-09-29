@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
-import { bulkUpdateArticleStatus } from "@/lib/admin/repository";
+import { bulkSetPrimaryCategory, bulkUpdateArticleStatus } from "@/lib/admin/repository";
 
 export async function POST(request: Request) {
   const user = await getAdminSessionUser();
@@ -14,12 +14,40 @@ export async function POST(request: Request) {
     .map((id) => id.trim())
     .filter(Boolean);
   const action = String(formData.get("action") ?? "review");
-  if ((action === "publish" || action === "archive") && !canBulkPublish(user)) {
-    return NextResponse.json({ error: "Insufficient role for publish/archive" }, { status: 403 });
+  const back = String(formData.get("back") ?? "/admin/articles");
+  if (ids.length === 0) {
+    return NextResponse.redirect(new URL(`${back}${back.includes("?") ? "&" : "?"}msg=${encodeURIComponent("没有选中任何文章。")}`, request.url), 303);
   }
-  const nextStatus =
-    action === "publish" ? "published" : action === "archive" ? "archived" : "review";
-  await bulkUpdateArticleStatus(ids, nextStatus, user.email);
 
-  return NextResponse.redirect(new URL("/admin/articles", request.url), 303);
+  try {
+    if (action === "category") {
+      const target = String(formData.get("category") ?? "").trim();
+      if (!target) throw new Error("请先选择目标分类。");
+      const moved = await bulkSetPrimaryCategory(ids, target, user.email);
+      const msg = `已把 ${moved} 篇的主分类改为「${target}」。`;
+      return NextResponse.redirect(
+        new URL(`${back}${back.includes("?") ? "&" : "?"}msg=${encodeURIComponent(msg)}`, request.url),
+        303
+      );
+    }
+
+    if ((action === "publish" || action === "archive") && !canBulkPublish(user)) {
+      return NextResponse.json({ error: "Insufficient role for publish/archive" }, { status: 403 });
+    }
+    const nextStatus =
+      action === "publish" ? "published" : action === "archive" ? "archived" : "draft";
+    await bulkUpdateArticleStatus(ids, nextStatus, user.email);
+    const label = action === "publish" ? "发布" : action === "archive" ? "归档" : "退回草稿";
+    const msg = `已把 ${ids.length} 篇${label}。`;
+    return NextResponse.redirect(
+      new URL(`${back}${back.includes("?") ? "&" : "?"}msg=${encodeURIComponent(msg)}`, request.url),
+      303
+    );
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "批量操作失败。";
+    return NextResponse.redirect(
+      new URL(`${back}${back.includes("?") ? "&" : "?"}msg=${encodeURIComponent(msg)}`, request.url),
+      303
+    );
+  }
 }

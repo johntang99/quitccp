@@ -1,7 +1,8 @@
 # 文章管理 — 设计稿 / Article management design
 
-Static mockups for the article-management redesign. **Design only — nothing here
-is implemented.** Open `index.html` for the design notes and the open questions;
+Static mockups for the article-management redesign. **These were the design; the
+feature is now built** — see `/admin/articles` and its three tabs. Kept for the
+record of what was decided and why. Open `index.html` for the design notes and the open questions;
 the other five pages are the screens.
 
 | file | tab | what it is |
