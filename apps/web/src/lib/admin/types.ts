@@ -23,13 +23,34 @@ export interface ArticleRecord {
   id: string;
   slug: string;
   title: string;
+  /** Shown under the title; shorter than the summary. */
+  subtitle: string;
   section: string;
   locale: string;
+  /**
+   * `review` is retained because migrated rows may carry it, but the admin
+   * offers only 草稿 / 已发布; 归档 is reachable from the delete dialog.
+   */
   status: "draft" | "review" | "published" | "archived";
   bodyMarkdown: string;
   bodyPlain: string;
+  /** Written by an editor. Falls back to the body's opening when left empty. */
+  summary: string;
+  /** Primary category name -- the one the breadcrumb uses. */
   category: string;
+  /** Additional categories the article also appears under. */
+  secondaryCategories: string[];
   tags: string[];
+  heroImage: string;
+  heroImageAlt: string;
+  heroCredit: string;
+  author: string;
+  translator: string;
+  /** Reprint provenance; `sourceUrl` becomes the canonical link. */
+  sourceTitle: string;
+  sourceUrl: string;
+  /** Null while unpublished. */
+  publishedAt: string | null;
   legacyUrl?: string;
   legacyId?: number;
   updatedAt: string;

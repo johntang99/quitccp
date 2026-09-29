@@ -201,6 +201,78 @@ function encodeArticleCursor(updatedAt: string): string {
   return Buffer.from(JSON.stringify({ updatedAt }), "utf8").toString("base64url");
 }
 
+/**
+ * The columns `010_article_editorial_fields.sql` adds.
+ *
+ * That migration is applied by hand, so every read asks for them and falls back
+ * to the base columns if they are not there yet -- the admin keeps working, and
+ * starts carrying the new fields the moment the migration runs.
+ */
+const ARTICLE_EDITORIAL_COLUMNS =
+  "subtitle, hero_image, hero_image_alt, hero_credit, author, translator, source_title, source_url, published_at";
+
+function isMissingEditorialColumn(error: unknown): boolean {
+  const text = JSON.stringify(error ?? "");
+  return /subtitle|hero_image|hero_credit|source_title|source_url|translator/.test(text);
+}
+
+interface ArticleRow {
+  id: string;
+  slug: string;
+  title: string;
+  section: string;
+  locale: string;
+  status: string;
+  summary?: string | null;
+  body_markdown?: string | null;
+  body_plain?: string | null;
+  legacy_url?: string | null;
+  legacy_id?: number | null;
+  updated_at: string;
+  subtitle?: string | null;
+  hero_image?: string | null;
+  hero_image_alt?: string | null;
+  hero_credit?: string | null;
+  author?: string | null;
+  translator?: string | null;
+  source_title?: string | null;
+  source_url?: string | null;
+  published_at?: string | null;
+}
+
+/** Builds an ArticleRecord from a row, tolerating columns that do not exist yet. */
+function toArticleRecord(
+  row: ArticleRow,
+  extra: { category: string; secondaryCategories: string[]; tags: string[]; includeBody: boolean }
+): ArticleRecord {
+  return {
+    id: String(row.id),
+    slug: String(row.slug),
+    title: String(row.title),
+    subtitle: String(row.subtitle ?? ""),
+    section: String(row.section),
+    locale: String(row.locale),
+    status: row.status as PageStatus,
+    bodyMarkdown: extra.includeBody ? String(row.body_markdown ?? "") : "",
+    bodyPlain: extra.includeBody ? String(row.body_plain ?? "") : "",
+    summary: String(row.summary ?? ""),
+    category: extra.category,
+    secondaryCategories: extra.secondaryCategories,
+    tags: extra.tags,
+    heroImage: String(row.hero_image ?? ""),
+    heroImageAlt: String(row.hero_image_alt ?? ""),
+    heroCredit: String(row.hero_credit ?? ""),
+    author: String(row.author ?? ""),
+    translator: String(row.translator ?? ""),
+    sourceTitle: String(row.source_title ?? ""),
+    sourceUrl: String(row.source_url ?? ""),
+    publishedAt: row.published_at ? String(row.published_at) : null,
+    legacyUrl: row.legacy_url ? String(row.legacy_url) : undefined,
+    legacyId: row.legacy_id ? Number(row.legacy_id) : undefined,
+    updatedAt: String(row.updated_at)
+  };
+}
+
 export async function listArticles(
   filters: ArticleListFilters,
   actorEmail: string
@@ -218,8 +290,8 @@ export async function listArticles(
   const page = Math.max(filters.page ?? 1, 1);
   const pageSize = Math.max(filters.pageSize ?? 20, 1);
   const offset = useCursor ? 0 : (page - 1) * pageSize;
-  const articleSelect =
-    "id, slug, title, section, locale, status, legacy_url, legacy_id, updated_at, summary";
+  const baseSelect = "id, slug, title, section, locale, status, legacy_url, legacy_id, updated_at, summary";
+  let articleSelect = `${baseSelect}, ${ARTICLE_EDITORIAL_COLUMNS}`;
 
   let rowsData: any[] = [];
   let totalRows = 0;
@@ -301,6 +373,7 @@ export async function listArticles(
 
   const ids = (rowsData ?? []).map((row) => row.id);
   const categoryByArticle = new Map<string, string>();
+  const secondaryByArticle = new Map<string, string[]>();
   const tagsByArticle = new Map<string, string[]>();
 
   if (ids.length > 0) {
@@ -310,7 +383,16 @@ export async function listArticles(
       .in("article_id", ids);
     for (const row of categoryRows ?? []) {
       const categoryName = (row as any).cms_article_categories?.name;
-      if (categoryName) categoryByArticle.set(String((row as any).article_id), String(categoryName));
+      if (!categoryName) continue;
+      const articleId = String((row as any).article_id);
+      // First one wins as primary; the rest are secondaries.
+      if (!categoryByArticle.has(articleId)) {
+        categoryByArticle.set(articleId, String(categoryName));
+        continue;
+      }
+      const list = secondaryByArticle.get(articleId) ?? [];
+      list.push(String(categoryName));
+      secondaryByArticle.set(articleId, list);
     }
 
     const { data: tagRows } = await supabase
@@ -343,40 +425,61 @@ export async function listArticles(
     total: totalRows,
     nextCursor,
     cursorApplied,
-    rows: (rowsData ?? []).map((row) => ({
-      id: String(row.id),
-      slug: String(row.slug),
-      title: String(row.title),
-      section: String(row.section),
-      locale: String(row.locale),
-      status: row.status as PageStatus,
-      bodyMarkdown: "",
-      bodyPlain: "",
-      category: categoryByArticle.get(String(row.id)) ?? "news",
-      tags: tagsByArticle.get(String(row.id)) ?? [],
-      legacyUrl: row.legacy_url ? String(row.legacy_url) : undefined,
-      legacyId: row.legacy_id ? Number(row.legacy_id) : undefined,
-      updatedAt: String(row.updated_at)
-    }))
+    rows: (rowsData ?? []).map((row) =>
+      toArticleRecord(row as ArticleRow, {
+        category: categoryByArticle.get(String(row.id)) ?? "",
+        secondaryCategories: (secondaryByArticle.get(String(row.id)) ?? []).slice(),
+        tags: tagsByArticle.get(String(row.id)) ?? [],
+        includeBody: false
+      })
+    )
   };
 }
 
-async function setArticleTaxonomy(articleId: string, category: string, tags: string[]) {
+/**
+ * Replaces an article's categories and tags.
+ *
+ * Categories are looked up by name and only created when genuinely absent --
+ * upserting on every save is what overwrote the Chinese category names with
+ * title-cased slugs.
+ */
+async function setArticleTaxonomy(
+  articleId: string,
+  category: string,
+  secondary: string[],
+  tags: string[]
+) {
   const supabase = createSupabaseAdminClient();
-  const categorySlug = toSlug(category);
+  const wanted = [category, ...secondary].map((name) => name.trim()).filter(Boolean);
+  const unique = Array.from(new Set(wanted));
 
-  const { data: categoryData, error: categoryError } = await supabase
-    .from("cms_article_categories")
-    .upsert({ slug: categorySlug, name: category }, { onConflict: "slug" })
-    .select("id")
-    .single();
-  if (categoryError) throw categoryError;
+  const ids: string[] = [];
+  for (const name of unique) {
+    const slug = toSlug(name);
+    const { data: found } = await supabase
+      .from("cms_article_categories")
+      .select("id")
+      .or(`name.eq.${name},slug.eq.${slug}`)
+      .limit(1);
+    if (found && found.length > 0) {
+      ids.push(String(found[0].id));
+      continue;
+    }
+    const { data: made, error: makeError } = await supabase
+      .from("cms_article_categories")
+      .insert({ slug, name })
+      .select("id")
+      .single();
+    if (makeError) throw makeError;
+    ids.push(String(made.id));
+  }
 
   await supabase.from("cms_article_category_map").delete().eq("article_id", articleId);
-  await supabase.from("cms_article_category_map").insert({
-    article_id: articleId,
-    category_id: categoryData.id
-  });
+  if (ids.length > 0) {
+    await supabase
+      .from("cms_article_category_map")
+      .insert(ids.map((categoryId) => ({ article_id: articleId, category_id: categoryId })));
+  }
 
   await supabase.from("cms_article_tag_map").delete().eq("article_id", articleId);
   for (const rawTag of tags) {
@@ -401,11 +504,17 @@ export async function upsertArticleRecord(
   actorEmail: string
 ): Promise<ArticleRecord> {
   const supabase = createSupabaseAdminClient();
-  const payload = {
+
+  // The editor's own summary wins; falling back to the body's opening only when
+  // nothing was written. The old code always truncated the body, so a written
+  // summary was discarded on every save.
+  const summary = input.summary?.trim() || input.bodyPlain.slice(0, 240);
+
+  const base: Record<string, unknown> = {
     slug: input.slug,
     locale: input.locale || "zh",
     title: input.title,
-    summary: input.bodyPlain.slice(0, 240),
+    summary,
     body_markdown: input.bodyMarkdown,
     body_plain: input.bodyPlain,
     section: input.section || "news",
@@ -414,39 +523,49 @@ export async function upsertArticleRecord(
     legacy_url: input.legacyUrl ?? null,
     legacy_id: input.legacyId ?? null
   };
+  const editorial: Record<string, unknown> = {
+    subtitle: input.subtitle ?? "",
+    hero_image: input.heroImage ?? "",
+    hero_image_alt: input.heroImageAlt ?? "",
+    hero_credit: input.heroCredit ?? "",
+    author: input.author ?? "",
+    translator: input.translator ?? "",
+    source_title: input.sourceTitle ?? "",
+    source_url: input.sourceUrl ?? "",
+    // Set when publishing and not already dated; clearing the status does not
+    // wipe the original publication date.
+    published_at: input.publishedAt ?? (input.status === "published" ? new Date().toISOString() : null)
+  };
 
-  const { data, error } = await supabase
-    .from("cms_articles")
-    .upsert(payload, { onConflict: "slug,locale" })
-    .select("id, slug, title, section, locale, status, body_markdown, body_plain, legacy_url, legacy_id, updated_at")
-    .single();
-  if (error) throw error;
+  const baseSelect =
+    "id, slug, title, section, locale, status, summary, body_markdown, body_plain, legacy_url, legacy_id, updated_at";
+  const write = async (payload: Record<string, unknown>, select: string) =>
+    supabase.from("cms_articles").upsert(payload, { onConflict: "slug,locale" }).select(select).single();
 
-  await setArticleTaxonomy(String(data.id), input.category, input.tags);
+  let result = await write({ ...base, ...editorial }, `${baseSelect}, ${ARTICLE_EDITORIAL_COLUMNS}`);
+  if (result.error && isMissingEditorialColumn(result.error)) {
+    // Pre-migration: save what the table can hold rather than failing the edit.
+    result = await write(base, baseSelect);
+  }
+  if (result.error) throw result.error;
+  const data = result.data as unknown as ArticleRow;
+
+  await setArticleTaxonomy(String(data.id), input.category, input.secondaryCategories ?? [], input.tags);
   await createRevision("article", String(data.id), actorEmail, {
     record: data,
-    taxonomy: { category: input.category, tags: input.tags }
+    taxonomy: { category: input.category, secondary: input.secondaryCategories, tags: input.tags }
   });
   await createAudit(actorEmail, "article.upsert", "article", String(data.id), "write", {
     slug: data.slug,
     locale: data.locale
   });
 
-  return {
-    id: String(data.id),
-    slug: String(data.slug),
-    title: String(data.title),
-    section: String(data.section),
-    locale: String(data.locale),
-    status: data.status as PageStatus,
-    bodyMarkdown: String(data.body_markdown),
-    bodyPlain: String(data.body_plain),
+  return toArticleRecord(data, {
     category: input.category,
+    secondaryCategories: input.secondaryCategories ?? [],
     tags: input.tags,
-    legacyUrl: data.legacy_url ? String(data.legacy_url) : undefined,
-    legacyId: data.legacy_id ? Number(data.legacy_id) : undefined,
-    updatedAt: String(data.updated_at)
-  };
+    includeBody: true
+  });
 }
 
 export async function bulkUpdateArticleStatus(ids: string[], status: PageStatus, actorEmail: string) {
@@ -479,49 +598,46 @@ export async function deleteArticleById(id: string, actorEmail: string) {
 
 export async function getArticleById(id: string): Promise<ArticleRecord | null> {
   const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase
+  const baseSelect =
+    "id, slug, title, section, locale, status, summary, body_markdown, body_plain, legacy_url, legacy_id, updated_at";
+
+  let result = await supabase
     .from("cms_articles")
-    .select("id, slug, title, section, locale, status, body_markdown, body_plain, legacy_url, legacy_id, updated_at")
+    .select(`${baseSelect}, ${ARTICLE_EDITORIAL_COLUMNS}`)
     .eq("id", id)
     .maybeSingle();
-  if (error) throw error;
-  if (!data) return null;
+  if (result.error && isMissingEditorialColumn(result.error)) {
+    result = await supabase.from("cms_articles").select(baseSelect).eq("id", id).maybeSingle();
+  }
+  if (result.error) throw result.error;
+  if (!result.data) return null;
+  const data = result.data as unknown as ArticleRow;
 
-  let category = "news";
-  let tags: string[] = [];
+  // Insertion order decides which category is primary, matching the list view.
   const { data: categoryRows } = await supabase
     .from("cms_article_category_map")
     .select("cms_article_categories(name)")
-    .eq("article_id", id)
-    .limit(1);
-  const maybeCategory = (categoryRows?.[0] as any)?.cms_article_categories?.name;
-  if (maybeCategory) category = String(maybeCategory);
+    .eq("article_id", id);
+  const names = (categoryRows ?? [])
+    .map((row) => (row as any)?.cms_article_categories?.name)
+    .filter(Boolean)
+    .map(String);
 
   const { data: tagRows } = await supabase
     .from("cms_article_tag_map")
     .select("cms_article_tags(name)")
     .eq("article_id", id);
-  tags =
-    (tagRows ?? [])
-      .map((row) => (row as any)?.cms_article_tags?.name)
-      .filter(Boolean)
-      .map(String) ?? [];
+  const tags = (tagRows ?? [])
+    .map((row) => (row as any)?.cms_article_tags?.name)
+    .filter(Boolean)
+    .map(String);
 
-  return {
-    id: String(data.id),
-    slug: String(data.slug),
-    title: String(data.title),
-    section: String(data.section),
-    locale: String(data.locale),
-    status: data.status as PageStatus,
-    bodyMarkdown: String(data.body_markdown ?? ""),
-    bodyPlain: String(data.body_plain ?? ""),
-    category,
+  return toArticleRecord(data, {
+    category: names[0] ?? "",
+    secondaryCategories: names.slice(1),
     tags,
-    legacyUrl: data.legacy_url ? String(data.legacy_url) : undefined,
-    legacyId: data.legacy_id ? Number(data.legacy_id) : undefined,
-    updatedAt: String(data.updated_at)
-  };
+    includeBody: true
+  });
 }
 
 export async function listMedia(actorEmail: string): Promise<MediaRecord[]> {
@@ -945,18 +1061,33 @@ export async function restoreRevision(revisionId: string, actorEmail: string) {
     if (!record.slug || !record.title) {
       throw new Error("Invalid article revision payload");
     }
-    const taxonomy = (payload.taxonomy ?? {}) as { category?: string; tags?: string[] };
+    const taxonomy = (payload.taxonomy ?? {}) as {
+      category?: string;
+      secondary?: string[];
+      tags?: string[];
+    };
     const articleInput: Omit<ArticleRecord, "updatedAt"> = {
       id: String(record.id ?? ""),
       slug: String(record.slug),
       title: String(record.title),
+      subtitle: String(record.subtitle ?? ""),
       section: String(record.section ?? "news"),
       locale: String(record.locale ?? "zh"),
       status: sanitizeStatus(record.status),
       bodyMarkdown: String(record.body_markdown ?? ""),
       bodyPlain: String(record.body_plain ?? ""),
-      category: taxonomy.category ?? "news",
+      summary: String(record.summary ?? ""),
+      category: taxonomy.category ?? "",
+      secondaryCategories: Array.isArray(taxonomy.secondary) ? taxonomy.secondary : [],
       tags: Array.isArray(taxonomy.tags) ? taxonomy.tags : [],
+      heroImage: String(record.hero_image ?? ""),
+      heroImageAlt: String(record.hero_image_alt ?? ""),
+      heroCredit: String(record.hero_credit ?? ""),
+      author: String(record.author ?? ""),
+      translator: String(record.translator ?? ""),
+      sourceTitle: String(record.source_title ?? ""),
+      sourceUrl: String(record.source_url ?? ""),
+      publishedAt: record.published_at ? String(record.published_at) : null,
       legacyUrl: record.legacy_url ? String(record.legacy_url) : undefined,
       legacyId: record.legacy_id ? Number(record.legacy_id) : undefined
     };

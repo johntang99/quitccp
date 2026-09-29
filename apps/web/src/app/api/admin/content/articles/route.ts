@@ -76,7 +76,21 @@ export async function POST(request: Request) {
       category,
       tags,
       legacyUrl: legacyUrlRaw || undefined,
-      legacyId: legacyIdRaw ? Number(legacyIdRaw) : undefined
+      legacyId: legacyIdRaw ? Number(legacyIdRaw) : undefined,
+      subtitle: String(formData.get("subtitle") ?? ""),
+      summary: String(formData.get("summary") ?? ""),
+      secondaryCategories: String(formData.get("secondaryCategories") ?? "")
+        .split(",")
+        .map((name) => name.trim())
+        .filter(Boolean),
+      heroImage: String(formData.get("heroImage") ?? ""),
+      heroImageAlt: String(formData.get("heroImageAlt") ?? ""),
+      heroCredit: String(formData.get("heroCredit") ?? ""),
+      author: String(formData.get("author") ?? ""),
+      translator: String(formData.get("translator") ?? ""),
+      sourceTitle: String(formData.get("sourceTitle") ?? ""),
+      sourceUrl: String(formData.get("sourceUrl") ?? ""),
+      publishedAt: String(formData.get("publishedAt") ?? "").trim() || null,
     },
     user.email
   );
