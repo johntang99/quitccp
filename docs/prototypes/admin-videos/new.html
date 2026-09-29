@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A · 新建视频 — 视频管理设计稿</title>
+<link rel="stylesheet" href="../admin-articles/admin.css">
+<style>
+  .vthumb{width:120px;aspect-ratio:16/9;object-fit:cover;border-radius:3px;background:#eee;display:block}
+  .novthumb{width:120px;aspect-ratio:16/9;border-radius:3px;background:#f0f0f0;color:#999;
+    font-size:11px;display:flex;align-items:center;justify-content:center}
+  .player{aspect-ratio:16/9;background:#111;border-radius:4px;display:flex;align-items:center;
+    justify-content:center;color:#888;font-size:13px;position:relative}
+  .player::after{content:"▶";position:absolute;font-size:34px;color:#fff;opacity:.85}
+  .dur{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.78);color:#fff;
+    font-size:11px;padding:1px 4px;border-radius:2px;line-height:1.5}
+  .wrapthumb{position:relative;width:120px}
+  .srcbadge{font-size:11px;border:1px solid #d5d5d5;border-radius:10px;padding:1px 7px;color:#555}
+  .bar{height:9px;background:#ececec;border-radius:5px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:#c8102e}
+  .note{background:#fffbe9;border:1px solid #f0e3b0;border-radius:4px;padding:10px 12px;font-size:13px}
+  .warn{background:#fdf1f0;border:1px solid #f2c9c4;border-radius:4px;padding:10px 12px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <h1>QuitCCP CMS</h1>
+    <p class="admin-userline">admin@quitccp.org · super_admin</p>
+    <nav>
+      <a href="#">Dashboard</a>
+      <a href="#">页面内容</a>
+      <a href="#">三退声明</a>
+      <a href="../admin-articles/new.html">文章管理</a>
+      <a href="#">文章分类</a>
+      <a href="./new.html" class="on">视频管理</a>
+      <a href="#">视频分类</a>
+      <a href="#">媒体资源</a>
+      <a href="#">站点设置</a>
+      <a href="#">审计日志</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <div class="admin-card" style="padding:14px 16px">
+      <h2 style="margin:0">视频管理 Videos</h2>
+      <p class="muted" style="margin:4px 0 0">设计稿 — 供讨论，尚未实现。</p>
+    </div>
+    <nav class="tabs">
+      <a href="./new.html" class="on">A · 新建视频</a>
+      <a href="./update.html">B · 查找与修改</a>
+      <a href="./latest.html">C · 最新 100 个</a>
+      <a href="./status.html">D · 视频统计</a>
+      <a href="./import.html">E · 从旧站导入</a>
+      <a href="./index.html">设计说明</a>
+    </nav>
+
+<form onsubmit="return false">
+<div class="form-grid">
+  <div>
+    <div class="admin-card">
+      <h3>1 · 先贴视频地址</h3>
+      <div class="field">
+        <label for="src">视频地址 Source URL<span class="req">*</span></label>
+        <div class="row">
+          <input class="admin-input" id="src" style="flex:1;font-family:ui-monospace,Menlo,monospace"
+                 value="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+          <button class="admin-btn admin-btn-primary" type="button">读取</button>
+        </div>
+        <span class="hint">
+          <b>这是新建视频的第一步，不是最后一步。</b>贴上地址点「读取」，下面的标题、封面、
+          时长会自动填好，编辑只需要改一改、选个分类就能发布。<br>
+          支持 YouTube、干净世界 Ganjing World、Vimeo，以及我们自己桶里的 .mp4。
+        </span>
+      </div>
+      <div class="row" style="gap:14px;align-items:flex-start">
+        <div style="width:300px">
+          <div class="player">预览播放器</div>
+          <p class="muted" style="font-size:12px;margin:6px 0 0">
+            来源 <span class="srcbadge">YouTube</span> · 视频 ID <code>dQw4w9WgXcQ</code> · 时长 12:47
+          </p>
+        </div>
+        <div style="flex:1">
+          <div class="note">
+            <b>读取到了：</b>标题、封面图、时长、频道名、上传日期。<br>
+            封面已经<b>下载进我们自己的桶</b>——YouTube 的缩略图地址在大陆打不开，
+            而且随时可能失效，所以不直接引用。
+          </div>
+          <p class="muted" style="font-size:12px;margin:8px 0 0">
+            读不到？（私享视频、已下架、接口超时）表单不会挡你，
+            下面的字段全部可以手填，封面也可以自己上传。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h3>2 · 基本信息</h3>
+      <div class="field">
+        <label for="t">标题 Title<span class="req">*</span></label>
+        <input class="admin-input" id="t" value="【三退大潮】旅美学者：中共的罪恶史无前例 举世无双">
+        <span class="hint">自动从视频平台读来，可改。用于列表、搜索与页面 &lt;h1&gt;。</span>
+      </div>
+      <div class="field">
+        <label for="ep">系列与集数 Episode</label>
+        <div class="row">
+          <input class="admin-input" id="ep" style="width:120px" placeholder="第几集" value="第 37 集">
+          <input class="admin-input" style="flex:1" placeholder="副标题，可留空" value="旅美学者专访">
+        </div>
+        <span class="hint">
+          《希望的路》《退党洪流》这类按集编号的系列填这里，栏目页会按集数排序而不是按日期。
+          不是系列的留空。
+        </span>
+      </div>
+      <div class="field">
+        <label for="sl">网址 Slug<span class="req">*</span></label>
+        <div class="row">
+          <input class="admin-input" id="sl" style="flex:1;font-family:ui-monospace,Menlo,monospace"
+                 value="【三退大潮】旅美学者：中共的罪恶史无前例 举世无双">
+          <button class="admin-btn admin-btn-sm" type="button">由标题重新生成</button>
+        </div>
+        <span class="hint">和文章一样，默认由标题生成中文 slug，编辑不必会英文，也不必动它。</span>
+      </div>
+      <div class="field">
+        <label for="d">简介 Description</label>
+        <textarea class="admin-textarea" id="d" rows="5">旅美学者接受本台专访，谈中共建政以来历次运动的死亡人数，以及为什么退出中共是每个中国人保平安的选择。</textarea>
+        <span class="hint">
+          支持 Markdown，但故意<b>不给文章那套 16 个按钮的编辑器</b>——视频页的正文只是一段说明，
+          不是一篇文章。需要长文的（比如九评原著）请用文章管理，再从这里链过去。
+        </span>
+      </div>
+      <div class="field">
+        <label>讲者／受访者</label>
+        <input class="admin-input" placeholder="多位用顿号分隔，可留空" value="翟德云">
+      </div>
+    </div>
+  </div>
+
+  <div class="side">
+    <div class="admin-card">
+      <h3>发布</h3>
+      <div class="field">
+        <label>状态</label>
+        <select class="admin-select"><option>已发布</option><option>草稿</option></select>
+        <span class="hint">和文章一致：只有这两种，没有送审流程。</span>
+      </div>
+      <div class="field">
+        <label>发布日期</label>
+        <input class="admin-input" type="date" value="2026-09-29">
+        <span class="hint">默认取视频在平台上的上传日期，可改。</span>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="admin-btn admin-btn-primary" type="button">保存并发布</button>
+        <button class="admin-btn" type="button">存为草稿</button>
+        <button class="admin-btn" type="button">预览</button>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h3>分类<span class="req">*</span></h3>
+      <div class="field">
+        <label>主分类</label>
+        <select class="admin-select"><option>三退前线</option><option>破除党文化</option><option>退一步海阔天空</option><option>九评系列</option><option>铁证如山</option><option>觉醒之旅</option><option>希望的路</option><option>其它系列</option></select>
+        <span class="hint">决定视频出现在 /videos 下的哪个栏目，必填。</span>
+      </div>
+      <div class="field">
+        <label>次分类</label>
+        <span class="chips">
+          <span class="chip on">觉醒之旅 <button type="button">×</button></span>
+          <span class="chip">＋ 添加</span>
+        </span>
+        <span class="hint">可多选。次分类只影响能不能被搜到，不影响它属于哪个栏目。</span>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h3>封面图</h3>
+      <div class="wrapthumb" style="width:100%">
+        <div class="player" style="background:#ddd;color:#777"></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="admin-btn admin-btn-sm" type="button">从视频重新抓取</button>
+        <button class="admin-btn admin-btn-sm" type="button">从媒体库选择</button>
+        <button class="admin-btn admin-btn-sm" type="button">上传</button>
+      </div>
+      <div class="field" style="margin-top:8px">
+        <label>图片说明</label>
+        <input class="admin-input" placeholder="可留空">
+      </div>
+      <span class="hint">
+        没有封面也能发布——列表里显示一个灰底占位，不会撑破版面。
+        这一点和文章一样：宁可没有，也不要假的。
+      </span>
+    </div>
+
+    <div class="admin-card">
+      <h3>来源与版权</h3>
+      <div class="field"><label>制作方／频道</label><input class="admin-input" value="全球退党服务中心"></div>
+      <div class="field"><label>原始链接</label><input class="admin-input" placeholder="转载时填对方页面地址"></div>
+      <div class="field"><label>旧站地址</label>
+        <input class="admin-input" value="https://www.tuidang.org/2019/05/12/398201/" readonly>
+        <span class="hint">从旧站导入的视频自动带上，只读。用来做 301 跳转。</span>
+      </div>
+    </div>
+  </div>
+</div>
+</form>
+
+<div class="admin-card">
+  <h3>保存时会做的检查</h3>
+  <table class="admin-table">
+    <thead><tr><th style="width:170px">检查</th><th>不通过时</th></tr></thead>
+    <tbody>
+      <tr><td>标题非空</td><td>停在标题框，提示「请填写标题」</td></tr>
+      <tr><td>视频地址非空且能解析出来源</td><td>提示「这个地址我们认不出来，请确认是 YouTube／干净世界／Vimeo／.mp4」</td></tr>
+      <tr><td>slug 非空且站内唯一</td><td>提示「这个网址已被《…》占用」，并给一个加日期后缀的建议</td></tr>
+      <tr><td>主分类已选</td><td>提示「请选择主分类」</td></tr>
+      <tr><td>填了图片说明却没有封面</td><td>提示「有说明却没有图」</td></tr>
+    </tbody>
+  </table>
+  <p class="muted" style="margin:8px 0 0">
+    顺序是从上到下，一次只提示第一个没过的，和文章表单一致。
+  </p>
+</div>
+
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>B · 查找与修改 — 视频管理设计稿</title>
+<link rel="stylesheet" href="../admin-articles/admin.css">
+<style>
+  .vthumb{width:120px;aspect-ratio:16/9;object-fit:cover;border-radius:3px;background:#eee;display:block}
+  .novthumb{width:120px;aspect-ratio:16/9;border-radius:3px;background:#f0f0f0;color:#999;
+    font-size:11px;display:flex;align-items:center;justify-content:center}
+  .player{aspect-ratio:16/9;background:#111;border-radius:4px;display:flex;align-items:center;
+    justify-content:center;color:#888;font-size:13px;position:relative}
+  .player::after{content:"▶";position:absolute;font-size:34px;color:#fff;opacity:.85}
+  .dur{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.78);color:#fff;
+    font-size:11px;padding:1px 4px;border-radius:2px;line-height:1.5}
+  .wrapthumb{position:relative;width:120px}
+  .srcbadge{font-size:11px;border:1px solid #d5d5d5;border-radius:10px;padding:1px 7px;color:#555}
+  .bar{height:9px;background:#ececec;border-radius:5px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:#c8102e}
+  .note{background:#fffbe9;border:1px solid #f0e3b0;border-radius:4px;padding:10px 12px;font-size:13px}
+  .warn{background:#fdf1f0;border:1px solid #f2c9c4;border-radius:4px;padding:10px 12px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <h1>QuitCCP CMS</h1>
+    <p class="admin-userline">admin@quitccp.org · super_admin</p>
+    <nav>
+      <a href="#">Dashboard</a>
+      <a href="#">页面内容</a>
+      <a href="#">三退声明</a>
+      <a href="../admin-articles/new.html">文章管理</a>
+      <a href="#">文章分类</a>
+      <a href="./new.html" class="on">视频管理</a>
+      <a href="#">视频分类</a>
+      <a href="#">媒体资源</a>
+      <a href="#">站点设置</a>
+      <a href="#">审计日志</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <div class="admin-card" style="padding:14px 16px">
+      <h2 style="margin:0">视频管理 Videos</h2>
+      <p class="muted" style="margin:4px 0 0">设计稿 — 供讨论，尚未实现。</p>
+    </div>
+    <nav class="tabs">
+      <a href="./new.html">A · 新建视频</a>
+      <a href="./update.html" class="on">B · 查找与修改</a>
+      <a href="./latest.html">C · 最新 100 个</a>
+      <a href="./status.html">D · 视频统计</a>
+      <a href="./import.html">E · 从旧站导入</a>
+      <a href="./index.html">设计说明</a>
+    </nav>
+
+<div class="admin-card">
+  <h3>查找 Search</h3>
+  <div class="admin-toolbar">
+    <input class="admin-input" style="flex:1;min-width:260px" placeholder="搜索标题、简介、讲者、slug 或旧站 ID">
+    <button class="admin-btn admin-btn-primary" type="button">搜索</button>
+  </div>
+  <div class="admin-toolbar">
+    <select class="admin-select"><option>全部分类</option><option>三退前线 (241)</option><option>希望的路 (93)</option><option>九评系列 (42)</option><option>铁证如山 (9)</option><option>觉醒之旅 (4)</option><option>退一步海阔天空 (2)</option><option>破除党文化 (0)</option><option>其它系列 (324)</option></select>
+    <select class="admin-select"><option>全部来源</option><option>YouTube</option><option>干净世界</option><option>Vimeo</option><option>自有文件</option></select>
+    <select class="admin-select"><option>全部状态</option><option>已发布</option><option>草稿</option></select>
+    <label class="muted" style="display:flex;align-items:center;gap:6px">发布于
+      <input class="admin-input" type="date" style="width:150px"> 至
+      <input class="admin-input" type="date" style="width:150px"></label>
+  </div>
+  <div class="admin-toolbar">
+    <span class="chips">
+      <span class="chip on">播放地址失效 <button type="button">×</button></span>
+      <span class="chip">缺封面</span><span class="chip">缺简介</span>
+      <span class="chip">缺分类</span><span class="chip">未标集数</span>
+    </span>
+    <span style="margin-left:auto" class="muted">排序
+      <select class="admin-select admin-btn-sm"><option>更新时间（新→旧）</option><option>发布时间（新→旧）</option><option>集数（小→大）</option><option>时长（长→短）</option></select>
+    </span>
+  </div>
+  <p class="muted" style="margin:0">符合条件 <b>5</b> 个（全站 715 个） · 当前第 1–5 个 ·
+    <a href="#">清除全部筛选</a> · <a href="#">导出 CSV</a></p>
+</div>
+
+<div class="admin-card">
+  <div class="warn" style="margin-bottom:10px">
+    <b>「播放地址失效」这个筛选是视频独有的，也是最该常用的一个。</b>
+    视频和文章不一样：文章搬过来就永远在，视频是外站的，
+    YouTube 随时可能下架一个频道，那一刻我们页面上的播放器就变成一块黑的。
+    系统每周自动抠一遍所有播放地址，失效的会在这里列出来。
+  </div>
+  <div class="admin-toolbar" style="margin-bottom:8px">
+    <span><b>已选 2 个</b></span>
+    <select class="admin-select admin-btn-sm"><option>批量操作…</option><option>发布</option><option>退回草稿</option><option>改主分类</option><option>重新抓取封面</option><option>重新检查播放地址</option><option>删除</option></select>
+    <button class="admin-btn admin-btn-sm" type="button">执行</button>
+    <span class="muted">批量删除会二次确认，并逐条写入审计日志。</span>
+  </div>
+  <table class="admin-table">
+    <thead><tr><th style="width:28px"><input type="checkbox"></th><th style="width:132px">封面</th>
+      <th>标题</th><th>分类</th><th>来源</th><th style="width:60px">可播</th><th>状态</th><th>发布时间</th><th>操作</th></tr></thead>
+    <tbody>
+<tr>
+  <td><input type="checkbox"></td>
+  <td><div class="wrapthumb"><img class="vthumb" src="" alt="" onerror="this.outerHTML='&lt;div class=novthumb&gt;无封面&lt;/div&gt;'"><span class="dur">12:47</span></div></td>
+  <td><a href="./new.html" style="font-weight:600">【三退大潮】旅美学者：中共的罪恶史无前例 举世无双</a><div class="muted" style="font-size:12px">第 37 集</div></td>
+  <td>三退前线</td><td><span class="srcbadge">YouTube</span></td>
+  <td style="text-align:center">✔</td>
+  <td><span class="badge b-pub">已发布</span></td>
+  <td class="muted">2019-05-12</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./new.html">编辑</a>
+    <button class="admin-btn admin-btn-sm" type="button">预览</button>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+<tr>
+  <td><input type="checkbox"></td>
+  <td><div class="wrapthumb"><img class="vthumb" src="" alt="" onerror="this.outerHTML='&lt;div class=novthumb&gt;无封面&lt;/div&gt;'"><span class="dur">24:10</span></div></td>
+  <td><a href="./new.html" style="font-weight:600">《希望的路》第三集 慧眼识真机 善念有福报</a><div class="muted" style="font-size:12px">第 3 集</div></td>
+  <td>希望的路</td><td><span class="srcbadge">YouTube</span></td>
+  <td style="text-align:center">✔</td>
+  <td><span class="badge b-pub">已发布</span></td>
+  <td class="muted">2018-11-02</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./new.html">编辑</a>
+    <button class="admin-btn admin-btn-sm" type="button">预览</button>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+<tr>
+  <td><input type="checkbox"></td>
+  <td><div class="wrapthumb"><img class="vthumb" src="" alt="" onerror="this.outerHTML='&lt;div class=novthumb&gt;无封面&lt;/div&gt;'"><span class="dur">31:02</span></div></td>
+  <td><a href="./new.html" style="font-weight:600">【退党洪流】第十六期 避疫有良方欧美亚抗共</a><div class="muted" style="font-size:12px">第 16 期</div></td>
+  <td>三退前线</td><td><span class="srcbadge">干净世界</span></td>
+  <td style="text-align:center">✔</td>
+  <td><span class="badge b-pub">已发布</span></td>
+  <td class="muted">2020-03-18</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./new.html">编辑</a>
+    <button class="admin-btn admin-btn-sm" type="button">预览</button>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+<tr>
+  <td><input type="checkbox"></td>
+  <td><div class="novthumb">无视频</div></td>
+  <td><a href="./new.html" style="font-weight:600">九评之一：评共产党是什么</a></td>
+  <td>九评系列</td><td><span class="srcbadge">—</span></td>
+  <td style="text-align:center"><span style="color:#c8102e">✕ 失效</span></td>
+  <td><span class="badge b-draft">草稿</span></td>
+  <td class="muted">2004-11-19</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./new.html">编辑</a>
+    <button class="admin-btn admin-btn-sm" type="button">预览</button>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+<tr>
+  <td><input type="checkbox"></td>
+  <td><div class="wrapthumb"><img class="vthumb" src="" alt="" onerror="this.outerHTML='&lt;div class=novthumb&gt;无封面&lt;/div&gt;'"><span class="dur">1:48:20</span></div></td>
+  <td><a href="./new.html" style="font-weight:600">《铁证如山》：中共活体摘取法轮功学员器官罪恶追查</a></td>
+  <td>铁证如山</td><td><span class="srcbadge">YouTube</span></td>
+  <td style="text-align:center">✔</td>
+  <td><span class="badge b-pub">已发布</span></td>
+  <td class="muted">2015-07-09</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./new.html">编辑</a>
+    <button class="admin-btn admin-btn-sm" type="button">预览</button>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+    </tbody>
+  </table>
+  <div class="admin-toolbar" style="margin-top:10px">
+    <button class="admin-btn admin-btn-sm" type="button">上一页</button>
+    <span class="muted">第 1 / 36 页</span>
+    <button class="admin-btn admin-btn-sm" type="button">下一页</button>
+    <span style="margin-left:auto" class="muted">每页
+      <select class="admin-select admin-btn-sm"><option>20</option><option>50</option><option>100</option></select> 个</span>
+  </div>
+</div>
+
+<div class="admin-card">
+  <h3>删除视频时</h3>
+  <p class="muted" style="margin:0 0 6px">和文章的规则一样，只多一条：</p>
+  <table class="admin-table">
+    <thead><tr><th style="width:190px">情况</th><th>处理</th></tr></thead>
+    <tbody>
+      <tr><td>视频从旧站导入</td><td>删除后旧地址仍然 301 跳到栏目页，不会变成 404</td></tr>
+      <tr><td>封面存在我们桶里</td><td><b>不</b>顺手删掉桶里的图——别的地方可能还在引用它，由「媒体资源」统一清理</td></tr>
+      <tr><td>视频被首页或栏目页引用</td><td>先提示「首页「影音精选」正在用这个视频」，要求确认</td></tr>
+    </tbody>
+  </table>
+</div>
+
+  </main>
+</div>
+</body>
+</html>

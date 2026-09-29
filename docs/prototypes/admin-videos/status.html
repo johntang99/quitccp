@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D · 视频统计 — 视频管理设计稿</title>
+<link rel="stylesheet" href="../admin-articles/admin.css">
+<style>
+  .vthumb{width:120px;aspect-ratio:16/9;object-fit:cover;border-radius:3px;background:#eee;display:block}
+  .novthumb{width:120px;aspect-ratio:16/9;border-radius:3px;background:#f0f0f0;color:#999;
+    font-size:11px;display:flex;align-items:center;justify-content:center}
+  .player{aspect-ratio:16/9;background:#111;border-radius:4px;display:flex;align-items:center;
+    justify-content:center;color:#888;font-size:13px;position:relative}
+  .player::after{content:"▶";position:absolute;font-size:34px;color:#fff;opacity:.85}
+  .dur{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.78);color:#fff;
+    font-size:11px;padding:1px 4px;border-radius:2px;line-height:1.5}
+  .wrapthumb{position:relative;width:120px}
+  .srcbadge{font-size:11px;border:1px solid #d5d5d5;border-radius:10px;padding:1px 7px;color:#555}
+  .bar{height:9px;background:#ececec;border-radius:5px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:#c8102e}
+  .note{background:#fffbe9;border:1px solid #f0e3b0;border-radius:4px;padding:10px 12px;font-size:13px}
+  .warn{background:#fdf1f0;border:1px solid #f2c9c4;border-radius:4px;padding:10px 12px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <h1>QuitCCP CMS</h1>
+    <p class="admin-userline">admin@quitccp.org · super_admin</p>
+    <nav>
+      <a href="#">Dashboard</a>
+      <a href="#">页面内容</a>
+      <a href="#">三退声明</a>
+      <a href="../admin-articles/new.html">文章管理</a>
+      <a href="#">文章分类</a>
+      <a href="./new.html" class="on">视频管理</a>
+      <a href="#">视频分类</a>
+      <a href="#">媒体资源</a>
+      <a href="#">站点设置</a>
+      <a href="#">审计日志</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <div class="admin-card" style="padding:14px 16px">
+      <h2 style="margin:0">视频管理 Videos</h2>
+      <p class="muted" style="margin:4px 0 0">设计稿 — 供讨论，尚未实现。</p>
+    </div>
+    <nav class="tabs">
+      <a href="./new.html">A · 新建视频</a>
+      <a href="./update.html">B · 查找与修改</a>
+      <a href="./latest.html">C · 最新 100 个</a>
+      <a href="./status.html" class="on">D · 视频统计</a>
+      <a href="./import.html">E · 从旧站导入</a>
+      <a href="./index.html">设计说明</a>
+    </nav>
+
+<div class="admin-card">
+  <h3>总量</h3>
+  <div class="row" style="gap:28px;flex-wrap:wrap">
+    <div><div class="muted" style="font-size:12px">视频总数</div><div style="font-size:30px;font-weight:700">715</div></div>
+    <div><div class="muted" style="font-size:12px">已发布</div><div style="font-size:30px;font-weight:700">706</div></div>
+    <div><div class="muted" style="font-size:12px">草稿</div><div style="font-size:30px;font-weight:700">9</div></div>
+    <div><div class="muted" style="font-size:12px">播放地址可用</div><div style="font-size:30px;font-weight:700;color:#127a3d">689</div></div>
+    <div><div class="muted" style="font-size:12px">播放地址失效</div><div style="font-size:30px;font-weight:700;color:#c8102e">26</div></div>
+    <div><div class="muted" style="font-size:12px">总时长</div><div style="font-size:30px;font-weight:700">214 小时</div></div>
+  </div>
+  <p class="muted" style="margin:10px 0 0">
+    「失效」那一格是这一页最重要的数字，点进去直接落到 B 页并预设好筛选。
+  </p>
+</div>
+
+<div class="admin-card">
+  <h3>每个分类有多少</h3>
+  <table class="admin-table">
+    <thead><tr><th>分类</th><th style="text-align:right">视频数</th>
+      <th style="text-align:right">可播放</th><th style="text-align:right">有封面</th><th>占比</th></tr></thead>
+    <tbody>
+<tr><td><b>三退前线</b></td><td style="text-align:right">241</td>
+    <td style="text-align:right">238</td><td style="text-align:right">201</td>
+    <td style="width:180px"><div class="bar"><i style="width:34%"></i></div></td></tr>
+<tr><td><b>其它系列</b></td><td style="text-align:right">324</td>
+    <td style="text-align:right">318</td><td style="text-align:right">150</td>
+    <td style="width:180px"><div class="bar"><i style="width:45%"></i></div></td></tr>
+<tr><td><b>希望的路</b></td><td style="text-align:right">93</td>
+    <td style="text-align:right">91</td><td style="text-align:right">88</td>
+    <td style="width:180px"><div class="bar"><i style="width:13%"></i></div></td></tr>
+<tr><td><b>九评系列</b></td><td style="text-align:right">42</td>
+    <td style="text-align:right">36</td><td style="text-align:right">30</td>
+    <td style="width:180px"><div class="bar"><i style="width:6%"></i></div></td></tr>
+<tr><td><b>铁证如山</b></td><td style="text-align:right">9</td>
+    <td style="text-align:right">9</td><td style="text-align:right">7</td>
+    <td style="width:180px"><div class="bar"><i style="width:1%"></i></div></td></tr>
+<tr><td><b>觉醒之旅</b></td><td style="text-align:right">4</td>
+    <td style="text-align:right">4</td><td style="text-align:right">4</td>
+    <td style="width:180px"><div class="bar"><i style="width:1%"></i></div></td></tr>
+<tr><td><b>退一步海阔天空</b></td><td style="text-align:right">2</td>
+    <td style="text-align:right">2</td><td style="text-align:right">2</td>
+    <td style="width:180px"><div class="bar"><i style="width:0%"></i></div></td></tr>
+<tr><td><b>破除党文化</b></td><td style="text-align:right">0</td>
+    <td style="text-align:right">0</td><td style="text-align:right">0</td>
+    <td style="width:180px"><div class="bar"><i style="width:0%"></i></div></td></tr>
+    </tbody>
+  </table>
+  <div class="warn" style="margin-top:10px">
+    <b>这张表现在就能告诉你一件事：三个栏目是空的或近乎空的。</b>
+    破除党文化 0 个、退一步海阔天空 2 个、觉醒之旅 4 个——
+    旧站的视频系列里没有对应内容，这三个是新站新开的栏目。
+    上线前得决定：先隐藏，还是先补内容。
+  </div>
+</div>
+
+<div class="admin-card">
+  <h3>按来源平台</h3>
+  <table class="admin-table">
+    <thead><tr><th>平台</th><th style="text-align:right">数量</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>YouTube</td><td style="text-align:right">681</td><td class="muted">大陆读者看不到。上线前要决定是否给每个视频配一个干净世界的备用地址。</td></tr>
+      <tr><td>干净世界 Ganjing World</td><td style="text-align:right">30</td><td class="muted">大陆可访问的主要出路。</td></tr>
+      <tr><td>自有文件（我们的桶）</td><td style="text-align:right">4</td><td class="muted">最可靠，但占存储也占流量。</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="admin-card">
+  <h3>按年份</h3>
+  <p class="muted" style="margin:0 0 8px">看得出哪几年在做视频，哪几年停了。</p>
+  <table class="admin-table">
+    <thead><tr><th>年份</th><th style="text-align:right">数量</th><th>分布</th></tr></thead>
+    <tbody>
+      <tr><td>2019</td><td style="text-align:right">130</td><td><div class="bar"><i style="width:100%"></i></div></td></tr>
+      <tr><td>2014</td><td style="text-align:right">63</td><td><div class="bar"><i style="width:48%"></i></div></td></tr>
+      <tr><td>2015</td><td style="text-align:right">43</td><td><div class="bar"><i style="width:33%"></i></div></td></tr>
+      <tr><td>2016</td><td style="text-align:right">37</td><td><div class="bar"><i style="width:28%"></i></div></td></tr>
+      <tr><td>2020</td><td style="text-align:right">21</td><td><div class="bar"><i style="width:16%"></i></div></td></tr>
+      <tr><td class="muted" colspan="3">…… 共 13 年</td></tr>
+    </tbody>
+  </table>
+</div>
+
+  </main>
+</div>
+</body>
+</html>

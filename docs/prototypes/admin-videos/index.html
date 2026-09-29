@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>设计说明 — 视频管理设计稿</title>
+<link rel="stylesheet" href="../admin-articles/admin.css">
+<style>
+  .vthumb{width:120px;aspect-ratio:16/9;object-fit:cover;border-radius:3px;background:#eee;display:block}
+  .novthumb{width:120px;aspect-ratio:16/9;border-radius:3px;background:#f0f0f0;color:#999;
+    font-size:11px;display:flex;align-items:center;justify-content:center}
+  .player{aspect-ratio:16/9;background:#111;border-radius:4px;display:flex;align-items:center;
+    justify-content:center;color:#888;font-size:13px;position:relative}
+  .player::after{content:"▶";position:absolute;font-size:34px;color:#fff;opacity:.85}
+  .dur{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.78);color:#fff;
+    font-size:11px;padding:1px 4px;border-radius:2px;line-height:1.5}
+  .wrapthumb{position:relative;width:120px}
+  .srcbadge{font-size:11px;border:1px solid #d5d5d5;border-radius:10px;padding:1px 7px;color:#555}
+  .bar{height:9px;background:#ececec;border-radius:5px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:#c8102e}
+  .note{background:#fffbe9;border:1px solid #f0e3b0;border-radius:4px;padding:10px 12px;font-size:13px}
+  .warn{background:#fdf1f0;border:1px solid #f2c9c4;border-radius:4px;padding:10px 12px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <h1>QuitCCP CMS</h1>
+    <p class="admin-userline">admin@quitccp.org · super_admin</p>
+    <nav>
+      <a href="#">Dashboard</a>
+      <a href="#">页面内容</a>
+      <a href="#">三退声明</a>
+      <a href="../admin-articles/new.html">文章管理</a>
+      <a href="#">文章分类</a>
+      <a href="./new.html" class="on">视频管理</a>
+      <a href="#">视频分类</a>
+      <a href="#">媒体资源</a>
+      <a href="#">站点设置</a>
+      <a href="#">审计日志</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <div class="admin-card" style="padding:14px 16px">
+      <h2 style="margin:0">视频管理 Videos</h2>
+      <p class="muted" style="margin:4px 0 0">设计稿 — 供讨论，尚未实现。</p>
+    </div>
+    <nav class="tabs">
+      <a href="./new.html">A · 新建视频</a>
+      <a href="./update.html">B · 查找与修改</a>
+      <a href="./latest.html">C · 最新 100 个</a>
+      <a href="./status.html">D · 视频统计</a>
+      <a href="./import.html">E · 从旧站导入</a>
+      <a href="./index.html" class="on">设计说明</a>
+    </nav>
+
+<div class="admin-card">
+  <h3>这份设计稿</h3>
+  <p class="muted" style="margin:0">
+    结构照搬文章管理，编辑学一次就会用两个。差别全部来自「视频是外站的、文章是我们的」这一条。
+  </p>
+</div>
+
+<div class="admin-card">
+  <h3>五个页面</h3>
+  <table class="admin-table">
+    <thead><tr><th style="width:150px">页面</th><th>做什么</th><th>和文章的差别</th></tr></thead>
+    <tbody>
+      <tr><td><a href="./new.html"><b>A · 新建视频</b></a></td>
+        <td>贴地址 → 自动读取 → 改一改 → 发布</td>
+        <td>以<b>视频地址</b>开头而不是标题；封面自动抓；没有 16 键 Markdown 编辑器</td></tr>
+      <tr><td><a href="./update.html"><b>B · 查找与修改</b></a></td>
+        <td>搜索、筛选、批量改、删除</td>
+        <td>多了<b>「播放地址失效」</b>筛选和来源平台筛选</td></tr>
+      <tr><td><a href="./latest.html"><b>C · 最新 100 个</b></a></td>
+        <td>直接列出最近改动的 100 个</td>
+        <td>无</td></tr>
+      <tr><td><a href="./status.html"><b>D · 视频统计</b></a></td>
+        <td>总量、各分类、各平台、各年份</td>
+        <td>多了<b>失效计数</b>和总时长；按平台分布是视频独有的</td></tr>
+      <tr><td><a href="./import.html"><b>E · 从旧站导入</b></a></td>
+        <td>把旧站挑出来的 715 个搬进视频库</td>
+        <td><b>文章管理没有这一页。</b>旧站没有视频类型，得先挑再搬</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="admin-card">
+  <h3>三个我认为值得单独说的决定</h3>
+  <ol style="margin:0;padding-left:20px;line-height:1.9">
+    <li><b>新建视频从「贴地址」开始，不是从「填标题」开始。</b>
+      九成的字段能从视频平台读出来，让编辑先贴地址，后面就只剩选分类。
+      反过来做的话，每个视频都要手打标题、找封面、量时长。</li>
+    <li><b>封面一律下载进我们自己的桶。</b>
+      YouTube 的缩略图地址在大陆打不开，而且视频一下架缩略图就跟着没了。
+      这和文章图片的处理是同一条规则。</li>
+    <li><b>「播放地址失效」要当成一个日常指标，不是一次性检查。</b>
+      文章搬过来就永远在，视频不是——YouTube 随时可能下架一个频道。
+      每周自动抠一遍，失效的进 B 页的筛选器和 D 页的红字。</li>
+  </ol>
+</div>
+
+<div class="admin-card">
+  <h3>等你定的四件事</h3>
+  <ol style="margin:0;padding-left:20px;line-height:1.9">
+    <li><b>350 个「带标注」的要不要导入？</b>
+      导：视频库 715 个，但其中 324 个堆在其它系列。
+      不导：365 个，干净，但只有四个栏目有内容。我倾向导——它们的播放器都是活的。</li>
+    <li><b>破除党文化（0）、退一步海阔天空（2）、觉醒之旅（4）怎么开张？</b>
+      先隐藏，还是从别处调内容？</li>
+    <li><b>进了视频库的，要不要从文章列表撤下来？</b>
+      我认为要，否则站内重复。代价是文章数从 15,514 变成 14,799。</li>
+    <li><b>681 个 YouTube 视频，大陆读者看不到。</b>
+      要不要给每个配一个干净世界的备用地址？这是内容工作不是技术工作，量不小。</li>
+  </ol>
+</div>
+
+  </main>
+</div>
+</body>
+</html>

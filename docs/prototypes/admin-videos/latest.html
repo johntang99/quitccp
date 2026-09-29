@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>C · 最新 100 个 — 视频管理设计稿</title>
+<link rel="stylesheet" href="../admin-articles/admin.css">
+<style>
+  .vthumb{width:120px;aspect-ratio:16/9;object-fit:cover;border-radius:3px;background:#eee;display:block}
+  .novthumb{width:120px;aspect-ratio:16/9;border-radius:3px;background:#f0f0f0;color:#999;
+    font-size:11px;display:flex;align-items:center;justify-content:center}
+  .player{aspect-ratio:16/9;background:#111;border-radius:4px;display:flex;align-items:center;
+    justify-content:center;color:#888;font-size:13px;position:relative}
+  .player::after{content:"▶";position:absolute;font-size:34px;color:#fff;opacity:.85}
+  .dur{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.78);color:#fff;
+    font-size:11px;padding:1px 4px;border-radius:2px;line-height:1.5}
+  .wrapthumb{position:relative;width:120px}
+  .srcbadge{font-size:11px;border:1px solid #d5d5d5;border-radius:10px;padding:1px 7px;color:#555}
+  .bar{height:9px;background:#ececec;border-radius:5px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:#c8102e}
+  .note{background:#fffbe9;border:1px solid #f0e3b0;border-radius:4px;padding:10px 12px;font-size:13px}
+  .warn{background:#fdf1f0;border:1px solid #f2c9c4;border-radius:4px;padding:10px 12px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <h1>QuitCCP CMS</h1>
+    <p class="admin-userline">admin@quitccp.org · super_admin</p>
+    <nav>
+      <a href="#">Dashboard</a>
+      <a href="#">页面内容</a>
+      <a href="#">三退声明</a>
+      <a href="../admin-articles/new.html">文章管理</a>
+      <a href="#">文章分类</a>
+      <a href="./new.html" class="on">视频管理</a>
+      <a href="#">视频分类</a>
+      <a href="#">媒体资源</a>
+      <a href="#">站点设置</a>
+      <a href="#">审计日志</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <div class="admin-card" style="padding:14px 16px">
+      <h2 style="margin:0">视频管理 Videos</h2>
+      <p class="muted" style="margin:4px 0 0">设计稿 — 供讨论，尚未实现。</p>
+    </div>
+    <nav class="tabs">
+      <a href="./new.html">A · 新建视频</a>
+      <a href="./update.html">B · 查找与修改</a>
+      <a href="./latest.html" class="on">C · 最新 100 个</a>
+      <a href="./status.html">D · 视频统计</a>
+      <a href="./import.html">E · 从旧站导入</a>
+      <a href="./index.html">设计说明</a>
+    </nav>
+
+<div class="admin-card">
+  <div class="admin-toolbar">
+    <b>最新 100 个视频</b>
+    <span class="muted">按更新时间排序，和文章那一页的口径一致。</span>
+    <span style="margin-left:auto">
+      <select class="admin-select admin-btn-sm"><option>更新时间（新→旧）</option><option>发布时间（新→旧）</option></select>
+      <button class="admin-btn admin-btn-sm" type="button">刷新</button>
+    </span>
+  </div>
+  <p class="muted" style="margin:0">
+    这一页不带筛选条件——要筛选请用 <a href="./update.html">B · 查找与修改</a>。
+    它存在的理由只有一个：编辑最常做的事是「我刚发的那个视频要改一下」，
+    这一页让那件事变成一次点击。
+  </p>
+</div>
+
+<div class="admin-card">
+  <table class="admin-table">
+    <thead><tr><th style="width:132px">封面</th><th>标题</th><th>分类</th><th>来源</th><th>状态</th><th>更新时间</th><th>操作</th></tr></thead>
+    <tbody>
+<tr>
+  <td><div class="wrapthumb"><img class="vthumb" src="" alt="" onerror="this.outerHTML='&lt;div class=novthumb&gt;无封面&lt;/div&gt;'"><span class="dur">09:31</span></div></td>
+  <td><a href="./new.html" style="font-weight:600">【三退大潮】良心人士：党性就是兽性 退党是恢复人性</a></td>
+  <td>三退前线</td><td><span class="srcbadge">YouTube</span></td>
+  <td><span class="badge b-pub">已发布</span></td>
+  <td class="muted">2026-09-29 11:04</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./new.html">编辑</a>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+<tr>
+  <td><div class="wrapthumb"><img class="vthumb" src="" alt="" onerror="this.outerHTML='&lt;div class=novthumb&gt;无封面&lt;/div&gt;'"><span class="dur">22:48</span></div></td>
+  <td><a href="./new.html" style="font-weight:600">《希望的路》第十二集 守得云开见月明</a></td>
+  <td>希望的路</td><td><span class="srcbadge">YouTube</span></td>
+  <td><span class="badge b-pub">已发布</span></td>
+  <td class="muted">2026-09-28 16:20</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./new.html">编辑</a>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+<tr>
+  <td><div class="wrapthumb"><img class="vthumb" src="" alt="" onerror="this.outerHTML='&lt;div class=novthumb&gt;无封面&lt;/div&gt;'"><span class="dur">14:05</span></div></td>
+  <td><a href="./new.html" style="font-weight:600">End CCP 征签年破百万 民众翻墙识正邪</a></td>
+  <td>三退前线</td><td><span class="srcbadge">干净世界</span></td>
+  <td><span class="badge b-pub">已发布</span></td>
+  <td class="muted">2026-09-27 09:12</td>
+  <td style="white-space:nowrap">
+    <a class="admin-btn admin-btn-sm" href="./new.html">编辑</a>
+    <button class="admin-btn admin-btn-sm admin-btn-danger" type="button">删除</button>
+  </td>
+</tr>
+    </tbody>
+  </table>
+  <p class="muted" style="margin:10px 0 0">…… 共 100 行，不分页。</p>
+</div>
+
+  </main>
+</div>
+</body>
+</html>

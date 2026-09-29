@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>E · 从旧站导入 — 视频管理设计稿</title>
+<link rel="stylesheet" href="../admin-articles/admin.css">
+<style>
+  .vthumb{width:120px;aspect-ratio:16/9;object-fit:cover;border-radius:3px;background:#eee;display:block}
+  .novthumb{width:120px;aspect-ratio:16/9;border-radius:3px;background:#f0f0f0;color:#999;
+    font-size:11px;display:flex;align-items:center;justify-content:center}
+  .player{aspect-ratio:16/9;background:#111;border-radius:4px;display:flex;align-items:center;
+    justify-content:center;color:#888;font-size:13px;position:relative}
+  .player::after{content:"▶";position:absolute;font-size:34px;color:#fff;opacity:.85}
+  .dur{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.78);color:#fff;
+    font-size:11px;padding:1px 4px;border-radius:2px;line-height:1.5}
+  .wrapthumb{position:relative;width:120px}
+  .srcbadge{font-size:11px;border:1px solid #d5d5d5;border-radius:10px;padding:1px 7px;color:#555}
+  .bar{height:9px;background:#ececec;border-radius:5px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:#c8102e}
+  .note{background:#fffbe9;border:1px solid #f0e3b0;border-radius:4px;padding:10px 12px;font-size:13px}
+  .warn{background:#fdf1f0;border:1px solid #f2c9c4;border-radius:4px;padding:10px 12px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <h1>QuitCCP CMS</h1>
+    <p class="admin-userline">admin@quitccp.org · super_admin</p>
+    <nav>
+      <a href="#">Dashboard</a>
+      <a href="#">页面内容</a>
+      <a href="#">三退声明</a>
+      <a href="../admin-articles/new.html">文章管理</a>
+      <a href="#">文章分类</a>
+      <a href="./new.html" class="on">视频管理</a>
+      <a href="#">视频分类</a>
+      <a href="#">媒体资源</a>
+      <a href="#">站点设置</a>
+      <a href="#">审计日志</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <div class="admin-card" style="padding:14px 16px">
+      <h2 style="margin:0">视频管理 Videos</h2>
+      <p class="muted" style="margin:4px 0 0">设计稿 — 供讨论，尚未实现。</p>
+    </div>
+    <nav class="tabs">
+      <a href="./new.html">A · 新建视频</a>
+      <a href="./update.html">B · 查找与修改</a>
+      <a href="./latest.html">C · 最新 100 个</a>
+      <a href="./status.html">D · 视频统计</a>
+      <a href="./import.html" class="on">E · 从旧站导入</a>
+      <a href="./index.html">设计说明</a>
+    </nav>
+
+<div class="admin-card">
+  <h3>从旧站导入视频</h3>
+  <p class="muted" style="margin:0 0 10px">
+    这一页文章管理没有，视频需要——因为旧站<b>没有视频这个类型</b>，视频就是文章，
+    得先挑出来再搬。挑选规则已经跑完，结果在这里等你确认。
+  </p>
+  <table class="admin-table">
+    <thead><tr><th style="width:28px"></th><th>这一批是什么</th><th style="text-align:right">数量</th><th>建议</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><input type="checkbox" checked></td>
+        <td><b>系列</b><div class="muted" style="font-size:12px">旧站七个【视频系列】分类下的文章，视频库的主体</div></td>
+        <td style="text-align:right"><b>365</b></td>
+        <td><span style="color:#127a3d">导入</span></td>
+      </tr>
+      <tr>
+        <td><input type="checkbox" checked></td>
+        <td><b>带标注</b><div class="muted" style="font-size:12px">在别的分类下，但标题带（视频）<b>且</b>正文播放器还能用</div></td>
+        <td style="text-align:right"><b>350</b></td>
+        <td><span style="color:#127a3d">导入</span></td>
+      </tr>
+      <tr>
+        <td><input type="checkbox"></td>
+        <td><b>播放器已失效</b><div class="muted" style="font-size:12px">标题写着（视频），正文里的播放器早就没了</div></td>
+        <td style="text-align:right">531</td>
+        <td><span style="color:#c8102e">不导入</span> — 搬过去就是点不开的视频</td>
+      </tr>
+      <tr>
+        <td><input type="checkbox"></td>
+        <td><b>新闻顺带嵌片</b><div class="muted" style="font-size:12px">有播放器，但标题没标注，本体是新闻报导</div></td>
+        <td style="text-align:right">218</td>
+        <td><span style="color:#c8102e">不导入</span> — 留在文章里更合适</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="admin-toolbar" style="margin-top:10px">
+    <button class="admin-btn admin-btn-primary" type="button">试运行（不写库）</button>
+    <button class="admin-btn" type="button">正式导入 715 个</button>
+    <span class="muted">导入可以重复跑：按旧站 ID 认人，已经进来的只更新不重复建。</span>
+  </div>
+</div>
+
+<div class="admin-card">
+  <h3>导入后会落到哪个分类</h3>
+  <p class="muted" style="margin:0 0 8px">
+    规则写在 <code>scripts/allocate-videos.ts</code>，逐条结果可导出核对。
+    下面这张表是真实数据，不是示意。
+  </p>
+  <table class="admin-table">
+    <thead><tr><th>新分类</th><th style="text-align:right">系列 365</th><th style="text-align:right">带标注 350</th><th style="text-align:right">合计</th><th>主要来自旧站哪里</th></tr></thead>
+    <tbody>
+      <tr><td><b>三退前线</b></td><td style="text-align:right">228</td><td style="text-align:right">13</td><td style="text-align:right"><b>241</b></td><td class="muted">三退大潮、退党洪流（按你说的合并）</td></tr>
+      <tr><td><b>希望的路</b></td><td style="text-align:right">93</td><td style="text-align:right">0</td><td style="text-align:right"><b>93</b></td><td class="muted">《希望的路》分集</td></tr>
+      <tr><td><b>九评系列</b></td><td style="text-align:right">32</td><td style="text-align:right">10</td><td style="text-align:right"><b>42</b></td><td class="muted">九评原著＋衍生</td></tr>
+      <tr><td><b>铁证如山</b></td><td style="text-align:right">9</td><td style="text-align:right">0</td><td style="text-align:right"><b>9</b></td><td class="muted">《铁证如山》系列讲座</td></tr>
+      <tr><td><b>觉醒之旅</b></td><td style="text-align:right">0</td><td style="text-align:right">4</td><td style="text-align:right"><b>4</b></td><td class="muted">世人觉醒</td></tr>
+      <tr><td><b>退一步海阔天空</b></td><td style="text-align:right">0</td><td style="text-align:right">2</td><td style="text-align:right"><b>2</b></td><td class="muted">人物专访</td></tr>
+      <tr><td><b>破除党文化</b></td><td style="text-align:right">0</td><td style="text-align:right">0</td><td style="text-align:right"><b>0</b></td><td class="muted">旧站没有对应内容</td></tr>
+      <tr><td><b>其它系列</b></td><td style="text-align:right">3</td><td style="text-align:right">321</td><td style="text-align:right"><b>324</b></td><td class="muted">按你说的，归不进任何系列的全放这里</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="admin-card">
+  <h3>导入时每个视频会带上什么</h3>
+  <table class="admin-table">
+    <thead><tr><th style="width:150px">字段</th><th>从哪里来</th></tr></thead>
+    <tbody>
+      <tr><td>标题、发布日期</td><td>旧站文章原样搬</td></tr>
+      <tr><td>视频地址</td><td>正文里 <code>::: video</code> 块的第一个地址</td></tr>
+      <tr><td>简介</td><td>正文去掉播放器之后的文字，截前 300 字</td></tr>
+      <tr><td>封面</td><td>旧站文章的封面图；没有就去视频平台抓，<b>都下载进我们的桶</b></td></tr>
+      <tr><td>分类</td><td>按左边那张表的规则</td></tr>
+      <tr><td>旧站地址</td><td>原样保留，用来做 301 跳转</td></tr>
+      <tr><td>集数</td><td>从标题里认「第 N 集／第 N 期」，认不出就留空</td></tr>
+    </tbody>
+  </table>
+  <div class="note" style="margin-top:10px">
+    <b>导入的视频同时还是文章吗？</b>不是。进了视频库就从文章列表里撤下来，
+    否则同一篇东西在站内出现两次，搜索结果里也会重复。
+    旧地址照常 301，只是落到 <code>/videos/…</code> 而不是 <code>/news/…</code>。
+    <b>这一条需要你点头，因为它会让文章总数从 15,514 减到 14,799。</b>
+  </div>
+</div>
+
+  </main>
+</div>
+</body>
+</html>
