@@ -30,51 +30,90 @@ export type NormalizedArticle = {
   bodyMarkdown: string;
   bodyPlain: string;
   section: "news" | "resources";
+  /** Empty when no category in `taxonomyMap` matched -- see resolveCategory. */
   category: string;
+  /** The post's original WordPress category slugs, kept for auditing. */
+  wpCategories: string[];
   locale: "zh";
   publishedAt: string;
 };
 
-type Target = { section: "news" | "resources"; category: string };
+type Target = { section: "news" | "resources"; category: string } | { skip: string };
 
 /**
- * Old tuidang.org category -> new category.
+ * 旧站分类 -> 新站分类。Keyed by the WordPress slug, with the Chinese name in a
+ * comment so the table can be read without cross-referencing.
  *
- * Keyed by the WordPress category *name* (Chinese) as well as its slug, because
- * the slug is a pinyin abbreviation that is easy to guess wrong: the previous
- * version of this map guessed four of the seven, and those four never matched a
- * single post -- which is why 7,785 of 10,000 articles fell through to the
- * catch-all `news` category.
+ * Built from the live taxonomy fetched 2026-09-29 (51 categories, 15,513 posts;
+ * see docs/implementation/wp-taxonomy-live.md). Rows marked ✔ were decided by
+ * the editor; the rest are proposals awaiting confirmation.
  *
- * Every target below is an existing category slug in `cms_article_categories`.
- * Run `scripts/check-wp-taxonomy.ts` against the real export before importing:
- * it reports which of the site's categories this table does not cover.
+ * There is deliberately **no catch-all**. The previous import defaulted unknown
+ * categories to `news`, which silently swallowed 7,785 articles -- 78% of the
+ * import -- and the new site has no 新闻 category at all. An unmapped category
+ * now fails the coverage check instead.
  */
 const taxonomyMap: Record<string, Target> = {
-  // --- confirmed by the editor -----------------------------------------
-  "红朝败相": { section: "news", category: "red-regime-collapse" },
-  "三退报道": { section: "news", category: "withdrawal-news" },
-  "名家评述": { section: "news", category: "topics-commentary" },
-  "国际声援": { section: "news", category: "worldwide-supports" },
-  "三退纪实": { section: "news", category: "withdrawal-stories" },
-  // 打倒中共恶魔 is the End CCP petition drive; filed with 三退要闻 for now.
-  "打倒中共恶魔": { section: "news", category: "withdrawal-news" },
-  // Reference material rather than news -- these leave the article stream.
-  "良言善语": { section: "resources", category: "culture" },
-  "文化故事": { section: "resources", category: "culture" },
+  // ---- 编辑已确认 ------------------------------------------------------
+  hchy:    { section: "news", category: "red-regime-collapse" },   // ✔ 红潮谎言 7581
+  gcze:    { section: "news", category: "red-regime-collapse" },   // ✔ 共产罪恶 667
+  hcbx:    { section: "news", category: "red-regime-collapse" },   // ✔ 红朝败相 501
+  sthsh:   { section: "news", category: "withdrawal-news" },       // ✔ 三退洪势 3453
+  tddsj:   { section: "news", category: "withdrawal-news" },       // ✔ 退党大事记 1287
+  toutiao: { section: "news", category: "withdrawal-news" },       // ✔ 今日头条 617
+  styw:    { section: "news", category: "withdrawal-news" },       // ✔ 三退要闻 568
+  ddzgem:  { section: "news", category: "withdrawal-news" },       // ✔ 打倒中共恶魔 191
+  gjsy:    { section: "news", category: "worldwide-supports" },    // ✔ 国际声援 63
+  tdjsgs:  { section: "news", category: "withdrawal-stories" },    // ✔ 退党纪实故事 136
+  lysy:    { section: "resources", category: "culture" },          // ✔ 良言善语 5
 
-  // --- proposed, not yet confirmed --------------------------------------
-  "调查报告": { section: "news", category: "worldwide-investigation" },
-  "公告": { section: "news", category: "announcement-claims" },
+  // ---- 待确认：新闻类 --------------------------------------------------
+  szps:    { section: "news", category: "topics-commentary" },     // 时政评述 209
+  mjlt:    { section: "news", category: "topics-commentary" },     // 名家论坛 60（你写的「名家评述」应是它）
+  rwygd:   { section: "news", category: "topics-commentary" },     // 人物与观点 27
+  jtdwh:   { section: "news", category: "topics-commentary" },     // 解体党文化 19
+  "9p20":  { section: "news", category: "topics-commentary" },     // 九评20周年 16
+  tddt:    { section: "news", category: "withdrawal-news" },       // 退党动态 151
+  dsj:     { section: "news", category: "withdrawal-news" },       // 大事记 1
+  srjx:    { section: "news", category: "withdrawal-stories" },    // 世人觉醒 72
+  stgs:    { section: "news", category: "withdrawal-stories" },    // 三退故事 62
+  sths:    { section: "news", category: "withdrawal-stories" },    // 三退洪声 49
+  styg:    { section: "news", category: "withdrawal-stories" },    // 三退义工 39
+  syrjx:   { section: "news", category: "withdrawal-stories" },    // 四亿人的觉醒 23
+  ygfc:    { section: "news", category: "withdrawal-stories" },    // 义工风采 14
+  tzrs:    { section: "news", category: "worldwide-investigation" },// 《铁证如山》系列讲座 34
+  shbjzc:  { section: "news", category: "worldwide-supports" },    // 社会褒奖支持 8
+  bd10312: { section: "news", category: "announcement-claims" },   // 退党证明与移民相关报道 22
+  gkbftdzm:{ section: "news", category: "announcement-claims" },   // 公开颁发退党证明 17
+  bd10238: { section: "news", category: "announcement-claims" },   // 移民常见问题 6
 
-  // --- pinyin slugs seen in the previous import -------------------------
-  hcbx: { section: "news", category: "red-regime-collapse" },
-  styw: { section: "news", category: "withdrawal-news" },
-  sthsh: { section: "news", category: "withdrawal-stories" },
-  tjbg: { section: "news", category: "worldwide-investigation" },
-  gg: { section: "news", category: "announcement-claims" },
-  wh: { section: "resources", category: "culture" },
-  zy: { section: "resources", category: "resource-downloads" }
+  // ---- 待确认：资料类（离开新闻流）-------------------------------------
+  zhwh:    { section: "resources", category: "culture" },          // 中华文化 101
+  yinyue:  { section: "resources", category: "culture" },          // 音乐 129
+  wenxue:  { section: "resources", category: "culture" },          // 文学 62
+  ctgsjx:  { section: "resources", category: "culture" },          // 传统故事精选 21
+  shuhua:  { section: "resources", category: "culture" },          // 书画 7
+  whpd:    { section: "resources", category: "culture" },          // 文化频道 6
+  dfhc:    { section: "resources", category: "culture" },          // 大法洪传 19
+  zxdzl:   { section: "resources", category: "resource-downloads" },// 真相点资料 19
+  zbhf:    { section: "resources", category: "resource-downloads" },// 展板横幅 10
+  cdxcx:   { section: "resources", category: "resource-downloads" },// 传单小册子 6
+  stqk:    { section: "resources", category: "resource-downloads" },// 三退期刊 7
+  zxyd:    { section: "resources", category: "resource-downloads" },// 真相园地 50
+
+  // ---- 待确认：看起来是视频，不是文章 ----------------------------------
+  spjx:    { skip: "视频精选 245 —— 建议进 cms_videos" },
+  stdc:    { skip: "【视频系列】三退大潮 230 —— 建议进 cms_videos" },
+  xwdl:    { skip: "【视频系列】希望的路 99 —— 建议进 cms_videos" },
+  tdhl:    { skip: "【视频系列】退党洪流 22 —— 建议进 cms_videos" },
+  "9ping": { skip: "【视频系列】九评共产党 9 —— 建议进 cms_videos" },
+  qtsp:    { skip: "其他视频 3 —— 建议进 cms_videos" },
+  zxgb:    { skip: "真相广播 2 —— 音频，建议进 cms_videos" },
+
+  // ---- 无意义的旧分类 --------------------------------------------------
+  wfl:     { skip: "未分类 31 —— 按文章的其它分类归；都没有则人工处理" },
+  qita:    { skip: "其他 6 —— 同上" },
+  temp:    { skip: "temp 4 —— 旧站的临时分类" }
 };
 
 export { taxonomyMap };
@@ -98,25 +137,33 @@ function htmlToMarkdownLite(input: string): string {
     .trim();
 }
 
+/**
+ * Resolves the first of a post's categories that the table covers.
+ *
+ * Returns `null` rather than falling back to a catch-all: an article whose
+ * categories are all unmapped has to surface in the coverage report, not be
+ * quietly filed somewhere.
+ */
 function resolveCategory(
   legacyPath: string,
   wordpressCategorySlugs: string[] = []
-): Target {
-  // Names and slugs are both looked up, so a post resolves whichever the
-  // caller happened to collect.
+): { section: "news" | "resources"; category: string } | null {
   for (const key of wordpressCategorySlugs) {
-    if (taxonomyMap[key]) return taxonomyMap[key];
+    const hit = taxonomyMap[key];
+    if (hit && !("skip" in hit)) return hit;
   }
-  const pathBits = legacyPath.split("/").filter(Boolean);
-  const first = pathBits[0];
-  if (first && taxonomyMap[first]) return taxonomyMap[first];
-  return { section: "news", category: "news" };
+  const first = legacyPath.split("/").filter(Boolean)[0];
+  const byPath = first ? taxonomyMap[first] : undefined;
+  if (byPath && !("skip" in byPath)) return byPath;
+  return null;
 }
 
 export function normalizePost(post: WpPost, categorySlugById?: Map<number, string>): NormalizedArticle {
   const postCategorySlugs =
     post.categories?.map((id) => categorySlugById?.get(id)).filter((slug): slug is string => Boolean(slug)) ?? [];
-  const { section, category } = resolveCategory(new URL(post.link).pathname, postCategorySlugs);
+  const resolved = resolveCategory(new URL(post.link).pathname, postCategorySlugs);
+  const section = resolved?.section ?? "news";
+  const category = resolved?.category ?? "";
   let normalizedSlug = post.slug;
   try {
     normalizedSlug = decodeURIComponent(post.slug);
@@ -133,6 +180,9 @@ export function normalizePost(post: WpPost, categorySlugById?: Map<number, strin
     bodyPlain: stripHtml(post.content.rendered),
     section,
     category,
+    // The original categories travel with the row from here on. Losing them was
+    // what made the last import impossible to audit or redo.
+    wpCategories: postCategorySlugs,
     locale: "zh",
     publishedAt: post.date_gmt
   };

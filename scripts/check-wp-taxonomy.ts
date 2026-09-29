@@ -74,29 +74,41 @@ async function main() {
   const seen = (mode === "--wxr" ? fromWxr(arg) : await fromRest(arg)).sort((a, b) => b.posts - a.posts);
 
   const mapped: Seen[] = [];
+  const skipped: Seen[] = [];
   const unmapped: Seen[] = [];
   for (const row of seen) {
-    (taxonomyMap[row.name] || taxonomyMap[row.slug] ? mapped : unmapped).push(row);
+    const t = taxonomyMap[row.slug] ?? taxonomyMap[row.name];
+    if (!t) unmapped.push(row);
+    else if ("skip" in t) skipped.push(row);
+    else mapped.push(row);
   }
 
   const total = seen.reduce((n, r) => n + r.posts, 0);
   const covered = mapped.reduce((n, r) => n + r.posts, 0);
+  const passed = skipped.reduce((n, r) => n + r.posts, 0);
 
-  console.log(`\n旧站分类 ${seen.length} 个，文章 ${total} 篇\n`);
-  console.log("已覆盖 MAPPED");
+  console.log(`\n旧站分类 ${seen.length} 个，归类 ${total} 次\n`);
+  console.log("已映射 MAPPED");
   for (const r of mapped) {
-    const t = taxonomyMap[r.name] ?? taxonomyMap[r.slug];
+    const t = (taxonomyMap[r.slug] ?? taxonomyMap[r.name]) as { section: string; category: string };
     console.log(`  ${r.name.padEnd(14)} ${r.slug.padEnd(16)} ${String(r.posts).padStart(6)}  →  ${t.section}/${t.category}`);
   }
+  if (skipped.length > 0) {
+    console.log("\n已标记跳过 SKIPPED  ← 明确不进文章库");
+    for (const r of skipped) {
+      const t = taxonomyMap[r.slug] ?? taxonomyMap[r.name];
+      console.log(`  ${r.name.padEnd(14)} ${r.slug.padEnd(16)} ${String(r.posts).padStart(6)}  —  ${(t as { skip: string }).skip}`);
+    }
+  }
   if (unmapped.length > 0) {
-    console.log("\n未覆盖 UNMAPPED  ← 这些会落进兜底分类「新闻」");
+    console.log("\n未覆盖 UNMAPPED  ← 必须先决定它们的去向");
     for (const r of unmapped) {
       console.log(`  ${r.name.padEnd(14)} ${r.slug.padEnd(16)} ${String(r.posts).padStart(6)}`);
     }
   }
-  const pct = total ? Math.round((covered / total) * 100) : 0;
-  console.log(`\n覆盖率：${covered}/${total} 篇（${pct}%）`);
-  if (pct < 100) {
+  const pct = total ? Math.round(((covered + passed) / total) * 100) : 0;
+  console.log(`\n映射 ${covered} · 跳过 ${passed} · 未覆盖 ${total - covered - passed}  ——  已决定 ${pct}%`);
+  if (unmapped.length > 0) {
     console.log("把上面 UNMAPPED 的分类补进 scripts/migrate-wp-posts.ts 的 taxonomyMap 后再导入。");
     process.exitCode = 1;
   }
