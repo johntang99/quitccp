@@ -526,3 +526,83 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
     return normalizedSlug === "article" ? fallback : null;
   }
 }
+
+export interface PublicVideoRecord {
+  slug: string;
+  title: string;
+  episode: string;
+  description: string;
+  bodyMarkdown: string;
+  sourceUrl: string;
+  backupUrl: string;
+  coverImage: string;
+  coverImageAlt: string;
+  speaker: string;
+  sourceCredit: string;
+  publishedAt: string | null;
+  durationSeconds: number | null;
+  category: string;
+}
+
+/**
+ * One video for the public page, by slug.
+ *
+ * Returns null rather than throwing when the video columns are missing, so the
+ * route falls through to a 404 instead of a 500 on an environment where the
+ * video migrations have not been applied.
+ */
+export async function getRenderableVideo(slug: string): Promise<PublicVideoRecord | null> {
+  const normalized = (() => {
+    try {
+      return decodeURIComponent(slug);
+    } catch {
+      return slug;
+    }
+  })();
+
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data, error } = await supabase
+      .from("cms_videos")
+      .select(
+        "id, slug, title, episode, description, body_markdown, source_url, backup_url, cover_image, " +
+          "cover_image_alt, speaker, source_credit, published_at, duration_seconds, status"
+      )
+      .eq("slug", normalized)
+      .eq("status", "published")
+      .maybeSingle();
+    if (error || !data) return null;
+    // The select is built by concatenation, which defeats the client's column
+    // inference; the shape is checked by hand below instead.
+    const row = data as unknown as Record<string, unknown>;
+
+    const { data: mapRows } = await supabase
+      .from("cms_video_category_map")
+      .select("position, cms_video_categories(name)")
+      .eq("video_id", row.id as string)
+      .order("position", { ascending: true });
+    const category =
+      (mapRows ?? [])
+        .map((row) => (row as { cms_video_categories?: { name?: string } }).cms_video_categories?.name)
+        .find(Boolean) ?? "";
+
+    return {
+      slug: String(row.slug),
+      title: String(row.title),
+      episode: String(row.episode ?? ""),
+      description: String(row.description ?? ""),
+      bodyMarkdown: String(row.body_markdown ?? ""),
+      sourceUrl: String(row.source_url ?? ""),
+      backupUrl: String(row.backup_url ?? ""),
+      coverImage: String(row.cover_image ?? ""),
+      coverImageAlt: String(row.cover_image_alt ?? ""),
+      speaker: String(row.speaker ?? ""),
+      sourceCredit: String(row.source_credit ?? ""),
+      publishedAt: row.published_at ? String(row.published_at) : null,
+      durationSeconds: row.duration_seconds ? Number(row.duration_seconds) : null,
+      category: String(category)
+    };
+  } catch {
+    return null;
+  }
+}

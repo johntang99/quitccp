@@ -2,6 +2,8 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { listVideoCategories, searchVideos } from "@/lib/admin/video-repository";
+import { DeleteVideoButton } from "@/components/admin/DeleteVideoButton";
+import { hostOf } from "@/lib/video-host";
 
 interface PageProps {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -117,7 +119,7 @@ export default async function AdminVideosPage({ searchParams }: PageProps) {
               <th>状态</th>
               <th>来源</th>
               <th>发布时间</th>
-              <th />
+              <th style={{ width: 150 }}>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -169,14 +171,20 @@ export default async function AdminVideosPage({ searchParams }: PageProps) {
                   <td>
                     <span className={`badge ${status.cls}`}>{status.label}</span>
                   </td>
-                  <td>
-                    {row.sourceUrl ? (
-                      <a href={row.sourceUrl} target="_blank" rel="noopener noreferrer">
-                        播放 ↗
-                      </a>
-                    ) : (
-                      <span className="muted">—</span>
-                    )}
+                  <td style={{ whiteSpace: "nowrap" }}>
+                    {(() => {
+                      // The label says where the file lives, not just that a link
+                      // exists. 213 of these still sit on the old site and have to
+                      // move before it goes away; a column that only said "播放"
+                      // made that invisible.
+                      const host = hostOf(row.sourceUrl);
+                      if (host.key === "none") return <span className="muted">无地址</span>;
+                      return (
+                        <a href={row.sourceUrl} target="_blank" rel="noopener noreferrer" title={row.sourceUrl}>
+                          {host.label} ↗
+                        </a>
+                      );
+                    })()}
                   </td>
                   <td className="muted" style={{ whiteSpace: "nowrap" }}>
                     {row.publishedAt ? row.publishedAt.slice(0, 10) : "—"}
@@ -184,7 +192,23 @@ export default async function AdminVideosPage({ searchParams }: PageProps) {
                   <td style={{ whiteSpace: "nowrap" }}>
                     <Link className="admin-btn admin-btn-sm" href={`/admin/videos/${row.id}`}>
                       编辑
-                    </Link>
+                    </Link>{" "}
+                    <a
+                      className="admin-btn admin-btn-sm"
+                      href={`/videos/${encodeURIComponent(row.slug)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      预览 ↗
+                    </a>{" "}
+                    <form
+                      method="post"
+                      action="/api/admin/content/videos/delete"
+                      style={{ display: "inline" }}
+                    >
+                      <input type="hidden" name="id" value={row.id} />
+                      <DeleteVideoButton title={row.title} />
+                    </form>
                   </td>
                 </tr>
               );
