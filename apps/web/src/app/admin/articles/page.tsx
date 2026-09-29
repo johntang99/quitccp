@@ -28,7 +28,7 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
     from: params.from,
     to: params.to,
     gap: params.gap as ArticleSearchFilters["gap"],
-    sort: (params.sort as ArticleSearchFilters["sort"]) ?? "updated",
+    sort: (params.sort as ArticleSearchFilters["sort"]) ?? "published",
     page: Number(params.page ?? "1") || 1,
     pageSize: Number(params.pageSize ?? "20") || 20
   };
@@ -101,9 +101,12 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
             至
             <input className="admin-input" type="date" name="to" defaultValue={params.to ?? ""} />
           </label>
-          <select className="admin-select" name="sort" defaultValue={params.sort ?? "updated"}>
-            <option value="updated">更新时间（新→旧）</option>
+          {/* 发布时间 is the default now. Sorting by 更新时间 is still offered, but
+              it groups rather than orders: the import stamped 80 articles per
+              second, so it cannot tell those 80 apart. */}
+          <select className="admin-select" name="sort" defaultValue={params.sort ?? "published"}>
             <option value="published">发布时间（新→旧）</option>
+            <option value="updated">更新时间（新→旧）</option>
             <option value="title">标题 A→Z</option>
           </select>
           {params.gap ? <input type="hidden" name="gap" value={params.gap} /> : null}

@@ -147,11 +147,17 @@ export async function searchVideos(filters: VideoSearchFilters): Promise<{
     // Order by when the video was published, not when we imported it. The whole
     // library was written in one pass, so `updated_at` is the same timestamp on
     // all 745 rows and sorting by it produces an arbitrary order.
+    // `id` underneath, for the same reason as articles: the whole library shares
+    // an import timestamp, so without a tiebreaker the page order is arbitrary.
     return withCategory
       ? query
           .order("published_at", { ascending: false, nullsFirst: false })
+          .order("id", { ascending: true })
           .range(offset, offset + pageSize - 1)
-      : query.order("updated_at", { ascending: false }).range(offset, offset + pageSize - 1);
+      : query
+          .order("updated_at", { ascending: false })
+          .order("id", { ascending: true })
+          .range(offset, offset + pageSize - 1);
   };
 
   let result = await run(`${base}, ${extra}`, true);

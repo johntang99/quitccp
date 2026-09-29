@@ -27,96 +27,98 @@ export function ArticleTable({
   numbered?: boolean;
 }) {
   return (
-    <table className="admin-table">
-      <thead>
-        <tr>
-          {selectable ? <th style={{ width: 28 }} /> : null}
-          {numbered ? <th style={{ width: 36 }}>#</th> : null}
-          <th style={{ width: 76 }}>封面</th>
-          <th>标题</th>
-          <th>分类</th>
-          <th>作者</th>
-          <th>状态</th>
-          <th>发布</th>
-          <th>更新</th>
-          <th />
-        </tr>
-      </thead>
-      <tbody>
-        {rows.length === 0 ? (
+    <div className="admin-table-wrap">
+      <table className="admin-table">
+        <thead>
           <tr>
-            <td colSpan={10} style={{ color: "#8a90a0", padding: 24, textAlign: "center" }}>
-              没有符合条件的文章。
-            </td>
+            {selectable ? <th style={{ width: 28 }} /> : null}
+            {numbered ? <th style={{ width: 36 }}>#</th> : null}
+            <th style={{ width: 76 }}>封面</th>
+            <th>标题</th>
+            <th>分类</th>
+            <th>作者</th>
+            <th>状态</th>
+            <th>发布</th>
+            <th>更新</th>
+            <th />
           </tr>
-        ) : null}
-        {rows.map((row, index) => {
-          const status = STATUS[row.status] ?? STATUS.draft;
-          return (
-            <tr key={row.id}>
-              {selectable ? (
-                <td>
-                  <input type="checkbox" name="ids" value={row.id} form="bulk-form" />
-                </td>
-              ) : null}
-              {numbered ? <td style={{ color: "#8a90a0" }}>{index + 1}</td> : null}
-              <td>
-                {row.heroImage ? (
-                  <img
-                    src={row.heroImage}
-                    alt=""
-                    style={{ width: 64, height: 44, objectFit: "cover", borderRadius: 4, display: "block" }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: 64,
-                      height: 44,
-                      borderRadius: 4,
-                      background: "#f1f1f4",
-                      display: "grid",
-                      placeItems: "center",
-                      color: "#8a90a0",
-                      fontSize: 11
-                    }}
-                  >
-                    无图
-                  </div>
-                )}
-              </td>
-              <td>
-                <Link href={`/admin/articles/${row.id}`} style={{ fontWeight: 600 }}>
-                  {row.title}
-                </Link>
-                {row.subtitle ? (
-                  <div style={{ color: "#8a90a0", fontSize: 12 }}>{row.subtitle}</div>
-                ) : null}
-              </td>
-              <td>{row.category || <span style={{ color: "#b42318" }}>未分类</span>}</td>
-              <td>{row.author || <span style={{ color: "#8a90a0" }}>—</span>}</td>
-              <td>
-                <span className={`badge ${status.cls}`}>{status.label}</span>
-              </td>
-              <td style={{ color: "#8a90a0", whiteSpace: "nowrap" }}>{day(row.publishedAt)}</td>
-              <td style={{ color: "#8a90a0", whiteSpace: "nowrap" }}>{day(row.updatedAt)}</td>
-              <td style={{ whiteSpace: "nowrap" }}>
-                <Link className="admin-btn admin-btn-sm" href={`/admin/articles/${row.id}`}>
-                  编辑
-                </Link>
-                <a
-                  className="admin-btn admin-btn-sm"
-                  href={`/news/${row.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ marginLeft: 4 }}
-                >
-                  预览
-                </a>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={10} style={{ color: "#8a90a0", padding: 24, textAlign: "center" }}>
+                没有符合条件的文章。
               </td>
             </tr>
-          );
-        })}
-      </tbody>
-    </table>
+          ) : null}
+          {rows.map((row, index) => {
+            const status = STATUS[row.status] ?? STATUS.draft;
+            return (
+              <tr key={row.id}>
+                {selectable ? (
+                  <td>
+                    <input type="checkbox" name="ids" value={row.id} form="bulk-form" />
+                  </td>
+                ) : null}
+                {numbered ? <td style={{ color: "#8a90a0" }}>{index + 1}</td> : null}
+                <td>
+                  {row.heroImage ? (
+                    <img
+                      src={row.heroImage}
+                      alt=""
+                      style={{ width: 64, height: 44, objectFit: "cover", borderRadius: 4, display: "block" }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: 64,
+                        height: 44,
+                        borderRadius: 4,
+                        background: "#f1f1f4",
+                        display: "grid",
+                        placeItems: "center",
+                        color: "#8a90a0",
+                        fontSize: 11
+                      }}
+                    >
+                      无图
+                    </div>
+                  )}
+                </td>
+                <td>
+                  <Link href={`/admin/articles/${row.id}`} style={{ fontWeight: 600 }}>
+                    {row.title}
+                  </Link>
+                  {row.subtitle ? (
+                    <div style={{ color: "#8a90a0", fontSize: 12 }}>{row.subtitle}</div>
+                  ) : null}
+                </td>
+                <td>{row.category || <span style={{ color: "#b42318" }}>未分类</span>}</td>
+                <td>{row.author || <span style={{ color: "#8a90a0" }}>—</span>}</td>
+                <td>
+                  <span className={`badge ${status.cls}`}>{status.label}</span>
+                </td>
+                <td style={{ color: "#8a90a0", whiteSpace: "nowrap" }}>{day(row.publishedAt)}</td>
+                <td style={{ color: "#8a90a0", whiteSpace: "nowrap" }}>{day(row.updatedAt)}</td>
+                <td style={{ whiteSpace: "nowrap" }}>
+                  <Link className="admin-btn admin-btn-sm" href={`/admin/articles/${row.id}`}>
+                    编辑
+                  </Link>
+                  <a
+                    className="admin-btn admin-btn-sm"
+                    href={`/news/${row.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ marginLeft: 4 }}
+                  >
+                    预览
+                  </a>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }

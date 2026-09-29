@@ -109,6 +109,7 @@ export default async function AdminVideosPage({ searchParams }: PageProps) {
       </section>
 
       <section className="admin-card">
+        <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
             <tr>
@@ -215,6 +216,7 @@ export default async function AdminVideosPage({ searchParams }: PageProps) {
             })}
           </tbody>
         </table>
+        </div>
 
         <div className="admin-toolbar" style={{ marginTop: 12 }}>
           {result.page > 1 ? (

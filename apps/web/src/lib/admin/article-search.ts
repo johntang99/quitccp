@@ -81,14 +81,19 @@ export async function searchArticles(filters: ArticleSearchFilters): Promise<Art
   }
 
   const order =
-    filters.sort === "published"
-      ? { column: "published_at", ascending: false }
+    filters.sort === "updated"
+      ? { column: "updated_at", ascending: false }
       : filters.sort === "title"
         ? { column: "title", ascending: true }
-        : { column: "updated_at", ascending: false };
+        : { column: "published_at", ascending: false };
 
+  // Every sort gets `id` underneath it. The import wrote all 15,514 rows in
+  // batches of 80, so 80 articles share an `updated_at` to the second; with no
+  // tiebreaker Postgres is free to return them in any order, which is why dates
+  // jumped from 2026 to 2011 mid-page and why paging could repeat or skip rows.
   const { data, error, count } = await query
     .order(order.column, { ascending: order.ascending, nullsFirst: false })
+    .order("id", { ascending: true })
     .range(offset, offset + pageSize - 1);
   if (error) throw error;
 

@@ -1389,8 +1389,17 @@
   margin-bottom: 16px;
 }
 
+/* A wide table scrolls rather than squeezing its columns to nothing. Without
+   this the 状态 column collapsed until "已发布" wrapped one character per line
+   against the right edge, which read as an empty column. */
+.admin-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .admin-table {
   width: 100%;
+  min-width: 900px;
   border-collapse: collapse;
 }
 
@@ -3207,7 +3216,7 @@
 .admin-tabs a.on { color: #4a3c96; border-bottom-color: #4a3c96; }
 .admin-tabs .admin-btn { border-bottom: 1px solid #d8d8d8; }
 
-.badge { display: inline-block; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 600; }
+.badge { display: inline-block; white-space: nowrap; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 600; }
 .b-pub { background: #e7f5ed; color: #1f7a4d; }
 .b-draft { background: #f1f1f4; color: #5a6070; }
 .b-review { background: #fdf3dc; color: #8a6d1f; }
