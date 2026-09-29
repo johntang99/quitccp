@@ -116,7 +116,26 @@ const taxonomyMap: Record<string, Target> = {
   temp:    { skip: "temp 4 —— 旧站的临时分类" }
 };
 
-export { taxonomyMap };
+/**
+ * Chinese names for categories the import may need to create.
+ *
+ * Without this the importer falls back to title-casing the slug, which is how
+ * the first import produced "Red Regime Collapse" instead of 红朝败相.
+ */
+const categoryNames: Record<string, string> = {
+  "red-regime-collapse": "红朝败相",
+  "withdrawal-news": "三退要闻",
+  "withdrawal-stories": "退党纪实故事",
+  "topics-commentary": "专题报导与时政评论",
+  "worldwide-supports": "国际声援行动",
+  "worldwide-investigation": "追查国际调查报告",
+  "announcement-claims": "公告与声明",
+  "famous-quitccp": "名人退党",
+  culture: "中华传统文化",
+  "resource-downloads": "资料下载"
+};
+
+export { taxonomyMap, categoryNames };
 export type { Target };
 
 function stripHtml(input: string): string {

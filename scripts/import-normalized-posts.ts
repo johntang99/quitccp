@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
-import type { NormalizedArticle } from "./migrate-wp-posts";
+import { categoryNames, taxonomyMap, type NormalizedArticle } from "./migrate-wp-posts";
 
 interface InputFile {
   rows: NormalizedArticle[];
@@ -13,6 +13,9 @@ function assertEnv(name: string): string {
 }
 
 function categoryNameFromSlug(slug: string): string {
+  // Prefer the Chinese name; the title-cased slug is only a last resort for a
+  // category nobody has named yet, and it is visible in the admin immediately.
+  if (categoryNames[slug]) return categoryNames[slug];
   return slug
     .split("-")
     .filter(Boolean)
@@ -37,23 +40,40 @@ async function main() {
   }
 
   const parsed = JSON.parse(readFileSync(filePath, "utf8")) as InputFile;
-  const rows = parsed.rows ?? [];
+  let rows = parsed.rows ?? [];
 
-  // A row with no category means no entry in `taxonomyMap` matched it. There is
-  // deliberately no catch-all any more, so such a row cannot be filed anywhere
-  // -- stop rather than invent a home for it.
-  const uncategorised = rows.filter((row) => !row.category?.trim());
-  if (uncategorised.length > 0) {
-    const sample = uncategorised.slice(0, 5).map((row) => `${row.legacyId} ${row.title.slice(0, 24)}`);
+  // A row with no category either sits only in categories we deliberately
+  // excluded (视频系列 / 未分类 / temp), or in one the table does not know about.
+  // The first is an intended outcome and is simply left out; the second means
+  // the table is incomplete and must stop the import.
+  const noCategory = rows.filter((row) => !row.category?.trim());
+  const excluded: NormalizedArticle[] = [];
+  const unknown: NormalizedArticle[] = [];
+  for (const row of noCategory) {
+    const cats = row.wpCategories ?? [];
+    const allKnown = cats.length > 0 && cats.every((slug) => Boolean(taxonomyMap[slug]));
+    (allKnown ? excluded : unknown).push(row);
+  }
+
+  if (unknown.length > 0) {
+    const sample = unknown
+      .slice(0, 5)
+      .map((row) => `${row.legacyId} [${(row.wpCategories ?? []).join(",") || "无分类"}] ${row.title.slice(0, 20)}`);
     throw new Error(
       [
-        `${uncategorised.length} 篇文章没有匹配到任何分类，导入中止。`,
-        `例如：${sample.join(" / ")}`,
-        "先跑 `npx tsx scripts/check-wp-taxonomy.ts --rest https://www.tuidang.org`，",
-        "把未覆盖的旧分类补进 scripts/migrate-wp-posts.ts 的 taxonomyMap。"
+        `${unknown.length} 篇文章的旧分类不在对照表里，导入中止。`,
+        ...sample.map((line) => `  ${line}`),
+        "把这些旧分类补进 scripts/migrate-wp-posts.ts 的 taxonomyMap 后重试。"
       ].join("\n")
     );
   }
+
+  if (excluded.length > 0) {
+    console.error(
+      `[import] 跳过 ${excluded.length} 篇：它们只属于已标记排除的旧分类（视频系列 / 未分类 / temp）。`
+    );
+  }
+  rows = rows.filter((row) => Boolean(row.category?.trim()));
 
   const categorySlugs = Array.from(new Set(rows.map((row) => row.category))).sort();
   const summary = {
