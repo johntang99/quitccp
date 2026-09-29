@@ -152,27 +152,70 @@ export type { Target };
 
 function stripHtml(input: string): string {
   return input
+    .replace(/<!--\[CDATA\[/g, " ")
     .replace(/<!\[CDATA\[/g, " ")
     .replace(/\]\]>/g, " ")
+    .replace(/-->/g, " ")
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
+/**
+ * WordPress HTML -> Markdown.
+ *
+ * Deliberately small, but it must carry the things a reader would notice losing:
+ * images, links, emphasis and list structure. The first version stripped every
+ * tag, which meant all 15,513 migrated articles arrived with no inline images
+ * and no links at all.
+ */
 function htmlToMarkdownLite(input: string): string {
   return (
     input
-      // Some old posts wrap their whole body in <![CDATA[ ... ]]>. Once the
-      // inner <p> tags are unwrapped below, the next ">" after "<![CDATA[" is
-      // the one in "]]>", so the tag-stripping regex treated the entire article
-      // as a single tag and deleted it -- 188 bodies came back empty.
+      // Both CDATA spellings appear in the corpus: the standard one and an
+      // HTML-comment variant. Left in place, the tag stripper below treats
+      // everything up to "]]>" as one tag and deletes the whole article.
+      .replace(/<!--\[CDATA\[/g, "")
       .replace(/<!\[CDATA\[/g, "")
       .replace(/\]\]>/g, "")
-      .replace(/<h2[^>]*>(.*?)<\/h2>/gi, "\n## $1\n")
-    .replace(/<h3[^>]*>(.*?)<\/h3>/gi, "\n### $1\n")
-    .replace(/<p[^>]*>(.*?)<\/p>/gi, "\n$1\n")
+      .replace(/-->/g, "")
+      // Drop what carries no content before anything else can mangle it.
+      .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
+      // Images and links first: they carry attributes the tag stripper eats.
+      .replace(/<img\b[^>]*>/gi, (tag) => {
+        const src = /\ssrc\s*=\s*["']([^"']+)["']/i.exec(tag)?.[1] ?? "";
+        const alt = /\salt\s*=\s*["']([^"']*)["']/i.exec(tag)?.[1] ?? "";
+        return src ? `\n\n![${alt}](${src})\n\n` : "";
+      })
+      .replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, (whole, text) => {
+        const href = /\shref\s*=\s*["']([^"']+)["']/i.exec(whole)?.[1] ?? "";
+        const label = String(text).replace(/<[^>]+>/g, "").trim();
+        if (!href || href.startsWith("#")) return label;
+        // A link wrapping only an image keeps the image, not a nested link.
+        if (/^!\[/.test(label)) return label;
+        return label ? `[${label}](${href})` : "";
+      })
+      .replace(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/gi, (_m, level, text) => {
+        const hashes = "#".repeat(Math.min(Number(level) + 1, 6));
+        return `\n\n${hashes} ${String(text).replace(/<[^>]+>/g, "").trim()}\n\n`;
+      })
+      .replace(/<(strong|b)\b[^>]*>([\s\S]*?)<\/\1>/gi, (_m, _t, text) => `**${String(text).trim()}**`)
+      .replace(/<(em|i)\b[^>]*>([\s\S]*?)<\/\1>/gi, (_m, _t, text) => `*${String(text).trim()}*`)
+      .replace(/<blockquote\b[^>]*>([\s\S]*?)<\/blockquote>/gi, (_m, text) =>
+        `\n\n${String(text).replace(/<[^>]+>/g, "").trim().split(/\n+/).map((l: string) => `> ${l.trim()}`).join("\n")}\n\n`
+      )
+      .replace(/<li\b[^>]*>([\s\S]*?)<\/li>/gi, (_m, text) => `\n- ${String(text).replace(/<[^>]+>/g, "").trim()}`)
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/(p|div|section|article|ul|ol|table|tr)>/gi, "\n\n")
+      // Whatever tags remain carry no meaning we keep.
       .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .replace(/&#8217;|&rsquo;/g, "'")
+      .replace(/&ldquo;|&rdquo;/g, '"')
+      .replace(/[ \t]+\n/g, "\n")
       .replace(/\n{3,}/g, "\n\n")
       .trim()
   );
