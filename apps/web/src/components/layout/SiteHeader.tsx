@@ -52,11 +52,15 @@ export async function SiteHeader() {
       <div className="brandbar">
         <div className="wrap brandbar-in">
           <Link href="/" className="brand">
-            <span className="brand-mark">退黨</span>
-            <span className="brand-txt">
-              <b>全球退党服务中心</b>
-              <span>Global Service Center for Quitting the Chinese Communist Party</span>
-            </span>
+            {/* The banner is the full lockup -- seal and wordmark -- so the
+                organisation's name lives in the alt text rather than beside it. */}
+            <img
+              className="brand-logo"
+              src="/logo/banner-2022-1.webp"
+              width={1020}
+              height={156}
+              alt="全球退党服务中心 Global Service Center for Quitting the Chinese Communist Party"
+            />
           </Link>
           <div className="brand-cta">
             <a

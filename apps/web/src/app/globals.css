@@ -3056,3 +3056,35 @@
 .home-sections .admin-btn { font-weight: 400; }
 /* Hints and counters under a field are commentary, not captions. */
 .home-sections label > span { font-weight: 400; }
+
+/* --------------------------------------------------------------------------
+   Header brand + menu.
+
+   The brand is one supplied banner (seal + wordmark) rather than the mark and
+   two text lines site.css styles, so it is sized here instead. The `height`
+   drives it and the width follows, keeping the artwork's 1020×156 ratio at
+   every breakpoint.
+   -------------------------------------------------------------------------- */
+.brand-logo {
+  height: 56px;
+  width: auto;
+  display: block;
+}
+@media (max-width: 980px) {
+  .brand-logo { height: 46px; }
+}
+@media (max-width: 600px) {
+  .brand-logo { height: 36px; }
+}
+
+/* The menu row sat at the default weight against a pale bar and read as
+   secondary to the page; the nav is primary. */
+.nav-links a { font-weight: 600; }
+
+/* A button label that wraps mid-word reads as broken. On a phone the brand and
+   the two buttons cannot share one line at any sensible logo size -- that was
+   true of the old text lockup too -- so the bar wraps instead of squeezing. */
+.brand-cta .btn { white-space: nowrap; }
+@media (max-width: 600px) {
+  .brandbar-in { flex-wrap: wrap; height: auto; padding: 12px 0; row-gap: 10px; }
+}
