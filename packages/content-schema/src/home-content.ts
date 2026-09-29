@@ -41,60 +41,60 @@ export type HomeSectionKey = (typeof HOME_SECTION_ORDER)[number];
  */
 export const HOME_SECTION_VARIANTS: Record<HomeSectionKey, { value: string; label: string }[]> = {
   hero: [
-    { value: "centered", label: "居中大标题（默认）" },
-    { value: "photo-split", label: "左文右图（对半）" },
-    { value: "gallery-split", label: "左文右图集（对半）" },
-    { value: "video-split", label: "左文右视频（对半）" },
-    { value: "full-bleed", label: "卡片叠加（Card overlay）" }
+    { value: "centered", label: "居中大标题 Centered（默认）" },
+    { value: "photo-split", label: "左文右图 Photo split（对半）" },
+    { value: "gallery-split", label: "左文右图集 Gallery split（对半）" },
+    { value: "video-split", label: "左文右视频 Video split（对半）" },
+    { value: "full-bleed", label: "卡片叠加 Card overlay" }
   ],
   registry: [
-    { value: "split", label: "左数字右滚动（默认）" },
-    { value: "dawn", label: "曙光 · 与「我们的服务」合并" },
-    { value: "stacked", label: "上下堆叠" },
-    { value: "count-only", label: "仅显示数字" },
-    { value: "stream-only", label: "仅显示滚动声明" }
+    { value: "split", label: "左数字右滚动 Split（默认）" },
+    { value: "dawn", label: "曙光 Dawn · 与「我们的服务」「见证者」合并" },
+    { value: "stacked", label: "上下堆叠 Stacked" },
+    { value: "count-only", label: "仅显示数字 Count only" },
+    { value: "stream-only", label: "仅显示滚动声明 Stream only" }
   ],
   services: [
-    { value: "cards3", label: "三栏卡片（默认）" },
-    { value: "cards2", label: "两栏卡片" },
-    { value: "list", label: "列表" }
+    { value: "cards3", label: "三栏卡片 Cards ×3（默认）" },
+    { value: "cards2", label: "两栏卡片 Cards ×2" },
+    { value: "list", label: "列表 List" }
   ],
   news: [
-    { value: "lead-list", label: "左主图右列表（默认）" },
-    { value: "broadsheet", label: "报刊头版 · 与「专题栏目」合并" },
-    { value: "feature", label: "大图头条（突出）" },
-    { value: "grid", label: "等分网格" }
+    { value: "lead-list", label: "左主图右列表 Lead + list（默认）" },
+    { value: "broadsheet", label: "报刊头版 Broadsheet · 与「专题栏目」合并" },
+    { value: "feature", label: "大图头条 Feature（突出）" },
+    { value: "grid", label: "等分网格 Grid" }
   ],
   channels: [
-    { value: "grid4", label: "四栏（默认）" },
-    { value: "grid2", label: "两栏" }
+    { value: "grid4", label: "四栏 Grid ×4（默认）" },
+    { value: "grid2", label: "两栏 Grid ×2" }
   ],
   video: [
-    { value: "grid3", label: "三栏（默认）" },
-    { value: "screening", label: "放映室（深色影院）" },
-    { value: "grid4", label: "四栏" },
-    { value: "list", label: "列表" }
+    { value: "grid3", label: "三栏 Grid ×3（默认）" },
+    { value: "screening", label: "放映室 Screening（深色影院）" },
+    { value: "grid4", label: "四栏 Grid ×4" },
+    { value: "list", label: "列表 List" }
   ],
   voices: [
-    { value: "grid3", label: "三栏引语（默认）" },
-    { value: "stacked", label: "纵向排列" }
+    { value: "grid3", label: "三栏引语 Quotes ×3（默认）" },
+    { value: "stacked", label: "纵向排列 Stacked" }
   ],
   network: [
-    { value: "split", label: "左文右城市（默认）" },
-    { value: "stacked", label: "上下堆叠" }
+    { value: "split", label: "左文右城市 Split（默认）" },
+    { value: "stacked", label: "上下堆叠 Stacked" }
   ],
   resources: [
-    { value: "grid", label: "网格（默认）" },
-    { value: "list", label: "列表" }
+    { value: "grid", label: "网格 Grid（默认）" },
+    { value: "list", label: "列表 List" }
   ],
   about: [
-    { value: "cells3", label: "三栏（默认）" },
-    { value: "verified", label: "可检验 · 与「参与我们」合并" },
-    { value: "stacked", label: "纵向排列" }
+    { value: "cells3", label: "三栏 Cells ×3（默认）" },
+    { value: "verified", label: "可检验 Verified · 与「参与我们」合并" },
+    { value: "stacked", label: "纵向排列 Stacked" }
   ],
   involve: [
-    { value: "grid4", label: "四栏（默认）" },
-    { value: "list", label: "列表" }
+    { value: "grid4", label: "四栏 Grid ×4（默认）" },
+    { value: "list", label: "列表 List" }
   ]
 };
 

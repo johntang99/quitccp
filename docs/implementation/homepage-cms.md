@@ -337,6 +337,19 @@ because the field names repeat across sections (`items`, `cards`) with different
 shapes. **No section on the homepage falls back to the JSON textarea any more**;
 anything added later that is not declared there still will.
 
+**Labelling conventions**, applied across the whole editor:
+
+- Field captions are bold; the value the operator types stays regular. The
+  controls need an explicit `font-weight: 400` — they inherit from the `<label>`
+  that wraps them.
+- Every caption, section name, fieldset legend, variant and `<option>` carries
+  its English beside the Chinese: `标题（Title）`, `放映室 Screening（深色影院）`.
+  Hints and running totals are prose, not captions, and stay Chinese.
+- Fieldsets run 文字 → 按钮与链接 → 图片与视频 → 内容条目. CTAs sit directly under
+  the text because on the Hero the media block is long enough to bury them.
+- Row editors whose fields are unlabelled once filled (the Hero's buttons, a
+  card's links, a split bar) carry a column header instead of a caption per row.
+
 Every section states its own situation inline: the two hidden ones say why they
 were turned off (and only while they are off), 视频资源 says which of its fields
 disappear when left blank, and the merged variants explain themselves in both

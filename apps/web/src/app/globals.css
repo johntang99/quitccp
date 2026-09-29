@@ -3041,3 +3041,18 @@
   .verified-card { min-height: 0; }
   .verified-panel { height: 62%; }
 }
+
+
+/* --------------------------------------------------------------------------
+   Homepage section editor (admin): field captions read as the heading for
+   their control, so they are bold while the value the operator types stays
+   regular. The controls have to be reset explicitly -- they inherit
+   font-weight from the <label> that wraps them.
+   -------------------------------------------------------------------------- */
+.home-sections label { font-weight: 600; }
+.home-sections .admin-input,
+.home-sections .admin-textarea,
+.home-sections .admin-select,
+.home-sections .admin-btn { font-weight: 400; }
+/* Hints and counters under a field are commentary, not captions. */
+.home-sections label > span { font-weight: 400; }

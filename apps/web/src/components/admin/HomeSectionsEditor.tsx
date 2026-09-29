@@ -24,58 +24,58 @@ export const HOME_SECTIONS: HomeSectionDef[] = [
   { key: "hero", label: "首屏 Hero" },
   {
     key: "registry",
-    label: "实时登记册",
+    label: "实时登记册 Registry",
     note: "声明内容来自三退网站的数据，不在此编辑；这里只调整版式与说明文字。"
   },
-  { key: "services", label: "我们的服务" },
-  { key: "news", label: "新闻与报告（公开更新与重点议题）" },
-  { key: "channels", label: "栏目卡片（专题栏目）" },
+  { key: "services", label: "我们的服务 Services" },
+  { key: "news", label: "新闻与报告 News（公开更新与重点议题）" },
+  { key: "channels", label: "栏目卡片 Channels（专题栏目）" },
   {
     key: "video",
-    label: "视频资源",
+    label: "视频资源 Video",
     note: "「导语」「底部说明」「底部标记」留空即不显示；填上文字就会出现。"
   },
-  { key: "voices", label: "见证者" },
+  { key: "voices", label: "见证者 Voices" },
   {
     key: "network",
-    label: "全球网络",
+    label: "全球网络 Network",
     hiddenNote: "已从首页移除。服务点查找仍在 /about/network，并从「关于我们」与「服务」页面链接过去。"
   },
   {
     key: "resources",
-    label: "资源馆",
+    label: "资源馆 Resources",
     hiddenNote: "已从首页移除：同样的链接在 /resources 页面上，首页这一排是重复的。"
   },
-  { key: "about", label: "关于我们" },
-  { key: "involve", label: "参与我们" }
+  { key: "about", label: "关于我们 About" },
+  { key: "involve", label: "参与我们 Involve" }
 ];
 
 const FIELD_LABELS: Record<string, string> = {
-  eyebrow: "小标题（eyebrow）",
-  title: "标题",
-  heading: "区块标题",
-  body: "正文",
-  lede: "导语",
-  image: "图片",
-  imageAlt: "图片说明",
-  count: "登记数字",
-  countLabel: "数字说明",
-  noteLabel: "数字注释链接文字",
-  noteHref: "数字注释链接地址",
-  streamHeading: "滚动区标题",
-  liveLabel: "实时标签（如「实时登记册 · LIVE」）",
-  moreLabel: "更多链接文字",
-  moreHref: "更多链接地址",
-  buttonLabel: "按钮文字",
-  buttonHref: "按钮链接",
-  citiesLabel: "城市列表标题",
-  listTitle: "侧栏标题",
-  listTitleEn: "侧栏英文标签",
-  listMoreLabel: "侧栏底部链接文字",
-  listMoreHref: "侧栏底部链接地址",
-  latestLabel: "卡片区标题",
-  footNote: "底部说明",
-  footMark: "底部标记"
+  eyebrow: "小标题（Eyebrow）",
+  title: "标题（Title）",
+  heading: "区块标题（Heading）",
+  body: "正文（Body）",
+  lede: "导语（Lede）",
+  image: "图片（Image）",
+  imageAlt: "图片说明（Image alt）",
+  count: "登记数字（Count）",
+  countLabel: "数字说明（Count label）",
+  noteLabel: "数字注释链接文字（Note label）",
+  noteHref: "数字注释链接地址（Note link）",
+  streamHeading: "滚动区标题（Stream heading）",
+  liveLabel: "实时标签（Live label，如「实时登记册 · LIVE」）",
+  moreLabel: "更多链接文字（More label）",
+  moreHref: "更多链接地址（More link）",
+  buttonLabel: "按钮文字（Button label）",
+  buttonHref: "按钮链接（Button link）",
+  citiesLabel: "城市列表标题（Cities label）",
+  listTitle: "侧栏标题（List title）",
+  listTitleEn: "侧栏英文标签（List title, latin）",
+  listMoreLabel: "侧栏底部链接文字（List more label）",
+  listMoreHref: "侧栏底部链接地址（List more link）",
+  latestLabel: "卡片区标题（Latest label）",
+  footNote: "底部说明（Footer note）",
+  footMark: "底部标记（Footer mark）"
 };
 
 /** Render order per section. Anything unlisted follows, alphabetically. */
@@ -164,7 +164,7 @@ interface RowField {
  */
 const NUMBER_FIELDS: Record<string, { label: string; min: number; max: number; hint?: string }> = {
   "registry.feedCount": {
-    label: "滚动条数",
+    label: "滚动条数（Feed count）",
     min: 1,
     max: 20,
     hint: "滚动带里显示多少条声明；声明不足时会循环填满。"
@@ -177,36 +177,36 @@ const NUMBER_FIELDS: Record<string, { label: string; min: number; max: number; h
  * of city names.
  */
 const STRING_LIST_FIELDS: Record<string, { label: string; hint?: string }> = {
-  "network.cities": { label: "城市（每行一个）", hint: "按填写顺序显示。" }
+  "network.cities": { label: "城市（Cities，每行一个）", hint: "按填写顺序显示。" }
 };
 
 const OBJECT_EDITORS: Record<string, { label: string; fields: RowField[] }> = {
   "video.featured": {
-    label: "本期推荐",
+    label: "本期推荐（Featured）",
     fields: [
-      { key: "image", label: "封面图", kind: "image" },
-      { key: "tag", label: "角标（如「本期推荐」）" },
-      { key: "title", label: "标题", kind: "area" },
-      { key: "body", label: "简介", kind: "area" },
-      { key: "href", label: "播放链接" },
-      { key: "duration", label: "时长角标（如 58:00，留空则不显示）" },
-      { key: "meta", label: "标签（每行一个）", kind: "list" },
-      { key: "primaryLabel", label: "主按钮文字" },
-      { key: "primaryHref", label: "主按钮链接" },
-      { key: "secondaryLabel", label: "次按钮文字" },
-      { key: "secondaryHref", label: "次按钮链接" }
+      { key: "image", label: "封面图（Poster）", kind: "image" },
+      { key: "tag", label: "角标（Tag，如「本期推荐」）" },
+      { key: "title", label: "标题（Title）", kind: "area" },
+      { key: "body", label: "简介（Summary）", kind: "area" },
+      { key: "href", label: "播放链接（Play link）" },
+      { key: "duration", label: "时长角标（Duration，如 58:00，留空则不显示）" },
+      { key: "meta", label: "标签（Tags，每行一个）", kind: "list" },
+      { key: "primaryLabel", label: "主按钮文字（Primary label）" },
+      { key: "primaryHref", label: "主按钮链接（Primary link）" },
+      { key: "secondaryLabel", label: "次按钮文字（Secondary label）" },
+      { key: "secondaryHref", label: "次按钮链接（Secondary link）" }
     ]
   },
   "news.lead": {
-    label: "头条文章",
+    label: "头条文章（Lead story）",
     fields: [
-      { key: "image", label: "图片", kind: "image" },
-      { key: "tag", label: "角标（如「头条」）" },
-      { key: "kicker", label: "英文前缀（如 FEATURE）" },
-      { key: "title", label: "标题", kind: "area" },
-      { key: "body", label: "摘要", kind: "area" },
-      { key: "meta", label: "日期" },
-      { key: "href", label: "链接" }
+      { key: "image", label: "图片（Image）", kind: "image" },
+      { key: "tag", label: "角标（Tag，如「头条」）" },
+      { key: "kicker", label: "英文前缀（Kicker，如 FEATURE）" },
+      { key: "title", label: "标题（Title）", kind: "area" },
+      { key: "body", label: "摘要（Summary）", kind: "area" },
+      { key: "meta", label: "日期（Date）" },
+      { key: "href", label: "链接（Link）" }
     ]
   }
 };
@@ -216,17 +216,17 @@ const ROW_EDITORS: Record<
   { label: string; blank: Record<string, unknown>; fields: RowField[] }
 > = {
   "news.items": {
-    label: "最新发布",
+    label: "最新发布（Latest）",
     blank: { title: "", date: "", href: "/news", image: "" },
     fields: [
-      { key: "image", label: "图片", kind: "image" },
-      { key: "title", label: "标题", kind: "area" },
-      { key: "date", label: "日期" },
-      { key: "href", label: "链接" }
+      { key: "image", label: "图片（Image）", kind: "image" },
+      { key: "title", label: "标题（Title）", kind: "area" },
+      { key: "date", label: "日期（Date）" },
+      { key: "href", label: "链接（Link）" }
     ]
   },
   "channels.cards": {
-    label: "专题栏目",
+    label: "专题栏目（Channels）",
     blank: {
       title: "",
       en: "",
@@ -238,96 +238,96 @@ const ROW_EDITORS: Record<
       footHref: "/news"
     },
     fields: [
-      { key: "image", label: "图片", kind: "image" },
-      { key: "title", label: "栏目名称" },
-      { key: "en", label: "英文标签（如 INVESTIGATIONS）" },
-      { key: "badge", label: "视频", kind: "video-flag" },
-      { key: "leadTitle", label: "导读标题", kind: "area" },
-      { key: "leadHref", label: "导读链接" },
-      { key: "footLabel", label: "底部链接文字" },
-      { key: "footHref", label: "底部链接地址" }
+      { key: "image", label: "图片（Image）", kind: "image" },
+      { key: "title", label: "栏目名称（Channel name）" },
+      { key: "en", label: "英文标签（Latin label，如 INVESTIGATIONS）" },
+      { key: "badge", label: "视频（Video）", kind: "video-flag" },
+      { key: "leadTitle", label: "导读标题（Lead title）", kind: "area" },
+      { key: "leadHref", label: "导读链接（Lead link）" },
+      { key: "footLabel", label: "底部链接文字（Foot label）" },
+      { key: "footHref", label: "底部链接地址（Foot link）" }
     ]
   },
   "video.items": {
-    label: "视频",
+    label: "视频（Videos）",
     blank: { title: "", meta: "", href: "/videos", image: "", duration: "", badge: "" },
     fields: [
-      { key: "image", label: "封面", kind: "image" },
-      { key: "title", label: "标题", kind: "area" },
-      { key: "meta", label: "系列与类型（如「三退前线 · 现场纪录」）" },
-      { key: "href", label: "链接" },
-      { key: "duration", label: "时长角标（如 11:05，留空则不显示）" },
-      { key: "badge", label: "角标（如 NEW，留空则不显示）" }
+      { key: "image", label: "封面（Thumbnail）", kind: "image" },
+      { key: "title", label: "标题（Title）", kind: "area" },
+      { key: "meta", label: "系列与类型（Series · kind，如「三退前线 · 现场纪录」）" },
+      { key: "href", label: "链接（Link）" },
+      { key: "duration", label: "时长角标（Duration，如 11:05，留空则不显示）" },
+      { key: "badge", label: "角标（Badge，如 NEW，留空则不显示）" }
     ]
   },
   "registry.substats": {
-    label: "小数据",
+    label: "小数据（Sub-stats）",
     blank: { value: "", label: "" },
     fields: [
-      { key: "value", label: "数字" },
-      { key: "label", label: "说明" }
+      { key: "value", label: "数字（Value）" },
+      { key: "label", label: "说明（Label）" }
     ]
   },
   "services.cards": {
-    label: "服务卡片",
+    label: "服务卡片（Service cards）",
     blank: { tag: "", title: "", body: "", links: [], ctaLabel: "", ctaHref: "" },
     fields: [
-      { key: "tag", label: "分类标签" },
-      { key: "title", label: "标题", kind: "area" },
-      { key: "body", label: "说明", kind: "area" },
-      { key: "links", label: "卡片内链接", kind: "links" },
-      { key: "ctaLabel", label: "底部按钮文字（留空则不显示）" },
-      { key: "ctaHref", label: "底部按钮链接" }
+      { key: "tag", label: "分类标签（Tag）" },
+      { key: "title", label: "标题（Title）", kind: "area" },
+      { key: "body", label: "说明（Body）", kind: "area" },
+      { key: "links", label: "卡片内链接（Links）", kind: "links" },
+      { key: "ctaLabel", label: "底部按钮文字（CTA label，留空则不显示）" },
+      { key: "ctaHref", label: "底部按钮链接（CTA link）" }
     ]
   },
   "about.cells": {
-    label: "指标",
+    label: "指标（Facts）",
     blank: { heading: "", value: "", body: "" },
     fields: [
-      { key: "value", label: "主数字／标题（左栏）" },
-      { key: "heading", label: "小标题（只在有分段条时显示）" },
-      { key: "body", label: "说明", kind: "area" },
-      { key: "bars", label: "分段条", kind: "bars" }
+      { key: "value", label: "主数字／标题（Figure，左栏）" },
+      { key: "heading", label: "小标题（Lead line，只在有分段条时显示）" },
+      { key: "body", label: "说明（Body）", kind: "area" },
+      { key: "bars", label: "分段条（Split bar）", kind: "bars" }
     ]
   },
   "involve.items": {
-    label: "参与方式",
+    label: "参与方式（Ways to join）",
     blank: { title: "", body: "", href: "#", ctaLabel: "", glyph: "" },
     fields: [
-      { key: "title", label: "标题" },
-      { key: "body", label: "说明", kind: "area" },
-      { key: "href", label: "链接" },
-      { key: "ctaLabel", label: "按钮文字（留空则用标题）" },
-      { key: "glyph", label: "圆形徽标文字（一个字，留空则不显示）" },
-      { key: "primary", label: "作为主推卡片（金色顶线与实心按钮）", kind: "flag" }
+      { key: "title", label: "标题（Title）" },
+      { key: "body", label: "说明（Body）", kind: "area" },
+      { key: "href", label: "链接（Link）" },
+      { key: "ctaLabel", label: "按钮文字（CTA label，留空则用标题）" },
+      { key: "glyph", label: "圆形徽标文字（Glyph，一个字，留空则不显示）" },
+      { key: "primary", label: "作为主推卡片（Primary，金色顶线与实心按钮）", kind: "flag" }
     ]
   },
   "resources.items": {
-    label: "资源",
+    label: "资源（Resources）",
     blank: { label: "", tag: "", href: "#" },
     fields: [
-      { key: "label", label: "名称" },
-      { key: "tag", label: "分类标签" },
-      { key: "href", label: "链接" }
+      { key: "label", label: "名称（Label）" },
+      { key: "tag", label: "分类标签（Tag）" },
+      { key: "href", label: "链接（Link）" }
     ]
   },
   "voices.items": {
-    label: "见证",
+    label: "见证（Voices）",
     blank: { quote: "", name: "", role: "", image: "" },
     fields: [
-      { key: "image", label: "头像", kind: "image" },
-      { key: "quote", label: "引述", kind: "area" },
-      { key: "name", label: "姓名" },
-      { key: "role", label: "身份（可换行）", kind: "area" }
+      { key: "image", label: "头像（Portrait）", kind: "image" },
+      { key: "quote", label: "引述（Quote）", kind: "area" },
+      { key: "name", label: "姓名（Name）" },
+      { key: "role", label: "身份（Role，可换行）", kind: "area" }
     ]
   },
   "video.series": {
-    label: "系列标签",
+    label: "系列标签（Series）",
     blank: { label: "", href: "/videos" },
     fields: [
-      { key: "label", label: "名称" },
-      { key: "href", label: "链接" },
-      { key: "active", label: "高亮显示（白底）", kind: "flag" }
+      { key: "label", label: "名称（Label）" },
+      { key: "href", label: "链接（Link）" },
+      { key: "active", label: "高亮显示（Active，白底）", kind: "flag" }
     ]
   }
 };
@@ -392,6 +392,22 @@ const fieldset: React.CSSProperties = {
   padding: "12px 14px",
   display: "grid",
   gap: 12
+};
+
+/** Field captions read as the control's heading, so they are set apart from
+ *  the value the operator types into it. */
+const fieldCaption: React.CSSProperties = {
+  display: "block",
+  marginBottom: 4,
+  fontWeight: 600
+};
+
+/** Column captions above a row editor whose fields are otherwise unlabelled. */
+const columnHead: React.CSSProperties = {
+  display: "grid",
+  gap: 8,
+  fontSize: 12,
+  color: "#777"
 };
 
 const legend: React.CSSProperties = {
@@ -570,7 +586,7 @@ export function HomeSectionsEditor({
   const videoEditor = (sectionKey: string, label: string, video: Record<string, unknown>) => (
     <div style={{ display: "grid", gap: 10 }}>
       <label>
-        视频地址（.mp4/.webm 直链，或嵌入地址）
+        视频地址（Video URL，.mp4/.webm 直链或嵌入地址）
         <input
           className="admin-input"
           style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12 }}
@@ -580,11 +596,11 @@ export function HomeSectionsEditor({
         />
       </label>
       <div>
-        <span style={{ display: "block", marginBottom: 4 }}>封面图（poster）</span>
+        <span style={fieldCaption}>封面图（Poster）</span>
         {imageField([sectionKey, "video", "poster"], `${label} · 视频封面`, String(video.poster ?? ""))}
       </div>
       <label>
-        视频说明
+        视频说明（Caption）
         <input
           className="admin-input"
           value={String(video.caption ?? "")}
@@ -599,6 +615,16 @@ export function HomeSectionsEditor({
 
   const actionsEditor = (sectionKey: string, items: Record<string, unknown>[]) => (
     <div style={{ display: "grid", gap: 8 }}>
+      {/* The rows are three unlabelled boxes once they hold text; the header
+          says which is which without repeating a caption per row. */}
+      {items.length > 0 ? (
+        <div style={{ ...columnHead, gridTemplateColumns: "1fr 1.4fr 120px auto" }}>
+          <span>按钮文字（Label）</span>
+          <span>链接地址（Link）</span>
+          <span>样式（Style）</span>
+          <span />
+        </div>
+      ) : null}
       {items.map((item, index) => (
         <div
           key={index}
@@ -622,8 +648,8 @@ export function HomeSectionsEditor({
             value={String(item.variant ?? "seal")}
             onChange={(event) => updateField([sectionKey, "actions", String(index), "variant"], event.target.value)}
           >
-            <option value="seal">主按钮</option>
-            <option value="line-light">次按钮</option>
+            <option value="seal">主按钮 Primary</option>
+            <option value="line-light">次按钮 Secondary</option>
           </select>
           <button
             className="admin-btn"
@@ -662,7 +688,7 @@ export function HomeSectionsEditor({
         if (field.kind === "image") {
           return (
             <div key={field.key}>
-              <span style={{ display: "block", marginBottom: 4 }}>{field.label}</span>
+              <span style={fieldCaption}>{field.label}</span>
               {imageField(path, `${label} · ${field.label}`, current, true)}
             </div>
           );
@@ -685,7 +711,14 @@ export function HomeSectionsEditor({
           const total = rows.reduce((sum, bar) => sum + (Number(bar.percent) || 0), 0);
           return (
             <div key={field.key} style={{ display: "grid", gap: 8 }}>
-              <span>{field.label}</span>
+              <span style={fieldCaption}>{field.label}</span>
+              {rows.length > 0 ? (
+                <div style={{ ...columnHead, gridTemplateColumns: "minmax(0, 1fr) 90px auto" }}>
+                  <span>名称（Label）</span>
+                  <span>百分比（%）</span>
+                  <span />
+                </div>
+              ) : null}
               {rows.map((bar, index) => (
                 <div
                   key={index}
@@ -751,10 +784,16 @@ export function HomeSectionsEditor({
           const write = (next: Record<string, unknown>[]) => updateField(path, next);
           return (
             <div key={field.key} style={{ display: "grid", gap: 8 }}>
-              <span>{field.label}</span>
+              <span style={fieldCaption}>{field.label}</span>
               {rows.length === 0 ? (
                 <span style={{ color: "#777", fontSize: 13 }}>还没有链接。</span>
-              ) : null}
+              ) : (
+                <div style={{ ...columnHead, gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.4fr) auto" }}>
+                  <span>文字（Label）</span>
+                  <span>链接（Link）</span>
+                  <span />
+                </div>
+              )}
               {rows.map((link, index) => (
                 <div
                   key={index}
@@ -957,7 +996,7 @@ export function HomeSectionsEditor({
   };
 
   return (
-    <>
+    <div className="home-sections" style={{ display: "contents" }}>
       <p style={{ margin: 0, color: "#666" }}>
         首页按区块编辑。每个区块可单独显示／隐藏并选择版式；文字、图片与列表都可
         直接编辑。个别区块的版式会把相邻区块并入显示，遇到时区块内会有黄色提示。
@@ -1052,7 +1091,7 @@ export function HomeSectionsEditor({
         const renderText = (key: string) =>
           IMAGE_FIELDS.has(key) ? (
             <div key={key}>
-              <span style={{ display: "block", marginBottom: 4 }}>{FIELD_LABELS[key] ?? key}</span>
+              <span style={fieldCaption}>{FIELD_LABELS[key] ?? key}</span>
               {imageField([section.key, key], `${section.label} · ${FIELD_LABELS[key] ?? key}`, String(value[key] ?? ""))}
             </div>
           ) : (
@@ -1100,11 +1139,11 @@ export function HomeSectionsEditor({
                     checked={enabled}
                     onChange={(event) => updateField([section.key, "enabled"], event.target.checked)}
                   />
-                  在首页显示
+                  在首页显示（Show）
                 </label>
                 {variants.length > 0 ? (
                   <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    版式
+                    版式（Layout）
                     <select
                       className="admin-select"
                       value={String(value.variant ?? variants[0].value)}
@@ -1122,35 +1161,16 @@ export function HomeSectionsEditor({
 
               {textBlock.length > 0 || numberKeys.length > 0 || listKeys.length > 0 ? (
                 <fieldset style={fieldset}>
-                  <legend style={legend}>文字</legend>
+                  <legend style={legend}>文字 Text</legend>
                   {textBlock.map(renderText)}
                   {numberKeys.map(renderNumber)}
                   {listKeys.map(renderStringList)}
                 </fieldset>
               ) : null}
 
-              {mediaText.length > 0 || structuredKeys.some((k) => k === "gallery" || k === "video") ? (
-                <fieldset style={fieldset}>
-                  <legend style={legend}>图片与视频</legend>
-                  {mediaText.map(renderText)}
-                  {structuredKeys.includes("gallery") ? (
-                    <div>
-                      <span style={{ display: "block", marginBottom: 6 }}>图集</span>
-                      {galleryEditor(section.key, section.label, asRows(value.gallery))}
-                    </div>
-                  ) : null}
-                  {structuredKeys.includes("video") ? (
-                    <div>
-                      <span style={{ display: "block", marginBottom: 6 }}>视频</span>
-                      {videoEditor(section.key, section.label, asRow(value.video))}
-                    </div>
-                  ) : null}
-                </fieldset>
-              ) : null}
-
               {linkText.length > 0 || structuredKeys.includes("actions") ? (
                 <fieldset style={fieldset}>
-                  <legend style={legend}>按钮与链接</legend>
+                  <legend style={legend}>按钮与链接 CTAs</legend>
                   {linkText.map(renderText)}
                   {structuredKeys.includes("actions")
                     ? actionsEditor(section.key, asRows(value.actions))
@@ -1158,9 +1178,28 @@ export function HomeSectionsEditor({
                 </fieldset>
               ) : null}
 
+              {mediaText.length > 0 || structuredKeys.some((k) => k === "gallery" || k === "video") ? (
+                <fieldset style={fieldset}>
+                  <legend style={legend}>图片与视频 Media</legend>
+                  {mediaText.map(renderText)}
+                  {structuredKeys.includes("gallery") ? (
+                    <div>
+                      <span style={fieldCaption}>图集（Gallery）</span>
+                      {galleryEditor(section.key, section.label, asRows(value.gallery))}
+                    </div>
+                  ) : null}
+                  {structuredKeys.includes("video") ? (
+                    <div>
+                      <span style={fieldCaption}>视频（Video）</span>
+                      {videoEditor(section.key, section.label, asRow(value.video))}
+                    </div>
+                  ) : null}
+                </fieldset>
+              ) : null}
+
               {richKeys.length > 0 ? (
                 <fieldset style={fieldset}>
-                  <legend style={legend}>内容条目</legend>
+                  <legend style={legend}>内容条目 Items</legend>
                   {richKeys.map((key) => {
                     const objectSpec = OBJECT_EDITORS[`${section.key}.${key}`];
                     const rowSpec = ROW_EDITORS[`${section.key}.${key}`];
@@ -1193,6 +1232,6 @@ export function HomeSectionsEditor({
           </details>
         );
       })}
-    </>
+    </div>
   );
 }
