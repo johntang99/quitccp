@@ -338,7 +338,11 @@ export async function runNormalization(baseUrl: string, options: MigrationPullOp
   let page = 1;
   const perPage = options.perPage ?? 100;
   const maxPages = options.maxPages ?? Number.POSITIVE_INFINITY;
-  const maxPosts = options.maxPosts ?? 3_000;
+  // No implicit ceiling. This used to default to 3,000, so a run without
+  // --max-posts stopped there and still exited 0 -- a silent partial pull that
+  // looks exactly like a complete one. A cap is now something the caller asks
+  // for.
+  const maxPosts = options.maxPosts ?? Number.POSITIVE_INFINITY;
 
   while (true) {
     if (page > maxPages || normalized.length >= maxPosts) break;
@@ -354,8 +358,14 @@ export async function runNormalization(baseUrl: string, options: MigrationPullOp
       pulledPosts += 1;
       if (normalized.length >= maxPosts) break;
     }
+    // Progress on stderr, so stdout stays a clean JSON document and a stalled
+    // or truncated run is visible while it happens.
+    if (page % 10 === 0) {
+      process.stderr.write(`[fetch] page ${page} · ${normalized.length} 篇\n`);
+    }
     page += 1;
   }
+  process.stderr.write(`[fetch] 完成：${normalized.length} 篇，共 ${page - 1} 页\n`);
 
   normalized.sort((a, b) => {
     if (a.legacyId !== b.legacyId) return a.legacyId - b.legacyId;
