@@ -137,29 +137,37 @@ export default async function AdminVideosPage({ searchParams }: PageProps) {
       </section>
 
       <section className="admin-card">
-        <form method="post" action="/api/admin/content/videos/bulk">
-          <div className="admin-toolbar" style={{ marginBottom: 8 }}>
-            <select className="admin-select" name="action" defaultValue="category">
-              <option value="category">改主分类为…</option>
-              <option value="published">发布</option>
-              <option value="draft">退回草稿</option>
-              <option value="archived">归档</option>
-            </select>
-            <select className="admin-select" name="category" defaultValue="">
-              <option value="">（选择目标分类）</option>
-              {categories.map((c) => (
-                <option key={c.slug} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <button className="admin-btn" type="submit">
-              对选中的视频执行
-            </button>
-            <span className="muted">勾选左侧复选框后执行；改分类只替换主分类。</span>
-          </div>
-          <VideoTable rows={result.rows} selectable />
+        {/* The bulk form holds only its own controls. The row checkboxes join it
+            by id, and the per-row delete form stays outside it -- a <form>
+            inside a <form> is invalid HTML: React refuses to hydrate it and the
+            browser drops the inner one, so delete did nothing at all. */}
+        <form
+          id="video-bulk-form"
+          method="post"
+          action="/api/admin/content/videos/bulk"
+          className="admin-toolbar"
+          style={{ marginBottom: 8 }}
+        >
+          <select className="admin-select" name="action" defaultValue="category">
+            <option value="category">改主分类为…</option>
+            <option value="published">发布</option>
+            <option value="draft">退回草稿</option>
+            <option value="archived">归档</option>
+          </select>
+          <select className="admin-select" name="category" defaultValue="">
+            <option value="">（选择目标分类）</option>
+            {categories.map((c) => (
+              <option key={c.slug} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <button className="admin-btn" type="submit">
+            对选中的视频执行
+          </button>
+          <span className="muted">勾选左侧复选框后执行；改分类只替换主分类。</span>
         </form>
+        <VideoTable rows={result.rows} selectable bulkFormId="video-bulk-form" />
 
         <div className="admin-toolbar" style={{ marginTop: 12 }}>
           {result.page > 1 ? (

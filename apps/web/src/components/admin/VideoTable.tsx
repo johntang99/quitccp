@@ -25,10 +25,13 @@ function duration(seconds: number | null): string {
  */
 export function VideoTable({
   rows,
-  selectable = false
+  selectable = false,
+  bulkFormId
 }: {
   rows: VideoListRow[];
   selectable?: boolean;
+  /** Associates the row checkboxes with a bulk form that lives outside the table. */
+  bulkFormId?: string;
 }) {
   return (
     <div className="admin-table-wrap">
@@ -61,7 +64,7 @@ export function VideoTable({
               <tr key={row.id}>
                 {selectable ? (
                   <td>
-                    <input type="checkbox" name="ids" value={row.id} />
+                    <input type="checkbox" name="ids" value={row.id} form={bulkFormId} />
                   </td>
                 ) : null}
                 <td>

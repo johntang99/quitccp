@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { MarkdownEditor } from "./MarkdownEditor";
 
@@ -78,6 +78,45 @@ function platformOf(url: string): string {
 export function VideoForm({ initial, categories, mode }: VideoFormProps) {
   const [value, setValue] = useState<VideoFormValues>(initial);
   const [picker, setPicker] = useState<null | "cover" | "body">(null);
+  // Same slug behaviour as articles: date prefix on by default, and a clash
+  // shown while typing rather than refused after 保存.
+  const [datePrefix, setDatePrefix] = useState(true);
+  const [slugCheck, setSlugCheck] = useState<{ available: boolean; takenBy?: string; suggestion: string } | null>(null);
+
+  useEffect(() => {
+    try {
+      setDatePrefix(window.localStorage.getItem("quitccp.slugDatePrefix") !== "0");
+    } catch {
+      // Private browsing refuses storage; the default stands.
+    }
+  }, []);
+
+  const buildSlug = (title: string) => {
+    const base = title.trim().replace(/\s+/g, "-");
+    if (!base || !datePrefix) return base;
+    const when = value.publishedAt ? new Date(value.publishedAt) : new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${when.getFullYear()}-${pad(when.getMonth() + 1)}-${pad(when.getDate())}-${base}`;
+  };
+
+  useEffect(() => {
+    const slug = value.slug.trim();
+    if (!slug) {
+      setSlugCheck(null);
+      return;
+    }
+    const timer = window.setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ slug });
+        if (value.id) params.set("id", value.id);
+        const response = await fetch(`/api/admin/content/videos/slug?${params}`);
+        if (response.ok) setSlugCheck(await response.json());
+      } catch {
+        // A failed check must not block editing; save refuses a clash anyway.
+      }
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [value.slug, value.id]);
   const [error, setError] = useState("");
 
   const set = <K extends keyof VideoFormValues>(key: K, next: VideoFormValues[K]) =>
@@ -215,11 +254,45 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                 <button
                   className="admin-btn admin-btn-sm"
                   type="button"
-                  onClick={() => set("slug", value.title.trim())}
+                  onClick={() => set("slug", buildSlug(value.title))}
                 >
                   由标题生成
                 </button>
               </div>
+              <div className="row" style={{ marginTop: 6, alignItems: "center", gap: 10 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                  <input
+                    type="checkbox"
+                    checked={datePrefix}
+                    onChange={(event) => {
+                      setDatePrefix(event.target.checked);
+                      try {
+                        window.localStorage.setItem(
+                          "quitccp.slugDatePrefix",
+                          event.target.checked ? "1" : "0"
+                        );
+                      } catch {
+                        // Not remembering the choice is not an error.
+                      }
+                    }}
+                  />
+                  网址前面加日期（推荐）
+                </label>
+                {slugCheck && !slugCheck.available ? (
+                  <button
+                    className="admin-btn admin-btn-sm"
+                    type="button"
+                    onClick={() => set("slug", slugCheck.suggestion)}
+                  >
+                    改用 {slugCheck.suggestion.slice(-18)}
+                  </button>
+                ) : null}
+              </div>
+              {slugCheck && !slugCheck.available ? (
+                <span className="hint" style={{ color: "#b42318" }}>
+                  这个网址已被《{slugCheck.takenBy}》占用。
+                </span>
+              ) : null}
             </div>
 
             <div className="field">
