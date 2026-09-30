@@ -3287,11 +3287,6 @@
 
 /* --- 栏目文章列表 -----------------------------------------------------------
    docs/prototypes/news/news-category-display-html. */
-.news-cat-head { position: relative; overflow: hidden; background: linear-gradient(135deg, #251E5E 0%, #362C88 55%, #4739A0 100%); color: #fff; }
-.news-cat-glow { position: absolute; right: -160px; top: -300px; width: 760px; height: 760px; border-radius: 50%; background: radial-gradient(closest-side, rgba(242,211,138,0.2), rgba(242,211,138,0) 100%); pointer-events: none; }
-.news-cat-head-inner { position: relative; display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; flex-wrap: wrap; padding-top: clamp(32px, 3.4vw, 44px); padding-bottom: clamp(72px, 8vw, 104px); }
-.news-cat-search { display: flex; align-items: center; gap: 10px; width: 300px; max-width: 100%; padding: 12px 16px; border-radius: 999px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.22); color: #CFC8EE; font-size: 14px; text-decoration: none; }
-
 /* The lead card straddles the gradient's lower edge. */
 .news-cat-lift { position: relative; margin-top: clamp(-64px, -4.4vw, -40px); }
 .news-cat-lead { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); background: #FFFEFA; border-radius: 14px; overflow: hidden; color: #1A1726; text-decoration: none; box-shadow: 0 2px 4px rgba(26,23,38,0.04), 0 40px 80px -40px rgba(26,23,38,0.4); }

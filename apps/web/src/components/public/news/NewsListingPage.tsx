@@ -1,4 +1,5 @@
 import { NEWS_CATEGORIES, type NewsCard, type NewsListing, type NewsSort } from "@/lib/public-content";
+import { NewsHeader } from "./NewsHeader";
 import { T, articleHref, day } from "./newsTokens";
 
 /**
@@ -7,8 +8,8 @@ import { T, articleHref, day } from "./newsTokens";
  *
  * Implements `docs/prototypes/news/news-category-display-html`: a gradient
  * masthead, a lead card lifted over its lower edge, then the list beside a
- * sidebar. The design's tab row is gone from the header because the artboard
- * puts cross-navigation in the 其他栏目 panel instead.
+ * sidebar. The masthead is the section's own <NewsHeader>, so the category tab
+ * row stays put and a reader can move between categories from inside one.
  */
 export function NewsListingPage({ listing }: { listing: NewsListing }) {
   const [lead, ...rest] = listing.items;
@@ -26,35 +27,13 @@ export function NewsListingPage({ listing }: { listing: NewsListing }) {
 
   return (
     <div className="news-page">
-      <header className="news-cat-head">
-        <span className="news-cat-glow" aria-hidden="true" />
-        <div className="news-shell news-cat-head-inner">
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <span style={{ fontSize: 13, color: "#CFC8EE" }}>
-              <a href="/" style={{ color: "inherit", textDecoration: "none" }}>首页</a>
-              <span style={{ opacity: 0.5 }}> / </span>
-              <a href="/news" style={{ color: "inherit", textDecoration: "none" }}>新闻与报告</a>
-              <span style={{ opacity: 0.5 }}> / </span>
-              {listing.name}
-            </span>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 18, flexWrap: "wrap" }}>
-              <h1 style={{ margin: 0, fontFamily: T.serif, fontWeight: 900, fontSize: "clamp(30px, 3.6vw, 48px)" }}>
-                {listing.name}
-              </h1>
-              <span style={{ fontFamily: T.mono, fontSize: 13, letterSpacing: "0.18em", color: T.gold }}>
-                {listing.en} · {listing.total.toLocaleString("zh-CN")} 篇
-              </span>
-            </div>
-          </div>
-          <a href="/search" className="news-cat-search">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <circle cx="11" cy="11" r="7" />
-              <path d="M20 20l-4-4" />
-            </svg>
-            在本栏目中搜索
-          </a>
-        </div>
-      </header>
+      {/* The section masthead, with this listing's identity in place of the
+          section title and its tab row intact -- every category visible, this
+          one marked. */}
+      <NewsHeader
+        active={listing.slug}
+        listing={{ name: listing.name, en: listing.en, total: listing.total }}
+      />
 
       {showLead && lead ? (
         <div className="news-shell news-cat-lift">
