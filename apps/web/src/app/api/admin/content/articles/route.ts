@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { listArticles, listCategories, upsertArticleRecord } from "@/lib/admin/repository";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 
 export async function GET(request: Request) {
   const user = await getAdminSessionUser();
@@ -66,8 +67,12 @@ export async function POST(request: Request) {
   // The form checks these in the browser, but the endpoint has to as well: a
   // title-less post used to come back as a bare 404, and an empty slug wrote a
   // row that no URL could ever reach.
+  // The form saves over fetch so the editor stays on the page; a plain form
+  // post (no JavaScript) still gets the redirects it expects.
+  const wantsJson = (request.headers.get("accept") ?? "").includes("application/json");
   const backTo = id ? `/admin/articles/${id}` : "/admin/articles/new";
   const reject = (message: string) => {
+    if (wantsJson) return NextResponse.json({ ok: false, error: message }, { status: 400 });
     const target = new URL(backTo, request.url);
     target.searchParams.set("error", message);
     return NextResponse.redirect(target, 303);
@@ -122,6 +127,24 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     return reject(error instanceof Error ? error.message : "保存失败。");
+  }
+
+  if (wantsJson) {
+    // The id matters for a new article: the form switches to editing it, so a
+    // second save updates rather than creating a duplicate.
+    const { data: saved } = await createSupabaseAdminClient()
+      .from("cms_articles")
+      .select("id, slug")
+      .eq("slug", slug)
+      .eq("locale", locale)
+      .maybeSingle();
+    return NextResponse.json({
+      ok: true,
+      id: saved ? String(saved.id) : id,
+      slug: saved ? String(saved.slug) : slug,
+      status,
+      savedAt: new Date().toISOString()
+    });
   }
 
   return NextResponse.redirect(new URL("/admin/articles", request.url), 303);

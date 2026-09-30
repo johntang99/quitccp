@@ -29,6 +29,8 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
     to: params.to,
     gap: params.gap as ArticleSearchFilters["gap"],
     sort: (params.sort as ArticleSearchFilters["sort"]) ?? "published",
+    featured: params.featured === "1" ? true : undefined,
+    editorArchive: params.editorArchive === "1" ? true : undefined,
     page: Number(params.page ?? "1") || 1,
     pageSize: Number(params.pageSize ?? "20") || 20
   };

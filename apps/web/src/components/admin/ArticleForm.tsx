@@ -68,6 +68,10 @@ export function ArticleForm({ initial, categories, authors, currentUser, mode }:
   const [datePrefix, setDatePrefix] = useState(true);
   const [slugCheck, setSlugCheck] = useState<{ available: boolean; takenBy?: string; suggestion: string } | null>(null);
   const [error, setError] = useState("");
+  // What the editor sees after pressing save: the form stays put, so the
+  // feedback has to be here rather than on the page it used to redirect to.
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState<{ at: string; status: string } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   const set = <K extends keyof ArticleFormValues>(key: K, value: ArticleFormValues[K]) =>
@@ -146,7 +150,50 @@ export function ArticleForm({ initial, categories, authors, currentUser, mode }:
     const form = formRef.current;
     if (!form) return;
     (form.elements.namedItem("status") as HTMLInputElement).value = status;
-    form.submit();
+    void save(form, status);
+  };
+
+  /**
+   * Saves without leaving the page.
+   *
+   * It used to post the form and land on the article list, which threw away
+   * whatever the editor was in the middle of. Now the save happens over fetch
+   * and the page stays exactly as it was; only the status line changes.
+   */
+  const save = async (form: HTMLFormElement, status: string) => {
+    setSaving(true);
+    setSaved(null);
+    try {
+      const response = await fetch(form.action, {
+        method: "POST",
+        headers: { accept: "application/json" },
+        body: new FormData(form)
+      });
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        error?: string;
+        id?: string;
+        slug?: string;
+        savedAt?: string;
+      };
+      if (!response.ok || !payload.ok) {
+        setError(payload.error || "保存失败。");
+        return;
+      }
+      setSaved({ at: new Date().toLocaleTimeString("zh-CN", { hour12: false }), status });
+      setV((prev) => ({ ...prev, status }));
+      // A new article becomes the article being edited, so the next save
+      // updates it instead of refusing the slug as already taken.
+      if (!v.id && payload.id) {
+        setV((prev) => ({ ...prev, id: payload.id }));
+        setSlugTouched(true);
+        window.history.replaceState(null, "", `/admin/articles/${payload.id}`);
+      }
+    } catch {
+      setError("保存失败：连不上服务器。");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleSecondary = (name: string) => {
@@ -368,13 +415,30 @@ export function ArticleForm({ initial, categories, authors, currentUser, mode }:
             </div>
 
             <div className="row">
-              <button type="button" className="admin-btn admin-btn-primary" onClick={() => submit("published")}>
-                {mode === "new" ? "发布" : "保存并发布"}
+              <button
+                type="button"
+                className="admin-btn admin-btn-primary"
+                disabled={saving}
+                onClick={() => submit("published")}
+              >
+                {saving ? "保存中…" : mode === "new" ? "发布" : "保存并发布"}
               </button>
-              <button type="button" className="admin-btn" onClick={() => submit("draft")}>
-                保存草稿
+              <button type="button" className="admin-btn" disabled={saving} onClick={() => submit("draft")}>
+                {saving ? "保存中…" : "保存草稿"}
               </button>
             </div>
+            {saved ? (
+              <p
+                role="status"
+                style={{ margin: "8px 0 0", color: "#1f7a4d", fontSize: 13, fontWeight: 600 }}
+              >
+                ✓ 已保存（{saved.status === "published" ? "已发布" : "草稿"}） · {saved.at}
+                　
+                <a href={`/news/${v.slug}`} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 400 }}>
+                  查看 ↗
+                </a>
+              </p>
+            ) : null}
           </div>
 
           <div className="admin-card">
