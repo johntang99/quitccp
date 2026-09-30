@@ -1377,6 +1377,15 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* Which section you are in. Nothing marked it before, so every screen in the
+   admin looked like every other one. */
+.admin-sidebar a.on {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 #f0c14b;
+}
+
 .admin-main {
   padding: 24px;
 }

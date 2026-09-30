@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { ArticleForm } from "@/components/admin/ArticleForm";
 import { ArticleTabs } from "@/components/admin/ArticleTabs";
@@ -18,13 +17,6 @@ export default async function NewArticlePage({
 
   return (
     <AdminShell user={user}>
-      <section className="admin-card" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <Link className="admin-btn" href="/admin/articles">
-          ← 返回列表
-        </Link>
-        <h2 style={{ margin: 0 }}>新建文章</h2>
-      </section>
-
       <ArticleTabs active="new" />
 
       {error ? (
