@@ -17,7 +17,7 @@ export function NewsListingPage({ listing }: { listing: NewsListing }) {
 
   return (
     <div className="news-page">
-      <NewsHeader active={listing.slug} />
+      <NewsHeader active={listing.slug} today={new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })} />
       <div className="news-shell news-body">
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <span style={{ fontFamily: T.serif, fontWeight: 900, fontSize: 32 }}>{listing.name}</span>

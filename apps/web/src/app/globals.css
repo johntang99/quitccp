@@ -3265,29 +3265,47 @@
 .spark-labels span { flex: 1; text-align: center; font-size: 11px; color: #8a90a0; }
 
 
-/* --- 新闻与报告 landing ---------------------------------------------------
-   Values from docs/prototypes/news/. The mockups are fixed at 1440px; these
-   are the same proportions expressed as a fluid shell so the page holds up
-   below that width instead of scrolling sideways. */
-.news-page { background: #F4F1EA; color: #1A1726; font-family: 'Noto Sans SC', 'PingFang SC', sans-serif; }
+/* --- 新闻与报告 landing (Premium) -----------------------------------------
+   Values from docs/prototypes/news/news-home-2-html. The artboard is a fixed
+   1440px; these are the same proportions as a fluid shell, so the page holds
+   together below that width instead of scrolling sideways. */
+.news-page { background: #F2EEE6; color: #1A1726; font-family: 'Noto Sans SC', 'PingFang SC', sans-serif; }
 .news-shell { max-width: 1440px; margin: 0 auto; padding-left: clamp(20px, 6.6vw, 96px); padding-right: clamp(20px, 6.6vw, 96px); }
-.news-masthead { position: relative; display: flex; justify-content: space-between; align-items: flex-end; gap: 48px; padding-top: clamp(36px, 4.4vw, 64px); padding-bottom: clamp(32px, 3.9vw, 56px); flex-wrap: wrap; }
-.news-tabs { display: flex; gap: 36px; overflow-x: auto; scrollbar-width: none; }
+
+.news-masthead { position: relative; display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; padding-top: clamp(32px, 3.6vw, 52px); padding-bottom: 36px; flex-wrap: wrap; }
+.news-tabs { position: relative; display: flex; gap: 30px; border-top: 1px solid rgba(255,255,255,0.14); padding-bottom: clamp(40px, 5vw, 72px); overflow-x: auto; scrollbar-width: none; }
 .news-tabs::-webkit-scrollbar { display: none; }
-.news-body { display: flex; flex-direction: column; gap: clamp(56px, 6.6vw, 96px); padding-top: clamp(40px, 5vw, 72px); padding-bottom: clamp(64px, 7.8vw, 112px); }
 
-.news-featured-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 48px; }
-.news-latest-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 56px; }
-.news-archive-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
-.news-cat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 72px 56px; align-items: start; }
+/* The hero card lifts over the header's lower edge. */
+.news-hero-lift { margin-top: clamp(-56px, -3.9vw, -32px); position: relative; }
+.news-hero { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 3fr) minmax(0, 3.2fr); background: #FFFEFA; border-radius: 12px; box-shadow: 0 2px 4px rgba(26,23,38,0.04), 0 40px 80px -40px rgba(26,23,38,0.35); }
+.news-hero-second { display: flex; flex-direction: column; padding: 28px 24px; border-left: 1px solid #ECE6DA; }
+.news-hero-latest { display: flex; flex-direction: column; padding: 28px 24px; border-left: 1px solid #ECE6DA; background: #FAF7F1; border-radius: 0 12px 12px 0; }
 
-@media (max-width: 1100px) {
-  .news-featured-grid { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+.news-archive-band { margin-top: clamp(48px, 5vw, 72px); position: relative; overflow: hidden; background: #17132F; color: #fff; padding-top: clamp(44px, 4.4vw, 64px); padding-bottom: clamp(48px, 5vw, 72px); }
+.news-archive-grid { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+
+.news-body { display: flex; flex-direction: column; gap: 32px; padding-top: clamp(44px, 5vw, 72px); padding-bottom: clamp(56px, 6.6vw, 96px); }
+.news-panel-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; align-items: start; }
+.news-panel-lead { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 20px; align-items: start; color: #1A1726; text-decoration: none; padding-bottom: 16px; }
+
+.news-invest { position: relative; overflow: hidden; display: grid; grid-template-columns: 560px minmax(0, 1fr); gap: 40px; background: linear-gradient(125deg, #2A2268 0%, #3B3190 100%); color: #fff; border-radius: 14px; padding: 32px; box-shadow: 0 40px 80px -44px rgba(42,34,104,0.8); }
+.news-commentary { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); background: #FFFEFA; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(26,23,38,0.05), 0 24px 50px -34px rgba(26,23,38,0.35); }
+.news-commentary-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; flex-grow: 1; }
+
+@media (max-width: 1180px) {
+  .news-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .news-hero-latest { grid-column: 1 / -1; border-left: 0; border-top: 1px solid #ECE6DA; border-radius: 0 0 12px 12px; }
+  .news-invest { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .news-commentary { grid-template-columns: minmax(0, 1fr); }
   .news-archive-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media (max-width: 820px) {
-  .news-latest-grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
+@media (max-width: 860px) {
+  .news-hero { grid-template-columns: minmax(0, 1fr); }
+  .news-hero-second { border-left: 0; border-top: 1px solid #ECE6DA; }
   .news-archive-grid { grid-template-columns: minmax(0, 1fr); }
-  .news-cat-grid { grid-template-columns: minmax(0, 1fr); gap: 56px; }
+  .news-panel-row { grid-template-columns: minmax(0, 1fr); }
+  .news-panel-lead { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .news-commentary-cols { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .news-masthead > a { width: 100%; }
 }

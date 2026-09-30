@@ -989,6 +989,10 @@ export interface NewsCard {
   image: string;
   category: string;
   publishedAt: string | null;
+  /** For 评论员专栏, which bylines its cards. */
+  author: string;
+  /** 第三十二集 → "32"; the investigations band numbers its episodes. */
+  episode: string;
 }
 
 export interface NewsCategoryBlock {
@@ -1007,7 +1011,37 @@ export interface NewsHome {
   categories: NewsCategoryBlock[];
 }
 
-const NEWS_CARD_COLUMNS = "slug, title, summary, hero_image, published_at";
+const NEWS_CARD_COLUMNS = "slug, title, summary, hero_image, published_at, author";
+
+/** Chinese numerals in a 第…集 title, for the investigations band. */
+const CN_DIGITS: Record<string, number> = {
+  零: 0, 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9
+};
+
+function episodeFromTitle(title: string): string {
+  const match = title.match(/第\s*([0-9]+|[零一二三四五六七八九十百]+)\s*[集期]/);
+  if (!match) return "";
+  const raw = match[1];
+  if (/^[0-9]+$/.test(raw)) return raw;
+
+  // 三十二 → 32, 十 → 10, 八 → 8. Only needs to reach the low hundreds.
+  let total = 0;
+  let section = 0;
+  for (const char of raw) {
+    if (char === "百") {
+      section = (section || 1) * 100;
+      total += section;
+      section = 0;
+    } else if (char === "十") {
+      section = (section || 1) * 10;
+      total += section;
+      section = 0;
+    } else if (char in CN_DIGITS) {
+      section = CN_DIGITS[char];
+    }
+  }
+  return String(total + section);
+}
 
 function toNewsCard(row: Record<string, unknown>, category: string): NewsCard {
   return {
@@ -1016,7 +1050,9 @@ function toNewsCard(row: Record<string, unknown>, category: string): NewsCard {
     summary: String(row.summary ?? ""),
     image: String(row.hero_image ?? ""),
     category,
-    publishedAt: row.published_at ? String(row.published_at) : null
+    publishedAt: row.published_at ? String(row.published_at) : null,
+    author: String(row.author ?? ""),
+    episode: episodeFromTitle(String(row.title))
   };
 }
 
