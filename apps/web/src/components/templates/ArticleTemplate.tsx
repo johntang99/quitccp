@@ -53,7 +53,10 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
   const shouldUseFallbackTitle = !title || title.trim().length < 6;
   const displayTitle = shouldUseFallbackTitle ? fallbackTitle : title;
   const breadcrumb = asRecord(payload.breadcrumb);
-  const articleTag = asString(payload.tag, "国际声援行动");
+  // Not a real category name. This default shows whenever the payload carries
+  // no tag, so naming an actual section here mislabels every such article --
+  // which is exactly what happened.
+  const articleTag = asString(payload.tag, "新闻与报告");
   const heroFigure = asRecord(payload.heroFigure);
   const heroFigureImage = asString(heroFigure.image);
   const heroCaptionLines = asStringArray(heroFigure.captionLines, []);

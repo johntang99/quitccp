@@ -427,7 +427,7 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
     const listMapped = await findVirtualNewsArticle(normalizedSlug);
     const { data, error } = await supabase
       .from("cms_articles")
-      .select("slug, title, summary, body_markdown, body_plain, status, updated_at")
+      .select("id, slug, title, summary, body_markdown, body_plain, status, updated_at, published_at, author")
       .eq("slug", normalizedSlug)
       .eq("locale", "zh")
       .in("status", ["published", "review", "draft"])
@@ -489,11 +489,20 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
             }));
     const summary = asString(data.summary, bodyRows.find((row) => row.type === "p")?.text ?? "");
     const heroImage = asString(listMapped?.image) || extractFirstImageFromMarkdown(markdownBody);
-    const articleTag = asString(listMapped?.tag, asString(fallbackContent.tag, "新闻与报告"));
+    // The article's own primary category, which nothing here used to consult.
+    // Without it every article fell through to the template's default and the
+    // whole site claimed to be 国际声援行动.
+    const primaryCategory = await primaryCategoryName(String(data.id));
+    const articleTag =
+      primaryCategory || asString(listMapped?.tag, asString(fallbackContent.tag, "新闻与报告"));
+    // Date the article by when it was published, not when we last wrote the row.
+    // The import touched all 15,514 rows at once, so updated_at would have put
+    // today's date on a piece from 2011.
+    const articleDate = asString(data.published_at) || asString(data.updated_at);
     const resolvedByline = [
-      toDateLabel(asString(data.updated_at)),
-      "新闻与报告",
-      "本站资料库",
+      toDateLabel(articleDate),
+      articleTag || "新闻与报告",
+      asString(data.author) || "本站资料库",
       `约 ${plainBody.length.toLocaleString("zh-CN")} 字`
     ];
     return {
@@ -511,6 +520,15 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
         byline: resolvedByline,
         body: bodyRows,
         tag: articleTag,
+        // The seed's breadcrumb names a category too, and the template prefers
+        // it over the tag -- so it has to be corrected here as well or the trail
+        // keeps claiming a section the article is not in.
+        breadcrumb: {
+          ...asObject(fallbackContent.breadcrumb),
+          sectionLabel: "新闻与报告",
+          sectionHref: "/news",
+          current: articleTag
+        },
         heroFigure: heroImage
           ? {
               ...asObject(fallbackContent.heroFigure),
@@ -604,5 +622,29 @@ export async function getRenderableVideo(slug: string): Promise<PublicVideoRecor
     };
   } catch {
     return null;
+  }
+}
+
+
+/**
+ * The name of an article's primary category -- the row at position 0 in the
+ * category map, which is what the admin shows and what migration 011 exists to
+ * make deterministic.
+ */
+async function primaryCategoryName(articleId: string): Promise<string> {
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data } = await supabase
+      .from("cms_article_category_map")
+      .select("position, cms_article_categories(name)")
+      .eq("article_id", articleId)
+      .order("position", { ascending: true })
+      .limit(1);
+    const name = (data ?? [])
+      .map((row) => (row as { cms_article_categories?: { name?: string } }).cms_article_categories?.name)
+      .find(Boolean);
+    return name ? String(name) : "";
+  } catch {
+    return "";
   }
 }
