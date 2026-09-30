@@ -60,8 +60,10 @@ export function ArticleForm({ initial, categories, authors, currentUser, mode }:
   });
   const [picker, setPicker] = useState<null | "hero" | "body">(null);
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
-  // Date prefix, remembered per browser so an editor sets it once.
-  const [datePrefix, setDatePrefix] = useState(false);
+  // Date prefix is on unless the editor turned it off. New articles get
+  // 2026-09-29-标题; the 15,515 migrated ones keep the slugs they were imported
+  // with, because changing a live URL breaks every link to it.
+  const [datePrefix, setDatePrefix] = useState(true);
   const [slugCheck, setSlugCheck] = useState<{ available: boolean; takenBy?: string; suggestion: string } | null>(null);
   const [error, setError] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
@@ -71,9 +73,10 @@ export function ArticleForm({ initial, categories, authors, currentUser, mode }:
 
   useEffect(() => {
     try {
-      setDatePrefix(window.localStorage.getItem("quitccp.slugDatePrefix") === "1");
+      // Only an explicit "0" turns it off; never having chosen means on.
+      setDatePrefix(window.localStorage.getItem("quitccp.slugDatePrefix") !== "0");
     } catch {
-      // Private browsing refuses storage; the default is simply off.
+      // Private browsing refuses storage; the default stands.
     }
   }, []);
 
@@ -100,7 +103,7 @@ export function ArticleForm({ initial, categories, authors, currentUser, mode }:
     if (slugTouched || mode === "edit") return;
     set("slug", buildSlug(v.title));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [v.title, datePrefix]);
+  }, [v.title, datePrefix, v.publishedAt]);
 
   // Ask whether the slug is free while the editor is still typing, so a clash
   // shows up here rather than as a refusal after they press 保存.
@@ -238,7 +241,7 @@ export function ArticleForm({ initial, categories, authors, currentUser, mode }:
                       if (!slugTouched || mode === "new") set("slug", "");
                     }}
                   />
-                  网址前面加日期（2026-09-29-标题）
+                  网址前面加日期（推荐）
                 </label>
                 {slugCheck && !slugCheck.available ? (
                   <button
