@@ -53,7 +53,7 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
   ].filter(Boolean);
 
   return (
-    <main className="wrap" style={{ padding: "34px 0 64px", maxWidth: 900 }}>
+    <div className="wrap" style={{ paddingTop: 34, paddingBottom: 64, maxWidth: 900 }}>
       <p style={{ fontFamily: "var(--mono)", fontSize: 12, color: "var(--muted)", display: "flex", gap: 8 }}>
         <a href="/" style={{ color: "var(--muted)" }}>首页</a>
         <span>/</span>
@@ -147,6 +147,6 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
           {video.sourceCredit}
         </p>
       ) : null}
-    </main>
+    </div>
   );
 }

@@ -22,7 +22,7 @@ export function VideoCategoryList({
   siblings: { slug: string; name: string; total: number }[];
 }) {
   return (
-    <main className="wrap" style={{ padding: "34px 0 72px" }}>
+    <div className="wrap" style={{ paddingTop: 34, paddingBottom: 72 }}>
       <p style={{ fontFamily: "var(--mono)", fontSize: 12, color: "var(--muted)", display: "flex", gap: 8 }}>
         <a href="/" style={{ color: "var(--muted)" }}>首页</a>
         <span>/</span>
@@ -122,6 +122,6 @@ export function VideoCategoryList({
           <a href={`/videos/${category.slug}?page=${category.page + 1}`}>下一页 →</a>
         ) : null}
       </div>
-    </main>
+    </div>
   );
 }

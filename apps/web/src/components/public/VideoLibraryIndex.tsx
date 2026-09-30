@@ -17,7 +17,7 @@ export function VideoLibraryIndex({ shelves }: { shelves: VideoLibraryShelf[] })
   const total = shelves.reduce((sum, shelf) => sum + shelf.total, 0);
 
   return (
-    <main className="wrap" style={{ padding: "34px 0 72px" }}>
+    <div className="wrap" style={{ paddingTop: 34, paddingBottom: 72 }}>
       <h1
         style={{
           fontFamily: "var(--serif)",
@@ -95,6 +95,6 @@ export function VideoLibraryIndex({ shelves }: { shelves: VideoLibraryShelf[] })
           </div>
         </section>
       ))}
-    </main>
+    </div>
   );
 }
