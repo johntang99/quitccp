@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { ArticleForm } from "@/components/admin/ArticleForm";
+import { ArticleTabs } from "@/components/admin/ArticleTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { getArticleFormLookups } from "@/lib/admin/article-form-data";
 
@@ -23,6 +24,8 @@ export default async function NewArticlePage({
         </Link>
         <h2 style={{ margin: 0 }}>新建文章</h2>
       </section>
+
+      <ArticleTabs active="new" />
 
       {error ? (
         <section className="admin-card" style={{ background: "#fdf1f0", borderColor: "#f2c9c4" }}>
