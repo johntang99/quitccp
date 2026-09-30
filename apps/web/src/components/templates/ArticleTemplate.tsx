@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ArticleTools } from "@/components/public/ArticleTools";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString, asStringArray } from "./content-utils";
 
@@ -41,11 +42,12 @@ function renderInline(text: string): ReactNode[] {
 
 export function ArticleTemplate({ title, content }: TemplatePageData) {
   const payload = asRecord(content);
-  const fallbackTitle = "全球退党服务中心在美国国会山为 31 名华人颁发退党证明";
-  const rawDek = asString(payload.dek);
-  const dek = rawDek
-    ? rawDek
-    : "在一份表彰退出中共运动的声明被正式载入《国会议事录》的同日，31 名华人在国会山现场领取了退出中共党、团、队的证明。";
+  // Both of these used to hold the same invented story about a proclamation
+  // entered into the Congressional Record. The dek printed it under any article
+  // with no standfirst, and the title replaced the headline of any article whose
+  // own title was shorter than six characters -- 「历史的丰碑」 and 「愿人人安度」
+  // were among them. An article shows its own title, or nothing.
+  const dek = asString(payload.dek);
   const rawByline = asStringArray(payload.byline, []);
   const bylineRows =
     rawByline.length === 4 && !rawByline.some((row) => row.includes("阅读约"))
@@ -92,8 +94,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
         src: asString(row.src),
         alt: asString(row.alt)
       }));
-  const shouldUseFallbackTitle = !title || title.trim().length < 6;
-  const displayTitle = shouldUseFallbackTitle ? fallbackTitle : title;
+  const displayTitle = title;
   const breadcrumb = asRecord(payload.breadcrumb);
   // Not a real category name. This default shows whenever the payload carries
   // no tag, so naming an actual section here mislabels every such article --
@@ -106,17 +107,13 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
   const inlineFigure = asRecord(payload.inlineFigure);
   const inlineFigureImage = asString(inlineFigure.image);
   const inlineFigureCaptionLines = asStringArray(inlineFigure.captionLines, []);
-  const actionPills = asObjectArray(payload.actionPills).length
-    ? asObjectArray(payload.actionPills).map((row) => ({
-        label: asString(row.label),
-        href: asString(row.href, "#")
-      }))
-    : [
-        { label: "复制链接", href: "#" },
-        { label: "下载 PDF", href: "#" },
-        { label: "转载说明", href: "#" },
-        { label: "打印", href: "#" }
-      ];
+  // Only pills a page actually supplies with a destination. The default four
+  // were all href="#" -- 复制链接, 下载 PDF, 转载说明 and 打印 each jumped to the
+  // top of the page and did nothing. The working three are rendered by
+  // <ArticleTools>; 下载 PDF is gone because nothing here makes a PDF.
+  const actionPills = asObjectArray(payload.actionPills)
+    .map((row) => ({ label: asString(row.label), href: asString(row.href) }))
+    .filter((row) => row.label && row.href && row.href !== "#");
   const relatedSection = asRecord(payload.relatedSection);
   const relatedItems = asObjectArray(relatedSection.items).length
     ? asObjectArray(relatedSection.items).map((row) => ({
@@ -166,7 +163,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
             <h1 style={{ fontFamily: "var(--serif)", fontWeight: 900, fontSize: "clamp(28px,3.4vw,40px)", lineHeight: 1.45, margin: "12px 0 20px", letterSpacing: ".01em" }}>
               {displayTitle}
             </h1>
-            <p className="dek">{dek}</p>
+            {dek ? <p className="dek">{dek}</p> : null}
             <div className="byline">
               {bylineRows.map((row) => (
                 <span key={row}>{row}</span>
@@ -250,6 +247,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
               ) : null}
             </div>
             <div style={{ marginTop: 44, paddingTop: 26, borderTop: "1px solid var(--rule)", display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <ArticleTools reuseAnchor="article-reuse" />
               {actionPills.map((action) => (
                 <a key={action.label} className="pill" href={action.href}>
                   {action.label}
@@ -294,7 +292,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
               </ul>
             </div>
             <div className="panel">
-              <h4>{asString(reusePanel.title, "转载条款")}</h4>
+              <h4 id="article-reuse">{asString(reusePanel.title, "转载条款")}</h4>
               <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.85, margin: 0 }}>
                 {asString(reusePanel.body, "本文可自由转载、翻译与再制作，无需事先取得授权，注明来源即可。")}
               </p>

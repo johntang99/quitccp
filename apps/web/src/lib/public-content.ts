@@ -188,8 +188,16 @@ function markdownToBodyRows(markdown: string): ArticleBodyRow[] {
       continue;
     }
 
+    // An image can also sit inside a paragraph rather than on its own line.
+    // stripInlineMarkdown drops those, so pull them out and emit them as
+    // figures after the paragraph they were embedded in.
+    const embedded = [...line.matchAll(/!\[([^\]]*)]\(([^)\s]+)[^)]*\)/g)];
     const cleaned = stripInlineMarkdown(line);
     if (cleaned) paragraphBuffer.push(cleaned);
+    if (embedded.length > 0) {
+      flushParagraph();
+      for (const match of embedded) rows.push({ type: "figure", src: match[2], alt: match[1] });
+    }
   }
 
   flushParagraph();
@@ -541,7 +549,13 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
       content: {
         ...fallbackContent,
         title: String(data.title),
-        dek: summary || asString(fallbackContent.dek),
+        // The importer set summary to the first 240 characters of the body, so
+        // showing it as the standfirst reprints the opening paragraph directly
+        // above itself. Only show a standfirst that says something the body
+        // does not already open with.
+        dek: isEchoOfBody(summary, firstParagraph && "text" in firstParagraph ? firstParagraph.text : "")
+          ? ""
+          : summary || asString(fallbackContent.dek),
         byline: resolvedByline,
         body: bodyRows,
         tag: articleTag,
@@ -869,4 +883,21 @@ export async function getVideoLibrary(perShelf = 6): Promise<VideoLibraryShelf[]
     })
   );
   return shelves.filter((shelf) => shelf.videos.length > 0);
+}
+
+
+/**
+ * True when a summary is just the beginning of the body.
+ *
+ * Compares with punctuation and whitespace removed, because the summary was cut
+ * at a fixed character count and usually ends mid-sentence.
+ */
+function isEchoOfBody(summary: string, firstParagraph: string): boolean {
+  const normalise = (value: string) => value.replace(/[\s，。、；：""''《》（）()!?！？…—-]/g, "");
+  const a = normalise(summary);
+  const b = normalise(firstParagraph);
+  if (!a || !b) return false;
+  const shorter = a.length <= b.length ? a : b;
+  const longer = a.length <= b.length ? b : a;
+  return shorter.length >= 12 && longer.startsWith(shorter.slice(0, Math.min(shorter.length, 60)));
 }
