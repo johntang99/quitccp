@@ -3154,6 +3154,10 @@
   border-left: 3px solid #b8913a;
   color: #5a6070;
 }
+.md-prev .md-table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 13px; }
+.md-prev .md-table th,
+.md-prev .md-table td { border: 1px solid #ddd; padding: 6px 9px; text-align: left; }
+.md-prev .md-table th { background: #f5f5f7; font-weight: 700; }
 .md-prev .md-video-frame { margin: 14px 0; }
 .md-prev .md-video-frame iframe,
 .md-prev .md-video-frame video {

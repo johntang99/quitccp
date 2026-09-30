@@ -88,6 +88,23 @@ function renderPreview(md: string): string {
     .map((block) => {
       const t = block.trim();
       if (!t) return "";
+      // A markdown table, recognised by the |---|---| separator on line two.
+      const tableLines = t.split("\n").map((line) => line.trim());
+      if (
+        tableLines.length >= 2 &&
+        /^\|.*\|$/.test(tableLines[0]) &&
+        /^\|[\s:|-]+\|$/.test(tableLines[1])
+      ) {
+        const cells = (row: string) => row.replace(/^\||\|$/g, "").split("|").map((cell) => cell.trim());
+        const head = cells(tableLines[0]);
+        const body = tableLines.slice(2).filter((line) => /^\|.*\|$/.test(line)).map(cells);
+        return `<table class="md-table"><thead><tr>${head
+          .map((cell) => `<th>${cell}</th>`)
+          .join("")}</tr></thead><tbody>${body
+          .map((cells2) => `<tr>${cells2.map((cell) => `<td>${cell}</td>`).join("")}</tr>`)
+          .join("")}</tbody></table>`;
+      }
+
       const fence = t.match(/^:::\s*video\s+(\S+)/);
       if (fence) {
         const caption = t.split("\n").slice(1).filter((l) => l !== ":::").join(" ");

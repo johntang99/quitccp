@@ -65,7 +65,8 @@ function asObjectArray(value: unknown): Record<string, unknown>[] {
 type ArticleBodyRow =
   | { type: "p" | "h2" | "h3" | "blockquote"; text: string }
   | { type: "figure"; src: string; alt: string }
-  | { type: "video"; src: string; caption: string };
+  | { type: "video"; src: string; caption: string }
+  | { type: "table"; head: string[]; rows: string[][] };
 
 function stripInlineMarkdown(value: string): string {
   return value
@@ -124,6 +125,25 @@ function markdownToBodyRows(markdown: string): ArticleBodyRow[] {
       flushQuote();
       continue;
     }
+    // A markdown table: a header row, a |---|---| separator, then body rows.
+    // Without this the whole thing collapsed into one paragraph of pipes.
+    if (/^\|.*\|$/.test(line) && /^\|[\s:|-]+\|$/.test((lines[index + 1] ?? "").trim())) {
+      flushParagraph();
+      flushQuote();
+      const cells = (row: string) =>
+        row.trim().replace(/^\||\|$/g, "").split("|").map((cell) => stripInlineMarkdown(cell));
+      const head = cells(line);
+      const body: string[][] = [];
+      let cursor = index + 2;
+      while (cursor < lines.length && /^\|.*\|$/.test(lines[cursor].trim())) {
+        body.push(cells(lines[cursor]));
+        cursor += 1;
+      }
+      rows.push({ type: "table", head, rows: body });
+      index = cursor - 1;
+      continue;
+    }
+
     // ::: video <url> / caption / ::: -- what the HTML converter turns an
     // <iframe> into, and what the editor's 插入视频 button writes. 695 published
     // articles carried one and printed it as literal text, fences and all.

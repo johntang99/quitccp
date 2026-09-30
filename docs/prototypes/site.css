@@ -452,6 +452,10 @@ a{color:inherit;text-decoration:none}
 }
 .prose figure{margin:34px 0}
 .prose figcaption{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:11px;line-height:1.7}
+.prose-table{border-collapse:collapse;width:100%;font-family:var(--sans,inherit);font-size:15px;line-height:1.7}
+.prose-table th,.prose-table td{border:1px solid var(--rule,#ddd);padding:8px 12px;text-align:left;vertical-align:top}
+.prose-table th{background:rgba(0,0,0,.035);font-weight:700}
+.prose-table tbody tr:nth-child(even){background:rgba(0,0,0,.015)}
 .prose a{color:var(--seal);border-bottom:1px solid rgba(74,60,150,.3)}
 .prose a:hover{border-bottom-color:var(--seal)}
 .dek{font-family:var(--sans);font-size:17.5px;line-height:1.95;color:var(--ink-soft);margin:0 0 30px}

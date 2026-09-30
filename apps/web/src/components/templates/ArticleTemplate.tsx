@@ -56,7 +56,15 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
       : ["2026-07-22", "华盛顿", "本站报导", "约 1,400 字"];
   const bodyRows = asObjectArray(payload.body);
   const shouldUseFallbackBody = bodyRows.length === 0;
-  const proseRows: Array<{ type: string; text?: string; src?: string; alt?: string; caption?: string }> = shouldUseFallbackBody
+  const proseRows: Array<{
+    type: string;
+    text?: string;
+    src?: string;
+    alt?: string;
+    caption?: string;
+    head?: string[];
+    rows?: string[][];
+  }> = shouldUseFallbackBody
     ? [
           {
             type: "p",
@@ -94,7 +102,11 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
         // type and text is what silently emptied every body image.
         src: asString(row.src),
         alt: asString(row.alt),
-        caption: asString(row.caption)
+        caption: asString(row.caption),
+        head: asStringArray(row.head, []),
+        rows: Array.isArray(row.rows)
+          ? (row.rows as unknown[]).map((cells) => asStringArray(cells, []))
+          : []
       }));
   const displayTitle = title;
   const breadcrumb = asRecord(payload.breadcrumb);
@@ -193,6 +205,38 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
             <div className="prose">
               {proseRows.map((row, index) => {
                 const type = asString(row.type, "p");
+
+                if (type === "table") {
+                  const head = row.head ?? [];
+                  const body = row.rows ?? [];
+                  if (head.length === 0 && body.length === 0) return null;
+                  // Wrapped, because a wide table must scroll rather than push
+                  // the article's column sideways on a phone.
+                  return (
+                    <div key={`table-${index}`} style={{ overflowX: "auto", margin: "26px 0" }}>
+                      <table className="prose-table">
+                        {head.length > 0 ? (
+                          <thead>
+                            <tr>
+                              {head.map((cell, cellIndex) => (
+                                <th key={cellIndex}>{cell}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                        ) : null}
+                        <tbody>
+                          {body.map((cells, rowIndex) => (
+                            <tr key={rowIndex}>
+                              {cells.map((cell, cellIndex) => (
+                                <td key={cellIndex}>{renderInline(cell)}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                }
 
                 if (type === "video") {
                   const src = asString(row.src);
