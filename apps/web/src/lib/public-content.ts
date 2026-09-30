@@ -497,7 +497,10 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
     const listMapped = await findVirtualNewsArticle(normalizedSlug);
     const { data, error } = await supabase
       .from("cms_articles")
-      .select("id, slug, title, summary, body_markdown, body_plain, status, updated_at, published_at, author")
+      .select(
+        "id, slug, title, summary, body_markdown, body_plain, status, updated_at, published_at, " +
+          "author, hero_image, hero_image_alt, hero_credit"
+      )
       .eq("slug", normalizedSlug)
       .eq("locale", "zh")
       // Drafts are readable only by someone signed into the admin, which is
@@ -509,6 +512,9 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
       .limit(1)
       .maybeSingle();
     if (error) throw error;
+    // The select is built by concatenation, which defeats the client's column
+    // inference; the shape is read through `row` and checked by hand below.
+    const row = (data ?? {}) as unknown as Record<string, unknown>;
     const fallbackContent = asObject(fallback.content);
     if (!data) {
       const virtual = listMapped;
@@ -549,8 +555,8 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
       };
     }
 
-    const markdownBody = asString(data.body_markdown);
-    const plainBody = asString(data.body_plain);
+    const markdownBody = asString(row.body_markdown);
+    const plainBody = asString(row.body_plain);
     const markdownRows = markdownToBodyRows(markdownBody);
     const bodyRows =
       markdownRows.length > 0
@@ -563,37 +569,46 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
             }));
     const firstParagraph = bodyRows.find((row) => row.type === "p");
     const summary = asString(
-      data.summary,
+      row.summary as string,
       firstParagraph && "text" in firstParagraph ? firstParagraph.text : ""
     );
-    const heroImage = asString(listMapped?.image) || extractFirstImageFromMarkdown(markdownBody);
+    // The article's own cover comes first. This used to look only at a page-list
+    // entry and then at the first image inside the body, so an article whose
+    // cover sits in hero_image -- 5,379 of them -- showed no picture at all
+    // unless its text happened to contain one.
+    const heroImage =
+      asString(row.hero_image) ||
+      asString(listMapped?.image) ||
+      extractFirstImageFromMarkdown(markdownBody);
+    const heroAlt = asString(row.hero_image_alt);
+    const heroCredit = asString(row.hero_credit);
     // The article's own primary category, which nothing here used to consult.
     // Without it every article fell through to the template's default and the
     // whole site claimed to be 国际声援行动.
-    const primaryCategory = await primaryCategoryName(String(data.id));
+    const primaryCategory = await primaryCategoryName(String(row.id));
     const articleTag =
       primaryCategory || asString(listMapped?.tag, asString(fallbackContent.tag, "新闻与报告"));
     // Date the article by when it was published, not when we last wrote the row.
     // The import touched all 15,514 rows at once, so updated_at would have put
     // today's date on a piece from 2011.
-    const articleDate = asString(data.published_at) || asString(data.updated_at);
+    const articleDate = asString(row.published_at) || asString(row.updated_at);
     const resolvedByline = [
       toDateLabel(articleDate),
       articleTag || "新闻与报告",
-      asString(data.author) || "本站资料库",
+      asString(row.author) || "本站资料库",
       `约 ${plainBody.length.toLocaleString("zh-CN")} 字`
     ];
     return {
       section: "news",
-      slug: String(data.slug),
-      title: String(data.title),
+      slug: String(row.slug),
+      title: String(row.title),
       template: "article",
       summary: summary || "article",
       locale: "zh",
       contentPath: "pages/news-article.json",
       content: {
         ...fallbackContent,
-        title: String(data.title),
+        title: String(row.title),
         // The importer set summary to the first 240 characters of the body, so
         // showing it as the standfirst reprints the opening paragraph directly
         // above itself. Only show a standfirst that says something the body
@@ -625,8 +640,14 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
           ? {
               ...asObject(fallbackContent.heroFigure),
               image: heroImage,
-              alt: String(data.title),
-              captionLines: listMapped?.meta ? [String(listMapped.meta), "图像与列表卡片一致"] : []
+              alt: heroAlt || String(row.title),
+              // The editor's caption and credit, when the article carries them;
+              // the list entry's meta line only as a fallback.
+              captionLines: [heroAlt, heroCredit].filter(Boolean).length
+                ? [heroAlt, heroCredit].filter(Boolean)
+                : listMapped?.meta
+                  ? [String(listMapped.meta)]
+                  : []
             }
           : {},
         inlineFigure: {}
