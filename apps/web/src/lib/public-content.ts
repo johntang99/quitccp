@@ -962,3 +962,260 @@ async function isAdminViewer(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * The news section's categories, in the order they appear everywhere: the tab
+ * row, the category grid, the menus.
+ *
+ * Kept here rather than read from `sort_order` so the order is the same on
+ * every surface and does not shift when someone re-sorts the admin list. The
+ * English labels are the design's small caps line, not translations.
+ */
+export const NEWS_CATEGORIES = [
+  { slug: "announcement-claims", name: "公告与声明", en: "ANNOUNCEMENTS" },
+  { slug: "red-regime-collapse", name: "红朝败相", en: "REGIME WATCH" },
+  { slug: "withdrawal-news", name: "三退要闻", en: "WITHDRAWAL NEWS" },
+  { slug: "worldwide-supports", name: "国际声援行动", en: "SOLIDARITY" },
+  { slug: "worldwide-investigation", name: "追查国际调查报告", en: "INVESTIGATIONS" },
+  { slug: "topics-commentary", name: "专题报导与时政评论", en: "COMMENTARY" },
+  { slug: "withdrawal-stories", name: "退党纪实故事", en: "STORIES" },
+  { slug: "famous-quitccp", name: "名人退党", en: "NOTABLE" }
+] as const;
+
+export interface NewsCard {
+  slug: string;
+  title: string;
+  summary: string;
+  image: string;
+  category: string;
+  publishedAt: string | null;
+}
+
+export interface NewsCategoryBlock {
+  slug: string;
+  name: string;
+  en: string;
+  lead: NewsCard | null;
+  rest: NewsCard[];
+  total: number;
+}
+
+export interface NewsHome {
+  featured: NewsCard[];
+  latest: NewsCard[];
+  archive: NewsCard[];
+  categories: NewsCategoryBlock[];
+}
+
+const NEWS_CARD_COLUMNS = "slug, title, summary, hero_image, published_at";
+
+function toNewsCard(row: Record<string, unknown>, category: string): NewsCard {
+  return {
+    slug: String(row.slug),
+    title: String(row.title),
+    summary: String(row.summary ?? ""),
+    image: String(row.hero_image ?? ""),
+    category,
+    publishedAt: row.published_at ? String(row.published_at) : null
+  };
+}
+
+/** Article ids for a category, via the map table's inner join. */
+async function newsByCategory(
+  categoryId: string,
+  limit: number
+): Promise<{ rows: Record<string, unknown>[]; total: number }> {
+  const supabase = createSupabaseAdminClient();
+  const { data, count } = await supabase
+    .from("cms_articles")
+    .select(`${NEWS_CARD_COLUMNS}, id, cms_article_category_map!inner(category_id)`, { count: "exact" })
+    .eq("cms_article_category_map.category_id", categoryId)
+    .eq("status", "published")
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("id", { ascending: true })
+    .limit(limit);
+  return { rows: (data ?? []) as unknown as Record<string, unknown>[], total: count ?? 0 };
+}
+
+/**
+ * Everything the news landing page shows.
+ *
+ * 精选 is simply the three newest flagged 重要: the newest takes the large slot
+ * and the previous two slide into the column beside it, which is the rotation
+ * the design describes -- no extra bookkeeping, just an ordered query.
+ */
+export async function getNewsHome(): Promise<NewsHome> {
+  try {
+    const supabase = createSupabaseAdminClient();
+
+    const nameBySlug = new Map(NEWS_CATEGORIES.map((row) => [row.slug, row.name]));
+    const { data: categoryRows } = await supabase
+      .from("cms_article_categories")
+      .select("id, slug, name")
+      .in("slug", NEWS_CATEGORIES.map((row) => row.slug));
+    const categoryById = new Map(
+      (categoryRows ?? []).map((row) => [String(row.id), String(row.name)])
+    );
+    const idBySlug = new Map((categoryRows ?? []).map((row) => [String(row.slug), String(row.id)]));
+
+    /** The primary category name for a set of articles, for the card's kicker. */
+    const categoriesFor = async (slugs: string[]) => {
+      if (slugs.length === 0) return new Map<string, string>();
+      const { data: articles } = await supabase
+        .from("cms_articles")
+        .select("id, slug")
+        .in("slug", slugs);
+      const idBy = new Map((articles ?? []).map((row) => [String(row.id), String(row.slug)]));
+      const { data: maps } = await supabase
+        .from("cms_article_category_map")
+        .select("article_id, category_id, position")
+        .in("article_id", [...idBy.keys()])
+        .order("position", { ascending: true });
+      const out = new Map<string, string>();
+      for (const row of maps ?? []) {
+        const articleSlug = idBy.get(String((row as { article_id: string }).article_id));
+        if (!articleSlug || out.has(articleSlug)) continue;
+        const name = categoryById.get(String((row as { category_id: string }).category_id));
+        if (name) out.set(articleSlug, name);
+      }
+      return out;
+    };
+
+    const [featuredResult, latestResult, archiveResult] = await Promise.all([
+      supabase
+        .from("cms_articles")
+        .select(NEWS_CARD_COLUMNS)
+        .eq("status", "published")
+        .eq("featured", true)
+        .order("published_at", { ascending: false, nullsFirst: false })
+        .order("id", { ascending: true })
+        .limit(3),
+      supabase
+        .from("cms_articles")
+        .select(NEWS_CARD_COLUMNS)
+        .eq("status", "published")
+        .order("published_at", { ascending: false, nullsFirst: false })
+        .order("id", { ascending: true })
+        .limit(10),
+      supabase
+        .from("cms_articles")
+        .select(NEWS_CARD_COLUMNS)
+        .eq("status", "published")
+        .eq("editor_archive", true)
+        .order("published_at", { ascending: false, nullsFirst: false })
+        .order("id", { ascending: true })
+        .limit(6)
+    ]);
+
+    const featuredRows = (featuredResult.data ?? []) as unknown as Record<string, unknown>[];
+    const latestRows = (latestResult.data ?? []) as unknown as Record<string, unknown>[];
+    const archiveRows = (archiveResult.data ?? []) as unknown as Record<string, unknown>[];
+
+    const kickers = await categoriesFor(
+      [...featuredRows, ...latestRows, ...archiveRows].map((row) => String(row.slug))
+    );
+
+    const categories = await Promise.all(
+      NEWS_CATEGORIES.map(async (category) => {
+        const id = idBySlug.get(category.slug);
+        if (!id) {
+          return { ...category, lead: null, rest: [], total: 0 } satisfies NewsCategoryBlock;
+        }
+        const { rows, total } = await newsByCategory(id, 5);
+        const cards = rows.map((row) => toNewsCard(row, category.name));
+        return {
+          slug: category.slug,
+          name: category.name,
+          en: category.en,
+          lead: cards[0] ?? null,
+          rest: cards.slice(1),
+          total
+        } satisfies NewsCategoryBlock;
+      })
+    );
+
+    return {
+      featured: featuredRows.map((row) => toNewsCard(row, kickers.get(String(row.slug)) ?? "")),
+      latest: latestRows.map((row) => toNewsCard(row, kickers.get(String(row.slug)) ?? "")),
+      archive: archiveRows.map((row) => toNewsCard(row, kickers.get(String(row.slug)) ?? "")),
+      categories
+    };
+  } catch {
+    return { featured: [], latest: [], archive: [], categories: [] };
+  }
+}
+
+export interface NewsListing {
+  slug: string;
+  name: string;
+  en: string;
+  items: NewsCard[];
+  total: number;
+  page: number;
+  pageCount: number;
+}
+
+/**
+ * One category's articles, paged — what the tab row and every 更多 → lead to.
+ *
+ * `archive` is the whole section rather than a category, so 查看全部 under
+ * 最新发布 has somewhere real to go.
+ */
+export async function getNewsListing(
+  slug: string,
+  page = 1,
+  pageSize = 24
+): Promise<NewsListing | null> {
+  const isArchive = slug === "archive";
+  const meta = NEWS_CATEGORIES.find((row) => row.slug === slug);
+  if (!isArchive && !meta) return null;
+
+  try {
+    const supabase = createSupabaseAdminClient();
+    const offset = (Math.max(page, 1) - 1) * pageSize;
+
+    let categoryId = "";
+    if (!isArchive) {
+      const { data } = await supabase
+        .from("cms_article_categories")
+        .select("id")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (!data) return null;
+      categoryId = String(data.id);
+    }
+
+    const query = isArchive
+      ? supabase
+          .from("cms_articles")
+          .select(NEWS_CARD_COLUMNS, { count: "exact" })
+          .eq("status", "published")
+      : supabase
+          .from("cms_articles")
+          .select(`${NEWS_CARD_COLUMNS}, cms_article_category_map!inner(category_id)`, {
+            count: "exact"
+          })
+          .eq("cms_article_category_map.category_id", categoryId)
+          .eq("status", "published");
+
+    const { data, count } = await query
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+
+    const name = isArchive ? "全部文章" : meta!.name;
+    const rows = (data ?? []) as unknown as Record<string, unknown>[];
+    const total = count ?? 0;
+    return {
+      slug,
+      name,
+      en: isArchive ? "ALL ARTICLES" : meta!.en,
+      items: rows.map((row) => toNewsCard(row, name)),
+      total,
+      page: Math.max(page, 1),
+      pageCount: Math.max(1, Math.ceil(total / pageSize))
+    };
+  } catch {
+    return null;
+  }
+}

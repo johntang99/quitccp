@@ -3263,3 +3263,31 @@
 .spark i.hi { background: #4a3c96; }
 .spark-labels { display: flex; gap: 4px; margin-top: 4px; }
 .spark-labels span { flex: 1; text-align: center; font-size: 11px; color: #8a90a0; }
+
+
+/* --- 新闻与报告 landing ---------------------------------------------------
+   Values from docs/prototypes/news/. The mockups are fixed at 1440px; these
+   are the same proportions expressed as a fluid shell so the page holds up
+   below that width instead of scrolling sideways. */
+.news-page { background: #F4F1EA; color: #1A1726; font-family: 'Noto Sans SC', 'PingFang SC', sans-serif; }
+.news-shell { max-width: 1440px; margin: 0 auto; padding-left: clamp(20px, 6.6vw, 96px); padding-right: clamp(20px, 6.6vw, 96px); }
+.news-masthead { position: relative; display: flex; justify-content: space-between; align-items: flex-end; gap: 48px; padding-top: clamp(36px, 4.4vw, 64px); padding-bottom: clamp(32px, 3.9vw, 56px); flex-wrap: wrap; }
+.news-tabs { display: flex; gap: 36px; overflow-x: auto; scrollbar-width: none; }
+.news-tabs::-webkit-scrollbar { display: none; }
+.news-body { display: flex; flex-direction: column; gap: clamp(56px, 6.6vw, 96px); padding-top: clamp(40px, 5vw, 72px); padding-bottom: clamp(64px, 7.8vw, 112px); }
+
+.news-featured-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 48px; }
+.news-latest-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 56px; }
+.news-archive-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+.news-cat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 72px 56px; align-items: start; }
+
+@media (max-width: 1100px) {
+  .news-featured-grid { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+  .news-archive-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 820px) {
+  .news-latest-grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .news-archive-grid { grid-template-columns: minmax(0, 1fr); }
+  .news-cat-grid { grid-template-columns: minmax(0, 1fr); gap: 56px; }
+  .news-masthead > a { width: 100%; }
+}
