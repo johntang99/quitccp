@@ -25,7 +25,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <html lang="zh-CN">
+    // suppressHydrationWarning: the videos page writes the reader's remembered
+    // background onto <html> before first paint, so the served markup and the
+    // hydrating markup legitimately differ by that one attribute.
+    <html lang="zh-CN" suppressHydrationWarning>
       <head>
         <script
           type="application/ld+json"

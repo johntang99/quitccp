@@ -1,3 +1,5 @@
+import { MarkdownBody } from "@/components/public/MarkdownBody";
+import { isEchoOfBody, markdownToBodyRows } from "@/lib/public-content";
 import { hostOf, isFileUrl, toEmbedUrl } from "@/lib/video-host";
 
 export interface PublicVideo {
@@ -24,14 +26,6 @@ function minutes(seconds: number | null): string {
   return hours > 0 ? `${hours} 小时 ${rest} 分` : `${rest} 分钟`;
 }
 
-/** Paragraph-level rendering only -- a transcript is prose, not a layout. */
-function paragraphs(markdown: string): string[] {
-  return markdown
-    .replace(/^#{1,6}\s*/gm, "")
-    .split(/\n{2,}/)
-    .map((block) => block.replace(/\s+/g, " ").trim())
-    .filter(Boolean);
-}
 
 /**
  * The public page for one video.
@@ -43,7 +37,18 @@ function paragraphs(markdown: string): string[] {
 export function VideoDetail({ video }: { video: PublicVideo }) {
   const host = hostOf(video.sourceUrl);
   const embed = toEmbedUrl(video.sourceUrl);
-  const body = paragraphs(video.bodyMarkdown || "");
+  // The same block renderer the article pages use. The old one here stripped
+  // the leading #s and emitted every block as a bare paragraph, so a body
+  // photograph printed as the literal text `![caption](https://…jpg)` and every
+  // link and bold run printed its markdown source too.
+  const body = markdownToBodyRows(video.bodyMarkdown || "");
+  // The importer set description to the opening of the body, so printing both
+  // showed the same passage twice -- once as an unbroken run-on, then again as
+  // proper paragraphs. Compared against the whole body rather than its first
+  // paragraph: these bodies often open with a one-line byline, so the summary
+  // spans several blocks and matched none of them on its own.
+  const bodyText = body.map((row) => ("text" in row ? row.text : "")).join(" ");
+  const showDescription = Boolean(video.description) && !isEchoOfBody(video.description, bodyText);
   const meta = [
     video.publishedAt ? video.publishedAt.slice(0, 10) : "",
     video.category,
@@ -130,15 +135,13 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
         <div style={{ marginBottom: 26 }} />
       )}
 
-      {video.description ? (
+      {showDescription ? (
         <p style={{ fontSize: 17, lineHeight: 1.9, margin: "0 0 20px" }}>{video.description}</p>
       ) : null}
 
       {body.length > 0 ? (
         <div className="prose">
-          {body.map((text, index) => (
-            <p key={index}>{text}</p>
-          ))}
+          <MarkdownBody rows={body} />
         </div>
       ) : null}
 

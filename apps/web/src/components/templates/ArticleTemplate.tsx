@@ -1,45 +1,8 @@
-import type { ReactNode } from "react";
 import { ArticleTools } from "@/components/public/ArticleTools";
 import { ArticleVideo } from "@/components/public/ArticleVideo";
+import { renderInline } from "@/components/public/MarkdownBody";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString, asStringArray } from "./content-utils";
-
-/**
- * Inline markdown inside one block: links, bold, emphasis.
- *
- * The converter used to flatten `[text](url)` to its label and drop the address,
- * losing every one of the 2,456 links the migration had carefully preserved in
- * the body text.
- */
-function renderInline(text: string): ReactNode[] {
-  const pattern = /\[([^\]]+)]\(([^)\s]+)[^)]*\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
-  const nodes: ReactNode[] = [];
-  let last = 0;
-  for (const match of text.matchAll(pattern)) {
-    const at = match.index ?? 0;
-    if (at > last) nodes.push(text.slice(last, at));
-    if (match[1]) {
-      const href = match[2];
-      const external = /^https?:\/\//i.test(href) && !href.includes("tuidang.org");
-      nodes.push(
-        <a
-          key={`${at}-a`}
-          href={href}
-          {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-        >
-          {match[1]}
-        </a>
-      );
-    } else if (match[3]) {
-      nodes.push(<strong key={`${at}-b`}>{match[3]}</strong>);
-    } else if (match[4]) {
-      nodes.push(<em key={`${at}-i`}>{match[4]}</em>);
-    }
-    last = at + match[0].length;
-  }
-  if (last < text.length) nodes.push(text.slice(last));
-  return nodes.length > 0 ? nodes : [text];
-}
 
 export function ArticleTemplate({ title, content }: TemplatePageData) {
   const payload = asRecord(content);

@@ -62,7 +62,7 @@ function asObjectArray(value: unknown): Record<string, unknown>[] {
     .filter((row) => Object.keys(row).length > 0);
 }
 
-type ArticleBodyRow =
+export type ArticleBodyRow =
   | { type: "p" | "h2" | "h3" | "blockquote"; text: string }
   | { type: "figure"; src: string; alt: string }
   | { type: "video"; src: string; caption: string }
@@ -95,7 +95,7 @@ function isLikelyStandaloneSubheading(lines: string[], index: number): boolean {
   return /[\p{Script=Han}A-Za-z0-9“”"'"'（）()《》·—\-？！?]/u.test(current);
 }
 
-function markdownToBodyRows(markdown: string): ArticleBodyRow[] {
+export function markdownToBodyRows(markdown: string): ArticleBodyRow[] {
   const lines = markdown.replace(/\r/g, "").split("\n");
   const rows: ArticleBodyRow[] = [];
   let paragraphBuffer: string[] = [];
@@ -233,7 +233,18 @@ function markdownToBodyRows(markdown: string): ArticleBodyRow[] {
     // stripInlineMarkdown drops those, so pull them out and emit them as
     // figures after the paragraph they were embedded in.
     const embedded = [...line.matchAll(/!\[([^\]]*)]\(([^)\s]+)[^)]*\)/g)];
-    const cleaned = stripInlineMarkdown(line);
+    let cleaned = stripInlineMarkdown(line);
+    if (embedded.length > 0) {
+      // The old site appends each photograph's caption to the same line as the
+      // image, so what survives stripInlineMarkdown is the caption on its own.
+      // Printed as prose it became a paragraph stating exactly what the
+      // figcaption underneath the photo already said, once per photo.
+      for (const match of embedded) {
+        const alt = match[1].trim();
+        if (alt) cleaned = cleaned.split(alt).join("");
+      }
+      cleaned = cleaned.trim();
+    }
     if (cleaned) paragraphBuffer.push(cleaned);
     if (embedded.length > 0) {
       flushParagraph();
@@ -779,8 +790,20 @@ export interface PublicVideoCategory {
   total: number;
   page: number;
   pageCount: number;
+  pageSize: number;
+  sort: VideoSort;
   videos: PublicVideoCard[];
 }
+
+/**
+ * The orders a reader can ask for.
+ *
+ * The design offers a third, 最热. Nothing in the library measures how often a
+ * film is watched, so there is no honest ordering behind that label and the
+ * control is not rendered -- a "most popular" list assembled from publication
+ * dates would be a claim the data cannot support.
+ */
+export type VideoSort = "latest" | "oldest";
 
 /**
  * One video category's listing.
@@ -793,7 +816,9 @@ export interface PublicVideoCategory {
 export async function getVideoCategory(
   slug: string,
   page = 1,
-  pageSize = 24
+  sort: VideoSort = "latest",
+  // 16 fills the design exactly: one lead film, three in 接着看, twelve in the grid.
+  pageSize = 16
 ): Promise<PublicVideoCategory | null> {
   try {
     const supabase = createSupabaseAdminClient();
@@ -814,7 +839,7 @@ export async function getVideoCategory(
       )
       .eq("cms_video_category_map.category_id", category.id)
       .eq("status", "published")
-      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("published_at", { ascending: sort === "oldest", nullsFirst: false })
       .order("id", { ascending: true })
       .range(offset, offset + pageSize - 1);
     if (error) return null;
@@ -827,6 +852,8 @@ export async function getVideoCategory(
       total,
       page: Math.max(page, 1),
       pageCount: Math.max(1, Math.ceil(total / pageSize)),
+      pageSize,
+      sort,
       videos: rows.map((row) => ({
         slug: String(row.slug),
         title: String(row.title),
@@ -939,7 +966,7 @@ export async function getVideoLibrary(perShelf = 6): Promise<VideoLibraryShelf[]
   const categories = await listPublicVideoCategories();
   const shelves = await Promise.all(
     categories.map(async (category) => {
-      const page = await getVideoCategory(category.slug, 1, perShelf);
+      const page = await getVideoCategory(category.slug, 1, "latest", perShelf);
       return {
         slug: category.slug,
         name: category.name,
@@ -956,10 +983,12 @@ export async function getVideoLibrary(perShelf = 6): Promise<VideoLibraryShelf[]
  * True when a summary is just the beginning of the body.
  *
  * Compares with punctuation and whitespace removed, because the summary was cut
- * at a fixed character count and usually ends mid-sentence.
+ * at a fixed character count and usually ends mid-sentence. Everything that is
+ * not a letter, a digit or a Han character goes: the two copies of a URL can
+ * differ by an underscore or a hyphen alone, which was enough to miss the match.
  */
-function isEchoOfBody(summary: string, firstParagraph: string): boolean {
-  const normalise = (value: string) => value.replace(/[\s，。、；：""''《》（）()!?！？…—-]/g, "");
+export function isEchoOfBody(summary: string, firstParagraph: string): boolean {
+  const normalise = (value: string) => value.replace(/[^\p{Script=Han}\p{L}\p{N}]/gu, "");
   const a = normalise(summary);
   const b = normalise(firstParagraph);
   if (!a || !b) return false;
@@ -1202,6 +1231,39 @@ export async function getNewsHome(): Promise<NewsHome> {
   }
 }
 
+/**
+ * Primary category name per article slug, in one round trip.
+ *
+ * Lifted out of getNewsHome so the section-wide listings label their cards the
+ * same way the homepage does rather than growing a second copy of the rule.
+ */
+async function primaryCategoryNames(slugs: string[]): Promise<Map<string, string>> {
+  const unique = [...new Set(slugs)];
+  if (unique.length === 0) return new Map();
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data: articles } = await supabase.from("cms_articles").select("id, slug").in("slug", unique);
+    const slugById = new Map((articles ?? []).map((row) => [String(row.id), String(row.slug)]));
+    if (slugById.size === 0) return new Map();
+    const { data: maps } = await supabase
+      .from("cms_article_category_map")
+      .select("article_id, position, cms_article_categories(name)")
+      .in("article_id", [...slugById.keys()])
+      .order("position", { ascending: true });
+    const out = new Map<string, string>();
+    for (const row of maps ?? []) {
+      const articleSlug = slugById.get(String((row as { article_id: string }).article_id));
+      // position ascending, so the first row seen for an article is its primary.
+      if (!articleSlug || out.has(articleSlug)) continue;
+      const name = (row as { cms_article_categories?: { name?: string } }).cms_article_categories?.name;
+      if (name) out.set(articleSlug, String(name));
+    }
+    return out;
+  } catch {
+    return new Map();
+  }
+}
+
 export interface NewsListing {
   slug: string;
   name: string;
@@ -1210,7 +1272,32 @@ export interface NewsListing {
   total: number;
   page: number;
   pageCount: number;
+  pageSize: number;
+  sort: NewsSort;
+  /**
+   * 编辑精选 for the sidebar: the 精彩保留 articles inside this listing's scope.
+   *
+   * The design's rail is headed 本栏最热. Nothing records how often an article is
+   * read, so there is no ranking to show there; the editors' own picks are real,
+   * already curated, and the nearest thing the data actually supports.
+   */
+  picks: NewsCard[];
 }
+
+/** See VideoSort: 最热 is not offered, for the same reason. */
+export type NewsSort = "latest" | "oldest";
+
+/**
+ * Listings that are not categories: the whole section, and the two editorial
+ * flags. They share the category page, so 最新发布 and 精彩保留 lead somewhere
+ * real instead of dead-ending on the homepage strip.
+ */
+const NEWS_VIRTUAL_LISTINGS: Record<string, { name: string; en: string; filter?: "featured" | "editor_archive" }> = {
+  archive: { name: "全部文章", en: "ALL ARTICLES" },
+  latest: { name: "最新发布", en: "LATEST" },
+  featured: { name: "重要报导", en: "FEATURED", filter: "featured" },
+  "editor-archive": { name: "精彩保留", en: "EDITOR'S PICKS", filter: "editor_archive" }
+};
 
 /**
  * One category's articles, paged — what the tab row and every 更多 → lead to.
@@ -1221,18 +1308,20 @@ export interface NewsListing {
 export async function getNewsListing(
   slug: string,
   page = 1,
-  pageSize = 24
+  sort: NewsSort = "latest",
+  // 13 fills the design: one lead card, twelve in the list beneath it.
+  pageSize = 13
 ): Promise<NewsListing | null> {
-  const isArchive = slug === "archive";
+  const virtual = NEWS_VIRTUAL_LISTINGS[slug];
   const meta = NEWS_CATEGORIES.find((row) => row.slug === slug);
-  if (!isArchive && !meta) return null;
+  if (!virtual && !meta) return null;
 
   try {
     const supabase = createSupabaseAdminClient();
     const offset = (Math.max(page, 1) - 1) * pageSize;
 
     let categoryId = "";
-    if (!isArchive) {
+    if (!virtual) {
       const { data } = await supabase
         .from("cms_article_categories")
         .select("id")
@@ -1242,37 +1331,129 @@ export async function getNewsListing(
       categoryId = String(data.id);
     }
 
-    const query = isArchive
-      ? supabase
-          .from("cms_articles")
-          .select(NEWS_CARD_COLUMNS, { count: "exact" })
-          .eq("status", "published")
-      : supabase
-          .from("cms_articles")
-          .select(`${NEWS_CARD_COLUMNS}, cms_article_category_map!inner(category_id)`, {
-            count: "exact"
-          })
-          .eq("cms_article_category_map.category_id", categoryId)
-          .eq("status", "published");
+    /** Every query on this page shares the same scope; only the columns differ. */
+    const scoped = (columns: string, withCount: boolean) => {
+      const base = virtual
+        ? supabase.from("cms_articles").select(columns, withCount ? { count: "exact" } : undefined)
+        : supabase
+            .from("cms_articles")
+            .select(
+              `${columns}, cms_article_category_map!inner(category_id)`,
+              withCount ? { count: "exact" } : undefined
+            )
+            .eq("cms_article_category_map.category_id", categoryId);
+      const filtered = base.eq("status", "published");
+      return virtual?.filter ? filtered.eq(virtual.filter, true) : filtered;
+    };
 
-    const { data, count } = await query
-      .order("published_at", { ascending: false, nullsFirst: false })
-      .order("id", { ascending: true })
-      .range(offset, offset + pageSize - 1);
+    const [listResult, picksResult] = await Promise.all([
+      scoped(NEWS_CARD_COLUMNS, true)
+        .order("published_at", { ascending: sort === "oldest", nullsFirst: false })
+        .order("id", { ascending: true })
+        .range(offset, offset + pageSize - 1),
+      // The sidebar rail. Skipped where it would only repeat the main list.
+      virtual?.filter === "editor_archive"
+        ? Promise.resolve({ data: [] })
+        : scoped(NEWS_CARD_COLUMNS, false)
+            .eq("editor_archive", true)
+            .order("published_at", { ascending: false, nullsFirst: false })
+            .order("id", { ascending: true })
+            .limit(5)
+    ]);
 
-    const name = isArchive ? "全部文章" : meta!.name;
-    const rows = (data ?? []) as unknown as Record<string, unknown>[];
-    const total = count ?? 0;
+    const name = virtual ? virtual.name : meta!.name;
+    const rows = (listResult.data ?? []) as unknown as Record<string, unknown>[];
+    const pickRows = (picksResult.data ?? []) as unknown as Record<string, unknown>[];
+    const total = listResult.count ?? 0;
+
+    // A category page's cards all share its name; the section-wide listings hold
+    // articles from every category, so each card carries its own.
+    const kickers = virtual
+      ? await primaryCategoryNames([...rows, ...pickRows].map((row) => String(row.slug)))
+      : new Map<string, string>();
+    const kickerFor = (row: Record<string, unknown>) =>
+      virtual ? kickers.get(String(row.slug)) ?? "" : name;
+
     return {
       slug,
       name,
-      en: isArchive ? "ALL ARTICLES" : meta!.en,
-      items: rows.map((row) => toNewsCard(row, name)),
+      en: virtual ? virtual.en : meta!.en,
+      items: rows.map((row) => toNewsCard(row, kickerFor(row))),
+      picks: pickRows.map((row) => toNewsCard(row, kickerFor(row))),
       total,
       page: Math.max(page, 1),
-      pageCount: Math.max(1, Math.ceil(total / pageSize))
+      pageCount: Math.max(1, Math.ceil(total / pageSize)),
+      pageSize,
+      sort
     };
   } catch {
     return null;
+  }
+}
+
+export interface VideoHome {
+  /** The one film the page opens with. */
+  feature: PublicVideoCard | null;
+  featureCategory: string;
+  /** 最新上线 — newest across every series. */
+  upnext: PublicVideoCard[];
+  shelves: VideoLibraryShelf[];
+  total: number;
+}
+
+/**
+ * Everything the video landing page shows.
+ *
+ * The feature is the newest video that actually has a cover: the design leans
+ * on a full-bleed image, and a card with nothing behind the gradient is worse
+ * than the second-newest film.
+ */
+export async function getVideoHome(): Promise<VideoHome> {
+  try {
+    const supabase = createSupabaseAdminClient();
+    const shelves = await getVideoLibrary(9);
+
+    const { data: featureRows } = await supabase
+      .from("cms_videos")
+      .select("slug, title, episode, description, cover_image, duration_seconds, published_at, source_url")
+      .eq("status", "published")
+      .neq("cover_image", "")
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("id", { ascending: true })
+      .limit(1);
+
+    const { data: upnextRows } = await supabase
+      .from("cms_videos")
+      .select("slug, title, episode, description, cover_image, duration_seconds, published_at, source_url")
+      .eq("status", "published")
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("id", { ascending: true })
+      .limit(5);
+
+    const toCard = (row: Record<string, unknown>): PublicVideoCard => ({
+      slug: String(row.slug),
+      title: String(row.title),
+      episode: String(row.episode ?? ""),
+      description: String(row.description ?? ""),
+      coverImage: String(row.cover_image ?? ""),
+      durationSeconds: row.duration_seconds ? Number(row.duration_seconds) : null,
+      publishedAt: row.published_at ? String(row.published_at) : null,
+      sourceUrl: String(row.source_url ?? "")
+    });
+
+    const feature = ((featureRows ?? []) as unknown as Record<string, unknown>[]).map(toCard)[0] ?? null;
+    const featureShelf = feature
+      ? shelves.find((shelf) => shelf.videos.some((video) => video.slug === feature.slug))
+      : undefined;
+
+    return {
+      feature,
+      featureCategory: featureShelf?.name ?? "",
+      upnext: ((upnextRows ?? []) as unknown as Record<string, unknown>[]).map(toCard),
+      shelves,
+      total: shelves.reduce((sum, shelf) => sum + shelf.total, 0)
+    };
+  } catch {
+    return { feature: null, featureCategory: "", upnext: [], shelves: [], total: 0 };
   }
 }
