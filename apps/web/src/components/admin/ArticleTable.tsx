@@ -38,8 +38,9 @@ export function ArticleTable({
             <th>分类</th>
             <th>作者</th>
             <th>状态</th>
+            <th style={{ width: 44, textAlign: "center" }} title="重要">重要</th>
+            <th style={{ width: 62, textAlign: "center" }} title="精彩保留">精彩</th>
             <th>发布</th>
-            <th>更新</th>
             <th />
           </tr>
         </thead>
@@ -98,8 +99,15 @@ export function ArticleTable({
                 <td>
                   <span className={`badge ${status.cls}`}>{status.label}</span>
                 </td>
+                {/* A mark when set, nothing when not: a column of ✗ is noise,
+                    and what an editor scans for is the few that are flagged. */}
+                <td style={{ textAlign: "center" }} title={row.featured ? "重要" : ""}>
+                  {row.featured ? <span style={{ color: "#c8102e", fontSize: 15 }}>★</span> : null}
+                </td>
+                <td style={{ textAlign: "center" }} title={row.editorArchive ? "精彩保留" : ""}>
+                  {row.editorArchive ? <span style={{ color: "#1f7a4d", fontSize: 15 }}>✦</span> : null}
+                </td>
                 <td style={{ color: "#8a90a0", whiteSpace: "nowrap" }}>{day(row.publishedAt)}</td>
-                <td style={{ color: "#8a90a0", whiteSpace: "nowrap" }}>{day(row.updatedAt)}</td>
                 <td style={{ whiteSpace: "nowrap" }}>
                   <Link className="admin-btn admin-btn-sm" href={`/admin/articles/${row.id}`}>
                     编辑

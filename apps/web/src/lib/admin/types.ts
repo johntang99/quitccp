@@ -51,6 +51,10 @@ export interface ArticleRecord {
   sourceUrl: string;
   /** Null while unpublished. */
   publishedAt: string | null;
+  /** 重要 — for the places that show a small, current selection. */
+  featured: boolean;
+  /** 精彩保留 — worth keeping in front of readers after it stops being news. */
+  editorArchive: boolean;
   legacyUrl?: string;
   legacyId?: number;
   updatedAt: string;

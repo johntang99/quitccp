@@ -30,6 +30,8 @@ export interface ArticleFormValues {
   sourceTitle: string;
   sourceUrl: string;
   publishedAt: string | null;
+  featured: boolean;
+  editorArchive: boolean;
   status: string;
   section: string;
   legacyId?: number;
@@ -168,6 +170,9 @@ export function ArticleForm({ initial, categories, authors, currentUser, mode }:
         <input type="hidden" name="tags" value={v.tags.join(",")} />
         <input type="hidden" name="heroImage" value={v.heroImage} />
         <input type="hidden" name="publishedAt" value={v.publishedAt ?? ""} />
+        {/* Only present when checked; the endpoint reads absence as false. */}
+        {v.featured ? <input type="hidden" name="featured" value="1" /> : null}
+        {v.editorArchive ? <input type="hidden" name="editorArchive" value="1" /> : null}
         {v.legacyId ? <input type="hidden" name="legacyId" value={v.legacyId} /> : null}
 
         <div>
@@ -335,6 +340,33 @@ export function ArticleForm({ initial, categories, authors, currentUser, mode }:
               />
               <span className="hint">可回填旧日期。没有定时发布：保存即上线。</span>
             </div>
+            {/* In the publish panel rather than further down the page: these are
+                decisions made at the moment of publishing, and the panel is the
+                one part of the form that is on screen without scrolling. */}
+            <div className="field" style={{ marginBottom: 12 }}>
+              <span className="cap">编辑标记</span>
+              <label style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
+                <input
+                  type="checkbox"
+                  checked={v.featured}
+                  onChange={(e) => set("featured", e.target.checked)}
+                />
+                <b>重要</b>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                <input
+                  type="checkbox"
+                  checked={v.editorArchive}
+                  onChange={(e) => set("editorArchive", e.target.checked)}
+                />
+                <b>精彩保留</b>
+              </label>
+              <span className="hint">
+                两者互不影响，可以都勾、都不勾。「重要」给首页与栏目顶部的少量精选，
+                「精彩保留」留给过了时效仍值得读的文章。
+              </span>
+            </div>
+
             <div className="row">
               <button type="button" className="admin-btn admin-btn-primary" onClick={() => submit("published")}>
                 {mode === "new" ? "发布" : "保存并发布"}

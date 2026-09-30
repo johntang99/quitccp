@@ -51,7 +51,9 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
   };
   const currentHref = hrefWith({});
   const hasFilters = Boolean(
-    params.q || params.category || params.status || params.author || params.from || params.to || params.gap
+    params.q || params.category || params.status || params.author || params.from || params.to || params.gap ||
+      params.featured ||
+      params.editorArchive
   );
 
   return (
@@ -110,6 +112,10 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
             <option value="title">标题 A→Z</option>
           </select>
           {params.gap ? <input type="hidden" name="gap" value={params.gap} /> : null}
+          {params.featured ? <input type="hidden" name="featured" value={params.featured} /> : null}
+          {params.editorArchive ? (
+            <input type="hidden" name="editorArchive" value={params.editorArchive} />
+          ) : null}
           <button className="admin-btn admin-btn-primary" type="submit">
             搜索
           </button>
@@ -117,6 +123,20 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
 
         <div className="admin-toolbar" style={{ marginBottom: 6 }}>
           <span className="article-chips">
+            {/* The two editorial marks sit with the gap chips: both answer
+                "show me the subset I care about right now". */}
+            <Link
+              href={hrefWith({ featured: params.featured ? undefined : "1", page: undefined })}
+              className={`article-chip${params.featured ? " is-on" : ""}`}
+            >
+              ★ 重要
+            </Link>
+            <Link
+              href={hrefWith({ editorArchive: params.editorArchive ? undefined : "1", page: undefined })}
+              className={`article-chip${params.editorArchive ? " is-on" : ""}`}
+            >
+              ✦ 精彩保留
+            </Link>
             {GAPS.map((gap) => (
               <Link
                 key={gap.key}

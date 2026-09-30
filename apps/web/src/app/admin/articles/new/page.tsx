@@ -47,6 +47,8 @@ export default async function NewArticlePage({
           sourceTitle: "",
           sourceUrl: "",
           publishedAt: new Date().toISOString(),
+          featured: false,
+          editorArchive: false,
           status: "draft",
           section: "news"
         }}

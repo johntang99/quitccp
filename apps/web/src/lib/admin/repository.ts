@@ -209,7 +209,8 @@ function encodeArticleCursor(updatedAt: string): string {
  * starts carrying the new fields the moment the migration runs.
  */
 const ARTICLE_EDITORIAL_COLUMNS =
-  "subtitle, hero_image, hero_image_alt, hero_credit, author, translator, source_title, source_url, published_at";
+  "subtitle, hero_image, hero_image_alt, hero_credit, author, translator, source_title, source_url, " +
+  "published_at, featured, editor_archive";
 
 function isMissingPosition(error: unknown): boolean {
   return JSON.stringify(error ?? "").includes("position");
@@ -217,7 +218,7 @@ function isMissingPosition(error: unknown): boolean {
 
 function isMissingEditorialColumn(error: unknown): boolean {
   const text = JSON.stringify(error ?? "");
-  return /subtitle|hero_image|hero_credit|source_title|source_url|translator/.test(text);
+  return /subtitle|hero_image|hero_credit|source_title|source_url|translator|featured|editor_archive/.test(text);
 }
 
 interface ArticleRow {
@@ -242,6 +243,8 @@ interface ArticleRow {
   source_title?: string | null;
   source_url?: string | null;
   published_at?: string | null;
+  featured?: boolean | null;
+  editor_archive?: boolean | null;
 }
 
 /** Builds an ArticleRecord from a row, tolerating columns that do not exist yet. */
@@ -271,6 +274,8 @@ function toArticleRecord(
     sourceTitle: String(row.source_title ?? ""),
     sourceUrl: String(row.source_url ?? ""),
     publishedAt: row.published_at ? String(row.published_at) : null,
+    featured: Boolean(row.featured),
+    editorArchive: Boolean(row.editor_archive),
     legacyUrl: row.legacy_url ? String(row.legacy_url) : undefined,
     legacyId: row.legacy_id ? Number(row.legacy_id) : undefined,
     updatedAt: String(row.updated_at)
@@ -296,6 +301,25 @@ export async function listArticles(
   const offset = useCursor ? 0 : (page - 1) * pageSize;
   const baseSelect = "id, slug, title, section, locale, status, legacy_url, legacy_id, updated_at, summary";
   let articleSelect = `${baseSelect}, ${ARTICLE_EDITORIAL_COLUMNS}`;
+  /**
+   * Drops the columns a hand-applied migration has not added yet.
+   *
+   * Postgres names only the first missing column in its error, so dropping just
+   * that one leaves the next still in the list and the retry fails again. Every
+   * column added by the same migration goes together.
+   */
+  const MIGRATION_GROUPS = [
+    ["subtitle", "hero_image", "hero_image_alt", "hero_credit", "author", "translator", "source_title", "source_url", "published_at"],
+    ["featured", "editor_archive"]
+  ];
+  const withoutMissing = (error: unknown) => {
+    const text = JSON.stringify(error ?? "");
+    const drop = new Set(
+      MIGRATION_GROUPS.filter((group) => group.some((column) => text.includes(column))).flat()
+    );
+    const kept = ARTICLE_EDITORIAL_COLUMNS.split(", ").filter((column) => !drop.has(column.trim()));
+    return kept.length > 0 ? `${baseSelect}, ${kept.join(", ")}` : baseSelect;
+  };
 
   let rowsData: any[] = [];
   let totalRows = 0;
@@ -323,24 +347,35 @@ export async function listArticles(
       await createAudit(actorEmail, "article.list", "article", "query", "read", { filters, total: 0 });
       return { rows: [], total: 0, page, pageSize, nextCursor: null, cursorApplied };
     }
-    let categoryQuery = supabase
-      .from("cms_article_category_map")
-      .select(`article_id, cms_articles!inner(${articleSelect})`, { count: "exact" })
-      .eq("category_id", categories[0].id)
-      .order("updated_at", { ascending: false, foreignTable: "cms_articles" })
-      .range(offset, offset + (useCursor ? pageSize : pageSize - 1));
-    if (filters.status) categoryQuery = categoryQuery.eq("cms_articles.status", filters.status);
-    if (filters.locale) categoryQuery = categoryQuery.eq("cms_articles.locale", filters.locale);
-    if (cursor?.updatedAt) {
-      categoryQuery = categoryQuery.lt("cms_articles.updated_at", cursor.updatedAt);
+    const buildCategoryQuery = (select: string) => {
+      let built = supabase
+        .from("cms_article_category_map")
+        .select(`article_id, cms_articles!inner(${select})`, { count: "exact" })
+        .eq("category_id", categories[0].id)
+        .order("updated_at", { ascending: false, foreignTable: "cms_articles" })
+        .range(offset, offset + (useCursor ? pageSize : pageSize - 1));
+      if (filters.status) built = built.eq("cms_articles.status", filters.status);
+      if (filters.locale) built = built.eq("cms_articles.locale", filters.locale);
+      if (cursor?.updatedAt) built = built.lt("cms_articles.updated_at", cursor.updatedAt);
+      if (filters.q) {
+        const q = filters.q.replace(/[%_]/g, " ");
+        built = built.or(`title.ilike.%${q}%,body_plain.ilike.%${q}%`, {
+          foreignTable: "cms_articles"
+        });
+      }
+      return built;
+    };
+    const categoryQuery = buildCategoryQuery(articleSelect);
+    let { data: categoryData, error: categoryError, count: categoryCount } = await categoryQuery;
+    if (categoryError && isMissingEditorialColumn(categoryError)) {
+      // 010 and 015 are applied by hand; ask again for what exists.
+      articleSelect = withoutMissing(categoryError);
+      ({
+        data: categoryData,
+        error: categoryError,
+        count: categoryCount
+      } = await buildCategoryQuery(articleSelect));
     }
-    if (filters.q) {
-      const q = filters.q.replace(/[%_]/g, " ");
-      categoryQuery = categoryQuery.or(`title.ilike.%${q}%,body_plain.ilike.%${q}%`, {
-        foreignTable: "cms_articles"
-      });
-    }
-    const { data: categoryData, error: categoryError, count: categoryCount } = await categoryQuery;
     if (categoryError) throw categoryError;
     rowsData = (categoryData ?? [])
       .map((row) => (row as any).cms_articles)
@@ -352,20 +387,26 @@ export async function listArticles(
     }
     totalRows = categoryCount ?? 0;
   } else {
-    let query = supabase
-      .from("cms_articles")
-      .select(articleSelect, { count: "exact" })
-      .order("updated_at", { ascending: false })
-      .order("id", { ascending: false });
-    if (filters.status) query = query.eq("status", filters.status);
-    if (filters.locale) query = query.eq("locale", filters.locale);
-    if (filters.q) {
-      const q = filters.q.replace(/[%_]/g, " ");
-      query = query.or(`title.ilike.%${q}%,body_plain.ilike.%${q}%`);
+    const buildPlainQuery = (select: string) => {
+      let built = supabase
+        .from("cms_articles")
+        .select(select, { count: "exact" })
+        .order("updated_at", { ascending: false })
+        .order("id", { ascending: false });
+      if (filters.status) built = built.eq("status", filters.status);
+      if (filters.locale) built = built.eq("locale", filters.locale);
+      if (filters.q) {
+        const q = filters.q.replace(/[%_]/g, " ");
+        built = built.or(`title.ilike.%${q}%,body_plain.ilike.%${q}%`);
+      }
+      if (cursor?.updatedAt) built = built.lt("updated_at", cursor.updatedAt);
+      return built.range(offset, offset + (useCursor ? pageSize : pageSize - 1));
+    };
+    let { data, error, count } = await buildPlainQuery(articleSelect);
+    if (error && isMissingEditorialColumn(error)) {
+      articleSelect = withoutMissing(error);
+      ({ data, error, count } = await buildPlainQuery(articleSelect));
     }
-    if (cursor?.updatedAt) query = query.lt("updated_at", cursor.updatedAt);
-    query = query.range(offset, offset + (useCursor ? pageSize : pageSize - 1));
-    const { data, error, count } = await query;
     if (error) throw error;
     rowsData = data ?? [];
     if (useCursor && rowsData.length > pageSize) {
@@ -555,6 +596,8 @@ export async function upsertArticleRecord(
     translator: input.translator ?? "",
     source_title: input.sourceTitle ?? "",
     source_url: input.sourceUrl ?? "",
+    featured: Boolean(input.featured),
+    editor_archive: Boolean(input.editorArchive),
     // Set when publishing and not already dated; clearing the status does not
     // wipe the original publication date.
     published_at: input.publishedAt ?? (input.status === "published" ? new Date().toISOString() : null)
@@ -1189,6 +1232,8 @@ export async function restoreRevision(revisionId: string, actorEmail: string) {
       slug: String(record.slug),
       title: String(record.title),
       subtitle: String(record.subtitle ?? ""),
+      featured: Boolean(record.featured),
+      editorArchive: Boolean(record.editor_archive),
       section: String(record.section ?? "news"),
       locale: String(record.locale ?? "zh"),
       status: sanitizeStatus(record.status),

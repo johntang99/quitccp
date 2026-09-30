@@ -65,6 +65,8 @@ export default async function EditArticlePage({ params, searchParams }: EditArti
           sourceTitle: article.sourceTitle,
           sourceUrl: article.sourceUrl,
           publishedAt: article.publishedAt,
+          featured: article.featured,
+          editorArchive: article.editorArchive,
           status: article.status,
           section: article.section,
           legacyId: article.legacyId

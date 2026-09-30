@@ -114,6 +114,9 @@ export async function POST(request: Request) {
         sourceTitle: String(formData.get("sourceTitle") ?? ""),
         sourceUrl: String(formData.get("sourceUrl") ?? ""),
         publishedAt: String(formData.get("publishedAt") ?? "").trim() || null,
+      // Checkboxes post nothing when unchecked, so absence means false.
+      featured: String(formData.get("featured") ?? "") === "1",
+      editorArchive: String(formData.get("editorArchive") ?? "") === "1",
       },
       user.email
     );
