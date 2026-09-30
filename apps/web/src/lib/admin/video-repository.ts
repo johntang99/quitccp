@@ -106,13 +106,30 @@ export async function deleteVideoCategory(id: string): Promise<void> {
   if (error) throw error;
 }
 
+export type VideoSort = "published" | "updated" | "title" | "duration";
+
 export interface VideoSearchFilters {
   q?: string;
   category?: string;
   status?: string;
+  /** Where it plays from: youtube / ganjing / tuidang / file / none. */
+  host?: string;
+  gap?: "no-source" | "no-cover" | "no-description";
+  from?: string;
+  to?: string;
+  sort?: VideoSort;
   page?: number;
   pageSize?: number;
 }
+
+/** How a host filter maps onto the stored address. */
+const HOST_PATTERNS: Record<string, { like?: string; empty?: boolean }> = {
+  youtube: { like: "%youtu%" },
+  ganjing: { like: "%ganjing%" },
+  tuidang: { like: "%tuidang.org%" },
+  file: { like: "%.mp4%" },
+  none: { empty: true }
+};
 
 export async function searchVideos(filters: VideoSearchFilters): Promise<{
   rows: VideoListRow[];
@@ -144,20 +161,49 @@ export async function searchVideos(filters: VideoSearchFilters): Promise<{
       query = query.or(`title.ilike.%${term}%,slug.ilike.%${term}%`);
     }
     if (filters.status) query = query.eq("status", filters.status);
-    // Order by when the video was published, not when we imported it. The whole
+
+    const host = filters.host ? HOST_PATTERNS[filters.host] : undefined;
+    if (host?.empty) query = query.eq("source_url", "");
+    else if (host?.like) query = query.like("source_url", host.like);
+
+    if (filters.from) query = query.gte("published_at", `${filters.from}T00:00:00Z`);
+    if (filters.to) query = query.lte("published_at", `${filters.to}T23:59:59Z`);
+
+    switch (filters.gap) {
+      case "no-source":
+        query = query.eq("source_url", "");
+        break;
+      case "no-cover":
+        query = query.eq("cover_image", "");
+        break;
+      case "no-description":
+        query = query.eq("description", "");
+        break;
+      default:
+        break;
+    }
+
+    // Order by when the video was published, not when we imported it: the whole
     // library was written in one pass, so `updated_at` is the same timestamp on
-    // all 745 rows and sorting by it produces an arbitrary order.
-    // `id` underneath, for the same reason as articles: the whole library shares
-    // an import timestamp, so without a tiebreaker the page order is arbitrary.
-    return withCategory
-      ? query
-          .order("published_at", { ascending: false, nullsFirst: false })
-          .order("id", { ascending: true })
-          .range(offset, offset + pageSize - 1)
-      : query
-          .order("updated_at", { ascending: false })
-          .order("id", { ascending: true })
-          .range(offset, offset + pageSize - 1);
+    // all 745 rows. `id` underneath, or the order inside a group is arbitrary.
+    if (!withCategory) {
+      return query
+        .order("updated_at", { ascending: false })
+        .order("id", { ascending: true })
+        .range(offset, offset + pageSize - 1);
+    }
+    const column =
+      filters.sort === "updated"
+        ? "updated_at"
+        : filters.sort === "title"
+          ? "title"
+          : filters.sort === "duration"
+            ? "duration_seconds"
+            : "published_at";
+    return query
+      .order(column, { ascending: filters.sort === "title", nullsFirst: false })
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
   };
 
   let result = await run(`${base}, ${extra}`, true);
@@ -341,4 +387,63 @@ export async function deleteVideo(id: string): Promise<void> {
   const supabase = createSupabaseAdminClient();
   const { error } = await supabase.from("cms_videos").delete().eq("id", id);
   if (error) throw error;
+}
+
+
+/**
+ * Re-files a batch of videos under one primary category.
+ *
+ * Mirrors the article bulk action: position 0 is the primary slot, so the old
+ * one is removed along with any existing copy of the target before inserting,
+ * or a video could end up holding the same category twice.
+ */
+export async function bulkSetVideoCategory(ids: string[], categoryName: string): Promise<number> {
+  if (ids.length === 0 || !categoryName.trim()) return 0;
+  const supabase = createSupabaseAdminClient();
+  const { data: category } = await supabase
+    .from("cms_video_categories")
+    .select("id")
+    .eq("name", categoryName)
+    .maybeSingle();
+  if (!category) throw new Error(`分类「${categoryName}」不存在。`);
+
+  let changed = 0;
+  for (let index = 0; index < ids.length; index += 100) {
+    const slice = ids.slice(index, index + 100);
+    await supabase.from("cms_video_category_map").delete().in("video_id", slice).eq("position", 0);
+    await supabase
+      .from("cms_video_category_map")
+      .delete()
+      .in("video_id", slice)
+      .eq("category_id", category.id);
+    const { error } = await supabase
+      .from("cms_video_category_map")
+      .insert(slice.map((id) => ({ video_id: id, category_id: category.id, position: 0 })));
+    if (error) throw error;
+    changed += slice.length;
+  }
+  return changed;
+}
+
+export async function bulkSetVideoStatus(ids: string[], status: string): Promise<number> {
+  if (ids.length === 0) return 0;
+  const supabase = createSupabaseAdminClient();
+  const { error } = await supabase
+    .from("cms_videos")
+    .update({ status, updated_at: new Date().toISOString() })
+    .in("id", ids);
+  if (error) throw error;
+  return ids.length;
+}
+
+/** The video holding a slug, if any -- excluding the one being edited. */
+export async function findVideoBySlug(
+  slug: string,
+  exceptId?: string
+): Promise<{ id: string; title: string } | null> {
+  const supabase = createSupabaseAdminClient();
+  let query = supabase.from("cms_videos").select("id, title").eq("slug", slug);
+  if (exceptId) query = query.neq("id", exceptId);
+  const { data } = await query.maybeSingle();
+  return data ? { id: String(data.id), title: String(data.title) } : null;
 }

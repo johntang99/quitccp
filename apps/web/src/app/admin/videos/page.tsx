@@ -1,31 +1,27 @@
-import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { VideoTable } from "@/components/admin/VideoTable";
+import { VideoTabs } from "@/components/admin/VideoTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
-import { listVideoCategories, searchVideos } from "@/lib/admin/video-repository";
-import { DeleteVideoButton } from "@/components/admin/DeleteVideoButton";
-import { hostOf } from "@/lib/video-host";
+import { listVideoCategories, searchVideos, type VideoSearchFilters } from "@/lib/admin/video-repository";
 
 interface PageProps {
   searchParams: Promise<Record<string, string | undefined>>;
 }
 
-function duration(seconds: number | null): string {
-  if (!seconds) return "—";
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
+const GAPS = [
+  { key: "no-source", label: "缺播放地址" },
+  { key: "no-cover", label: "缺封面" },
+  { key: "no-description", label: "缺简介" }
+] as const;
 
-const STATUS: Record<string, { label: string; cls: string }> = {
-  published: { label: "已发布", cls: "b-pub" },
-  draft: { label: "草稿", cls: "b-draft" },
-  archived: { label: "已归档", cls: "b-arch" }
-};
+const HOSTS = [
+  { key: "youtube", label: "YouTube" },
+  { key: "ganjing", label: "干净世界" },
+  { key: "tuidang", label: "自有（旧站）" },
+  { key: "none", label: "无地址" }
+] as const;
 
-/**
- * 视频管理 — the same shape as 文章管理 so the two read alike: search and
- * filters at the top, one row per item with its cover, inline edit and preview.
- */
+/** 查找与修改 — the video half of the article screen of the same name. */
 export default async function AdminVideosPage({ searchParams }: PageProps) {
   const user = await requireAdminSessionUser();
   const params = await searchParams;
@@ -35,6 +31,11 @@ export default async function AdminVideosPage({ searchParams }: PageProps) {
       q: params.q,
       category: params.category,
       status: params.status,
+      host: params.host,
+      gap: params.gap as VideoSearchFilters["gap"],
+      from: params.from,
+      to: params.to,
+      sort: (params.sort as VideoSearchFilters["sort"]) ?? "published",
       page: Number(params.page ?? "1") || 1,
       pageSize: Number(params.pageSize ?? "20") || 20
     }),
@@ -52,21 +53,12 @@ export default async function AdminVideosPage({ searchParams }: PageProps) {
 
   return (
     <AdminShell user={user}>
-      <section className="admin-card" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <h2 style={{ margin: 0 }}>视频管理 Videos</h2>
-        <Link className="admin-btn" href="/admin/video-categories">
-          视频分类
-        </Link>
-        <Link className="admin-btn admin-btn-primary" href="/admin/videos/new" style={{ marginLeft: "auto" }}>
-          ＋ 新建视频
-        </Link>
-      </section>
+      <VideoTabs active="search" />
 
       {!result.ready ? (
         <section className="admin-card" style={{ background: "#fffbe9", borderColor: "#f2e3b3" }}>
           <strong>视频分类与来源字段尚未建立。</strong> 请先执行{" "}
-          <code>supabase/content/migrations/012_video_categories.sql</code>
-          。在那之前这一页只显示标题、状态与时长。
+          <code>supabase/content/migrations/012_video_categories.sql</code>。
         </section>
       ) : null}
 
@@ -93,141 +85,92 @@ export default async function AdminVideosPage({ searchParams }: PageProps) {
               </option>
             ))}
           </select>
+          <select className="admin-select" name="host" defaultValue={params.host ?? ""}>
+            <option value="">全部来源</option>
+            {HOSTS.map((h) => (
+              <option key={h.key} value={h.key}>
+                {h.label}
+              </option>
+            ))}
+          </select>
           <select className="admin-select" name="status" defaultValue={params.status ?? ""}>
             <option value="">全部状态</option>
             <option value="published">已发布</option>
             <option value="draft">草稿</option>
             <option value="archived">已归档</option>
           </select>
+          <label className="muted" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            发布于
+            <input className="admin-input" type="date" name="from" defaultValue={params.from ?? ""} />
+            至
+            <input className="admin-input" type="date" name="to" defaultValue={params.to ?? ""} />
+          </label>
+          <select className="admin-select" name="sort" defaultValue={params.sort ?? "published"}>
+            <option value="published">发布时间（新→旧）</option>
+            <option value="updated">更新时间（新→旧）</option>
+            <option value="duration">时长（长→短）</option>
+            <option value="title">标题 A→Z</option>
+          </select>
+          {params.gap ? <input type="hidden" name="gap" value={params.gap} /> : null}
           <button className="admin-btn admin-btn-primary" type="submit">
             搜索
           </button>
         </form>
+
+        <div className="admin-toolbar" style={{ marginBottom: 8 }}>
+          <span className="chips">
+            {GAPS.map((gap) => (
+              <a
+                key={gap.key}
+                className={`chip${params.gap === gap.key ? " on" : ""}`}
+                href={hrefWith({ gap: params.gap === gap.key ? undefined : gap.key, page: undefined })}
+              >
+                {gap.label}
+              </a>
+            ))}
+          </span>
+        </div>
+
         <p className="muted" style={{ margin: 0 }}>
           符合条件 <b>{result.total.toLocaleString()}</b> 个 · 第 {result.page}／{result.pageCount} 页
         </p>
       </section>
 
       <section className="admin-card">
-        <div className="admin-table-wrap">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th style={{ width: 76 }}>封面</th>
-              <th>标题</th>
-              <th>分类</th>
-              <th>时长</th>
-              <th>状态</th>
-              <th>来源</th>
-              <th>发布时间</th>
-              <th style={{ width: 150 }}>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {result.rows.length === 0 ? (
-              <tr>
-                <td colSpan={8} style={{ color: "#8a90a0", padding: 24, textAlign: "center" }}>
-                  还没有视频。旧站的视频稍后会从文章里迁移过来。
-                </td>
-              </tr>
-            ) : null}
-            {result.rows.map((row) => {
-              const status = STATUS[row.status] ?? STATUS.draft;
-              return (
-                <tr key={row.id}>
-                  <td>
-                    {row.coverImage ? (
-                      <img
-                        src={row.coverImage}
-                        alt=""
-                        style={{ width: 64, height: 44, objectFit: "cover", borderRadius: 4, display: "block" }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: 64,
-                          height: 44,
-                          borderRadius: 4,
-                          background: "#f1f1f4",
-                          display: "grid",
-                          placeItems: "center",
-                          color: "#8a90a0",
-                          fontSize: 11
-                        }}
-                      >
-                        无图
-                      </div>
-                    )}
-                  </td>
-                  <td>
-                    <Link href={`/admin/videos/${row.id}`} style={{ fontWeight: 600 }}>
-                      {row.title}
-                    </Link>
-                    <div className="muted" style={{ fontSize: 12, fontFamily: "ui-monospace, Menlo, monospace" }}>
-                      {row.slug}
-                    </div>
-                  </td>
-                  <td>{row.category || <span style={{ color: "#b42318" }}>未分类</span>}</td>
-                  <td>{duration(row.durationSeconds)}</td>
-                  <td>
-                    <span className={`badge ${status.cls}`}>{status.label}</span>
-                  </td>
-                  <td style={{ whiteSpace: "nowrap" }}>
-                    {(() => {
-                      // The label says where the file lives, not just that a link
-                      // exists. 213 of these still sit on the old site and have to
-                      // move before it goes away; a column that only said "播放"
-                      // made that invisible.
-                      const host = hostOf(row.sourceUrl);
-                      if (host.key === "none") return <span className="muted">无地址</span>;
-                      return (
-                        <a href={row.sourceUrl} target="_blank" rel="noopener noreferrer" title={row.sourceUrl}>
-                          {host.label} ↗
-                        </a>
-                      );
-                    })()}
-                  </td>
-                  <td className="muted" style={{ whiteSpace: "nowrap" }}>
-                    {row.publishedAt ? row.publishedAt.slice(0, 10) : "—"}
-                  </td>
-                  <td style={{ whiteSpace: "nowrap" }}>
-                    <Link className="admin-btn admin-btn-sm" href={`/admin/videos/${row.id}`}>
-                      编辑
-                    </Link>{" "}
-                    <a
-                      className="admin-btn admin-btn-sm"
-                      href={`/videos/${encodeURIComponent(row.slug)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      预览 ↗
-                    </a>{" "}
-                    <form
-                      method="post"
-                      action="/api/admin/content/videos/delete"
-                      style={{ display: "inline" }}
-                    >
-                      <input type="hidden" name="id" value={row.id} />
-                      <DeleteVideoButton title={row.title} />
-                    </form>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        </div>
+        <form method="post" action="/api/admin/content/videos/bulk">
+          <div className="admin-toolbar" style={{ marginBottom: 8 }}>
+            <select className="admin-select" name="action" defaultValue="category">
+              <option value="category">改主分类为…</option>
+              <option value="published">发布</option>
+              <option value="draft">退回草稿</option>
+              <option value="archived">归档</option>
+            </select>
+            <select className="admin-select" name="category" defaultValue="">
+              <option value="">（选择目标分类）</option>
+              {categories.map((c) => (
+                <option key={c.slug} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <button className="admin-btn" type="submit">
+              对选中的视频执行
+            </button>
+            <span className="muted">勾选左侧复选框后执行；改分类只替换主分类。</span>
+          </div>
+          <VideoTable rows={result.rows} selectable />
+        </form>
 
         <div className="admin-toolbar" style={{ marginTop: 12 }}>
           {result.page > 1 ? (
-            <Link className="admin-btn" href={hrefWith({ page: String(result.page - 1) })}>
+            <a className="admin-btn" href={hrefWith({ page: String(result.page - 1) })}>
               ← 上一页
-            </Link>
+            </a>
           ) : null}
           {result.page < result.pageCount ? (
-            <Link className="admin-btn" href={hrefWith({ page: String(result.page + 1) })}>
+            <a className="admin-btn" href={hrefWith({ page: String(result.page + 1) })}>
               下一页 →
-            </Link>
+            </a>
           ) : null}
         </div>
       </section>

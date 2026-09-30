@@ -1,21 +1,29 @@
-import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { VideoForm } from "@/components/admin/VideoForm";
+import { VideoTabs } from "@/components/admin/VideoTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { listVideoCategories } from "@/lib/admin/video-repository";
 
-export default async function NewVideoPage() {
+export default async function NewVideoPage({
+  searchParams
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
   const user = await requireAdminSessionUser();
   const categories = await listVideoCategories();
+  // Why a save was refused comes back here rather than as a raw JSON page.
+  const error = (await searchParams).error;
 
   return (
     <AdminShell user={user}>
-      <section className="admin-card" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <h2 style={{ margin: 0 }}>新建视频</h2>
-        <Link className="admin-btn" href="/admin/videos" style={{ marginLeft: "auto" }}>
-          ← 返回列表
-        </Link>
-      </section>
+      <VideoTabs active="new" />
+
+      {error ? (
+        <section className="admin-card" style={{ background: "#fdf1f0", borderColor: "#f2c9c4" }}>
+          <strong style={{ color: "#b42318" }}>{error}</strong>
+        </section>
+      ) : null}
+
 
       <VideoForm
         mode="new"
