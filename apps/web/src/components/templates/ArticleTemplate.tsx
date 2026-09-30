@@ -1,5 +1,43 @@
+import type { ReactNode } from "react";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString, asStringArray } from "./content-utils";
+
+/**
+ * Inline markdown inside one block: links, bold, emphasis.
+ *
+ * The converter used to flatten `[text](url)` to its label and drop the address,
+ * losing every one of the 2,456 links the migration had carefully preserved in
+ * the body text.
+ */
+function renderInline(text: string): ReactNode[] {
+  const pattern = /\[([^\]]+)]\(([^)\s]+)[^)]*\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
+  const nodes: ReactNode[] = [];
+  let last = 0;
+  for (const match of text.matchAll(pattern)) {
+    const at = match.index ?? 0;
+    if (at > last) nodes.push(text.slice(last, at));
+    if (match[1]) {
+      const href = match[2];
+      const external = /^https?:\/\//i.test(href) && !href.includes("tuidang.org");
+      nodes.push(
+        <a
+          key={`${at}-a`}
+          href={href}
+          {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+        >
+          {match[1]}
+        </a>
+      );
+    } else if (match[3]) {
+      nodes.push(<strong key={`${at}-b`}>{match[3]}</strong>);
+    } else if (match[4]) {
+      nodes.push(<em key={`${at}-i`}>{match[4]}</em>);
+    }
+    last = at + match[0].length;
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return nodes.length > 0 ? nodes : [text];
+}
 
 export function ArticleTemplate({ title, content }: TemplatePageData) {
   const payload = asRecord(content);
@@ -15,7 +53,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
       : ["2026-07-22", "华盛顿", "本站报导", "约 1,400 字"];
   const bodyRows = asObjectArray(payload.body);
   const shouldUseFallbackBody = bodyRows.length === 0;
-  const proseRows: Array<{ type: string; text: string }> = shouldUseFallbackBody
+  const proseRows: Array<{ type: string; text?: string; src?: string; alt?: string }> = shouldUseFallbackBody
     ? [
           {
             type: "p",
@@ -48,7 +86,11 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
       ]
     : bodyRows.map((row) => ({
         type: asString(row.type, "p"),
-        text: asString(row.text)
+        text: asString(row.text),
+        // A figure row carries its address here, not in `text`. Mapping only
+        // type and text is what silently emptied every body image.
+        src: asString(row.src),
+        alt: asString(row.alt)
       }));
   const shouldUseFallbackTitle = !title || title.trim().length < 6;
   const displayTitle = shouldUseFallbackTitle ? fallbackTitle : title;
@@ -152,12 +194,29 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
             <div className="prose">
               {proseRows.map((row, index) => {
                 const type = asString(row.type, "p");
+
+                // Photographs in the body. The converter used to throw these
+                // away and keep only the caption underneath, so a photo essay
+                // came out as a column of 「（作者提供）」.
+                if (type === "figure") {
+                  const src = asString(row.src);
+                  if (!src) return null;
+                  const alt = asString(row.alt);
+                  return (
+                    <figure key={`figure-${index}`}>
+                      <img src={src} alt={alt} style={{ width: "100%", height: "auto", display: "block" }} />
+                      {alt ? <figcaption>{alt}</figcaption> : null}
+                    </figure>
+                  );
+                }
+
                 const text = asString(row.text);
                 if (!text) return null;
-                if (type === "h2") return <h2 key={`${type}-${index}`}>{text}</h2>;
-                if (type === "h3") return <h3 key={`${type}-${index}`}>{text}</h3>;
-                if (type === "blockquote") return <blockquote key={`${type}-${index}`}>{text}</blockquote>;
-                return <p key={`${type}-${index}`}>{text}</p>;
+                const inline = renderInline(text);
+                if (type === "h2") return <h2 key={`${type}-${index}`}>{inline}</h2>;
+                if (type === "h3") return <h3 key={`${type}-${index}`}>{inline}</h3>;
+                if (type === "blockquote") return <blockquote key={`${type}-${index}`}>{inline}</blockquote>;
+                return <p key={`${type}-${index}`}>{inline}</p>;
               })}
               {/* The mockup demonstrated link styling with a sentence about link
                   styling. Rendered unconditionally it became the last paragraph

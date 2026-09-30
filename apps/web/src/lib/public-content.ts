@@ -62,7 +62,9 @@ function asObjectArray(value: unknown): Record<string, unknown>[] {
     .filter((row) => Object.keys(row).length > 0);
 }
 
-type ArticleBodyRow = { type: "p" | "h2" | "h3" | "blockquote"; text: string };
+type ArticleBodyRow =
+  | { type: "p" | "h2" | "h3" | "blockquote"; text: string }
+  | { type: "figure"; src: string; alt: string };
 
 function stripInlineMarkdown(value: string): string {
   return value
@@ -121,7 +123,26 @@ function markdownToBodyRows(markdown: string): ArticleBodyRow[] {
       flushQuote();
       continue;
     }
-    if (/^!\[[^\]]*]\(([^)]+)\)$/.test(line) || /^<img\b/i.test(line)) {
+    // Images used to be dropped here. The body kept the caption line that
+    // follows each one, so a photo essay rendered as a column of
+    // 「（作者提供）」 with nothing above them.
+    const image =
+      line.match(/^!\[([^\]]*)]\(([^)\s]+)[^)]*\)$/) ??
+      line.match(/^<img\b[^>]*\bsrc="([^"]+)"[^>]*\balt="([^"]*)"/i);
+    if (image) {
+      flushParagraph();
+      flushQuote();
+      const isHtml = line.startsWith("<");
+      const src = isHtml ? image[1] : image[2];
+      const alt = isHtml ? image[2] : image[1];
+      rows.push({ type: "figure", src, alt });
+      // The old site repeats the caption as the next line. Consume it rather
+      // than printing it twice, once as the figure's caption and once as prose.
+      const next = (lines[index + 1] ?? "").trim();
+      if (alt && next === alt) index += 1;
+      continue;
+    }
+    if (/^<img\b/i.test(line)) {
       flushParagraph();
       flushQuote();
       continue;
@@ -487,7 +508,11 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
               type: "p" as const,
               text: asString((row as Record<string, unknown>).text)
             }));
-    const summary = asString(data.summary, bodyRows.find((row) => row.type === "p")?.text ?? "");
+    const firstParagraph = bodyRows.find((row) => row.type === "p");
+    const summary = asString(
+      data.summary,
+      firstParagraph && "text" in firstParagraph ? firstParagraph.text : ""
+    );
     const heroImage = asString(listMapped?.image) || extractFirstImageFromMarkdown(markdownBody);
     // The article's own primary category, which nothing here used to consult.
     // Without it every article fell through to the template's default and the
