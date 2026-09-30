@@ -459,7 +459,11 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
       .select("id, slug, title, summary, body_markdown, body_plain, status, updated_at, published_at, author")
       .eq("slug", normalizedSlug)
       .eq("locale", "zh")
-      .in("status", ["published", "review", "draft"])
+      // Drafts are readable only by someone signed into the admin, which is
+      // what the 预览 button needs. Without this check an unpublished article
+      // was live at its public URL, and the slug is the Chinese title -- not a
+      // secret.
+      .in("status", (await isAdminViewer()) ? ["published", "review", "draft"] : ["published"])
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -900,4 +904,20 @@ function isEchoOfBody(summary: string, firstParagraph: string): boolean {
   const shorter = a.length <= b.length ? a : b;
   const longer = a.length <= b.length ? b : a;
   return shorter.length >= 12 && longer.startsWith(shorter.slice(0, Math.min(shorter.length, 60)));
+}
+
+
+/**
+ * Whether the request carries a valid admin session.
+ *
+ * Kept deliberately cheap and failure-tolerant: a public page must render when
+ * there is no cookie, and must not blow up if the session cannot be checked.
+ */
+async function isAdminViewer(): Promise<boolean> {
+  try {
+    const { getAdminSessionUser } = await import("@/lib/admin/auth");
+    return (await getAdminSessionUser()) !== null;
+  } catch {
+    return false;
+  }
 }

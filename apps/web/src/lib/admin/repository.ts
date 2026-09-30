@@ -562,8 +562,38 @@ export async function upsertArticleRecord(
 
   const baseSelect =
     "id, slug, title, section, locale, status, summary, body_markdown, body_plain, legacy_url, legacy_id, updated_at";
+
+  // Identify the row by its id when we have one, and by slug only when we do
+  // not.
+  //
+  // This used to be a single upsert on (slug, locale) with the id ignored. Two
+  // consequences: creating an article with a slug that already existed silently
+  // overwrote that article -- title, body, everything -- and changing an
+  // article's slug left the original row behind and made a second one.
+  const id = input.id?.trim();
+  if (id) {
+    const { data: clash } = await supabase
+      .from("cms_articles")
+      .select("id, title")
+      .eq("slug", input.slug)
+      .eq("locale", input.locale || "zh")
+      .neq("id", id)
+      .maybeSingle();
+    if (clash) throw new Error(`网址「${input.slug}」已被《${clash.title}》占用，请换一个。`);
+  } else {
+    const { data: clash } = await supabase
+      .from("cms_articles")
+      .select("id, title")
+      .eq("slug", input.slug)
+      .eq("locale", input.locale || "zh")
+      .maybeSingle();
+    if (clash) throw new Error(`网址「${input.slug}」已被《${clash.title}》占用，请换一个。`);
+  }
+
   const write = async (payload: Record<string, unknown>, select: string) =>
-    supabase.from("cms_articles").upsert(payload, { onConflict: "slug,locale" }).select(select).single();
+    id
+      ? supabase.from("cms_articles").update(payload).eq("id", id).select(select).single()
+      : supabase.from("cms_articles").insert(payload).select(select).single();
 
   let result = await write({ ...base, ...editorial }, `${baseSelect}, ${ARTICLE_EDITORIAL_COLUMNS}`);
   if (result.error && isMissingEditorialColumn(result.error)) {

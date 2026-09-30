@@ -279,7 +279,13 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                 name="publishedAt"
                 type="datetime-local"
                 value={toLocalInput(value.publishedAt)}
-                onChange={(event) => set("publishedAt", event.target.value || null)}
+                // Convert to an instant here, the way the article form does.
+                // Posting the raw datetime-local value leaves the server to
+                // guess a zone -- in production that is UTC, not the editor's,
+                // so the time shifted by the offset on every save.
+                onChange={(event) =>
+                  set("publishedAt", event.target.value ? new Date(event.target.value).toISOString() : null)
+                }
               />
             </div>
             {/* The button is the decision. A separate 状态 dropdown next to a

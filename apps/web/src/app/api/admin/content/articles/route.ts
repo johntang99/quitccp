@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
-import { listArticles, upsertArticleRecord } from "@/lib/admin/repository";
+import { listArticles, listCategories, upsertArticleRecord } from "@/lib/admin/repository";
 
 export async function GET(request: Request) {
   const user = await getAdminSessionUser();
@@ -63,37 +63,63 @@ export async function POST(request: Request) {
     );
   }
 
-  await upsertArticleRecord(
-    {
-      id,
-      slug,
-      title,
-      section,
-      locale,
-      status,
-      bodyMarkdown,
-      bodyPlain,
-      category,
-      tags,
-      legacyUrl: legacyUrlRaw || undefined,
-      legacyId: legacyIdRaw ? Number(legacyIdRaw) : undefined,
-      subtitle: String(formData.get("subtitle") ?? ""),
-      summary: String(formData.get("summary") ?? ""),
-      secondaryCategories: String(formData.get("secondaryCategories") ?? "")
-        .split(",")
-        .map((name) => name.trim())
-        .filter(Boolean),
-      heroImage: String(formData.get("heroImage") ?? ""),
-      heroImageAlt: String(formData.get("heroImageAlt") ?? ""),
-      heroCredit: String(formData.get("heroCredit") ?? ""),
-      author: String(formData.get("author") ?? ""),
-      translator: String(formData.get("translator") ?? ""),
-      sourceTitle: String(formData.get("sourceTitle") ?? ""),
-      sourceUrl: String(formData.get("sourceUrl") ?? ""),
-      publishedAt: String(formData.get("publishedAt") ?? "").trim() || null,
-    },
-    user.email
-  );
+  // The form checks these in the browser, but the endpoint has to as well: a
+  // title-less post used to come back as a bare 404, and an empty slug wrote a
+  // row that no URL could ever reach.
+  const backTo = id ? `/admin/articles/${id}` : "/admin/articles/new";
+  const reject = (message: string) => {
+    const target = new URL(backTo, request.url);
+    target.searchParams.set("error", message);
+    return NextResponse.redirect(target, 303);
+  };
+  if (!title.trim()) return reject("请填写标题。");
+  if (!slug.trim()) return reject("请填写网址 slug。");
+  if (!category.trim()) return reject("请选择主分类。");
+
+  // A category is chosen from a list, so a name that is not on it is a typo or
+  // a hand-made request -- not a new category. Creating one silently meant a
+  // single mistyped character grew the taxonomy by one and hid the article in it.
+  const known = (await listCategories(user.email)).map((row) => row.name);
+  const unknown = [category, ...(String(formData.get("secondaryCategories") ?? "")
+    .split(",").map((name) => name.trim()).filter(Boolean))]
+    .filter((name) => !known.includes(name));
+  if (unknown.length > 0) return reject(`分类不存在：${unknown.join("、")}`);
+
+  try {
+    await upsertArticleRecord(
+      {
+        id,
+        slug,
+        title,
+        section,
+        locale,
+        status,
+        bodyMarkdown,
+        bodyPlain,
+        category,
+        tags,
+        legacyUrl: legacyUrlRaw || undefined,
+        legacyId: legacyIdRaw ? Number(legacyIdRaw) : undefined,
+        subtitle: String(formData.get("subtitle") ?? ""),
+        summary: String(formData.get("summary") ?? ""),
+        secondaryCategories: String(formData.get("secondaryCategories") ?? "")
+          .split(",")
+          .map((name) => name.trim())
+          .filter(Boolean),
+        heroImage: String(formData.get("heroImage") ?? ""),
+        heroImageAlt: String(formData.get("heroImageAlt") ?? ""),
+        heroCredit: String(formData.get("heroCredit") ?? ""),
+        author: String(formData.get("author") ?? ""),
+        translator: String(formData.get("translator") ?? ""),
+        sourceTitle: String(formData.get("sourceTitle") ?? ""),
+        sourceUrl: String(formData.get("sourceUrl") ?? ""),
+        publishedAt: String(formData.get("publishedAt") ?? "").trim() || null,
+      },
+      user.email
+    );
+  } catch (error) {
+    return reject(error instanceof Error ? error.message : "保存失败。");
+  }
 
   return NextResponse.redirect(new URL("/admin/articles", request.url), 303);
 }

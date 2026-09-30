@@ -8,11 +8,14 @@ import { getArticleById } from "@/lib/admin/repository";
 
 interface EditArticlePageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }
 
-export default async function EditArticlePage({ params }: EditArticlePageProps) {
+export default async function EditArticlePage({ params, searchParams }: EditArticlePageProps) {
   const user = await requireAdminSessionUser();
   const { id } = await params;
+  // Why a save was refused -- a taken slug, a missing field -- comes back here.
+  const error = (await searchParams).error;
   const article = await getArticleById(id);
   if (!article) notFound();
   const { categories, authors } = await getArticleFormLookups(user.email);
@@ -22,6 +25,11 @@ export default async function EditArticlePage({ params }: EditArticlePageProps) 
 
   return (
     <AdminShell user={user}>
+      {error ? (
+        <section className="admin-card" style={{ background: "#fdf1f0", borderColor: "#f2c9c4" }}>
+          <strong style={{ color: "#b42318" }}>{error}</strong>
+        </section>
+      ) : null}
       <section className="admin-card" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <Link className="admin-btn" href="/admin/articles">
           ← 返回列表

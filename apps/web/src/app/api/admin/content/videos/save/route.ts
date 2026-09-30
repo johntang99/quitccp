@@ -28,8 +28,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "只有 super_admin／content_admin 可以发布或归档。" }, { status: 403 });
   }
 
-  // `datetime-local` posts local wall time with no zone; Date reads it as local,
-  // which is what the editor meant by it.
+  // The form sends an instant (ISO with offset). A bare datetime-local value
+  // would be read in the server's zone, which is not the editor's.
   const publishedRaw = text("publishedAt");
   const published = publishedRaw ? new Date(publishedRaw) : null;
 
