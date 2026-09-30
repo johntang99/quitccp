@@ -60,6 +60,25 @@ function apply(
  * Escapes first, so a body containing HTML shows as text rather than executing
  * -- article bodies come from a WordPress import and are not trusted markup.
  */
+/**
+ * An embeddable address, or "" when the host is not one we play.
+ *
+ * Keeps javascript: and data: out of the preview's iframe, and turns a YouTube
+ * watch link into its embed form so the player actually loads.
+ */
+function previewEmbed(url: string): string {
+  const value = url.trim();
+  if (!/^https?:\/\//i.test(value)) return "";
+  const youtube =
+    value.match(/youtube\.com\/watch\?v=([A-Za-z0-9_-]{6,})/) ??
+    value.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/) ??
+    value.match(/youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/);
+  if (youtube) return `https://www.youtube.com/embed/${youtube[1]}`;
+  if (/^https?:\/\/[^/]*(ganjing(world)?\.com|vimeo\.com)\//i.test(value)) return value;
+  if (/\.(mp4|webm|ogg|mov)(\?|$)/i.test(value)) return value;
+  return "";
+}
+
 function renderPreview(md: string): string {
   const esc = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -69,9 +88,23 @@ function renderPreview(md: string): string {
     .map((block) => {
       const t = block.trim();
       if (!t) return "";
-      if (/^:::\s*video\s+(\S+)/.test(t)) {
+      const fence = t.match(/^:::\s*video\s+(\S+)/);
+      if (fence) {
         const caption = t.split("\n").slice(1).filter((l) => l !== ":::").join(" ");
-        return `<div class="md-video">▶ 视频${caption ? ` — ${caption}` : ""}</div>`;
+        // Show the actual player rather than a black rectangle. The block was
+        // escaped above, so the address has to be unescaped before use, and only
+        // a known video host is allowed through -- the preview is for the
+        // editor, but an href is still an href.
+        const raw = fence[1].replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+        const embed = previewEmbed(raw);
+        if (embed) {
+          return `<figure class="md-video-frame">${
+            /\.(mp4|webm|ogg|mov)(\?|$)/i.test(embed)
+              ? `<video src="${embed}" controls preload="none"></video>`
+              : `<iframe src="${embed}" allowfullscreen loading="lazy"></iframe>`
+          }${caption ? `<figcaption>${caption}</figcaption>` : ""}</figure>`;
+        }
+        return `<div class="md-video">▶ 认不出的视频地址${caption ? ` — ${caption}` : ""}</div>`;
       }
       if (/^###\s+/.test(t)) return `<h3>${t.replace(/^###\s+/, "")}</h3>`;
       if (/^##\s+/.test(t)) return `<h2>${t.replace(/^##\s+/, "")}</h2>`;

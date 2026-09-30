@@ -64,7 +64,8 @@ function asObjectArray(value: unknown): Record<string, unknown>[] {
 
 type ArticleBodyRow =
   | { type: "p" | "h2" | "h3" | "blockquote"; text: string }
-  | { type: "figure"; src: string; alt: string };
+  | { type: "figure"; src: string; alt: string }
+  | { type: "video"; src: string; caption: string };
 
 function stripInlineMarkdown(value: string): string {
   return value
@@ -123,6 +124,26 @@ function markdownToBodyRows(markdown: string): ArticleBodyRow[] {
       flushQuote();
       continue;
     }
+    // ::: video <url> / caption / ::: -- what the HTML converter turns an
+    // <iframe> into, and what the editor's 插入视频 button writes. 695 published
+    // articles carried one and printed it as literal text, fences and all.
+    const fence = line.match(/^:::\s*video\s+(\S+)\s*$/i);
+    if (fence) {
+      flushParagraph();
+      flushQuote();
+      const caption: string[] = [];
+      let cursor = index + 1;
+      while (cursor < lines.length && !/^:::\s*$/.test(lines[cursor].trim())) {
+        const text = lines[cursor].trim();
+        if (text) caption.push(text);
+        cursor += 1;
+      }
+      rows.push({ type: "video", src: fence[1], caption: caption.join(" ") });
+      // Skip past the closing fence; if there is none, stop at the caption.
+      index = cursor < lines.length ? cursor : lines.length;
+      continue;
+    }
+
     // Images used to be dropped here. The body kept the caption line that
     // follows each one, so a photo essay rendered as a column of
     // 「（作者提供）」 with nothing above them.

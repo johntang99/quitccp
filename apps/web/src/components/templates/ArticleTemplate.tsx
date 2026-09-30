@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { ArticleTools } from "@/components/public/ArticleTools";
+import { ArticleVideo } from "@/components/public/ArticleVideo";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString, asStringArray } from "./content-utils";
 
@@ -55,7 +56,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
       : ["2026-07-22", "华盛顿", "本站报导", "约 1,400 字"];
   const bodyRows = asObjectArray(payload.body);
   const shouldUseFallbackBody = bodyRows.length === 0;
-  const proseRows: Array<{ type: string; text?: string; src?: string; alt?: string }> = shouldUseFallbackBody
+  const proseRows: Array<{ type: string; text?: string; src?: string; alt?: string; caption?: string }> = shouldUseFallbackBody
     ? [
           {
             type: "p",
@@ -92,7 +93,8 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
         // A figure row carries its address here, not in `text`. Mapping only
         // type and text is what silently emptied every body image.
         src: asString(row.src),
-        alt: asString(row.alt)
+        alt: asString(row.alt),
+        caption: asString(row.caption)
       }));
   const displayTitle = title;
   const breadcrumb = asRecord(payload.breadcrumb);
@@ -191,6 +193,12 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
             <div className="prose">
               {proseRows.map((row, index) => {
                 const type = asString(row.type, "p");
+
+                if (type === "video") {
+                  const src = asString(row.src);
+                  if (!src) return null;
+                  return <ArticleVideo key={`video-${index}`} src={src} caption={asString(row.caption)} />;
+                }
 
                 // Photographs in the body. The converter used to throw these
                 // away and keep only the caption underneath, so a photo essay
