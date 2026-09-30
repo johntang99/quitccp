@@ -2,7 +2,13 @@ import { notFound } from "next/navigation";
 import { PageFromRoute } from "@/components/PageFromRoute";
 import { VideoCategoryList } from "@/components/public/VideoCategoryList";
 import { VideoDetail } from "@/components/public/VideoDetail";
-import { getRenderableVideo, getVideoCategory, listPublicVideoCategories } from "@/lib/public-content";
+import { VideoLibraryIndex } from "@/components/public/VideoLibraryIndex";
+import {
+  getRenderableVideo,
+  getVideoCategory,
+  getVideoLibrary,
+  listPublicVideoCategories
+} from "@/lib/public-content";
 
 /** The section's own CMS page. Everything else is a category or a video. */
 const VIDEO_PAGES = new Set(["index"]);
@@ -31,6 +37,13 @@ export default async function VideosPage({
     if (video) return <VideoDetail video={video} />;
     notFound();
   }
+
+  // The CMS page for this section lists five hand-written shelves with sample
+  // titles: it names categories that do not exist, omits three that do, and
+  // shows no video from the library. Render the library itself when there is
+  // one, and fall back to the page only if there is not.
+  const shelves = await getVideoLibrary();
+  if (shelves.length > 0) return <VideoLibraryIndex shelves={shelves} />;
 
   return <PageFromRoute section="videos" slug={slug} />;
 }

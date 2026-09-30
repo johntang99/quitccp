@@ -815,3 +815,33 @@ export async function getRelatedArticles(
     return [];
   }
 }
+
+export interface VideoLibraryShelf {
+  slug: string;
+  name: string;
+  total: number;
+  videos: PublicVideoCard[];
+}
+
+/**
+ * The video library's front page: every category with its newest few.
+ *
+ * The section index used to be a CMS page listing five hand-written shelves and
+ * sample titles, which named categories that no longer exist, omitted three that
+ * do, and showed no actual video from the library.
+ */
+export async function getVideoLibrary(perShelf = 6): Promise<VideoLibraryShelf[]> {
+  const categories = await listPublicVideoCategories();
+  const shelves = await Promise.all(
+    categories.map(async (category) => {
+      const page = await getVideoCategory(category.slug, 1, perShelf);
+      return {
+        slug: category.slug,
+        name: category.name,
+        total: category.total,
+        videos: page?.videos ?? []
+      };
+    })
+  );
+  return shelves.filter((shelf) => shelf.videos.length > 0);
+}
