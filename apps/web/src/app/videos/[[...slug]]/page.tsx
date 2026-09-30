@@ -1,19 +1,32 @@
 import { notFound } from "next/navigation";
 import { PageFromRoute } from "@/components/PageFromRoute";
+import { VideoCategoryList } from "@/components/public/VideoCategoryList";
 import { VideoDetail } from "@/components/public/VideoDetail";
-import { getRenderableVideo } from "@/lib/public-content";
+import { getRenderableVideo, getVideoCategory, listPublicVideoCategories } from "@/lib/public-content";
 
-/** The section's own CMS pages; anything else under /videos is a video slug. */
+/** The section's own CMS page. Everything else is a category or a video. */
 const VIDEO_PAGES = new Set(["index"]);
 
-export default async function VideosPage({ params }: { params: Promise<{ slug?: string[] }> }) {
+export default async function VideosPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ slug?: string[] }>;
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
   const resolved = await params;
   const slug = resolved.slug?.[0];
 
-  // A video's slug is its own path segment, the same shape articles use under
-  // /news. Without this every video in the library 404s, which is what the
-  // admin's preview link would have hit.
   if (slug && !VIDEO_PAGES.has(slug)) {
+    // Category first: the section index links to eight of these, and every one
+    // of them was a 404 -- the videos were in the database with nothing leading
+    // to them. A video slug is the longer, Chinese one, so the two never collide.
+    const category = await getVideoCategory(slug, Number((await searchParams).page ?? "1") || 1);
+    if (category) {
+      const siblings = await listPublicVideoCategories();
+      return <VideoCategoryList category={category} siblings={siblings} />;
+    }
+
     const video = await getRenderableVideo(slug);
     if (video) return <VideoDetail video={video} />;
     notFound();

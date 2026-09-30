@@ -648,3 +648,114 @@ async function primaryCategoryName(articleId: string): Promise<string> {
     return "";
   }
 }
+
+export interface PublicVideoCard {
+  slug: string;
+  title: string;
+  episode: string;
+  description: string;
+  coverImage: string;
+  durationSeconds: number | null;
+  publishedAt: string | null;
+  sourceUrl: string;
+}
+
+export interface PublicVideoCategory {
+  slug: string;
+  name: string;
+  total: number;
+  page: number;
+  pageCount: number;
+  videos: PublicVideoCard[];
+}
+
+/**
+ * One video category's listing.
+ *
+ * The section index links to eight of these and every one of them was a 404:
+ * the videos existed but nothing led to them. Ordered by publication date with
+ * `id` beneath it, for the same reason the admin lists are -- the whole library
+ * shares an import timestamp.
+ */
+export async function getVideoCategory(
+  slug: string,
+  page = 1,
+  pageSize = 24
+): Promise<PublicVideoCategory | null> {
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data: category } = await supabase
+      .from("cms_video_categories")
+      .select("id, slug, name")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (!category) return null;
+
+    const offset = (Math.max(page, 1) - 1) * pageSize;
+    const { data, count, error } = await supabase
+      .from("cms_videos")
+      .select(
+        "id, slug, title, episode, description, cover_image, duration_seconds, published_at, source_url, " +
+          "cms_video_category_map!inner(category_id)",
+        { count: "exact" }
+      )
+      .eq("cms_video_category_map.category_id", category.id)
+      .eq("status", "published")
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) return null;
+
+    const rows = (data ?? []) as unknown as Record<string, unknown>[];
+    const total = count ?? 0;
+    return {
+      slug: String(category.slug),
+      name: String(category.name),
+      total,
+      page: Math.max(page, 1),
+      pageCount: Math.max(1, Math.ceil(total / pageSize)),
+      videos: rows.map((row) => ({
+        slug: String(row.slug),
+        title: String(row.title),
+        episode: String(row.episode ?? ""),
+        description: String(row.description ?? ""),
+        coverImage: String(row.cover_image ?? ""),
+        durationSeconds: row.duration_seconds ? Number(row.duration_seconds) : null,
+        publishedAt: row.published_at ? String(row.published_at) : null,
+        sourceUrl: String(row.source_url ?? "")
+      }))
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Every category with its published count, for the section index. */
+export async function listPublicVideoCategories(): Promise<
+  { slug: string; name: string; total: number }[]
+> {
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data } = await supabase
+      .from("cms_video_categories")
+      .select("id, slug, name, sort_order")
+      .order("sort_order", { ascending: true });
+    const rows = data ?? [];
+    const counts = await Promise.all(
+      rows.map(async (row) => {
+        const { count } = await supabase
+          .from("cms_video_category_map")
+          .select("video_id", { count: "exact", head: true })
+          .eq("category_id", row.id);
+        return count ?? 0;
+      })
+    );
+    return rows.map((row, index) => ({
+      slug: String(row.slug),
+      name: String(row.name),
+      total: counts[index]
+    }));
+  } catch {
+    return [];
+  }
+}
