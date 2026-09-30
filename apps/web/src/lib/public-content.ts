@@ -523,6 +523,14 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
         // The seed's breadcrumb names a category too, and the template prefers
         // it over the tag -- so it has to be corrected here as well or the trail
         // keeps claiming a section the article is not in.
+        // The seed payload carries the mockup's link-styling demo sentence, and
+        // spreading the seed brought it into every real article. A migrated
+        // article's body is complete as written; nothing should be appended.
+        bodyLink: {},
+        relatedSection: {
+          ...asObject(fallbackContent.relatedSection),
+          items: await getRelatedArticles(articleTag, normalizedSlug)
+        },
         breadcrumb: {
           ...asObject(fallbackContent.breadcrumb),
           sectionLabel: "新闻与报告",
@@ -755,6 +763,54 @@ export async function listPublicVideoCategories(): Promise<
       name: String(row.name),
       total: counts[index]
     }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Real articles from the same category, for the "相关阅读" strip.
+ *
+ * The template used to carry two invented ones as its fallback. Rather than
+ * leave the strip empty now that they are gone, it gets actual neighbours --
+ * ordered by publication date, with `id` beneath it so the choice is stable
+ * between requests rather than reshuffling on every render.
+ */
+export async function getRelatedArticles(
+  categoryName: string,
+  excludeSlug: string,
+  limit = 2
+): Promise<{ href: string; image: string; tag: string; title: string; meta: string }[]> {
+  if (!categoryName) return [];
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data: category } = await supabase
+      .from("cms_article_categories")
+      .select("id")
+      .eq("name", categoryName)
+      .maybeSingle();
+    if (!category) return [];
+
+    const { data } = await supabase
+      .from("cms_articles")
+      .select("slug, title, hero_image, published_at, cms_article_category_map!inner(category_id)")
+      .eq("cms_article_category_map.category_id", category.id)
+      .eq("status", "published")
+      .neq("slug", excludeSlug)
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("id", { ascending: true })
+      .limit(limit + 1);
+
+    return ((data ?? []) as unknown as Record<string, unknown>[])
+      .filter((row) => String(row.slug) !== excludeSlug)
+      .slice(0, limit)
+      .map((row) => ({
+        href: `/news/${encodeURIComponent(String(row.slug))}`,
+        image: String(row.hero_image ?? ""),
+        tag: categoryName,
+        title: String(row.title),
+        meta: row.published_at ? String(row.published_at).slice(0, 10) : ""
+      }));
   } catch {
     return [];
   }

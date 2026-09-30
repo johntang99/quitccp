@@ -84,22 +84,12 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
         title: asString(row.title),
         meta: asString(row.meta)
       }))
-    : [
-        {
-          href: "/news/article",
-          image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.29-P.png",
-          tag: "国际声援行动",
-          title: "欧洲议会通过决议，关注强制器官摘取问题",
-          meta: "2026-06-25 · 布鲁塞尔"
-        },
-        {
-          href: "/news/article",
-          image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.23-P.png",
-          tag: "移民相关",
-          title: "美国第 444 号决议与华人身份申请的关系",
-          meta: "2026-07-22"
-        }
-      ];
+    // No invented fallback. These two placeholders -- a European Parliament
+    // resolution and a numbered US House resolution, each with a date and a
+    // dateline -- rendered on all 15,514 article pages as though the site had
+    // reported them. On a site whose purpose is documentary credibility,
+    // showing nothing is the only safe default.
+    : [];
   const ctaPanel = asRecord(payload.ctaPanel);
   const sectionPanel = asRecord(payload.sectionPanel);
   const sectionLinks = asObjectArray(sectionPanel.links).length
@@ -169,11 +159,17 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
                 if (type === "blockquote") return <blockquote key={`${type}-${index}`}>{text}</blockquote>;
                 return <p key={`${type}-${index}`}>{text}</p>;
               })}
-              <p>
-                {asString(bodyLink.prefix, "正文中的")}
-                <a href={asString(bodyLink.href, "#")}>{asString(bodyLink.label, "链接使用紫色并带下划线")}</a>
-                {asString(bodyLink.suffix, "，在浅色背景上保持足够对比度。")}
-              </p>
+              {/* The mockup demonstrated link styling with a sentence about link
+                  styling. Rendered unconditionally it became the last paragraph
+                  of every real article: "正文中的链接使用紫色并带下划线…". It shows
+                  now only when a page actually supplies one. */}
+              {asString(bodyLink.label) ? (
+                <p>
+                  {asString(bodyLink.prefix)}
+                  <a href={asString(bodyLink.href, "#")}>{asString(bodyLink.label)}</a>
+                  {asString(bodyLink.suffix)}
+                </p>
+              ) : null}
               {inlineFigureImage ? (
                 <figure>
                   <img

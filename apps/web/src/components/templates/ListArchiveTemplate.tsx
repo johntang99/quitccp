@@ -482,15 +482,19 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
         meta: asString(row.meta || row.date),
         isVideo: Boolean(row.isVideo)
       }));
+      // Empty, deliberately. This used to hold an invented lead story naming a
+      // real congressman and claiming a proclamation entered into the
+      // Congressional Record. It is not rendering today because the CMS payload
+      // supplies its own lead -- but a page saved without one would have
+      // published it as reporting.
       const fallbackLead = {
-        slug: "international-support-action",
-        href: "/news/article",
-        image: "https://www.tuidang.org/wp-content/uploads/2026/07/signal-2026-07-22-11-53-42-724.jpg",
-        tag: "国际声援行动",
-        title: "美议员在国会表彰退党运动，31 名华人现场领取退党证明",
-        summary:
-          "田纳西州联邦众议员安迪·奥格尔斯发出表彰公告，声明正式载入《国会议事录》。同日，31 名华人在国会访客中心的论坛上领取了退出中共党、团、队的证明。",
-        meta: "2026-07-21 · 华盛顿 · 本站报导"
+        slug: "",
+        href: "",
+        image: "",
+        tag: "",
+        title: "",
+        summary: "",
+        meta: ""
       };
       const frontLeadPayload = asRecord(payload.frontLead);
       const frontLead = {

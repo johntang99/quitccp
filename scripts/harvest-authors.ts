@@ -95,11 +95,30 @@ async function fetchPage(url: string): Promise<string | null> {
   return null;
 }
 
+/**
+ * Writes one author, retrying a statement timeout.
+ *
+ * A single-row update on a primary key should not take seconds, but the import
+ * hit 57014 on single rows too: it is load on the instance, not the row. One
+ * slow write is no reason to abandon a run of fifteen thousand -- the article
+ * keeps author = '' and the next run picks it up.
+ */
+async function writeAuthor(id: string, author: string): Promise<boolean> {
+  for (const wait of [0, 2000, 5000, 15000]) {
+    if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
+    const { error } = await supabase.from("cms_articles").update({ author }).eq("id", id);
+    if (!error) return true;
+    if (error.code !== "57014") throw error;
+  }
+  return false;
+}
+
 async function main() {
   const apply = process.argv.includes("--apply");
   const limitArg = process.argv.indexOf("--limit");
   const limit = limitArg === -1 ? Number.POSITIVE_INFINITY : Number(process.argv[limitArg + 1]);
 
+  let timedOut = 0;
   let found = 0;
   let none = 0;
   let unreadable = 0;
@@ -163,11 +182,11 @@ async function main() {
     found += 1;
 
     if (apply) {
-      const { error: updateError } = await supabase
-        .from("cms_articles")
-        .update({ author: byline.author })
-        .eq("id", article.id);
-      if (updateError) throw updateError;
+      const written = await writeAuthor(article.id, byline.author);
+      if (!written) {
+        timedOut += 1;
+        continue;
+      }
       appendFileSync(LOG, `${article.id}\t${byline.author}\t${byline.affiliation}\t${article.title}\n`);
     } else {
       console.log(` ${byline.author}${byline.affiliation ? `（${byline.affiliation}）` : ""} — ${article.title}`);
@@ -180,7 +199,13 @@ async function main() {
     }
   }
 
-  console.log(JSON.stringify({ mode: apply ? "apply" : "dry-run", checked: seen, found, noByline: none, unreadable }, null, 2));
+  console.log(
+    JSON.stringify(
+      { mode: apply ? "apply" : "dry-run", checked: seen, found, noByline: none, unreadable, timedOut },
+      null,
+      2
+    )
+  );
 }
 
 main().catch((error) => {
