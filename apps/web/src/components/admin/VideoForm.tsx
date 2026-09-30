@@ -82,6 +82,10 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
   // shown while typing rather than refused after 保存.
   const [datePrefix, setDatePrefix] = useState(true);
   const [slugCheck, setSlugCheck] = useState<{ available: boolean; takenBy?: string; suggestion: string } | null>(null);
+  // The slug follows the title until it has been edited by hand, exactly as the
+  // article form does. Without this the field simply stayed empty unless the
+  // editor thought to press 由标题生成.
+  const [slugTouched, setSlugTouched] = useState(mode === "edit");
 
   useEffect(() => {
     try {
@@ -98,6 +102,12 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
     const pad = (n: number) => String(n).padStart(2, "0");
     return `${when.getFullYear()}-${pad(when.getMonth() + 1)}-${pad(when.getDate())}-${base}`;
   };
+
+  useEffect(() => {
+    if (slugTouched || mode === "edit") return;
+    set("slug", buildSlug(value.title));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value.title, datePrefix, value.publishedAt]);
 
   useEffect(() => {
     const slug = value.slug.trim();
@@ -248,13 +258,19 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                   id="slug"
                   name="slug"
                   value={value.slug}
-                  onChange={(event) => set("slug", event.target.value)}
+                  onChange={(event) => {
+                    setSlugTouched(true);
+                    set("slug", event.target.value);
+                  }}
                   style={{ flex: 1, fontFamily: "ui-monospace, Menlo, monospace" }}
                 />
                 <button
                   className="admin-btn admin-btn-sm"
                   type="button"
-                  onClick={() => set("slug", buildSlug(value.title))}
+                  onClick={() => {
+                    setSlugTouched(true);
+                    set("slug", buildSlug(value.title));
+                  }}
                 >
                   由标题生成
                 </button>
