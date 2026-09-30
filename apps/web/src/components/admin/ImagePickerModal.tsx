@@ -143,21 +143,35 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
           <button className="admin-btn" type="button" onClick={loadLibrary} disabled={loading}>
             刷新
           </button>
-          <label className="admin-btn" style={{ cursor: uploadEnabled ? "pointer" : "not-allowed" }}>
-            <input
-              ref={fileInput}
-              type="file"
-              accept="image/*"
-              style={{ display: "none" }}
-              disabled={!uploadEnabled || uploading}
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) handleUpload(file);
-                event.currentTarget.value = "";
-              }}
-            />
+          {/* A real button that opens the picker itself, rather than a <label>
+              wrapping a display:none input and relying on the browser to
+              forward the click. That pattern works in some browsers and
+              silently does nothing in others -- and a hidden input is also
+              invisible to the accessibility tree, so the control announced
+              itself as an anonymous piece of text rather than a button. */}
+          <button
+            className="admin-btn"
+            type="button"
+            disabled={!uploadEnabled || uploading}
+            onClick={() => fileInput.current?.click()}
+          >
             {uploading ? "上传中…" : `上传图片（≤ ${MAX_UPLOAD_MB}MB）`}
-          </label>
+          </button>
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*"
+            // Off-screen rather than display:none: a hidden input cannot always
+            // be opened programmatically, and Safari in particular ignores it.
+            style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) handleUpload(file);
+              event.currentTarget.value = "";
+            }}
+          />
           <button className="admin-btn" type="button" onClick={onClose} style={{ marginLeft: "auto" }}>
             关闭
           </button>
