@@ -42,8 +42,15 @@ stays local and only its inline links point outward.
 | 11 | `/resources/tools` (免翻墙链接) | Action | `https://www.tuidang.org/2022/09/14/686434/` |
 | 12 | `/resources/downloads` | Action | `https://www.tuidang.org/td_promo/` |
 | 13 | header CTA 我要三退 | Action | `https://santui.tuidang.org` |
-| 14 | homepage 实时登记册 counter | Data feed | `https://santui.tuidang.org/stat/statics` (XML) |
-| 15 | homepage 最新声明 cards | Data feed | `https://santui.tuidang.org/index/showpage/type/1` |
+| 14 | homepage 实时登记册 counter | Data feed ✅ | `https://santui.tuidang.org/stat/statics` (XML) |
+| 15 | homepage 声明 cards | Data feed ✅ | `https://santui.tuidang.org/index/showpage/type/2` (精彩推荐) |
+
+Rows 14 and 15 are the only **data feeds** rather than links, and both are
+live. They are not fetched at request time — santui is behind a Cloudflare
+challenge that no plain HTTP client clears — but by an hourly scheduled browser
+that writes a snapshot the site reads. See
+[santui-registry-sync.md](./santui-registry-sync.md). Note row 15 is `type/2`
+(精彩推荐), not `type/1` (最新声明).
 
 ### Secondary santui endpoints worth linking
 

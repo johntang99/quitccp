@@ -136,8 +136,50 @@ bottom-pinned and centres instead.
 Its declaration entries are **not** editable in the CMS. They are real
 declarations belonging to the santui feed, not editorial copy, so the admin
 shows only the layout picker and the surrounding labels (数字, 说明, 滚动区标题).
-The sample rows stay in `HomeTemplate.tsx` until the feed at
-`santui.tuidang.org/stat/statics` is wired up.
+
+The count and the declarations are now filled from santui.tuidang.org by a
+scheduled job — see [santui-registry-sync.md](./santui-registry-sync.md). The
+count field in the CMS is the fallback for a database that has never synced.
+
+The right-hand side of the band also takes an optional promoted banner
+(`registry.asideImage` / `asideImageAlt` / `asideHref`), which replaces the three
+小统计 when set; clearing the image brings them back.
+
+## What fills itself from the database
+
+Three bands used to be hand-typed in the homepage admin and went stale the
+moment an editor published something new. They now read from the content tables
+on every render, so the homepage cannot fall behind the site.
+
+| band | what is automatic | picked how |
+|---|---|---|
+| 新闻与报告 | the headline article and the three 最新发布 rows | newest article flagged 重要 leads; the rest by publish time |
+| 栏目卡片 | each card's image, lead-story title and links | newest article in the category named by the card |
+| 视频资源 | the large film and the four 最新上线 cards | newest video flagged 重要 leads; the rest by publish time |
+| 实时登记册 | the count and the declarations | santui snapshot — see [santui-registry-sync.md](./santui-registry-sync.md) |
+
+Fetched in `HomeTemplate.tsx`:
+
+```ts
+const [liveNews, liveVideo, santui] = await Promise.all([
+  getHomeNews(home.channels.cards.map((card) => card.title)),
+  getHomeVideo(),
+  getSantuiSnapshot()
+]);
+```
+
+`getHomeNews` and `getHomeVideo` live in `lib/public-content.ts`. A 栏目卡片
+card is matched to a category **by its 栏目名称**, so a card naming a category
+that does not exist simply does not fill — which is why that field's label says
+so.
+
+**The admin hides what it cannot change.** `AUTO_FILLED` in
+`HomeSectionsEditor.tsx` excludes the row lists outright, and the objects that
+survive (`news.lead`, `video.featured`) are trimmed in `FIELD_SPECS` to the few
+labels that are still editorial — 头条 / FEATURE / 本期推荐 / 立即观看. Each
+section also carries a note saying what fills itself. The stored values for the
+hidden fields remain in `pages/home.json` as an unused fallback; nothing reads
+them while the live data resolves.
 
 ## Editor behaviour
 
@@ -255,12 +297,15 @@ across the seam and the loop would visibly jump.
 `feedCount` (1–20) sets how many records the trail carries; the row fills by
 cycling if fewer declarations are available.
 
-> **⚠ The declarations are placeholders, not real records.** Ten sample entries
-> live in `HomeTemplate.tsx` purely so the trail has something to show. On a
-> public site they read as genuine declarations by real people, which they are
-> not. Wire the santui feed
-> (`santui.tuidang.org/index/showpage/type/1`) before launch — see
-> [services-link-out-map.md](./services-link-out-map.md) row 15.
+The trail is filled from santui's 精彩推荐 — see
+[santui-registry-sync.md](./santui-registry-sync.md). Each card shows two lines
+of the statement, with the second line reserved so the row stays even whether
+the text runs long or stops short.
+
+> **⚠ The `streamEntries` constant in `HomeTemplate.tsx` is still placeholder
+> copy.** It is reached only when no santui snapshot has ever been written. On a
+> public site those rows read as genuine declarations by real people, which they
+> are not — so a deployment showing them is misconfigured, not merely stale.
 
 The sun glow, rings and grid overlay are `aria-hidden` decoration. The pulsing
 dot respects `prefers-reduced-motion`.
@@ -322,9 +367,9 @@ image, and add / delete / 上移 / 下移:
 |---|---|
 | 实时登记册 | `substats[]`, plus `feedCount` as a 1–20 number input |
 | 我们的服务 | `cards[]` including each card's nested `links[]` and its CTA |
-| 新闻与报告 | `lead` (object) and `items[]` |
-| 栏目卡片 | `cards[]`, with the video badge as a checkbox |
-| 视频资源 | `featured` (object, with its tag pills one-per-line), `series[]`, `items[]` |
+| 新闻与报告 | `lead`, trimmed to `tag` + `kicker` — the article itself is auto-filled |
+| 栏目卡片 | `cards[]`, trimmed to `title` / `en` / `footLabel` — image and lead story are auto-filled |
+| 视频资源 | `featured`, trimmed to `tag` + `primaryLabel`; `series[]` |
 | 见证者 | `items[]`, with the portrait picker |
 | 关于我们 | `cells[]`, whose 分段条 rows are label + percent with a running total |
 | 参与我们 | `items[]`, with CTA text, the circled glyph and a 主推卡片 flag |
@@ -388,7 +433,7 @@ New content fields:
 |---|---|
 | `video.lede` | intro paragraph under the heading; **blank by default** |
 | `video.series[]` | the pill nav — `{ label, href, active }`; `active` gives the filled white pill |
-| `video.featured` | poster + copy: `tag`, `title`, `body`, `image`, `href`, `duration`, `meta[]`, and the two buttons |
+| `video.featured` | only `tag` and `primaryLabel` are the editor's; poster, title, 简介, link, duration and tags come from the film being featured |
 | `video.latestLabel` | heading of the card row, 「最新上线」 |
 | `video.items[].duration` / `badge` | the corner chips; blank hides each |
 | `video.footNote` / `footMark` | the two ends of the footer line; **both blank by default** |
