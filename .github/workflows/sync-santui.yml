@@ -23,6 +23,10 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    # A whole run is seconds of work; anything past this is a stuck browser or
+    # a challenge that will not clear, and the default six-hour ceiling would
+    # just burn minutes and hold the concurrency group.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

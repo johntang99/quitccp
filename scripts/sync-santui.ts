@@ -238,7 +238,13 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+// Exits explicitly rather than waiting for the event loop to drain: the
+// Supabase client keeps a realtime heartbeat alive, so the process can sit idle
+// after the work is finished -- which on a runner means a job that never ends
+// rather than one that fails.
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
