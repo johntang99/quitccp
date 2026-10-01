@@ -44,6 +44,9 @@ export function VideoTable({
             <th>分类</th>
             <th>时长</th>
             <th>状态</th>
+            {/* Same two marks as the article list, same glyphs and colours. */}
+            <th style={{ width: 44, textAlign: "center" }} title="重要">重要</th>
+            <th style={{ width: 62, textAlign: "center" }} title="精彩保留">精彩</th>
             <th>来源</th>
             <th>发布时间</th>
             <th style={{ width: 150 }}>操作</th>
@@ -52,7 +55,7 @@ export function VideoTable({
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={selectable ? 9 : 8} style={{ color: "#8a90a0", padding: 24, textAlign: "center" }}>
+              <td colSpan={selectable ? 11 : 10} style={{ color: "#8a90a0", padding: 24, textAlign: "center" }}>
                 没有符合条件的视频。
               </td>
             </tr>
@@ -103,6 +106,12 @@ export function VideoTable({
                 <td>{duration(row.durationSeconds)}</td>
                 <td>
                   <span className={`badge ${status.cls}`}>{status.label}</span>
+                </td>
+                <td style={{ textAlign: "center" }} title={row.featured ? "重要" : ""}>
+                  {row.featured ? <span style={{ color: "#c8102e", fontSize: 15 }}>★</span> : null}
+                </td>
+                <td style={{ textAlign: "center" }} title={row.editorArchive ? "精彩保留" : ""}>
+                  {row.editorArchive ? <span style={{ color: "#1f7a4d", fontSize: 15 }}>✦</span> : null}
                 </td>
                 <td style={{ whiteSpace: "nowrap" }}>
                   {host.key === "none" ? (

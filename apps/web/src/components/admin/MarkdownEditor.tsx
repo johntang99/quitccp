@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from "react";
 
 /**
  * Markdown editor for article bodies.
@@ -18,6 +18,17 @@ interface MarkdownEditorProps {
   onChange: (next: string) => void;
   /** Opens the shared media library; resolves with the chosen URL. */
   onPickImage: () => void;
+}
+
+/**
+ * What a parent can ask the editor to do.
+ *
+ * The media library lives outside this component, so the picker's result has to
+ * come back in through a handle. Without one the forms appended the image to the
+ * end of the body, wherever the editor had actually put the caret.
+ */
+export interface MarkdownEditorHandle {
+  insertAtCaret: (text: string) => void;
 }
 
 /** Wraps or prefixes the selection, then restores focus and a sane caret. */
@@ -143,22 +154,67 @@ function renderPreview(md: string): string {
     .replace(/~~([^~]+)~~/g, "<s>$1</s>");
 }
 
-export function MarkdownEditor({ value, onChange, onPickImage }: MarkdownEditorProps) {
+export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(function MarkdownEditor(
+  { value, onChange, onPickImage },
+  handle
+) {
   const [mode, setMode] = useState<Mode>("split");
   const ref = useRef<HTMLTextAreaElement>(null);
+  /**
+   * Where the caret was the last time the editor touched the textarea.
+   *
+   * Read back instead of `selectionStart` at insert time because opening the
+   * media library unmounts focus and, in some browsers, resets the textarea's
+   * selection to 0 -- which would file every picked image above the headline.
+   * Null means the body has not been clicked into yet, and an insert then goes
+   * to the end rather than silently landing before the first line.
+   */
+  const caretRef = useRef<{ start: number; end: number } | null>(null);
 
-  const run = (kind: "wrap" | "line" | "insert", a: string, b = "") => {
+  const rememberCaret = () => {
     const el = ref.current;
-    if (!el) return;
-    const { next, caret } = apply(el, kind, a, b);
+    if (el) caretRef.current = { start: el.selectionStart, end: el.selectionEnd };
+  };
+
+  const commit = (next: string, caret: number) => {
     onChange(next);
+    caretRef.current = { start: caret, end: caret };
     // The caret is restored after React commits the new value, otherwise it
     // jumps to the end of the textarea on every toolbar click.
     requestAnimationFrame(() => {
+      const el = ref.current;
+      if (!el) return;
       el.focus();
       el.setSelectionRange(caret, caret);
     });
   };
+
+  const run = (kind: "wrap" | "line" | "insert", a: string, b = "") => {
+    const el = ref.current;
+    if (!el) return;
+    // Restore the remembered caret first: a toolbar button that opens a prompt
+    // (链接, 视频) blurs the textarea before the handler runs.
+    const at = caretRef.current;
+    if (at) el.setSelectionRange(at.start, at.end);
+    const { next, caret } = apply(el, kind, a, b);
+    commit(next, caret);
+  };
+
+  useImperativeHandle(handle, () => ({
+    insertAtCaret: (text: string) => {
+      const el = ref.current;
+      const at = caretRef.current;
+      if (!el) return;
+      if (!at) {
+        // Never clicked into: append, which is where it used to go anyway.
+        const next = `${value}${value.endsWith("\n") || !value ? "" : "\n"}${text}`;
+        commit(next, next.length);
+        return;
+      }
+      const next = value.slice(0, at.start) + text + value.slice(at.end);
+      commit(next, at.start + text.length);
+    }
+  }));
 
   const stats = useMemo(() => {
     const chars = value.replace(/\s/g, "").length;
@@ -238,7 +294,14 @@ export function MarkdownEditor({ value, onChange, onPickImage }: MarkdownEditorP
             ref={ref}
             spellCheck={false}
             value={value}
-            onChange={(event) => onChange(event.target.value)}
+            onChange={(event) => {
+              onChange(event.target.value);
+              rememberCaret();
+            }}
+            onSelect={rememberCaret}
+            onClick={rememberCaret}
+            onKeyUp={rememberCaret}
+            onFocus={rememberCaret}
             placeholder="正文，Markdown 格式。可直接把图片拖进来。"
           />
         ) : null}
@@ -258,4 +321,4 @@ export function MarkdownEditor({ value, onChange, onPickImage }: MarkdownEditorP
       </div>
     </div>
   );
-}
+});

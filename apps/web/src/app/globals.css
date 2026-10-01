@@ -2320,10 +2320,12 @@
   margin: 0;
   font-family: var(--serif);
   font-size: 18px;
-  line-height: 1.9;
+  /* A dek runs three or four lines, so newspaper columns split it into two
+     stubs that the eye has to jump between for no gain in density. One column,
+     set tighter than the 1.9 body rhythm, reads as a single block under the
+     headline. */
+  line-height: 1.65;
   color: var(--bs-body);
-  column-count: 2;
-  column-gap: 40px;
 }
 .bsheet-lead:hover h3 { color: var(--seal); }
 
@@ -2499,7 +2501,6 @@
   .bsheet-body { grid-template-columns: minmax(0, 1fr); gap: 40px; }
   /* The 1px gutter would draw a stray hairline once the columns stack. */
   .bsheet-gutter { display: none; }
-  .bsheet-lead p { column-count: 1; }
   .bsheet-band { padding: 48px 0 28px; }
   .bsheet-cats { grid-template-columns: minmax(0, 1fr); }
   .bsheet-cat-lead { min-height: 0; }
@@ -3095,6 +3096,159 @@
   .brand-logo { height: 36px; }
 }
 
+/* --------------------------------------------------------------------------
+   Phone menu.
+
+   The base stylesheet hides .nav-links below 980px and offered nothing in its
+   place, so no section of the site could be reached from a phone. The button
+   appears exactly where the links disappear, and the sheet drops from the
+   sticky menu bar.
+   -------------------------------------------------------------------------- */
+.navbtn { display: none; }
+.navsheet, .navsheet-scrim { display: none; }
+
+@media (max-width: 980px) {
+  .navbtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    /* 44px tall: a menu button is the one control everything else depends on. */
+    min-height: 44px;
+    padding: 0 14px 0 12px;
+    border: 1px solid var(--rule, #E2DED5);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ink, #1A1726);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    flex: none;
+  }
+  /* The base stylesheet gives the search width:100% below 980px, which was
+     right when it had the bar to itself. Now it shares the row with the menu
+     button, so it takes the remaining space instead of a full bar's worth. */
+  .menubar-in > .search { width: auto; flex: 1 1 auto; min-width: 0; }
+  .navbtn-bars { display: grid; gap: 4px; width: 17px; }
+  .navbtn-bars > span {
+    display: block;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform .18s ease, opacity .18s ease;
+  }
+  /* The three bars become a cross while the sheet is open. */
+  .navbtn-bars[data-open] > span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .navbtn-bars[data-open] > span:nth-child(2) { opacity: 0; }
+  .navbtn-bars[data-open] > span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+  /* Both live in <body>. They sit *below* the menu bar's z-index of 60 so the
+     bar -- and the close button in it -- stays tappable while the sheet is
+     open; the bar is opaque, so nothing shows through. `top` is set inline from
+     the measured bar. */
+  .navsheet-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(24, 18, 56, 0.44);
+    z-index: 55;
+  }
+  .navsheet {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 56;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--paper, #F7F5F0);
+    border-top: 1px solid var(--rule, #E2DED5);
+    box-shadow: 0 24px 48px -24px rgba(24, 18, 56, 0.45);
+  }
+  .navsheet nav { display: flex; flex-direction: column; padding: 6px 0; }
+  .navsheet-link {
+    display: block;
+    padding: 15px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink, #1A1726);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule, #E9E5DC);
+    border-left: 3px solid transparent;
+  }
+  .navsheet-link:last-child { border-bottom: 0; }
+  .navsheet-link[data-on="1"] { color: var(--seal, #4A3C96); border-left-color: var(--seal, #4A3C96); }
+  .navsheet-cta {
+    display: flex;
+    gap: 10px;
+    padding: 14px 20px 20px;
+    border-top: 1px solid var(--rule, #E2DED5);
+  }
+  .navsheet-cta .btn { flex: 1; justify-content: center; text-align: center; }
+}
+
+/* The language row is a 22px-tall line of links -- too small a target on a
+   phone, where it is also the first thing under the thumb. */
+@media (max-width: 980px) {
+  .langs a { display: inline-flex; align-items: center; min-height: 36px; }
+  .socials a { min-width: 32px; min-height: 32px; }
+  .tb-link { display: inline-flex; align-items: center; min-height: 36px; }
+}
+
+/* --------------------------------------------------------------------------
+   Footer on a phone.
+
+   The base stylesheet collapses .foot-grid to a single column below 600px, so
+   the brand block and the three link lists stacked into roughly 1,150px of
+   footer -- more than a screenful of links to scroll past. The three lists sit
+   side by side instead, under a full-width brand block that needs the room for
+   its address and language pills.
+   -------------------------------------------------------------------------- */
+/* Tablets get the same arrangement -- the base stylesheet's two columns left
+   the four blocks in a 2x2 with the same wasted run of scrolling. */
+@media (max-width: 980px) {
+  .foot-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 30px 20px;
+  }
+  /* The brand block carries the address and the language pills, so it keeps the
+     full width above the three lists. */
+  .foot-grid > :first-child { grid-column: 1 / -1; }
+}
+
+@media (max-width: 600px) {
+  .foot { padding: 44px 0 28px; }
+  .foot-grid { gap: 26px 12px; padding-bottom: 28px; }
+  .foot h5 { margin-bottom: 12px; letter-spacing: .1em; }
+  /* Three columns inside 390px leaves ~110px each; the longest labels run to
+     six characters, so they get a slightly tighter measure rather than wrapping
+     every one of them onto two lines. */
+  .foot-grid > :not(:first-child) { font-size: 13.5px; }
+  .foot li { padding: 4px 0; }
+}
+
+/* --------------------------------------------------------------------------
+   全球网络 band, light.
+
+   The base .cities rules were written for the dark band: lavender text on a
+   near-white rule that only reads against a purple ground. On the paper ground
+   both invert. The ground is the page's own --paper rather than a fresh #fff,
+   so this reads as the site's light, not a third shade of white.
+   -------------------------------------------------------------------------- */
+.net-light { background: var(--paper); color: var(--ink); }
+.net-light .h2 { color: var(--ink); }
+.net-light .net-body {
+  color: var(--ink-soft);
+  max-width: 40ch;
+  margin: 20px 0 32px;
+  font-size: 15px;
+  line-height: 1.9;
+}
+.net-light .cities { color: var(--ink-soft); }
+.net-light .cities div { border-top-color: var(--rule); }
+
 /* The menu row sat at the default weight against a pale bar and read as
    secondary to the page; the nav is primary. */
 .nav-links a { font-weight: 600; }
@@ -3417,6 +3571,7 @@
 .vp-chip { display: flex; align-items: center; gap: 8px; font-size: 14px; text-decoration: none; padding: 9px 18px; border-radius: 999px; background: var(--chip-bg); color: var(--chip-fg); border: 1px solid var(--chip-bd); }
 .vp-chip[data-on="1"] { background: var(--on-bg); color: var(--on-fg); border-color: var(--on-bg); font-weight: 500; }
 
+.vp-divider { margin: clamp(44px, 5vw, 72px) 0 0; border: 0; border-top: 1px solid var(--border); }
 .vp-feature { display: grid; grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); gap: 24px; padding-top: 40px; }
 .vp-section { display: flex; flex-direction: column; gap: 24px; padding-top: clamp(48px, 6vw, 88px); }
 .vp-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }

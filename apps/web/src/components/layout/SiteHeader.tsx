@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
+import { MobileNav } from "@/components/layout/MobileNav";
 import { getPublicNav } from "@/lib/public-settings";
 import { EXTERNAL_LINK_PROPS, EXTERNAL_SERVICES } from "@/lib/external-services";
 
@@ -83,6 +84,13 @@ export async function SiteHeader() {
 
       <div className="menubar">
         <div className="wrap menubar-in">
+          {/* Shown only where .nav-links is hidden -- see the .navbtn rules. */}
+          <MobileNav
+            items={navItems}
+            donationHref={EXTERNAL_SERVICES.donation}
+            declareHref={EXTERNAL_SERVICES.declare}
+            externalProps={EXTERNAL_LINK_PROPS}
+          />
           <nav className="nav-links" aria-label="主导航">
             {navItems.map((item) => (
               <Link key={item.href} href={item.href as Route}>

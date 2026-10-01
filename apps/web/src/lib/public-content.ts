@@ -4,6 +4,7 @@ import {
   routeSeeds,
   type TemplateKind
 } from "@quitccp/content-schema";
+import { firstImageInMarkdown } from "@/lib/markdown-image";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import type { RenderablePage } from "./site-data";
 import { extractNewsSlugFromHref, toNewsArticleSlug } from "./news-linking";
@@ -255,14 +256,6 @@ export function markdownToBodyRows(markdown: string): ArticleBodyRow[] {
   flushParagraph();
   flushQuote();
   return rows;
-}
-
-function extractFirstImageFromMarkdown(markdown: string): string {
-  const markdownMatch = markdown.match(/!\[[^\]]*]\((https?:\/\/[^\s)]+)(?:\s+\"[^\"]*\")?\)/);
-  if (markdownMatch?.[1]) return markdownMatch[1];
-  const htmlMatch = markdown.match(/<img[^>]+src=["']([^"']+)["']/i);
-  if (htmlMatch?.[1]) return htmlMatch[1];
-  return "";
 }
 
 function toDateLabel(isoLike: string): string {
@@ -590,7 +583,7 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
     const heroImage =
       asString(row.hero_image) ||
       asString(listMapped?.image) ||
-      extractFirstImageFromMarkdown(markdownBody);
+      firstImageInMarkdown(markdownBody);
     const heroAlt = asString(row.hero_image_alt);
     const heroCredit = asString(row.hero_credit);
     // The article's own primary category, which nothing here used to consult.
@@ -806,6 +799,18 @@ export interface PublicVideoCategory {
 export type VideoSort = "latest" | "oldest";
 
 /**
+ * Listings that are not one of the eight series.
+ *
+ * 全部视频 is the whole library; the section index links to it from the chip row
+ * and from 最新上线. Before this the 全部 → link pointed at 其它系列, which is a
+ * real category of 324 films and not "everything".
+ */
+const VIDEO_VIRTUAL_LISTINGS: Record<string, { name: string; filter?: "featured" }> = {
+  archive: { name: "全部视频" },
+  featured: { name: "重要影片", filter: "featured" }
+};
+
+/**
  * One video category's listing.
  *
  * The section index links to eight of these and every one of them was a 404:
@@ -822,23 +827,34 @@ export async function getVideoCategory(
 ): Promise<PublicVideoCategory | null> {
   try {
     const supabase = createSupabaseAdminClient();
-    const { data: category } = await supabase
-      .from("cms_video_categories")
-      .select("id, slug, name")
-      .eq("slug", slug)
-      .maybeSingle();
-    if (!category) return null;
+    const virtual = VIDEO_VIRTUAL_LISTINGS[slug];
+
+    let categoryId = "";
+    let name = virtual?.name ?? "";
+    if (!virtual) {
+      const { data: category } = await supabase
+        .from("cms_video_categories")
+        .select("id, slug, name")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (!category) return null;
+      categoryId = String(category.id);
+      name = String(category.name);
+    }
 
     const offset = (Math.max(page, 1) - 1) * pageSize;
-    const { data, count, error } = await supabase
-      .from("cms_videos")
-      .select(
-        "id, slug, title, episode, description, cover_image, duration_seconds, published_at, source_url, " +
-          "cms_video_category_map!inner(category_id)",
-        { count: "exact" }
-      )
-      .eq("cms_video_category_map.category_id", category.id)
-      .eq("status", "published")
+    const columns =
+      "id, slug, title, episode, description, cover_image, duration_seconds, published_at, source_url";
+    let query = virtual
+      ? supabase.from("cms_videos").select(columns, { count: "exact" })
+      : supabase
+          .from("cms_videos")
+          .select(`${columns}, cms_video_category_map!inner(category_id)`, { count: "exact" })
+          .eq("cms_video_category_map.category_id", categoryId);
+    query = query.eq("status", "published");
+    if (virtual?.filter === "featured") query = query.eq("featured", true);
+
+    const { data, count, error } = await query
       .order("published_at", { ascending: sort === "oldest", nullsFirst: false })
       .order("id", { ascending: true })
       .range(offset, offset + pageSize - 1);
@@ -847,8 +863,8 @@ export async function getVideoCategory(
     const rows = (data ?? []) as unknown as Record<string, unknown>[];
     const total = count ?? 0;
     return {
-      slug: String(category.slug),
-      name: String(category.name),
+      slug,
+      name,
       total,
       page: Math.max(page, 1),
       pageCount: Math.max(1, Math.ceil(total / pageSize)),
@@ -1264,6 +1280,188 @@ async function primaryCategoryNames(slugs: string[]): Promise<Map<string, string
   }
 }
 
+/**
+ * The homepage's news block, read live from the article table.
+ *
+ * It used to be typed by hand into the homepage admin, and had gone stale in
+ * two ways at once: the lead and the three 最新发布 rows linked to articles on
+ * the old tuidang.org rather than to our own pages, and all four 专题栏目
+ * "全部…" links pointed at menu slugs that no longer exist and returned 404.
+ * Anything an editor still controls -- headings, labels, which four columns
+ * appear -- stays in the CMS; only the articles come from here.
+ */
+export interface HomeNewsLive {
+  /** Newest article flagged 重要, or the newest published if none is. */
+  lead: NewsCard | null;
+  leadIsFlagged: boolean;
+  /** The three newest after the lead, never repeating it. */
+  items: NewsCard[];
+  /** Latest article per requested column, keyed by the category name asked for. */
+  channelLeads: Map<string, { card: NewsCard | null; slug: string }>;
+}
+
+/** Names the homepage cards use that differ from the category's own name. */
+const CHANNEL_NAME_ALIASES: Record<string, string> = {
+  三退新闻: "三退要闻",
+  追查国际调查报告: "追查国际调查报告",
+  专题报导与时政评论: "专题报导与时政评论",
+  国际声援行动: "国际声援行动"
+};
+
+export async function getHomeNews(channelNames: string[]): Promise<HomeNewsLive> {
+  const empty: HomeNewsLive = { lead: null, leadIsFlagged: false, items: [], channelLeads: new Map() };
+  try {
+    const supabase = createSupabaseAdminClient();
+
+    const newest = async (build: (q: ReturnType<typeof baseQuery>) => ReturnType<typeof baseQuery>, limit: number) => {
+      const { data } = await build(baseQuery());
+      return ((data ?? []) as unknown as Record<string, unknown>[]).slice(0, limit);
+    };
+    const baseQuery = () =>
+      supabase
+        .from("cms_articles")
+        .select(NEWS_CARD_COLUMNS)
+        .eq("status", "published")
+        .order("published_at", { ascending: false, nullsFirst: false })
+        .order("id", { ascending: true });
+
+    const { data: flagged } = await baseQuery().eq("featured", true).limit(1);
+    const flaggedRows = (flagged ?? []) as unknown as Record<string, unknown>[];
+    const leadIsFlagged = flaggedRows.length > 0;
+
+    // One row more than needed, so dropping the lead still leaves three.
+    const { data: recent } = await baseQuery().limit(5);
+    const recentRows = (recent ?? []) as unknown as Record<string, unknown>[];
+
+    const leadRow = leadIsFlagged ? flaggedRows[0] : recentRows[0];
+    if (!leadRow) return empty;
+    const leadSlug = String(leadRow.slug);
+    const itemRows = recentRows.filter((row) => String(row.slug) !== leadSlug).slice(0, 3);
+
+    const names = await primaryCategoryNames(
+      [leadRow, ...itemRows].map((row) => String(row.slug))
+    );
+    const lead = toNewsCard(leadRow, names.get(leadSlug) ?? "");
+    const items = itemRows.map((row) => toNewsCard(row, names.get(String(row.slug)) ?? ""));
+
+    // One latest article per column the homepage asks for.
+    const channelLeads = new Map<string, { card: NewsCard | null; slug: string }>();
+    await Promise.all(
+      channelNames.map(async (asked) => {
+        const wanted = CHANNEL_NAME_ALIASES[asked] ?? asked;
+        const meta = NEWS_CATEGORIES.find((row) => row.name === wanted);
+        if (!meta) return;
+        // Two, so a column whose newest article is already the page lead can
+        // show the next one instead of printing the same story twice.
+        const listing = await getNewsListing(meta.slug, 1, "latest", 2);
+        const pick =
+          (listing?.items ?? []).find((item) => item.slug !== leadSlug) ?? listing?.items[0] ?? null;
+        channelLeads.set(asked, { card: pick, slug: meta.slug });
+      })
+    );
+
+    return { lead, leadIsFlagged, items, channelLeads };
+  } catch {
+    return empty;
+  }
+}
+
+/**
+ * The homepage's 影音节目 band, read live from the video table.
+ *
+ * Hand-typed like the news block was, and stale the same way: the feature and
+ * all four cards linked to youtube.com, zhuichaguoji.org or the old tuidang.org
+ * rather than to our own video pages.
+ */
+export interface HomeVideoLive {
+  feature: PublicVideoCard | null;
+  featureIsFlagged: boolean;
+  featureCategory: string;
+  /** The four newest, never repeating the feature. */
+  items: { card: PublicVideoCard; category: string }[];
+}
+
+export async function getHomeVideo(): Promise<HomeVideoLive> {
+  const empty: HomeVideoLive = { feature: null, featureIsFlagged: false, featureCategory: "", items: [] };
+  try {
+    const supabase = createSupabaseAdminClient();
+    const columns =
+      "id, slug, title, episode, description, cover_image, duration_seconds, published_at, source_url";
+    const base = () =>
+      supabase
+        .from("cms_videos")
+        .select(columns)
+        .eq("status", "published")
+        .order("published_at", { ascending: false, nullsFirst: false })
+        .order("id", { ascending: true });
+
+    const { data: flagged } = await base().eq("featured", true).neq("cover_image", "").limit(1);
+    const flaggedRows = (flagged ?? []) as unknown as Record<string, unknown>[];
+    const featureIsFlagged = flaggedRows.length > 0;
+
+    // One spare, so dropping the feature still leaves four.
+    const { data: recent } = await base().neq("cover_image", "").limit(6);
+    const recentRows = (recent ?? []) as unknown as Record<string, unknown>[];
+
+    const featureRow = featureIsFlagged ? flaggedRows[0] : recentRows[0];
+    if (!featureRow) return empty;
+
+    const toCard = (row: Record<string, unknown>): PublicVideoCard => ({
+      slug: String(row.slug),
+      title: String(row.title),
+      episode: String(row.episode ?? ""),
+      description: String(row.description ?? ""),
+      coverImage: String(row.cover_image ?? ""),
+      durationSeconds: row.duration_seconds ? Number(row.duration_seconds) : null,
+      publishedAt: row.published_at ? String(row.published_at) : null,
+      sourceUrl: String(row.source_url ?? "")
+    });
+
+    const featureSlug = String(featureRow.slug);
+    const itemRows = recentRows.filter((row) => String(row.slug) !== featureSlug).slice(0, 4);
+    const categories = await primaryVideoCategoryNames(
+      [featureRow, ...itemRows].map((row) => String(row.id))
+    );
+
+    return {
+      feature: toCard(featureRow),
+      featureIsFlagged,
+      featureCategory: categories.get(String(featureRow.id)) ?? "",
+      items: itemRows.map((row) => ({
+        card: toCard(row),
+        category: categories.get(String(row.id)) ?? ""
+      }))
+    };
+  } catch {
+    return empty;
+  }
+}
+
+/** Primary category name per video id, in one round trip. */
+async function primaryVideoCategoryNames(ids: string[]): Promise<Map<string, string>> {
+  const unique = [...new Set(ids)];
+  if (unique.length === 0) return new Map();
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data } = await supabase
+      .from("cms_video_category_map")
+      .select("video_id, position, cms_video_categories(name)")
+      .in("video_id", unique)
+      .order("position", { ascending: true });
+    const out = new Map<string, string>();
+    for (const row of data ?? []) {
+      const videoId = String((row as { video_id: string }).video_id);
+      // position ascending, so the first row seen for a video is its primary.
+      if (out.has(videoId)) continue;
+      const name = (row as { cms_video_categories?: { name?: string } }).cms_video_categories?.name;
+      if (name) out.set(videoId, String(name));
+    }
+    return out;
+  } catch {
+    return new Map();
+  }
+}
+
 export interface NewsListing {
   slug: string;
   name: string;
@@ -1395,6 +1593,14 @@ export interface VideoHome {
   /** The one film the page opens with. */
   feature: PublicVideoCard | null;
   featureCategory: string;
+  /**
+   * True when the feature is a film an editor flagged 重要.
+   *
+   * False means nothing is flagged and the page fell back to the newest film
+   * with a cover, so it must not be labelled 重要 -- the badge would be
+   * asserting an editorial decision nobody made.
+   */
+  featureIsFlagged: boolean;
   /** 最新上线 — newest across every series. */
   upnext: PublicVideoCard[];
   shelves: VideoLibraryShelf[];
@@ -1413,14 +1619,30 @@ export async function getVideoHome(): Promise<VideoHome> {
     const supabase = createSupabaseAdminClient();
     const shelves = await getVideoLibrary(9);
 
-    const { data: featureRows } = await supabase
+    const featureColumns =
+      "slug, title, episode, description, cover_image, duration_seconds, published_at, source_url";
+    // The newest film flagged 重要. Falls back to the newest with a cover when
+    // nothing is flagged, so the page always opens with something.
+    const { data: flaggedRows } = await supabase
       .from("cms_videos")
-      .select("slug, title, episode, description, cover_image, duration_seconds, published_at, source_url")
+      .select(featureColumns)
       .eq("status", "published")
+      .eq("featured", true)
       .neq("cover_image", "")
       .order("published_at", { ascending: false, nullsFirst: false })
       .order("id", { ascending: true })
       .limit(1);
+    const featureIsFlagged = (flaggedRows ?? []).length > 0;
+    const { data: featureRows } = featureIsFlagged
+      ? { data: flaggedRows }
+      : await supabase
+          .from("cms_videos")
+          .select(featureColumns)
+          .eq("status", "published")
+          .neq("cover_image", "")
+          .order("published_at", { ascending: false, nullsFirst: false })
+          .order("id", { ascending: true })
+          .limit(1);
 
     const { data: upnextRows } = await supabase
       .from("cms_videos")
@@ -1449,11 +1671,12 @@ export async function getVideoHome(): Promise<VideoHome> {
     return {
       feature,
       featureCategory: featureShelf?.name ?? "",
+      featureIsFlagged,
       upnext: ((upnextRows ?? []) as unknown as Record<string, unknown>[]).map(toCard),
       shelves,
       total: shelves.reduce((sum, shelf) => sum + shelf.total, 0)
     };
   } catch {
-    return { feature: null, featureCategory: "", upnext: [], shelves: [], total: 0 };
+    return { feature: null, featureCategory: "", featureIsFlagged: false, upnext: [], shelves: [], total: 0 };
   }
 }

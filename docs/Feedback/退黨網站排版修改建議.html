@@ -1,0 +1,377 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>退黨網站排版規範</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 規範說明頁 — 每節一組「現狀 / 建議」並排樣本，窄屏上下堆疊；末尾是字級表、CSS 變量和驗收清單 */
+:root{
+  --bg:#f6f5f9; --surface:#ffffff; --fg:#1d1a2b; --muted:#5f5a73; --line:#dcd8e6;
+  --accent:#4a3aa8; --before:#b0413e; --after:#2f7a52;
+  --brand:#2c2170; --brand-2:#3d2f94; --on-brand:#f4f1ff; --on-brand-muted:#c9c2ea; --gold:#d8b25a;
+  --code-bg:#1f1b33; --code-fg:#e9e6f5;
+  --ui:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --sans-sc:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --serif-sc:"Noto Serif SC","Songti SC",serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  /* 模擬現狀：字體未加載時各平台實際看到的後備字體 */
+  --old-serif:"Songti SC","STSong",SimSun,serif;
+  --old-sans:"PingFang SC","Microsoft YaHei",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#15131f; --surface:#1e1b2c; --fg:#ece9f5; --muted:#a9a3bf; --line:#343047;
+  --accent:#a99cf5; --before:#ec8a85; --after:#7fcfa2; --code-bg:#0f0d18; --code-fg:#e9e6f5; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#15131f; --surface:#1e1b2c; --fg:#ece9f5; --muted:#a9a3bf; --line:#343047;
+  --accent:#a99cf5; --before:#ec8a85; --after:#7fcfa2; --code-bg:#0f0d18; --code-fg:#e9e6f5; color-scheme:dark}
+
+body{background:var(--bg);color:var(--fg);font:400 16px/1.8 var(--ui);letter-spacing:.02em}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px;padding-block:48px 80px;display:grid;gap:64px}
+h1,h2,h3{text-wrap:balance;margin:0}
+p{margin:0}
+.intro{display:grid;gap:16px;max-width:44em}
+.kicker{font-size:13px;font-weight:500;letter-spacing:.08em;color:var(--accent)}
+.intro h1{font:700 clamp(28px,4vw,40px)/1.3 var(--ui)}
+.intro p{color:var(--muted)}
+.stats{display:flex;flex-wrap:wrap;gap:12px 32px;margin-top:8px}
+.stat{display:grid}
+.stat b{font:500 28px/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+
+section{display:grid;gap:20px}
+.sec-head{display:grid;gap:6px;max-width:48em}
+.sec-head .no{font:500 13px/1 var(--mono);color:var(--accent)}
+.sec-head h2{font:700 24px/1.35 var(--ui)}
+.sec-head p{color:var(--muted);font-size:15px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:760px){.pair{grid-template-columns:1fr}}
+.col{display:grid;gap:12px;align-content:start;min-width:0}
+.tag{font-size:13px;font-weight:700;letter-spacing:.06em;display:flex;align-items:center;gap:8px}
+.tag::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.tag.b{color:var(--before)} .tag.a{color:var(--after)}
+.notes{margin:0;padding-left:1.2em;font-size:14px;line-height:1.7;color:var(--muted);display:grid;gap:4px}
+.notes b{color:var(--fg);font-weight:500}
+
+/* 樣本 */
+.spec{border-radius:6px;padding:28px 24px;overflow:hidden;min-width:0}
+.spec.dark{background:linear-gradient(160deg,var(--brand),var(--brand-2));color:var(--on-brand)}
+.spec.light{background:var(--surface);border:1px solid var(--line);color:var(--fg)}
+.nw{white-space:nowrap}
+
+/* 1 首頁頭條 */
+.o-eyebrow{font:400 13px/1.95 var(--mono);letter-spacing:.16em;color:var(--on-brand-muted)}
+.o-h1{font:900 32px/1.42 var(--old-serif);letter-spacing:.01em;margin:6px 0 14px;text-wrap:wrap}
+.o-p{font:400 15px/1.95 var(--old-sans);color:var(--on-brand-muted);max-width:28em}
+.n-eyebrow{font:500 13px/1.6 var(--sans-sc);letter-spacing:.08em;color:var(--gold)}
+.n-h1{font:700 32px/1.3 var(--serif-sc);letter-spacing:.01em;margin:10px 0 16px;text-wrap:balance}
+.n-p{font:400 16px/1.8 var(--sans-sc);letter-spacing:.02em;color:var(--on-brand-muted);max-width:28em}
+
+/* 2 欄目標題與卡片 */
+.o-h2{font:900 28px/1.75 var(--old-serif)}
+.o-card{margin-top:16px;border-top:1px solid var(--line);padding-top:16px}
+.o-cardtag{font:400 12px/1.75 var(--mono);letter-spacing:.2em;color:var(--muted)}
+.o-h3{font:900 21px/1.75 var(--old-serif)}
+.o-desc{font:400 14px/1.85 var(--old-sans);color:var(--muted)}
+.n-h2{font:700 28px/1.3 var(--serif-sc);letter-spacing:.01em}
+.n-card{margin-top:20px;border-top:1px solid var(--line);padding-top:16px;display:grid;gap:6px}
+.n-cardtag{font:500 13px/1.6 var(--sans-sc);letter-spacing:.06em;color:var(--accent)}
+.n-h3{font:700 20px/1.4 var(--serif-sc)}
+.n-desc{font:400 15px/1.8 var(--sans-sc);letter-spacing:.02em;color:var(--muted)}
+
+/* 3 標籤與小字 */
+.o-col{font:900 24px/1.75 var(--old-serif);letter-spacing:7.8px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}
+.o-chip{font:400 12px/1.75 var(--mono);letter-spacing:.12em;border:1px solid var(--line);padding:0 8px}
+.o-foot{font:400 11px/1.75 var(--mono);letter-spacing:.16em;color:var(--muted)}
+.o-copy{font:400 11.5px/1.75 var(--mono);letter-spacing:.04em;color:var(--muted);margin-top:10px}
+.n-col{font:700 24px/1.3 var(--serif-sc);letter-spacing:.02em}
+.n-chip{font:500 13px/1.6 var(--sans-sc);letter-spacing:.04em;border:1px solid var(--line);padding:2px 10px;border-radius:3px}
+.n-foot{font:500 14px/1.6 var(--sans-sc);letter-spacing:.04em;color:var(--muted)}
+.n-copy{font:400 13px/1.6 var(--sans-sc);color:var(--muted);margin-top:10px}
+.n-copy .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* 4 數據 */
+.o-fig{font:900 96px/.9 var(--old-serif);letter-spacing:-3px}
+.o-fig small{font-size:32px;letter-spacing:0}
+.o-label{font:400 20px/1.5 var(--old-serif);margin-top:12px}
+.n-fig{font:700 80px/1 var(--serif-sc);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.n-fig small{font-size:32px;margin-left:4px}
+.n-label{font:400 18px/1.6 var(--sans-sc);margin-top:12px}
+.n-src{font:400 13px/1.6 var(--sans-sc);color:var(--on-brand-muted);margin-top:14px;border-top:1px solid rgba(255,255,255,.2);padding-top:10px}
+
+/* 字級表 */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:14px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:500;color:var(--muted);font-size:13px;letter-spacing:.04em}
+tr:last-child td{border-bottom:0}
+td.m{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px;white-space:nowrap}
+
+/* 代碼 */
+.code{position:relative;background:var(--code-bg);color:var(--code-fg);border-radius:6px;overflow:hidden}
+.code pre{margin:0;padding:20px;overflow-x:auto;font:400 13px/1.65 var(--mono);letter-spacing:0}
+.copy{position:absolute;top:10px;right:10px;font:500 13px/1 var(--ui);background:transparent;color:var(--code-fg);border:1px solid rgba(255,255,255,.3);border-radius:4px;padding:8px 12px;cursor:pointer}
+.copy:hover{border-color:rgba(255,255,255,.7)}
+.copy:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* 清單 */
+.check{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px 32px;margin:0;padding:0;list-style:none}
+.check li{display:grid;grid-template-columns:20px 1fr;gap:10px;font-size:15px;line-height:1.7}
+.check li::before{content:"";width:14px;height:14px;border:1.5px solid var(--muted);border-radius:3px;margin-top:5px}
+.check b{font-weight:500}
+.foot{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+</style>
+
+<div class="wrap">
+
+<header class="intro">
+  <div class="kicker">quitccp.vercel.app · 首頁檢查 · 2026 年 9 月 30 日</div>
+  <h1>退黨網站中文排版規範</h1>
+  <p>根據首頁實際生效的 CSS 整理。下面每一組都是同一段內容：左邊按網站現在的設定排出來，右邊按建議規範排。樣本字號按比例縮小，比例關係不變。</p>
+  <div class="stats">
+    <div class="stat"><b>58</b><span>種文字樣式（目標 ≤ 10）</span></div>
+    <div class="stat"><b>29</b><span>種行高（目標 3）</span></div>
+    <div class="stat"><b>~40</b><span>種字號（目標 7）</span></div>
+    <div class="stat"><b>0</b><span>個已加載的中文網頁字體</span></div>
+  </div>
+</header>
+
+<section>
+  <div class="sec-head"><span class="no">1</span><h2>首頁頭條</h2><p>字重、斷行、標籤字體和內文行距，一眼就能看出差別。</p></div>
+  <div class="pair">
+    <div class="col">
+      <span class="tag b">現狀</span>
+      <div class="spec dark">
+        <p class="o-eyebrow">成立于 2005 · 总部纽约 · 全球 100+ 服务点</p>
+        <p class="o-h1">习访美背后：从《民族团结法》到华府街头拳头</p>
+        <p class="o-p">中共长臂伸进自由世界 一场针对人类文明底线的越境侵犯。2026年9月24日下午，华盛顿特区出现了两幅截然不同的画面，同一个下午，两个华盛顿。</p>
+      </div>
+      <ul class="notes">
+        <li>標題 <b>900 粗</b>，中文網頁字體未加載：Mac 顯示宋體-簡，Windows 顯示 SimSun 假加粗</li>
+        <li>標籤用英文等寬字體排中文，再加 0.16em 字距，字與字之間鬆散</li>
+        <li>標題沒有斷行控制，會拆開「华府」或「《民族团结法》」</li>
+        <li>內文行距 1.95 偏鬆；用空格代替逗號</li>
+      </ul>
+    </div>
+    <div class="col">
+      <span class="tag a">建議</span>
+      <div class="spec dark">
+        <p class="n-eyebrow">成立于 2005 年 · 总部纽约 · 全球 100 多个服务点</p>
+        <p class="n-h1">习访美背后：从<span class="nw">《民族团结法》</span>到<span class="nw">华府街头</span>拳头</p>
+        <p class="n-p">中共长臂伸进自由世界，是一场针对人类文明底线的越境侵犯。2026 年 9 月 24 日下午，华盛顿特区出现了两幅截然不同的画面：同一个下午，两个华盛顿。</p>
+      </div>
+      <ul class="notes">
+        <li>Noto Serif SC <b>700</b>，行距 1.3，<code>text-wrap: balance</code></li>
+        <li>標籤改用中文無襯線 500，字距 0.08em</li>
+        <li>專有名詞用 <code>white-space: nowrap</code> 包住</li>
+        <li>內文 16–17px，行距 1.8；空格改為正式標點</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="no">2</span><h2>欄目標題與服務卡片</h2><p>標題沿用內文 1.75 行距，一換行就像兩段文字；卡片內樣式各自為政。</p></div>
+  <div class="pair">
+    <div class="col">
+      <span class="tag b">現狀</span>
+      <div class="spec light">
+        <p class="o-h2">退党服务、媒体报道、视频真相、各种服务</p>
+        <div class="o-card">
+          <p class="o-cardtag">01·登记</p>
+          <p class="o-h3">三退登记与证明</p>
+          <p class="o-desc">声明可以匿名提交，也可以申请一份中英文对照的证明文件。</p>
+        </div>
+      </div>
+      <ul class="notes">
+        <li>H2 行距 <b>1.75</b>、H3 行距 <b>1.75</b>，兩行標題中間空出一大截</li>
+        <li>卡片編號用等寬字體加 0.2em 字距</li>
+        <li>卡片說明行距 1.85，和頭條 1.95、其他段落 1.8 各不相同</li>
+      </ul>
+    </div>
+    <div class="col">
+      <span class="tag a">建議</span>
+      <div class="spec light">
+        <p class="n-h2">退党服务、媒体报道、视频真相、各种服务</p>
+        <div class="n-card">
+          <p class="n-cardtag">登记</p>
+          <p class="n-h3">三退登记与证明</p>
+          <p class="n-desc">声明可以匿名提交，也可以申请一份中英文对照的证明文件。</p>
+        </div>
+      </div>
+      <ul class="notes">
+        <li>標題統一行距 <b>1.3</b>（H3 用 1.4），字重 700</li>
+        <li>卡片之間沒有先後次序，所以不需要「01 / 02」編號</li>
+        <li>全站內文只用一個行距：<b>1.8</b></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="no">3</span><h2>欄目名、標籤與頁腳小字</h2><p>現在很多小字低於 12px，而且用英文等寬字體排中文。</p></div>
+  <div class="pair">
+    <div class="col">
+      <span class="tag b">現狀</span>
+      <div class="spec light">
+        <p class="o-col">专题栏目</p>
+        <div class="row"><span class="o-chip">头条</span><span class="o-chip">本期推荐</span><span class="o-foot">服务</span></div>
+        <p class="o-copy">© 2005-2026 全球退党服务中心</p>
+      </div>
+      <ul class="notes">
+        <li>「专题栏目」字距 <b>7.8px（0.3em）</b>，四個字散開</li>
+        <li>標籤、頁腳欄目名 11–12px 等寬字體，中文顯示為系統後備字</li>
+        <li>CSS 中還有 8.5px、9.5px、10px 的字號</li>
+      </ul>
+    </div>
+    <div class="col">
+      <span class="tag a">建議</span>
+      <div class="spec light">
+        <p class="n-col">专题栏目</p>
+        <div class="row"><span class="n-chip">头条</span><span class="n-chip">本期推荐</span><span class="n-foot">服务</span></div>
+        <p class="n-copy">© <span class="num">2005–2026</span> 全球退党服务中心</p>
+      </div>
+      <ul class="notes">
+        <li>中文標題字距 0–0.02em，不超過 0.1em</li>
+        <li>中文標籤用無襯線 500，最小 13px；頁腳 14px</li>
+        <li>等寬字體只用於純數字或英文，例如年份、編號、501(c)(3)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="no">4</span><h2>首頁大數字</h2><p>對「權威發布」的定位，數字要讓人查得到出處，這比字有多大更重要。</p></div>
+  <div class="pair">
+    <div class="col">
+      <span class="tag b">現狀</span>
+      <div class="spec dark">
+        <p class="o-fig">4.64<small>亿</small></p>
+        <p class="o-label">人已公开声明退出中共党、团、队组织。</p>
+      </div>
+      <ul class="notes">
+        <li>數字 900 粗、字距 -6px、行距 0.9，數字之間擠在一起</li>
+        <li>沒有數據來源和更新時間</li>
+      </ul>
+    </div>
+    <div class="col">
+      <span class="tag a">建議</span>
+      <div class="spec dark">
+        <p class="n-fig">4.64<small>亿</small></p>
+        <p class="n-label">人已公开声明退出中共党、团、队组织。</p>
+        <p class="n-src">来源：全球退党服务中心登记册 · 更新于 2026-09-30 · 统计方法说明 →</p>
+      </div>
+      <ul class="notes">
+        <li>數字 700、等寬數字（tabular-nums），字距接近 0</li>
+        <li>下方加來源、更新日期和方法說明連結（示例文字，需按實際情況填寫）</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="no">5</span><h2>字級表</h2><p>全站只保留這幾種樣式。手機欄是 390px 屏寬時的數值。</p></div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>用途</th><th>字體</th><th>桌面</th><th>手機</th><th>字重</th><th>行距</th><th>字距</th></tr></thead>
+      <tbody>
+        <tr><td>頭條大標題</td><td>Noto Serif SC</td><td class="m">48px</td><td class="m">30px</td><td class="m">700</td><td class="m">1.3</td><td class="m">0.01em</td></tr>
+        <tr><td>欄目標題 H2</td><td>Noto Serif SC</td><td class="m">36px</td><td class="m">26px</td><td class="m">700</td><td class="m">1.3</td><td class="m">0.01em</td></tr>
+        <tr><td>卡片／文章小標 H3</td><td>Noto Serif SC</td><td class="m">24px</td><td class="m">20px</td><td class="m">700</td><td class="m">1.4</td><td class="m">0</td></tr>
+        <tr><td>列表標題</td><td>Noto Serif SC</td><td class="m">18px</td><td class="m">17px</td><td class="m">600</td><td class="m">1.5</td><td class="m">0</td></tr>
+        <tr><td>內文</td><td>Noto Sans SC</td><td class="m">17px</td><td class="m">16px</td><td class="m">400</td><td class="m">1.8</td><td class="m">0.02em</td></tr>
+        <tr><td>說明、日期、頁腳</td><td>Noto Sans SC</td><td class="m">14px</td><td class="m">14px</td><td class="m">400</td><td class="m">1.6</td><td class="m">0.02em</td></tr>
+        <tr><td>標籤、欄目眉題</td><td>Noto Sans SC</td><td class="m">13px</td><td class="m">13px</td><td class="m">500</td><td class="m">1.6</td><td class="m">0.08em</td></tr>
+        <tr><td>純數字／英文代號</td><td>IBM Plex Mono</td><td class="m">按所在層級</td><td class="m">—</td><td class="m">400–500</td><td class="m">同上</td><td class="m">0</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:14px;color:var(--muted)">內文每行寬度控制在 36–40 個漢字（<code>max-width: 38em</code>）。繁體版把 SC 換成 TC 即可，其餘數值不變。</p>
+</section>
+
+<section>
+  <div class="sec-head"><span class="no">6</span><h2>給工程師的 CSS 變量</h2><p>放進全局樣式，再把現有的零散數值逐一替換成這些變量。</p></div>
+  <div class="code">
+    <button class="copy" id="copyBtn" type="button">複製</button>
+<pre id="cssCode">/* 1. 用 next/font/google 真正加載字體（在 layout.tsx）：
+   Noto_Serif_SC({ weight: ['600','700'] })
+   Noto_Sans_SC({ weight: ['400','500','700'] })
+   繁體版另加 Noto_Serif_TC / Noto_Sans_TC */
+
+:root {
+  --serif: "Noto Serif SC", "Songti SC", serif;   /* 不要把 SimSun 當後備 */
+  --sans:  "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --mono:  "IBM Plex Mono", ui-monospace, monospace;  /* 只用於純數字和英文 */
+
+  --fs-display: clamp(30px, 4vw, 48px);
+  --fs-h2:      clamp(26px, 3vw, 36px);
+  --fs-h3:      clamp(20px, 2vw, 24px);
+  --fs-item:    18px;
+  --fs-body:    17px;
+  --fs-small:   14px;
+  --fs-label:   13px;   /* 全站最小字號 */
+
+  --lh-heading: 1.3;
+  --lh-item:    1.5;
+  --lh-body:    1.8;
+}
+
+@media (max-width: 640px) { :root { --fs-body: 16px; --fs-item: 17px; } }
+
+body { font: 400 var(--fs-body)/var(--lh-body) var(--sans); letter-spacing: .02em; }
+
+h1, h2, h3 {
+  font-family: var(--serif);
+  font-weight: 700;              /* 取代全站的 900 */
+  line-height: var(--lh-heading);/* 標題不要沿用內文行距 */
+  letter-spacing: .01em;
+  text-wrap: balance;
+}
+h3 { line-height: 1.4; }
+
+p { max-width: 38em; text-wrap: pretty; }
+
+.eyebrow, .chip, .tag {
+  font: 500 var(--fs-label)/1.6 var(--sans);  /* 不用等寬字體排中文 */
+  letter-spacing: .08em;
+}
+
+.num, time, .stat { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+:lang(zh) { line-break: strict; text-spacing-trim: normal; }
+.nw { white-space: nowrap; }  /* 包住專有名詞，防止拆行 */</pre>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="no">7</span><h2>驗收清單</h2><p>改完後逐項檢查，Mac 和 Windows 都要看。</p></div>
+  <ul class="check">
+    <li><span><b>Windows 上標題不再是 SimSun。</b>開發者工具 Network 裏能看到 Noto 字體文件載入。</span></li>
+    <li><span><b>CSS 裏搜不到 <code>font-weight: 900</code>。</b></span></li>
+    <li><span><b>所有 h1–h3 的行距在 1.25–1.4 之間。</b></span></li>
+    <li><span><b>內文只有一個行距 1.8。</b></span></li>
+    <li><span><b>沒有小於 12px 的字號。</b></span></li>
+    <li><span><b>中文不再使用 IBM Plex Mono。</b></span></li>
+    <li><span><b>中文字距都不超過 0.1em。</b></span></li>
+    <li><span><b>文案裏沒有用空格代替標點。</b>中英文和數字之間是否空格，全站統一。</span></li>
+    <li><span><b>標題在 390px 手機寬度下不會拆開專有名詞。</b></span></li>
+    <li><span><b>簡體頁不混用繁體 Logo。</b>另設 zh-Hant 繁體版，<code>&lt;html lang&gt;</code> 分別標記。</span></li>
+    <li><span><b>窄屏下語言列和 Logo 有左右邊距。</b></span></li>
+    <li><span><b>每個統計數字都有來源和更新日期。</b></span></li>
+  </ul>
+</section>
+
+<p class="foot">左側樣本用各平台現有的後備字體模擬「字體未加載」的效果，所以在不同電腦上看會略有差異，這正是現在網站的問題所在。</p>
+
+</div>
+
+<script>
+document.getElementById('copyBtn').addEventListener('click', async (e) => {
+  const btn = e.currentTarget, code = document.getElementById('cssCode');
+  try { await navigator.clipboard.writeText(code.innerText); btn.textContent = '已複製'; }
+  catch (err) { const r = document.createRange(); r.selectNodeContents(code); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = '已選取，請按複製'; }
+  setTimeout(() => { btn.textContent = '複製'; }, 2000);
+});
+</script>
+
+</body></html>

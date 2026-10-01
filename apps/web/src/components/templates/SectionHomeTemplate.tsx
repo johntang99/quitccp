@@ -10,7 +10,7 @@ import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString, asStringArray } from "./content-utils";
 import { resolveNewsArticleHref } from "@/lib/news-linking";
 
-export function SectionHomeTemplate({ title, section, slug, content }: TemplatePageData) {
+export function SectionHomeTemplate({ title, section, slug, content, query }: TemplatePageData) {
   const payload = asRecord(content);
 
   if (section === "services" && slug === "index") {
@@ -1732,7 +1732,53 @@ export function SectionHomeTemplate({ title, section, slug, content }: TemplateP
           { tag: "亚太", title: "韩国 · 济州岛", body: "码头、免税店与主要景点前轮班值守，主要面向邮轮旅客。", meta: "依邮轮班次调整" },
           { tag: "欧洲", title: "伦敦 · 中国城", body: "周末于中国城一带设点，提供中英文咨询。", meta: "周六、周日 12:00–18:00" }
         ];
-    const pager = asStringArray(payload.pager, ["1", "2", "3", "下一页 →"]);
+    /**
+     * Region filter and paging, both driven by the query string.
+     *
+     * These were decorative: five chips and a "1 2 3 下一页" row, every one of
+     * them href="#". The pager in particular claimed three pages of service
+     * points when the page holds four, so it is now derived from the real
+     * count and simply does not render while everything fits on one page.
+     */
+    const firstValue = (value: string | string[] | undefined) =>
+      Array.isArray(value) ? value[0] ?? "" : value ?? "";
+    const safeDecode = (value: string) => {
+      try {
+        return decodeURIComponent(value);
+      } catch {
+        return value;
+      }
+    };
+
+    // Only regions that actually have a service point: a chip that can only
+    // ever return "nothing here" is not a filter. 大洋洲 is configured but has
+    // no points yet, so it appears as soon as one is added.
+    const regionsPresent = [...new Set(locations.map((row) => row.tag).filter(Boolean))];
+    const regionChips = [
+      "全部",
+      ...filters.filter((label) => label !== "全部" && regionsPresent.includes(label)),
+      ...regionsPresent.filter((label) => !filters.includes(label))
+    ];
+    const requestedRegion = safeDecode(firstValue(query?.region)).trim();
+    const activeRegion = regionChips.includes(requestedRegion) ? requestedRegion : "全部";
+    const matching =
+      activeRegion === "全部" ? locations : locations.filter((row) => row.tag === activeRegion);
+
+    const perPage = 10;
+    const pageCount = Math.max(1, Math.ceil(matching.length / perPage));
+    const requestedPage = Number.parseInt(firstValue(query?.page), 10);
+    const activePage = Number.isFinite(requestedPage)
+      ? Math.min(Math.max(requestedPage, 1), pageCount)
+      : 1;
+    const visibleLocations = matching.slice((activePage - 1) * perPage, activePage * perPage);
+    const networkHref = (region: string, page: number) => {
+      const params = new URLSearchParams();
+      if (region !== "全部") params.set("region", region);
+      if (page > 1) params.set("page", String(page));
+      const qs = params.toString();
+      return `/about/network${qs ? `?${qs}` : ""}`;
+    };
+
     const ctaPanel = asRecord(payload.ctaPanel);
     const setupPanel = asRecord(payload.setupPanel);
     const setupLinks = asObjectArray(setupPanel.links).length
@@ -1774,8 +1820,13 @@ export function SectionHomeTemplate({ title, section, slug, content }: TemplateP
           <div className="wrap cols">
             <div>
               <div className="filters" style={{ marginTop: 40 }}>
-                {filters.map((label, index) => (
-                  <a key={label} className={index === 0 ? "chip on" : "chip"} href="#">
+                {regionChips.map((label) => (
+                  <a
+                    key={label}
+                    className={label === activeRegion ? "chip on" : "chip"}
+                    href={networkHref(label, 1)}
+                    aria-current={label === activeRegion ? "true" : undefined}
+                  >
                     {label}
                   </a>
                 ))}
@@ -1792,7 +1843,7 @@ export function SectionHomeTemplate({ title, section, slug, content }: TemplateP
                 </p>
               </div>
               <div className="arch">
-                {locations.map((row, index) => (
+                {visibleLocations.map((row, index) => (
                   <article key={`${row.tag}-${row.title}`} className="arow" style={{ gridTemplateColumns: "1fr", paddingTop: index === 0 ? 0 : undefined }}>
                     <div>
                       <span className="tag">{row.tag}</span>
@@ -1803,13 +1854,28 @@ export function SectionHomeTemplate({ title, section, slug, content }: TemplateP
                   </article>
                 ))}
               </div>
-              <nav className="pager">
-                {pager.map((label, index) => (
-                  <a key={`${label}-${index}`} className={index === 0 ? "on" : undefined} href="#">
-                    {label}
-                  </a>
-                ))}
-              </nav>
+              {visibleLocations.length === 0 ? (
+                <p style={{ color: "var(--muted)", fontSize: 15 }}>这个地区还没有列出服务点。</p>
+              ) : null}
+              {pageCount > 1 ? (
+                <nav className="pager" aria-label="分页">
+                  {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
+                    <a
+                      key={page}
+                      className={page === activePage ? "on" : undefined}
+                      href={networkHref(activeRegion, page)}
+                      aria-current={page === activePage ? "page" : undefined}
+                    >
+                      {page}
+                    </a>
+                  ))}
+                  {activePage < pageCount ? (
+                    <a href={networkHref(activeRegion, activePage + 1)} rel="next">
+                      下一页 →
+                    </a>
+                  ) : null}
+                </nav>
+              ) : null}
             </div>
             <aside className="side">
               <div className="panel panel--seal">

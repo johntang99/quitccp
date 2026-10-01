@@ -67,13 +67,21 @@ export default async function VideosPage({
       <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
       <span className="vp-glow" aria-hidden="true" />
 
-      <VideoHomeHeader shelves={home.shelves} total={home.total} />
+      <VideoHomeHeader shelves={home.shelves} />
       <FeatureBand
         feature={home.feature}
         featureCategory={home.featureCategory}
+        featureIsFlagged={home.featureIsFlagged}
         upnext={home.upnext}
         shelves={home.shelves}
       />
+
+      {/* Divides the page's two halves: the single film it opens with above,
+          the series shelves below. Without it the first shelf read as part of
+          the feature block. */}
+      <div className="vp-shell">
+        <hr className="vp-divider" />
+      </div>
 
       {find(FRONTLINE) ? <LeadAndGrid shelf={find(FRONTLINE)!} note="服务点现场、义工纪实与当事人访谈" /> : null}
       {find(JIUPING) ? <VideoSeriesBand shelf={find(JIUPING)!} /> : null}

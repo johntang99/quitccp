@@ -33,6 +33,8 @@ export default async function AdminVideosPage({ searchParams }: PageProps) {
       status: params.status,
       host: params.host,
       gap: params.gap as VideoSearchFilters["gap"],
+      featured: params.featured === "1" ? true : undefined,
+      editorArchive: params.editorArchive === "1" ? true : undefined,
       from: params.from,
       to: params.to,
       sort: (params.sort as VideoSearchFilters["sort"]) ?? "published",
@@ -112,6 +114,10 @@ export default async function AdminVideosPage({ searchParams }: PageProps) {
             <option value="title">标题 A→Z</option>
           </select>
           {params.gap ? <input type="hidden" name="gap" value={params.gap} /> : null}
+          {params.featured ? <input type="hidden" name="featured" value={params.featured} /> : null}
+          {params.editorArchive ? (
+            <input type="hidden" name="editorArchive" value={params.editorArchive} />
+          ) : null}
           <button className="admin-btn admin-btn-primary" type="submit">
             搜索
           </button>
@@ -119,6 +125,20 @@ export default async function AdminVideosPage({ searchParams }: PageProps) {
 
         <div className="admin-toolbar" style={{ marginBottom: 8 }}>
           <span className="chips">
+            {/* The two editorial marks sit with the gap chips, same as articles:
+                both answer "show me the subset I care about right now". */}
+            <a
+              className={`chip${params.featured ? " on" : ""}`}
+              href={hrefWith({ featured: params.featured ? undefined : "1", page: undefined })}
+            >
+              ★ 重要
+            </a>
+            <a
+              className={`chip${params.editorArchive ? " on" : ""}`}
+              href={hrefWith({ editorArchive: params.editorArchive ? undefined : "1", page: undefined })}
+            >
+              ✦ 精彩保留
+            </a>
             {GAPS.map((gap) => (
               <a
                 key={gap.key}

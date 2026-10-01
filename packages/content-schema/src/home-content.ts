@@ -373,10 +373,10 @@ export const homeContentDefaults: HomeContent = {
         title: "调查、存档与见证",
         body: "收集并核实侵害人权的案例，保存当事人的第一手陈述，向各国议会、机构与媒体提交。",
         links: [
-          { label: "迫害案例档案", href: "/news/investigations" },
-          { label: "调查报告", href: "/news/investigations" },
-          { label: "当事人口述", href: "/involve/stories" },
-          { label: "国际议会与机构关注", href: "/news/solidarity" }
+          { label: "迫害案例档案", href: "/news/worldwide-investigation" },
+          { label: "调查报告", href: "/news/topics-commentary" },
+          { label: "当事人口述", href: "/news/withdrawal-stories" },
+          { label: "国际议会与机构关注", href: "/news/worldwide-supports" }
         ]
       },
       {
@@ -384,9 +384,9 @@ export const homeContentDefaults: HomeContent = {
         title: "出版、影音与工具",
         body: "出版与整理公开读物，制作影音节目，并提供可在受限网络环境下使用的访问工具。",
         links: [
-          { label: "《九评共产党》", href: "https://www.tuidang.org/9ping/" },
+          { label: "《九评共产党》", href: "/resources" },
           { label: "视频与音频节目", href: "/videos" },
-          { label: "展板、传单与素材下载", href: "https://www.tuidang.org/td_promo/" },
+          { label: "展板、传单与素材下载", href: "/resources/downloads" },
           { label: "安全访问与免翻墙工具", href: "/resources/tools" }
         ]
       }
@@ -445,11 +445,11 @@ export const homeContentDefaults: HomeContent = {
         title: "追查国际调查报告",
         en: "INVESTIGATIONS",
         leadTitle: "《铁证如山》：中共活体摘取法轮功学员器官罪恶追查",
-        leadHref: "/news/investigations",
+        leadHref: "/news/worldwide-investigation",
         image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.23-P.png",
         badge: "▶",
         footLabel: "全部调查报告 →",
-        footHref: "/news/investigations"
+        footHref: "/news/worldwide-investigation"
       },
       {
         title: "专题报导与时政评论",
@@ -465,11 +465,11 @@ export const homeContentDefaults: HomeContent = {
         title: "国际声援行动",
         en: "INTERNATIONAL SUPPORT",
         leadTitle: "美国国会议员联署声明，表彰退出中共运动并载入《国会议事录》",
-        leadHref: "/news/solidarity",
+        leadHref: "/news/worldwide-supports",
         image: "https://www.tuidang.org/wp-content/uploads/2026/07/signal-2026-07-22-11-53-42-724.jpg",
         badge: "",
         footLabel: "全部声援行动 →",
-        footHref: "/news/solidarity"
+        footHref: "/news/worldwide-supports"
       },
       {
         title: "三退新闻",
@@ -574,7 +574,7 @@ export const homeContentDefaults: HomeContent = {
     // whole row taller than the service cards beside it.
     lede: "来自曾经身处体制之内的人，陈述被完整保存并公开。",
     moreLabel: "更多见证 →",
-    moreHref: "/involve/stories",
+    moreHref: "/news/famous-quitccp",
     items: [
       {
         quote: "作为外交官，按理应该为国家利益服务，但我在那里做的事大多不是为了国家利益，而是在迫害自己的人民。",
@@ -597,10 +597,10 @@ export const homeContentDefaults: HomeContent = {
     ]
   },
   network: {
-    // Off on the homepage. /about/network still carries the service-point
-    // finder and is linked from /about and /services, so nothing is orphaned.
-    // Re-tick 在首页显示 in the admin to bring it back.
-    enabled: false,
+    // Back on the homepage, in the place the original design gave it: after
+    // 见证者 and before 关于我们. /about/network still carries the service-point
+    // finder, and the band's button leads there.
+    enabled: true,
     variant: "split",
     eyebrow: "全球网络",
     heading: "一百多个服务点，\n由志愿者维持运转。",

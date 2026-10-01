@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ImagePickerModal } from "./ImagePickerModal";
-import { MarkdownEditor } from "./MarkdownEditor";
+import { MarkdownEditor, type MarkdownEditorHandle } from "./MarkdownEditor";
 
 /**
  * The single article form, used for both creating and editing.
@@ -61,6 +61,30 @@ export function ArticleForm({ initial, categories, authors, currentUser, mode }:
     author: initial.author || (mode === "new" ? currentUser : "")
   });
   const [picker, setPicker] = useState<null | "hero" | "body">(null);
+  // Lets the picker drop its image where the caret is, not at the end.
+  const editor = useRef<MarkdownEditorHandle>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiError, setAiError] = useState("");
+
+  /** Drafts the summary from the whole body; the editor keeps or edits it. */
+  const generateSummary = async () => {
+    setAiBusy(true);
+    setAiError("");
+    try {
+      const response = await fetch("/api/admin/content/summary", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title: v.title, body: v.bodyMarkdown })
+      });
+      const data = (await response.json()) as { summary?: string; error?: string };
+      if (!response.ok || !data.summary) throw new Error(data.error || "生成失败");
+      set("summary", data.summary);
+    } catch (error) {
+      setAiError(error instanceof Error ? error.message : "生成失败");
+    } finally {
+      setAiBusy(false);
+    }
+  };
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
   // Date prefix is on unless the editor turned it off. New articles get
   // 2026-09-29-标题; the 15,515 migrated ones keep the slugs they were imported
@@ -325,6 +349,7 @@ export function ArticleForm({ initial, categories, authors, currentUser, mode }:
             <div className="field" style={{ margin: 0 }}>
               <span className="cap">正文（Body · Markdown）<span className="req">*</span></span>
               <MarkdownEditor
+                ref={editor}
                 value={v.bodyMarkdown}
                 onChange={(next) => set("bodyMarkdown", next)}
                 onPickImage={() => setPicker("body")}
@@ -334,7 +359,21 @@ export function ArticleForm({ initial, categories, authors, currentUser, mode }:
 
           <div className="admin-card">
             <div className="field" style={{ margin: 0 }}>
-              <label htmlFor="af-summary">摘要（Summary）</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <label htmlFor="af-summary" style={{ margin: 0 }}>摘要（Summary）</label>
+                <button
+                  type="button"
+                  className="admin-btn admin-btn-sm"
+                  onClick={generateSummary}
+                  disabled={aiBusy || v.bodyMarkdown.trim().length < 60}
+                  title="读完正文后生成 100–150 字摘要"
+                >
+                  {aiBusy ? "生成中…" : "✦ AI 生成"}
+                </button>
+                {aiError ? (
+                  <span role="status" style={{ color: "#b42318", fontSize: 12.5 }}>{aiError}</span>
+                ) : null}
+              </div>
               <textarea
                 id="af-summary"
                 name="summary"
@@ -364,7 +403,7 @@ export function ArticleForm({ initial, categories, authors, currentUser, mode }:
                   从正文首段生成
                 </button>
                 <span className="hint">
-                  用于列表卡片与搜索结果。建议 60–160 字。当前 <b>{v.summary.length}</b> 字
+                  用于列表卡片与搜索结果。建议 60–160 字。当前 <b>{v.summary.length}</b> 字。AI 生成的是草稿，请先读一遍再保存。
                 </span>
               </div>
             </div>
@@ -598,7 +637,7 @@ export function ArticleForm({ initial, categories, authors, currentUser, mode }:
         onClose={() => setPicker(null)}
         onSelect={(url) => {
           if (picker === "hero") set("heroImage", url);
-          else set("bodyMarkdown", `${v.bodyMarkdown}\n\n![图片说明](${url})\n`);
+          else editor.current?.insertAtCaret(`\n\n![图片说明](${url})\n\n`);
           setPicker(null);
         }}
       />

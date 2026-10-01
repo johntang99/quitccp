@@ -29,6 +29,8 @@ export interface VideoListRow {
   category: string;
   publishedAt: string | null;
   updatedAt: string;
+  featured: boolean;
+  editorArchive: boolean;
 }
 
 function missing(error: unknown, ...names: string[]): boolean {
@@ -115,6 +117,9 @@ export interface VideoSearchFilters {
   /** Where it plays from: youtube / ganjing / tuidang / file / none. */
   host?: string;
   gap?: "no-source" | "no-cover" | "no-description";
+  /** 重要 / 精彩保留. Undefined means "do not filter on it". */
+  featured?: boolean;
+  editorArchive?: boolean;
   from?: string;
   to?: string;
   sort?: VideoSort;
@@ -146,8 +151,10 @@ export async function searchVideos(filters: VideoSearchFilters): Promise<{
 
   const base = "id, slug, title, description, status, duration_seconds, updated_at";
   const extra = "source_url, cover_image, published_at";
+  /** The flags 016 adds; dropped along with the filters if it has not run. */
+  const flags = "featured, editor_archive";
 
-  const run = async (select: string, withCategory: boolean) => {
+  const run = async (select: string, withCategory: boolean, withFlags: boolean) => {
     let query = withCategory && filters.category
       ? supabase
           .from("cms_videos")
@@ -161,6 +168,10 @@ export async function searchVideos(filters: VideoSearchFilters): Promise<{
       query = query.or(`title.ilike.%${term}%,slug.ilike.%${term}%`);
     }
     if (filters.status) query = query.eq("status", filters.status);
+    if (withFlags) {
+      if (filters.featured !== undefined) query = query.eq("featured", filters.featured);
+      if (filters.editorArchive !== undefined) query = query.eq("editor_archive", filters.editorArchive);
+    }
 
     const host = filters.host ? HOST_PATTERNS[filters.host] : undefined;
     if (host?.empty) query = query.eq("source_url", "");
@@ -206,11 +217,18 @@ export async function searchVideos(filters: VideoSearchFilters): Promise<{
       .range(offset, offset + pageSize - 1);
   };
 
-  let result = await run(`${base}, ${extra}`, true);
+  let result = await run(`${base}, ${extra}, ${flags}`, true, true);
+  let hasFlags = true;
+  // 016 not applied: drop the two columns and the filters that read them.
+  if (result.error && missing(result.error, "featured", "editor_archive")) {
+    hasFlags = false;
+    result = await run(`${base}, ${extra}`, true, false);
+  }
   let ready = true;
   if (result.error && missing(result.error, "source_url", "cover_image", "cms_video_category_map")) {
     ready = false;
-    result = await run(base, false);
+    hasFlags = false;
+    result = await run(base, false, false);
   }
   if (result.error) throw result.error;
 
@@ -248,7 +266,9 @@ export async function searchVideos(filters: VideoSearchFilters): Promise<{
       coverImage: String(row.cover_image ?? ""),
       category: categoryByVideo.get(String(row.id)) ?? "",
       publishedAt: row.published_at ? String(row.published_at) : null,
-      updatedAt: String(row.updated_at)
+      updatedAt: String(row.updated_at),
+      featured: hasFlags && row.featured === true,
+      editorArchive: hasFlags && row.editor_archive === true
     }))
   };
 }
@@ -271,15 +291,32 @@ export interface VideoRecord {
   status: string;
   publishedAt: string | null;
   category: string;
+  featured: boolean;
+  editorArchive: boolean;
 }
 
-const EDITABLE =
+const EDITABLE_BASE =
   "id, slug, title, description, status, duration_seconds, source_url, cover_image, published_at, " +
   "body_markdown, episode, speaker, source_credit, backup_url, cover_image_alt, legacy_url";
+/** With the flags 016 adds. Asked for first; dropped if the migration has not run. */
+const EDITABLE = `${EDITABLE_BASE}, featured, editor_archive`;
+
+/** Postgres names only the first missing column, so both go together. */
+function isMissingFlagColumn(error: unknown): boolean {
+  return /featured|editor_archive/.test(JSON.stringify(error ?? ""));
+}
 
 export async function getVideo(id: string): Promise<VideoRecord | null> {
   const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase.from("cms_videos").select(EDITABLE).eq("id", id).maybeSingle();
+  let { data, error } = await supabase.from("cms_videos").select(EDITABLE).eq("id", id).maybeSingle();
+  if (error && isMissingFlagColumn(error)) {
+    // 016 has not been applied yet: read what exists and treat both as off.
+    ({ data, error } = await supabase
+      .from("cms_videos")
+      .select(EDITABLE_BASE)
+      .eq("id", id)
+      .maybeSingle());
+  }
   if (error) throw error;
   if (!data) return null;
   const row = data as unknown as Record<string, unknown>;
@@ -310,7 +347,9 @@ export async function getVideo(id: string): Promise<VideoRecord | null> {
     legacyUrl: String(row.legacy_url ?? ""),
     status: String(row.status ?? "draft"),
     publishedAt: row.published_at ? String(row.published_at) : null,
-    category: String(category)
+    category: String(category),
+    featured: row.featured === true,
+    editorArchive: row.editor_archive === true
   };
 }
 
@@ -330,6 +369,8 @@ export interface VideoInput {
   status: string;
   publishedAt: string | null;
   category: string;
+  featured: boolean;
+  editorArchive: boolean;
 }
 
 export async function saveVideo(input: VideoInput): Promise<string> {
@@ -350,14 +391,24 @@ export async function saveVideo(input: VideoInput): Promise<string> {
     published_at: input.publishedAt,
     updated_at: new Date().toISOString()
   };
+  const withFlags = { ...payload, featured: input.featured, editor_archive: input.editorArchive };
 
   let id = input.id?.trim() ?? "";
   if (id) {
-    const { error } = await supabase.from("cms_videos").update(payload).eq("id", id);
+    let { error } = await supabase.from("cms_videos").update(withFlags).eq("id", id);
+    // Saving must not fail just because 016 has not been applied; everything
+    // except the two flags is still written.
+    if (error && isMissingFlagColumn(error)) {
+      ({ error } = await supabase.from("cms_videos").update(payload).eq("id", id));
+    }
     if (error) throw error;
   } else {
-    const { data, error } = await supabase.from("cms_videos").insert(payload).select("id").single();
+    let { data, error } = await supabase.from("cms_videos").insert(withFlags).select("id").single();
+    if (error && isMissingFlagColumn(error)) {
+      ({ data, error } = await supabase.from("cms_videos").insert(payload).select("id").single());
+    }
     if (error) throw error;
+    if (!data) throw new Error("保存失败：数据库没有返回新建视频的 id。");
     id = String(data.id);
   }
 

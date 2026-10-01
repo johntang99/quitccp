@@ -1,14 +1,47 @@
 import type { NewsCard } from "@/lib/public-content";
 import { T, articleHref, day, shortDay } from "./newsTokens";
 
-function Kicker({ card, size = 13 }: { card: NewsCard; size?: number }) {
+/**
+ * Says that a card is one of the 重要 selection.
+ *
+ * All three cards at the top of the hero are articles an editor flagged 重要;
+ * nothing on the page said so, so they read as "whatever happens to be newest".
+ * The same ★ the admin list uses, so the mark means one thing in both places.
+ */
+function FeaturedTag({ size = 12 }: { size?: number }) {
   return (
-    <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: size }}>
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 3,
+        fontSize: size,
+        fontWeight: 500,
+        color: T.goldDeep,
+        whiteSpace: "nowrap"
+      }}
+      title="编辑标记为「重要」"
+    >
+      <span aria-hidden="true">★</span>
+      重要
+    </span>
+  );
+}
+
+function Kicker({ card, size = 13, featured = false }: { card: NewsCard; size?: number; featured?: boolean }) {
+  return (
+    <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: size, flexWrap: "wrap" }}>
       {card.category ? <span style={{ color: T.seal, fontWeight: 500 }}>{card.category}</span> : null}
       {card.category && card.publishedAt ? (
         <span style={{ width: 1, height: 10, background: T.divider }} aria-hidden="true" />
       ) : null}
       <span style={{ fontFamily: T.mono, fontSize: size - 1, color: T.muted }}>{day(card.publishedAt)}</span>
+      {featured ? (
+        <>
+          <span style={{ width: 1, height: 10, background: T.divider }} aria-hidden="true" />
+          <FeaturedTag size={size - 1} />
+        </>
+      ) : null}
     </span>
   );
 }
@@ -54,7 +87,7 @@ export function NewsHero({ featured, latest }: { featured: NewsCard[]; latest: N
                 头条
               </span>
             </div>
-            <Kicker card={lead} />
+            <Kicker card={lead} featured />
             <h2 style={{ margin: 0, fontFamily: T.serif, fontWeight: 900, fontSize: "clamp(24px, 2.4vw, 32px)", lineHeight: 1.38 }}>
               {lead.title}
             </h2>
@@ -100,7 +133,7 @@ export function NewsHero({ featured, latest }: { featured: NewsCard[]; latest: N
                   <img src={card.image} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                 ) : null}
               </div>
-              <Kicker card={card} size={12} />
+              <Kicker card={card} size={12} featured />
               <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 19, lineHeight: 1.5 }}>{card.title}</span>
             </a>
           ))}

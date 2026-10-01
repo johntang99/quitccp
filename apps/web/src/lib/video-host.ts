@@ -27,6 +27,21 @@ export function hostOf(url: string): HostInfo {
   return { key: "other", label: "其它", reachableInChina: false };
 }
 
+/**
+ * The YouTube video id in a watch, share or embed address; "" for anything else.
+ *
+ * Deliberately strict: the id is interpolated into a URL the server fetches, so
+ * anything that is not plainly an id must not get through.
+ */
+export function youtubeIdOf(url: string): string {
+  const value = (url ?? "").trim();
+  const match =
+    value.match(/youtube\.com\/watch\?v=([A-Za-z0-9_-]{6,20})/) ??
+    value.match(/youtu\.be\/([A-Za-z0-9_-]{6,20})/) ??
+    value.match(/youtube\.com\/embed\/([A-Za-z0-9_-]{6,20})/);
+  return match ? match[1] : "";
+}
+
 /** Turns a watch or share address into one that can sit in an iframe. */
 export function toEmbedUrl(url: string): string {
   const value = (url ?? "").trim();

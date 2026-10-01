@@ -5,11 +5,13 @@ import { Duration, MONO, Play, SERIF, SectionHead, Still, kicker, runtime, video
 export function FeatureBand({
   feature,
   featureCategory,
+  featureIsFlagged,
   upnext,
   shelves
 }: {
   feature: PublicVideoCard | null;
   featureCategory: string;
+  featureIsFlagged: boolean;
   upnext: PublicVideoCard[];
   shelves: VideoLibraryShelf[];
 }) {
@@ -19,65 +21,70 @@ export function FeatureBand({
   return (
     <section className="vp-shell vp-feature">
       {feature ? (
+        // Title and blurb sit under the still rather than over it: laid on top
+        // they had to fight the cover art, which on these films is usually large
+        // burnt-in Chinese type, and the two sets of words ran into each other.
         <a
           href={videoHref(feature.slug)}
-          style={{
-            position: "relative",
-            display: "block",
-            aspectRatio: "16 / 9",
-            borderRadius: 14,
-            overflow: "hidden",
-            color: "#fff",
-            textDecoration: "none",
-            background: "#241E4A",
-            boxShadow: "var(--shadow)"
-          }}
+          style={{ display: "flex", flexDirection: "column", gap: 16, color: "var(--text)", textDecoration: "none" }}
         >
-          {feature.coverImage ? (
-            <img
-              src={feature.coverImage}
-              alt=""
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-            />
-          ) : null}
           <span
             style={{
-              position: "absolute",
-              inset: 0,
-              background:
-                "linear-gradient(180deg, rgba(20,16,50,0) 35%, rgba(20,16,50,0.6) 62%, rgba(20,16,50,0.96) 100%)"
+              position: "relative",
+              display: "block",
+              aspectRatio: "16 / 9",
+              borderRadius: 14,
+              overflow: "hidden",
+              background: "#241E4A",
+              boxShadow: "var(--shadow)"
             }}
-            aria-hidden="true"
-          />
-          <span
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "38%",
-              width: 92,
-              height: 92,
-              margin: "-46px 0 0 -46px",
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.95)",
-              color: "#251E5E",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 30,
-              boxShadow: "0 0 0 14px rgba(255,255,255,0.16)"
-            }}
-            aria-hidden="true"
           >
-            ▶
+            {feature.coverImage ? (
+              <img
+                src={feature.coverImage}
+                alt=""
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : null}
+            <span
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                width: 92,
+                height: 92,
+                margin: "-46px 0 0 -46px",
+                borderRadius: "50%",
+                background: "rgba(255,255,255,0.95)",
+                color: "#251E5E",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 30,
+                boxShadow: "0 0 0 14px rgba(255,255,255,0.16)"
+              }}
+              aria-hidden="true"
+            >
+              ▶
+            </span>
           </span>
-          <span
-            style={{ position: "absolute", left: 36, right: 36, bottom: 30, display: "flex", flexDirection: "column", gap: 12 }}
-          >
+
+          <span style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <span style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              {/* 重要 only when an editor actually flagged it; otherwise this is
+                  just the newest film and says so. */}
               <span
-                style={{ background: "#F2D38A", color: "#1A1638", fontSize: 12, fontWeight: 500, padding: "5px 10px", borderRadius: 3 }}
+                style={{
+                  background: "#F2D38A",
+                  color: "#1A1638",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  padding: "5px 10px",
+                  borderRadius: 3
+                }}
+                title={featureIsFlagged ? "编辑标记为「重要」" : undefined}
               >
-                本期推荐
+                {featureIsFlagged ? "★ 重要" : "最新上线"}
               </span>
               {[featureCategory, feature.episode, runtime(feature.durationSeconds)]
                 .filter(Boolean)
@@ -86,8 +93,8 @@ export function FeatureBand({
                     key={meta}
                     style={{
                       fontSize: 12,
-                      color: "#E6E1F8",
-                      border: "1px solid rgba(255,255,255,0.3)",
+                      color: "var(--muted)",
+                      border: "1px solid var(--border)",
                       padding: "4px 10px",
                       borderRadius: 999
                     }}
@@ -96,7 +103,15 @@ export function FeatureBand({
                   </span>
                 ))}
             </span>
-            <span style={{ fontFamily: SERIF, fontWeight: 900, fontSize: "clamp(22px, 2.6vw, 34px)", lineHeight: 1.35 }}>
+            <span
+              style={{
+                fontFamily: SERIF,
+                fontWeight: 900,
+                fontSize: "clamp(22px, 2.6vw, 34px)",
+                lineHeight: 1.35,
+                color: "var(--title)"
+              }}
+            >
               {feature.title}
             </span>
             {feature.description ? (
@@ -104,7 +119,7 @@ export function FeatureBand({
                 style={{
                   fontSize: 15,
                   lineHeight: 1.7,
-                  color: "#D6D0F2",
+                  color: "var(--muted)",
                   maxWidth: 680,
                   display: "-webkit-box",
                   WebkitLineClamp: 2,
@@ -148,7 +163,7 @@ export function FeatureBand({
             />
             最新上线
           </span>
-          <a href="/videos/others" style={{ fontSize: 13, color: "var(--acc)", textDecoration: "none" }}>
+          <a href="/videos/archive" style={{ fontSize: 13, color: "var(--acc)", textDecoration: "none" }}>
             全部 →
           </a>
         </div>

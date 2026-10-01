@@ -1,3 +1,4 @@
+import { getHomeNews, getHomeVideo, type HomeNewsLive, type HomeVideoLive } from "@/lib/public-content";
 import { getHomepageHeroContent } from "@/lib/public-settings";
 import { HeroGallery, HeroVideo } from "@/components/public/HeroMedia";
 import { DawnBand } from "./DawnBand";
@@ -7,6 +8,7 @@ import { VerifiedBand } from "./VerifiedBand";
 import { externalLinkProps } from "@/lib/external-services";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString } from "./content-utils";
+import type { HomeContent } from "@quitccp/content-schema";
 import { resolveHomeContent } from "./home-content";
 
 /**
@@ -127,10 +129,138 @@ function SectionHead({
   );
 }
 
+/** The article's own page, not the old site's copy of it. */
+const newsHref = (slug: string) => `/news/${encodeURIComponent(slug)}`;
+
+/**
+ * Swaps the hand-typed lead and 最新发布 rows for live articles.
+ *
+ * Everything the editor writes -- eyebrow, heading, the 更多 labels, the kicker
+ * over the lead -- is kept; only title, summary, image, date and destination
+ * come from the database.
+ */
+function withLiveNews(news: HomeContent["news"], live: HomeNewsLive): HomeContent["news"] {
+  const lead = live.lead!;
+  return {
+    ...news,
+    lead: {
+      ...news.lead,
+      image: lead.image,
+      // The chip stays whatever the editor wrote (头条); it labels the slot, not
+      // the article.
+      meta: (lead.publishedAt ?? "").slice(0, 10),
+      title: lead.title,
+      body: lead.summary,
+      href: newsHref(lead.slug)
+    },
+    items:
+      live.items.length > 0
+        ? live.items.map((card) => ({
+            title: card.title,
+            date: (card.publishedAt ?? "").slice(0, 10),
+            href: newsHref(card.slug),
+            image: card.image
+          }))
+        : news.items
+  };
+}
+
+/**
+ * Gives each 专题栏目 card its column's newest article.
+ *
+ * A card whose name matches no category keeps whatever it had, so adding a
+ * column the article table does not know about degrades rather than empties.
+ */
+function withLiveChannels(
+  channels: HomeContent["channels"],
+  live: HomeNewsLive
+): HomeContent["channels"] {
+  return {
+    ...channels,
+    cards: channels.cards.map((card) => {
+      const resolved = live.channelLeads.get(card.title);
+      if (!resolved) return card;
+      // The category page, replacing the old menu slugs that returned 404.
+      const foot = `/news/${resolved.slug}`;
+      if (!resolved.card) return { ...card, footHref: foot, leadHref: foot };
+      return {
+        ...card,
+        image: resolved.card.image,
+        leadTitle: resolved.card.title,
+        leadHref: newsHref(resolved.card.slug),
+        footHref: foot
+      };
+    })
+  };
+}
+
+/** 12:47 — blank when a duration was never recovered, rather than 0:00. */
+function clockOf(seconds: number | null): string {
+  if (!seconds) return "";
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const rest = seconds % 60;
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`
+    : `${minutes}:${String(rest).padStart(2, "0")}`;
+}
+
+/**
+ * Swaps the hand-typed feature and four cards for live videos.
+ *
+ * The editor keeps the eyebrow, heading, lede, the 本期推荐 chip, the button
+ * labels and the series nav. The secondary button's destination follows the
+ * feature's own series, so it cannot go on saying 查看全部调查影像 while the
+ * feature is a different kind of film.
+ */
+function withLiveVideo(video: HomeContent["video"], live: HomeVideoLive): HomeContent["video"] {
+  const feature = live.feature!;
+  const href = `/videos/${encodeURIComponent(feature.slug)}`;
+  const minutes = feature.durationSeconds ? `${Math.round(feature.durationSeconds / 60)} 分` : "";
+  const seriesHref = video.series.find((row) => row.label === live.featureCategory)?.href;
+
+  return {
+    ...video,
+    featured: {
+      ...video.featured,
+      image: feature.coverImage,
+      title: feature.title,
+      body: feature.description,
+      href,
+      duration: clockOf(feature.durationSeconds),
+      meta: [live.featureCategory, feature.episode, minutes].filter(Boolean),
+      primaryHref: href,
+      secondaryHref: seriesHref ?? "/videos/archive",
+      secondaryLabel: live.featureCategory
+        ? `查看全部${live.featureCategory}`
+        : video.featured.secondaryLabel
+    },
+    items:
+      live.items.length > 0
+        ? live.items.map((row, index) => ({
+            title: row.card.title,
+            meta: [row.category, row.card.episode].filter(Boolean).join(" · "),
+            href: `/videos/${encodeURIComponent(row.card.slug)}`,
+            image: row.card.coverImage,
+            duration: clockOf(row.card.durationSeconds),
+            // Only the newest carries it, the way the hand-written list did.
+            badge: index === 0 ? "NEW" : ""
+          }))
+        : video.items
+  };
+}
+
 export async function HomeTemplate({ content }: TemplatePageData) {
   const heroFallback = await getHomepageHeroContent();
   const payload = asRecord(content);
   const home = resolveHomeContent(payload);
+  // The articles in the 主要新闻 band and the four 专题栏目 cards come from the
+  // article table, not from what someone last typed into the homepage admin.
+  // The editor still owns the headings, the labels and which four columns show.
+  const [liveNews, liveVideo] = await Promise.all([
+    getHomeNews(home.channels.cards.map((card) => card.title)),
+    getHomeVideo()
+  ]);
 
   // The hero also has a legacy shape (payload.hero + payload.subtitle) and a
   // settings-backed fallback, both of which predate this schema. Keep honouring
@@ -318,7 +448,7 @@ export async function HomeTemplate({ content }: TemplatePageData) {
 
       {/* 报刊头版 absorbs 专题栏目, the way 曙光 absorbs 我们的服务. */}
       {news.enabled && news.variant === "broadsheet" ? (
-        <BroadsheetBand news={news} channels={channels} />
+        <BroadsheetBand news={liveNews.lead ? withLiveNews(news, liveNews) : news} channels={withLiveChannels(channels, liveNews)} />
       ) : null}
 
       {news.enabled && news.variant !== "broadsheet" ? (
@@ -393,7 +523,9 @@ export async function HomeTemplate({ content }: TemplatePageData) {
         </section>
       ) : null}
 
-      {video.enabled && video.variant === "screening" ? <ScreeningBand video={video} /> : null}
+      {video.enabled && video.variant === "screening" ? (
+        <ScreeningBand video={liveVideo.feature ? withLiveVideo(video, liveVideo) : video} />
+      ) : null}
 
       {video.enabled && video.variant !== "screening" ? (
         <section id="video" className="sec">
@@ -453,26 +585,19 @@ export async function HomeTemplate({ content }: TemplatePageData) {
       ) : null}
 
       {network.enabled ? (
-        <section className="sec sec--ink">
+        // Light rather than the dark band it used to be, so it breaks the run
+        // of purple between 影音节目 above and 关于我们 below. Colours come from
+        // .net-light in globals.css.
+        <section className="sec net-light">
           <div className={`wrap net net--${network.variant}`}>
             <div>
-              <p className="eyebrow eyebrow--onink">{network.eyebrow}</p>
-              <h2 className="h2" style={{ color: "#F2F0E9" }}>
+              <p className="eyebrow">{network.eyebrow}</p>
+              <h2 className="h2">
                 <MultiLine text={network.heading} />
               </h2>
-              <p
-                style={{
-                  color: "var(--lav-lt)",
-                  maxWidth: "40ch",
-                  margin: "20px 0 32px",
-                  fontSize: 15,
-                  lineHeight: 1.9
-                }}
-              >
-                {network.body}
-              </p>
+              <p className="net-body">{network.body}</p>
               <a
-                className="btn btn--line-light"
+                className="btn btn--line"
                 href={network.buttonHref}
                 {...externalLinkProps(network.buttonHref)}
               >
@@ -480,7 +605,7 @@ export async function HomeTemplate({ content }: TemplatePageData) {
               </a>
             </div>
             <div>
-              <p className="eyebrow eyebrow--onink" style={{ marginBottom: 8 }}>
+              <p className="eyebrow" style={{ marginBottom: 8 }}>
                 {network.citiesLabel}
               </p>
               <div className="cities">

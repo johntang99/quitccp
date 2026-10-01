@@ -83,7 +83,7 @@ export function VideoCategoryPage({
           </div>
 
           <nav aria-label="视频系列" className="vp-chips">
-            <a className="vp-chip" href="/videos">全部</a>
+            <a className="vp-chip" href="/videos">视频首页</a>
             {siblings.map((sibling) => (
               <a
                 key={sibling.slug}
@@ -92,9 +92,15 @@ export function VideoCategoryPage({
                 href={`/videos/${sibling.slug}`}
               >
                 {sibling.name}
-                <span style={{ fontFamily: MONO, fontSize: 11, opacity: 0.65 }}>{sibling.total}</span>
               </a>
             ))}
+            <a
+              className="vp-chip"
+              data-on={category.slug === "archive" ? "1" : undefined}
+              href="/videos/archive"
+            >
+              全部视频
+            </a>
           </nav>
         </div>
       </header>

@@ -43,7 +43,9 @@ export default async function NewVideoPage({
           legacyUrl: "",
           status: "published",
           publishedAt: new Date().toISOString(),
-          category: ""
+          category: "",
+          featured: false,
+          editorArchive: false
         }}
       />
     </AdminShell>

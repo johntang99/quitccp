@@ -187,32 +187,23 @@ const STRING_LIST_FIELDS: Record<string, { label: string; hint?: string }> = {
 };
 
 const OBJECT_EDITORS: Record<string, ObjectEditorSpec> = {
+  // Poster, title, summary, play link, duration and tags come from the video
+  // the band is featuring; the secondary button follows that film's own series.
+  // What is left is the wording around it.
   "video.featured": {
-    label: "本期推荐（Featured）",
+    label: "本期推荐（Featured）· 影片本身由视频库自动填入",
     fields: [
-      { key: "image", label: "封面图（Poster）", kind: "image" },
       { key: "tag", label: "角标（Tag，如「本期推荐」）" },
-      { key: "title", label: "标题（Title）", kind: "area" },
-      { key: "body", label: "简介（Summary）", kind: "area" },
-      { key: "href", label: "播放链接（Play link）" },
-      { key: "duration", label: "时长角标（Duration，如 58:00，留空则不显示）" },
-      { key: "meta", label: "标签（Tags，每行一个）", kind: "list" },
-      { key: "primaryLabel", label: "主按钮文字（Primary label）" },
-      { key: "primaryHref", label: "主按钮链接（Primary link）" },
-      { key: "secondaryLabel", label: "次按钮文字（Secondary label）" },
-      { key: "secondaryHref", label: "次按钮链接（Secondary link）" }
+      { key: "primaryLabel", label: "主按钮文字（Primary label）" }
     ]
   },
+  // Image, title, summary, date and link come from the article the band is
+  // leading with. What is left is the wording around it.
   "news.lead": {
-    label: "头条文章（Lead story）",
+    label: "头条文章（Lead story）· 文章本身由文章库自动填入",
     fields: [
-      { key: "image", label: "图片（Image）", kind: "image" },
       { key: "tag", label: "角标（Tag，如「头条」）" },
-      { key: "kicker", label: "英文前缀（Kicker，如 FEATURE）" },
-      { key: "title", label: "标题（Title）", kind: "area" },
-      { key: "body", label: "摘要（Summary）", kind: "area" },
-      { key: "meta", label: "日期（Date）" },
-      { key: "href", label: "链接（Link）" }
+      { key: "kicker", label: "英文前缀（Kicker，如 FEATURE）" }
     ]
   }
 };
@@ -240,15 +231,13 @@ const ROW_EDITORS: Record<string, RowEditorSpec> = {
       footLabel: "",
       footHref: "/news"
     },
+    // 图片、导读标题、导读链接、底部链接地址 are filled from the latest article
+    // in this column, so they are not editable here. 栏目名称 decides which
+    // column that is -- it has to match a news category name.
     fields: [
-      { key: "image", label: "图片（Image）", kind: "image" },
-      { key: "title", label: "栏目名称（Channel name）" },
+      { key: "title", label: "栏目名称（Channel name，须与新闻分类同名）" },
       { key: "en", label: "英文标签（Latin label，如 INVESTIGATIONS）" },
-      { key: "badge", label: "视频（Video）", kind: "video-flag" },
-      { key: "leadTitle", label: "导读标题（Lead title）", kind: "area" },
-      { key: "leadHref", label: "导读链接（Lead link）" },
-      { key: "footLabel", label: "底部链接文字（Foot label）" },
-      { key: "footHref", label: "底部链接地址（Foot link）" }
+      { key: "footLabel", label: "底部链接文字（Foot label）" }
     ]
   },
   "video.items": {
@@ -335,6 +324,22 @@ const ROW_EDITORS: Record<string, RowEditorSpec> = {
   }
 };
 
+/**
+ * Fields the homepage now fills from the database, so the admin must not offer
+ * them: editing one changes nothing, which is worse than not having it.
+ *
+ * The values stay in the stored JSON -- they are simply not rendered -- so
+ * nothing is destroyed by hiding them, and the section's own headings and
+ * labels remain editable as before.
+ */
+const AUTO_FILLED: Record<string, Set<string>> = {
+  // The three 最新发布 rows: see getHomeNews(). `lead` stays, trimmed to the
+  // two labels that are still the editor's -- see FIELD_SPECS above.
+  news: new Set(["items"]),
+  // The four 最新上线 cards: see getHomeVideo(). `featured` stays, trimmed.
+  video: new Set(["items"])
+};
+
 function orderFields(sectionKey: string, keys: string[]): string[] {
   const order = FIELD_ORDER[sectionKey] ?? [];
   return [...keys].sort((a, b) => {
@@ -356,7 +361,7 @@ function orderFields(sectionKey: string, keys: string[]): string[] {
 function couplingNote(sectionKey: string, data: Record<string, unknown>): string | null {
   const variantOf = (key: string) => String(asRow(data[key]).variant ?? "");
   if (sectionKey === "channels" && variantOf("news") === "broadsheet") {
-    return "「新闻与报告」正在使用「报刊头版」版式，本区块已并入其中显示：内容仍然生效，但这里的「版式」选择不起作用。";
+    return "「新闻与报告」正在使用「报刊头版」版式，本区块已并入其中显示，这里的「版式」选择不起作用。每张卡片的图片、导读标题与链接由该栏目最新一篇文章自动填入；这里设置显示哪几个栏目、栏目名称与底部链接文字。栏目名称须与新闻分类同名，否则该卡片不会自动更新。";
   }
   if (
     (sectionKey === "services" || sectionKey === "voices") &&
@@ -374,7 +379,13 @@ function couplingNote(sectionKey: string, data: Record<string, unknown>): string
     return "「可检验」版式把「参与我们」并入本区块一起显示；参与方式仍在「参与我们」里编辑。左栏为拉丁文字时用等宽字体，中文用衬线字体，无需另设。";
   }
   if (sectionKey === "news" && variantOf("news") === "broadsheet") {
-    return "「报刊头版」版式把「栏目卡片（专题栏目）」并入本区块一起显示；栏目卡片仍在该区块里编辑。";
+    return "「报刊头版」版式把「栏目卡片（专题栏目）」并入本区块一起显示；栏目卡片仍在该区块里编辑。头条与「最新发布」三条由文章库自动填入——标记为「重要」的最新一篇作头条，其余按发布时间排——这里只设置标题与链接文字。";
+  }
+  if (sectionKey === "channels") {
+    return "每张卡片的图片、导读标题与链接由该栏目最新一篇文章自动填入；这里设置显示哪几个栏目、栏目名称与底部链接文字。栏目名称须与新闻分类同名，否则该卡片不会自动更新。";
+  }
+  if (sectionKey === "video") {
+    return "大图影片与「最新上线」四张卡片由视频库自动填入——标记为「重要」的最新一部作大图，其余按发布时间排——这里只设置区块标题、系列导航与按钮文字。";
   }
   return null;
 }
@@ -638,9 +649,12 @@ export function HomeSectionsEditor({
         const variants = HOME_SECTION_VARIANTS[section.key as keyof typeof HOME_SECTION_VARIANTS] ?? [];
         const enabled = value.enabled !== false;
 
+        const autoFilled = AUTO_FILLED[section.key];
         const keys = orderFields(
           section.key,
-          Object.keys(value).filter((k) => k !== "enabled" && k !== "variant")
+          Object.keys(value).filter(
+            (k) => k !== "enabled" && k !== "variant" && !autoFilled?.has(k)
+          )
         );
         const textKeys = keys.filter((k) => typeof value[k] === "string");
         const otherKeys = keys.filter((k) => typeof value[k] !== "string");

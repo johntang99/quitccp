@@ -1,0 +1,256 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>退黨網站淺色首頁</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 首頁樣板，頂部切換條換三種淺色底；深紫文字 + 金色點綴，版式按排版規範 */
+/* 刻意只做淺色版：本頁要比較的就是三種淺色底 */
+:root{
+  color-scheme:light;
+  --ink:#241a4f;        /* 標題深紫 */
+  --text:#3a3160;       /* 內文深紫 */
+  --muted:#6b6488;
+  --brand:#2c2170;      /* 按鈕、頁腳底色 */
+  --gold:#c9a045;       /* 線條、色塊、大字 */
+  --gold-soft:#ecd9a8;
+  --gold-text:#85651c;  /* 小字金色，保證可讀 */
+  --on-brand:#f6f3ff;
+  --serif:"Noto Serif SC","Songti SC",serif;
+  --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --ui:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  /* 預設：杏色 */
+  --bg:#f7efe2; --surface:#fdf8f0; --line:#e5d7bf; --band:#efe3cf;
+}
+body[data-bg="lavender"]{--bg:#f3f0fa; --surface:#fbfafe; --line:#dcd5ee; --band:#e9e3f6}
+body[data-bg="white"]{--bg:#ffffff; --surface:#f8f7fb; --line:#e6e2ef; --band:#f4f1f9}
+
+body{background:var(--bg);color:var(--text);font:400 17px/1.8 var(--sans);letter-spacing:.02em;transition:background .25s}
+@media (prefers-reduced-motion:reduce){body{transition:none}}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{font-family:var(--serif);font-weight:700;color:var(--ink);letter-spacing:.01em;text-wrap:balance}
+.nw{white-space:nowrap}
+.in{max-width:1180px;margin:0 auto;padding-inline:24px}
+@media (max-width:640px){body{font-size:16px}.in{padding-inline:16px}}
+
+/* 切換條 */
+.switch{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--ink);color:var(--on-brand);font-family:var(--ui)}
+.switch .in{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding-block:10px}
+.switch b{font-size:14px;font-weight:500;letter-spacing:.04em}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{display:flex;align-items:center;gap:8px;font:500 14px/1 var(--ui);color:var(--on-brand);background:transparent;border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:7px 14px 7px 8px;cursor:pointer}
+.opt i{width:18px;height:18px;border-radius:50%;border:1px solid rgba(255,255,255,.5)}
+.opt[aria-pressed="true"]{background:var(--on-brand);color:var(--ink);border-color:var(--on-brand)}
+.opt:focus-visible,.btn:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.hex{font:400 13px/1.4 var(--mono);opacity:.75;margin-left:auto}
+
+/* 頁頭 */
+.util{border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
+.util .in{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 20px;padding-block:8px}
+.langs{display:flex;flex-wrap:wrap;gap:4px 16px}
+.langs .on{color:var(--ink);font-weight:500;border-bottom:2px solid var(--gold)}
+.mast .in{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding-block:22px}
+.logo{display:flex;align-items:center;gap:14px}
+.mark{width:46px;height:46px;border-radius:50%;border:2px solid var(--gold);display:grid;place-items:center;font:700 20px/1 var(--serif);color:var(--ink);background:var(--surface)}
+.wm b{display:block;font:700 23px/1.2 var(--serif);color:var(--ink);letter-spacing:.06em}
+.wm span{display:block;font:500 10.5px/1.4 var(--sans);letter-spacing:.12em;color:var(--gold-text);text-transform:uppercase;margin-top:3px}
+.acts{display:flex;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;font:500 15px/1 var(--sans);letter-spacing:.04em;padding:13px 22px;border-radius:3px;border:1px solid var(--ink);color:var(--ink);background:transparent;cursor:pointer}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:var(--ink)}
+.btn.solid{background:var(--brand);border-color:var(--brand);color:var(--on-brand)}
+nav{border-top:1px solid var(--line);border-bottom:3px double var(--line)}
+nav .in{display:flex;gap:4px 28px;overflow-x:auto;padding-block:12px;font:500 15px/1.6 var(--sans);color:var(--ink);white-space:nowrap}
+nav .cur{box-shadow:inset 0 -2px 0 var(--gold)}
+
+/* 頭條 */
+.hero .in{display:grid;grid-template-columns:1.05fr 1fr;gap:48px;align-items:center;padding-block:56px}
+@media (max-width:860px){.hero .in{grid-template-columns:1fr;gap:28px;padding-block:32px}}
+.hero-txt{display:grid;gap:18px;min-width:0}
+.eyebrow{font:500 13px/1.6 var(--sans);letter-spacing:.08em;color:var(--gold-text)}
+.hero h1{font-size:clamp(30px,4vw,46px);line-height:1.3}
+.hero p.lede{max-width:30em;color:var(--text)}
+.hero .acts{margin-top:6px;flex-wrap:wrap}
+.photo{aspect-ratio:4/3;max-width:100%;border-radius:2px;background:
+  linear-gradient(180deg,rgba(36,26,79,0) 55%,rgba(36,26,79,.55)),
+  linear-gradient(135deg,#8c84b3,#4b4189 45%,#c9a045 140%);position:relative;display:flex;align-items:flex-end;padding:16px;color:#fff;font-size:13px}
+.cap{font:400 14px/1.6 var(--sans);color:var(--muted);margin-top:10px}
+.cap b{color:var(--ink);font-weight:500}
+
+/* 數字帶 */
+.band{background:var(--band);border-block:1px solid var(--line)}
+.band .in{display:grid;grid-template-columns:auto 1fr;gap:12px 48px;align-items:end;padding-block:44px}
+@media (max-width:720px){.band .in{grid-template-columns:1fr}}
+.fig{font:700 clamp(64px,9vw,104px)/1 var(--serif);color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.fig small{font-size:.38em;margin-left:6px;color:var(--gold-text)}
+.fig-txt{display:grid;gap:10px;padding-bottom:6px;min-width:0}
+.fig-txt p:first-child{font:400 20px/1.6 var(--sans);color:var(--ink)}
+.src{font-size:14px;color:var(--muted);border-top:1px solid var(--gold-soft);padding-top:10px}
+.src a{color:var(--gold-text);border-bottom:1px solid var(--gold-soft)}
+
+/* 欄目 */
+.sec .in{padding-block:64px;display:grid;gap:32px}
+.sec-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px;border-top:2px solid var(--ink);padding-top:18px}
+.sec-h > div{display:grid;gap:6px}
+.sec-h h2{font-size:clamp(26px,3vw,36px);line-height:1.3}
+.more{font:500 15px/1.6 var(--sans);color:var(--ink);border-bottom:1px solid var(--gold)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+@media (max-width:860px){.cards{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--gold);padding:26px 24px;display:grid;gap:10px;align-content:start}
+.card .eyebrow{font-size:13px}
+.card h3{font-size:22px;line-height:1.4}
+.card p{font-size:15px;color:var(--muted)}
+.card ul{list-style:none;margin:6px 0 0;padding:0;border-top:1px solid var(--line)}
+.card li{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font:500 15px/1.5 var(--sans);color:var(--ink)}
+.card li span{color:var(--gold-text)}
+
+/* 新聞 */
+.news{display:grid;grid-template-columns:1.3fr 1fr;gap:40px}
+@media (max-width:860px){.news{grid-template-columns:1fr}}
+.lead{display:grid;gap:14px;min-width:0}
+.lead .photo{aspect-ratio:16/9}
+.lead h3{font-size:clamp(22px,2.4vw,28px);line-height:1.35}
+.lead p{color:var(--muted);font-size:16px}
+.meta{font:400 14px/1.6 var(--sans);color:var(--muted)}
+.meta .d{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.list{list-style:none;margin:0;padding:0;border-top:1px solid var(--line);min-width:0}
+.list li{padding:16px 0;border-bottom:1px solid var(--line);display:grid;gap:4px}
+.list .k{font:500 13px/1.6 var(--sans);letter-spacing:.06em;color:var(--gold-text)}
+.list h3{font-size:18px;line-height:1.5;font-weight:600}
+
+/* 頁腳 */
+footer{background:var(--brand);color:var(--on-brand)}
+footer .in{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:28px;padding-block:48px}
+@media (max-width:860px){footer .in{grid-template-columns:1fr 1fr}}
+footer h4{margin:0 0 10px;font:500 14px/1.6 var(--sans);letter-spacing:.06em;color:var(--gold-soft)}
+footer ul{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:14px;color:#d9d3f2}
+.f-about{display:grid;gap:10px;font-size:14px;color:#d9d3f2}
+.f-about b{font:700 20px/1.3 var(--serif);color:#fff;letter-spacing:.06em}
+.copy{grid-column:1/-1;border-top:1px solid rgba(255,255,255,.18);padding-top:16px;font-size:13px;color:#bfb7e3}
+.note{font:400 14px/1.7 var(--ui);color:var(--muted);padding-block:20px 40px}
+</style>
+
+
+<div class="switch">
+  <div class="in">
+    <b>底色方案</b>
+    <div class="opts" role="group" aria-label="底色方案">
+      <button class="opt" type="button" id="opt-apricot" data-v="apricot" aria-pressed="true"><i style="background:#f7efe2"></i>1 杏色</button>
+      <button class="opt" type="button" id="opt-lavender" data-v="lavender" aria-pressed="false"><i style="background:#f3f0fa"></i>2 淺紫色</button>
+      <button class="opt" type="button" id="opt-white" data-v="white" aria-pressed="false"><i style="background:#ffffff"></i>3 白色</button>
+    </div>
+    <span class="hex" id="hex">底 #F7EFE2 · 卡片 #FDF8F0</span>
+  </div>
+</div>
+
+<div class="util"><div class="in">
+  <div class="langs"><a class="on" href="#">中文</a><a href="#">English</a><a href="#">Deutsch</a><a href="#">한국어</a><a href="#">日本語</a><a href="#">Română</a></div>
+  <a href="#">免翻墙链接</a>
+</div></div>
+
+<header class="mast"><div class="in">
+  <a class="logo" href="#">
+    <span class="mark">退</span>
+    <span class="wm"><b>全球退党服务中心</b><span>Global Service Center for Quitting the CCP</span></span>
+  </a>
+  <div class="acts"><a class="btn" href="#">捐助我们</a><a class="btn gold" href="#">我要三退</a></div>
+</div></header>
+
+<nav><div class="in">
+  <a class="cur" href="#">首页</a><a href="#">新闻与报告</a><a href="#">视频</a><a href="#">我们的服务</a><a href="#">关于我们</a><a href="#">参与支持</a><a href="#">资源</a>
+</div></nav>
+
+<section class="hero"><div class="in">
+  <div class="hero-txt">
+    <p class="eyebrow">成立于 2005 年 · 总部纽约 · 全球 100 多个服务点</p>
+    <h1>习访美背后：从<span class="nw">《民族团结法》</span>到<span class="nw">华府街头</span>拳头</h1>
+    <p class="lede">中共长臂伸进自由世界，是一场针对人类文明底线的越境侵犯。2026 年 9 月 24 日下午，华盛顿特区出现了两幅截然不同的画面：同一个下午，两个华盛顿。</p>
+    <div class="acts"><a class="btn solid" href="#">阅读全文</a><a class="btn" href="#">退出中共</a></div>
+  </div>
+  <figure style="margin:0">
+    <div class="photo">新闻图片位置</div>
+    <figcaption class="cap"><b>Robert Destro</b> 在华盛顿集会上发言</figcaption>
+  </figure>
+</div></section>
+
+<section class="band"><div class="in">
+  <p class="fig">4.64<small>亿</small></p>
+  <div class="fig-txt">
+    <p>人已公开声明退出中共党、团、队组织。</p>
+    <p class="src">来源：全球退党服务中心登记册 · 更新于 2026-09-30 · <a href="#">统计方法说明</a></p>
+  </div>
+</div></section>
+
+<section class="sec"><div class="in">
+  <div class="sec-h">
+    <div><p class="eyebrow">我们的服务</p><h2>退党服务、媒体报道、视频真相</h2></div>
+    <a class="more" href="#">查看全部服务 →</a>
+  </div>
+  <div class="cards">
+    <article class="card">
+      <p class="eyebrow">登记</p>
+      <h3>三退登记与证明</h3>
+      <p>声明可以匿名提交，也可以申请一份中英文对照的证明文件。</p>
+      <ul><li>声明三退<span>→</span></li><li>办理退党证明<span>→</span></li><li>查询验证<span>→</span></li></ul>
+    </article>
+    <article class="card">
+      <p class="eyebrow">调查</p>
+      <h3>调查、存档与见证</h3>
+      <p>来自曾经身处体制之内的人，陈述被完整记录并存档。</p>
+      <ul><li>调查报告<span>→</span></li><li>亲历者见证<span>→</span></li><li>声援与响应<span>→</span></li></ul>
+    </article>
+    <article class="card">
+      <p class="eyebrow">出版</p>
+      <h3>出版、影音与工具</h3>
+      <p>书籍、影音节目与资料下载，供个人阅读和转发。</p>
+      <ul><li>《九评共产党》<span>→</span></li><li>影音节目<span>→</span></li><li>资料与工具<span>→</span></li></ul>
+    </article>
+  </div>
+</div></section>
+
+<section class="sec" style="padding-top:0"><div class="in" style="padding-top:0">
+  <div class="sec-h">
+    <div><p class="eyebrow">新闻与报告</p><h2>主要新闻与重点议题</h2></div>
+    <a class="more" href="#">进入新闻中心 →</a>
+  </div>
+  <div class="news">
+    <article class="lead">
+      <div class="photo">头条图片位置</div>
+      <p class="meta">头条 · <span class="d">2026-09-27</span></p>
+      <h3>全球退党中心：三退大潮宣告镇压破产</h3>
+      <p>示例摘要：此处放置文章导语，两到三行，控制在 80 字以内。</p>
+    </article>
+    <ul class="list">
+      <li><span class="k">调查</span><h3>一场泥石流，照出百万军人沉默抗命</h3><span class="meta"><span class="d">2026-09-26</span></span></li>
+      <li><span class="k">声援</span><h3>纽约中领馆前烛光夜悼</h3><span class="meta"><span class="d">2026-09-26</span></span></li>
+      <li><span class="k">视频</span><h3>《铁证如山》系列调查</h3><span class="meta"><span class="d">2026-09-23</span></span></li>
+      <li><span class="k">评论</span><h3>示例标题：列表标题 18px，行距 1.5，字重 600</h3><span class="meta"><span class="d">2026-09-22</span></span></li>
+    </ul>
+  </div>
+</div></section>
+
+<footer><div class="in">
+  <div class="f-about"><b>全球退党服务中心</b><p>Global Service Center for Quitting the Chinese Communist Party<br>美国 501(c)(3) 非营利组织</p></div>
+  <div><h4>服务</h4><ul><li>声明三退</li><li>办理退党证明</li><li>查询验证</li><li>三退问答</li></ul></div>
+  <div><h4>关于我们</h4><ul><li>财务与问责</li><li>全球服务网络</li><li>团队</li><li>联系我们</li></ul></div>
+  <div><h4>参与</h4><ul><li>成为义工</li><li>见证故事</li><li>捐助我们</li></ul></div>
+  <p class="copy">© 2005–2026 全球退党服务中心 · 服务条款 · 隐私政策</p>
+</div></footer>
+
+<div class="in note">样板说明：图片为占位色块；新闻标题和摘要部分为示例文字。排版数值按《退黨網站排版規範》设定。</div>
+
+<script>
+const hex={apricot:'底 #F7EFE2 · 卡片 #FDF8F0',lavender:'底 #F3F0FA · 卡片 #FBFAFE',white:'底 #FFFFFF · 卡片 #F8F7FB'};
+function setBg(v){
+  if(!hex[v]) v='apricot';
+  document.body.dataset.bg=v;
+  document.querySelectorAll('.opt').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));
+  document.getElementById('hex').textContent=hex[v];
+}
+document.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{setBg(b.dataset.v);try{history.replaceState(null,'','#'+b.dataset.v)}catch(e){}}));
+setBg(location.hash.slice(1));
+</script>
+
+
+</body></html>

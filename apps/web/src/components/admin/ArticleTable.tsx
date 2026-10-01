@@ -20,11 +20,18 @@ function day(value: string | null): string {
 export function ArticleTable({
   rows,
   selectable = true,
-  numbered = false
+  numbered = false,
+  dateColumn = "published"
 }: {
   rows: ArticleRecord[];
   selectable?: boolean;
   numbered?: boolean;
+  /**
+   * Which date to show. It must be the one the list is sorted on: showing the
+   * publish date beside an update-ordered list made the dates look shuffled --
+   * 2026 then 2011 then 2012 -- with nothing on screen to explain the order.
+   */
+  dateColumn?: "published" | "updated";
 }) {
   return (
     <div className="admin-table-wrap">
@@ -40,7 +47,7 @@ export function ArticleTable({
             <th>状态</th>
             <th style={{ width: 44, textAlign: "center" }} title="重要">重要</th>
             <th style={{ width: 62, textAlign: "center" }} title="精彩保留">精彩</th>
-            <th>发布</th>
+            <th>{dateColumn === "updated" ? "更新" : "发布"}</th>
             <th />
           </tr>
         </thead>
@@ -107,7 +114,9 @@ export function ArticleTable({
                 <td style={{ textAlign: "center" }} title={row.editorArchive ? "精彩保留" : ""}>
                   {row.editorArchive ? <span style={{ color: "#1f7a4d", fontSize: 15 }}>✦</span> : null}
                 </td>
-                <td style={{ color: "#8a90a0", whiteSpace: "nowrap" }}>{day(row.publishedAt)}</td>
+                <td style={{ color: "#8a90a0", whiteSpace: "nowrap" }}>
+                  {day(dateColumn === "updated" ? row.updatedAt : row.publishedAt)}
+                </td>
                 <td style={{ whiteSpace: "nowrap" }}>
                   <Link className="admin-btn admin-btn-sm" href={`/admin/articles/${row.id}`}>
                     编辑

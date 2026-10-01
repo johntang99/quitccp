@@ -23,9 +23,22 @@ export function NewsHeader({
   today?: string;
   listing?: { name: string; en: string; total: number };
 }) {
-  // archive and latest are the whole section, so 全部 is the tab they belong to.
+  // archive and latest are the whole section: they light 全部新闻, not a category.
   const wholeSection = active === "archive" || active === "latest";
   const activeTab = wholeSection ? undefined : active;
+  // Only the section index itself, which passes no `active` at all.
+  const isHome = active === undefined;
+
+  const tabStyle = (on: boolean) => ({
+    fontSize: 15,
+    textDecoration: "none",
+    padding: "16px 0 14px",
+    marginTop: -1,
+    whiteSpace: "nowrap" as const,
+    color: on ? "#fff" : "#CFC8EE",
+    fontWeight: on ? 600 : 400,
+    borderTop: `2px solid ${on ? T.gold : "transparent"}`
+  });
   return (
     <header
       style={{
@@ -79,67 +92,27 @@ export function NewsHeader({
             </p>
           </div>
         )}
-        <a
-          href="/search"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            width: 320,
-            padding: "12px 16px",
-            borderRadius: 999,
-            background: "rgba(255,255,255,0.1)",
-            border: "1px solid rgba(255,255,255,0.22)",
-            color: "#CFC8EE",
-            fontSize: 14,
-            textDecoration: "none"
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#CFC8EE" strokeWidth="2" strokeLinecap="round">
-            <circle cx="11" cy="11" r="7" />
-            <path d="M20 20l-4-4" />
-          </svg>
-          {listing ? "在本栏目中搜索" : "搜索文章、人物或地点"}
-        </a>
       </div>
 
       <nav aria-label="新闻分类" className="news-shell news-tabs">
-        <a
-          href="/news"
-          style={{
-            fontSize: 15,
-            textDecoration: "none",
-            padding: "16px 0 14px",
-            marginTop: -1,
-            whiteSpace: "nowrap",
-            color: activeTab ? "#CFC8EE" : "#fff",
-            fontWeight: activeTab ? 400 : 600,
-            borderTop: `2px solid ${activeTab ? "transparent" : T.gold}`
-          }}
-        >
-          全部
+        {/* 新闻首页 is this section's front page; 全部新闻 at the far end is the
+            whole archive. They used to be one tab called 全部, which meant the
+            homepage and the 15,515-article listing shared a name. */}
+        <a href="/news" style={tabStyle(isHome)}>
+          新闻首页
         </a>
-        {NEWS_CATEGORIES.map((category) => {
-          const on = activeTab === category.slug;
-          return (
-            <a
-              key={category.slug}
-              href={`/news/${category.slug}`}
-              style={{
-                fontSize: 15,
-                textDecoration: "none",
-                padding: "16px 0 14px",
-                marginTop: -1,
-                whiteSpace: "nowrap",
-                color: on ? "#fff" : "#CFC8EE",
-                fontWeight: on ? 600 : 400,
-                borderTop: `2px solid ${on ? T.gold : "transparent"}`
-              }}
-            >
-              {category.name}
-            </a>
-          );
-        })}
+        {NEWS_CATEGORIES.map((category) => (
+          <a
+            key={category.slug}
+            href={`/news/${category.slug}`}
+            style={tabStyle(activeTab === category.slug)}
+          >
+            {category.name}
+          </a>
+        ))}
+        <a href="/news/archive" style={tabStyle(wholeSection)}>
+          全部新闻
+        </a>
       </nav>
     </header>
   );

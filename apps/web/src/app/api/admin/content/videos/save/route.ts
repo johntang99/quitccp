@@ -16,6 +16,10 @@ export async function POST(request: Request) {
 
   const form = await request.formData();
   const text = (name: string) => String(form.get(name) ?? "").trim();
+  const flag = (name: string) => form.get(name) === "1";
+  // The form saves over fetch and stays on the page; a plain post without
+  // JavaScript still gets the redirects it expects.
+  const wantsJson = (request.headers.get("accept") ?? "").includes("application/json");
 
   const title = text("title");
   const slug = text("slug");
@@ -28,6 +32,7 @@ export async function POST(request: Request) {
   // with no category at all and said 「已保存」.
   const backTo = id ? `/admin/videos/${id}` : "/admin/videos/new";
   const reject = (message: string) => {
+    if (wantsJson) return NextResponse.json({ ok: false, error: message }, { status: 400 });
     const target = new URL(backTo, request.url);
     target.searchParams.set("error", message);
     return NextResponse.redirect(target, 303);
@@ -53,8 +58,9 @@ export async function POST(request: Request) {
   const publishedRaw = text("publishedAt");
   const published = publishedRaw ? new Date(publishedRaw) : null;
 
+  let savedId = id;
   try {
-    await saveVideo({
+    savedId = await saveVideo({
       id: id || undefined,
       slug,
       title,
@@ -69,10 +75,22 @@ export async function POST(request: Request) {
       sourceCredit: text("sourceCredit"),
       status,
       publishedAt: published && !Number.isNaN(published.getTime()) ? published.toISOString() : null,
-      category
+      category,
+      featured: flag("featured"),
+      editorArchive: flag("editorArchive")
     });
   } catch (error) {
     return reject(error instanceof Error ? error.message : "保存失败。");
+  }
+
+  if (wantsJson) {
+    return NextResponse.json({
+      ok: true,
+      id: savedId,
+      slug,
+      status,
+      savedAt: new Date().toISOString()
+    });
   }
 
   const target = new URL("/admin/videos", request.url);

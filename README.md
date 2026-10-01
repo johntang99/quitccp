@@ -9,6 +9,15 @@ rm -rf .next
 npm run dev
 
 npm install
+
+# Verify the production build WITHOUT breaking a running dev server.
+# `next dev` and `next build` both write to .next by default, so a plain
+# `npm run build` replaces the chunks the dev server is serving and localhost:4020
+# starts 500ing with "Cannot find module ./vendor-chunks/...".
+# build:check writes to .next-verify instead, so both can run at once.
+npm run build:check
+
+# The real deploy build (writes .next). Stop the dev server first.
 npm run build
 
 git add .
@@ -28,6 +37,28 @@ This repository contains the full implementation for the QuitCCP dynamic platfor
 - `supabase/content` - Content database migrations.
 - `supabase/service` - Sensitive service database migrations.
 - `scripts` - Migration and validation scripts.
+
+## Environment variables
+
+Secrets live in the repo-root `.env.local`. `apps/web/next.config.ts` loads that
+file into `process.env` at startup, so route handlers see the root values without
+anything being duplicated into `apps/web/.env.local`.
+
+There is deliberately **no `apps/web/.env.local`**. One file locally, one set of
+project variables on Vercel — nothing to keep in sync and no second file that
+could be committed by accident.
+
+Precedence, highest first:
+
+1. real environment variables (Vercel's project settings, or `FOO=bar npm start`)
+2. `apps/web/.env.local` — supported if you create one, but not used here
+3. the repo-root `.env.local`
+
+On Vercel the root file does not exist — it is gitignored — so the loader is a
+no-op there and the platform's variables are used directly. **Every variable the
+app needs at runtime must be set in the Vercel project**: the Supabase URL,
+service-role key and anon key, `JWT_SECRET`, `SUPABASE_STORAGE_BUCKET`,
+`NEXT_PUBLIC_SITE_URL`, and `OPENAI_API_KEY` for the 摘要 AI 生成 button.
 
 ## Quick Start
 
