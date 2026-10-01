@@ -87,7 +87,10 @@ const FIELD_LABELS: Record<string, string> = {
   listMoreHref: "侧栏底部链接地址（List more link）",
   latestLabel: "卡片区标题（Latest label）",
   footNote: "底部说明（Footer note）",
-  footMark: "底部标记（Footer mark）"
+  footMark: "底部标记（Footer mark）",
+  asideImage: "右侧推广图（Promo image，留空则显示三项统计）",
+  asideImageAlt: "推广图说明（Promo image alt）",
+  asideHref: "推广图链接（Promo link）"
 };
 
 /** Render order per section. Anything unlisted follows, alphabetically. */
@@ -100,6 +103,9 @@ const FIELD_ORDER: Record<string, string[]> = {
     "liveLabel",
     "streamHeading",
     "feedCount",
+    "asideImage",
+    "asideImageAlt",
+    "asideHref",
     "noteLabel",
     "noteHref",
     "substats"
@@ -139,12 +145,12 @@ const FIELD_ORDER: Record<string, string[]> = {
 };
 
 /** Plain-text fields that hold an image URL. */
-const IMAGE_FIELDS = new Set(["image", "poster", "backgroundImage"]);
+const IMAGE_FIELDS = new Set(["image", "poster", "backgroundImage", "asideImage"]);
 
 /** Fields that get a purpose-built editor rather than a JSON textarea. */
 const STRUCTURED = new Set(["gallery", "video", "actions"]);
 
-const MEDIA_FIELDS = new Set(["image", "imageAlt", "gallery", "video"]);
+const MEDIA_FIELDS = new Set(["image", "imageAlt", "gallery", "video", "asideImage", "asideImageAlt"]);
 const LINK_FIELDS = new Set([
   "actions",
   "moreLabel",
@@ -152,7 +158,8 @@ const LINK_FIELDS = new Set([
   "buttonLabel",
   "buttonHref",
   "listMoreLabel",
-  "listMoreHref"
+  "listMoreHref",
+  "asideHref"
 ]);
 
 /**

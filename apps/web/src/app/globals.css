@@ -1957,6 +1957,19 @@
 }
 .dawn-note:hover { color: #FFF0C8; }
 
+/* The promoted banner that can replace the three statistics. The band's own
+   16:9-ish artwork sets the height, so no crop is imposed on it; the border
+   keeps a light image from bleeding into the purple ground. */
+.dawn-promo {
+  display: block;
+  line-height: 0;
+  border: 1px solid rgba(255, 255, 255, .28);
+  background: rgba(255, 255, 255, .06);
+  transition: border-color .2s ease, transform .2s ease;
+}
+.dawn-promo img { width: 100%; height: auto; display: block; }
+.dawn-promo:hover { border-color: var(--dawn-gold); transform: translateY(-2px); }
+
 /* ---- declaration feed: a continuously moving trail ---- */
 .dawn-feed {
   overflow: hidden;

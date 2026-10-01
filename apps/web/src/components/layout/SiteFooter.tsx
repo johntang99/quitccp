@@ -92,7 +92,6 @@ export function SiteFooter() {
         <div className="foot-bottom">
           <span>© 2005-2026 全球退党服务中心 · 501(c)(3) 非营利组织</span>
           <span>
-            <Link href="/services/privacy">隐私政策</Link> ·{" "}
             <a href={EXTERNAL_SERVICES.termsOfService} {...EXTERNAL_LINK_PROPS}>
               服务条款
             </a>{" "}

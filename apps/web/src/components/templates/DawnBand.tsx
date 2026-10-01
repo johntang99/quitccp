@@ -66,18 +66,32 @@ export function DawnBand({ registry, services, voices, feed }: DawnBandProps) {
             <p className="dawn-count-label">{registry.countLabel}</p>
           </div>
 
+          {/* A promoted banner takes the whole right column when one is set;
+              clearing the image in the CMS brings the three statistics back. */}
           <div className="dawn-aside">
-            <div className="dawn-stats">
-              {registry.substats.map((stat) => (
-                <span key={`${stat.value}-${stat.label}`}>
-                  <b>{stat.value}</b>
-                  <span>{stat.label}</span>
-                </span>
-              ))}
-            </div>
-            <a className="dawn-note" href={registry.noteHref} {...externalLinkProps(registry.noteHref)}>
-              {registry.noteLabel}
-            </a>
+            {registry.asideImage ? (
+              <a
+                className="dawn-promo"
+                href={registry.asideHref || registry.noteHref}
+                {...externalLinkProps(registry.asideHref || registry.noteHref)}
+              >
+                <img src={registry.asideImage} alt={registry.asideImageAlt} />
+              </a>
+            ) : (
+              <>
+                <div className="dawn-stats">
+                  {registry.substats.map((stat) => (
+                    <span key={`${stat.value}-${stat.label}`}>
+                      <b>{stat.value}</b>
+                      <span>{stat.label}</span>
+                    </span>
+                  ))}
+                </div>
+                <a className="dawn-note" href={registry.noteHref} {...externalLinkProps(registry.noteHref)}>
+                  {registry.noteLabel}
+                </a>
+              </>
+            )}
           </div>
         </div>
 

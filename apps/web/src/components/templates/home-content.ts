@@ -177,6 +177,11 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
       substats: substats.length > 0 ? substats : d.registry.substats,
       streamHeading: asString(registryRow.streamHeading, d.registry.streamHeading),
       liveLabel: asString(registryRow.liveLabel, d.registry.liveLabel),
+      // Cleared deliberately means "show the statistics again", so these three
+      // fall back to "" rather than to the default banner.
+      asideImage: asString(registryRow.asideImage, d.registry.asideImage),
+      asideImageAlt: asString(registryRow.asideImageAlt, d.registry.asideImageAlt),
+      asideHref: asString(registryRow.asideHref, d.registry.asideHref),
       feedCount: Math.max(1, Math.min(20, asNumber(registryRow.feedCount, d.registry.feedCount)))
     },
     services: {

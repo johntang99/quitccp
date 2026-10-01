@@ -133,6 +133,14 @@ export interface HomeContent {
     streamHeading: string;
     /** Shown beside the pulsing dot in the dawn variant, e.g. "实时登记册 · LIVE". */
     liveLabel: string;
+    /**
+     * A promoted banner filling the right of the 曙光 band, in place of the
+     * three small statistics. Blank falls back to those statistics, which is
+     * also what every other variant still shows.
+     */
+    asideImage: string;
+    asideImageAlt: string;
+    asideHref: string;
     /** How many declaration cards the dawn trail carries. */
     feedCount: number;
   };
@@ -345,6 +353,10 @@ export const homeContentDefaults: HomeContent = {
     ],
     streamHeading: "Latest Updates",
     liveLabel: "实时登记册 · LIVE",
+    asideImage:
+      "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/articles/f7/f725911b111ce6f2.jpeg",
+    asideImageAlt: "法轮功创始人李洪志大师发表《为什么会有人类》",
+    asideHref: "https://www.tuidang.org/2023/01/24/690040/",
     feedCount: 10
   },
   services: {
