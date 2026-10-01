@@ -1,5 +1,6 @@
 import { getHomeNews, getHomeVideo, type HomeNewsLive, type HomeVideoLive } from "@/lib/public-content";
 import { getHomepageHeroContent } from "@/lib/public-settings";
+import { formatYi, getSantuiSnapshot, toFeedRow } from "@/lib/santui";
 import { HeroGallery, HeroVideo } from "@/components/public/HeroMedia";
 import { DawnBand } from "./DawnBand";
 import { BroadsheetBand } from "./BroadsheetBand";
@@ -12,12 +13,14 @@ import type { HomeContent } from "@quitccp/content-schema";
 import { resolveHomeContent } from "./home-content";
 
 /**
- * Declaration entries shown in the 实时登记册 ticker.
+ * Last-resort rows for the 实时登记册 ticker.
  *
  * !! THESE ARE PLACEHOLDERS, NOT REAL DECLARATIONS. !!
- * They exist so the trail has something to show; on a public site they read as
- * genuine records of real people, which they are not. Replace them by wiring
- * the santui feed (santui.tuidang.org/index/showpage/type/1) before launch.
+ * The trail is now filled from santui.tuidang.org's 精彩推荐 via
+ * `npm run sync:santui` (see `@/lib/santui`), and these are reached only when
+ * no snapshot has ever been written -- a fresh database, or a machine that has
+ * never run the sync. They read as genuine records of real people and are not,
+ * so a deployment that shows them is misconfigured, not merely stale.
  *
  * Content is deliberately NOT editable in the CMS: real declarations belong to
  * the feed, not to an editor. Only the section's layout is configurable.
@@ -257,9 +260,10 @@ export async function HomeTemplate({ content }: TemplatePageData) {
   // The articles in the 主要新闻 band and the four 专题栏目 cards come from the
   // article table, not from what someone last typed into the homepage admin.
   // The editor still owns the headings, the labels and which four columns show.
-  const [liveNews, liveVideo] = await Promise.all([
+  const [liveNews, liveVideo, santui] = await Promise.all([
     getHomeNews(home.channels.cards.map((card) => card.title)),
-    getHomeVideo()
+    getHomeVideo(),
+    getSantuiSnapshot()
   ]);
 
   // The hero also has a legacy shape (payload.hero + payload.subtitle) and a
@@ -280,10 +284,20 @@ export async function HomeTemplate({ content }: TemplatePageData) {
     text: asString(row.text),
     at: asString(row.at)
   }));
-  const streamRows = legacyStream.length > 0 ? legacyStream : streamEntries;
+  // Real declarations first. The CMS rows, and failing those the placeholders,
+  // only stand in while the santui snapshot is missing or has never been run.
+  const streamRows =
+    santui && santui.declarations.length > 0
+      ? santui.declarations.map(toFeedRow)
+      : legacyStream.length > 0
+        ? legacyStream
+        : streamEntries;
 
-  const { hero, registry, services, news, channels, video, voices, network, resources, about, involve } =
-    home;
+  const { hero, services, news, channels, video, voices, network, resources, about, involve } = home;
+  // The headline figure is santui's, not ours; the CMS value is the fallback
+  // for a machine that has never synced.
+  const liveCount = santui ? formatYi(santui.total) : "";
+  const registry = liveCount ? { ...home.registry, count: liveCount } : home.registry;
 
   const heroActions = (
     <div className="hero-cta">

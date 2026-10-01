@@ -1,0 +1,79 @@
+import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+
+/**
+ * The live registry figures, as captured from santui.tuidang.org.
+ *
+ * Written by `npm run sync:santui` (see that script for why the fetch cannot
+ * happen at request time) and read here. Everything in this module degrades to
+ * `null` rather than throwing: the homepage must render even if the table is
+ * missing, the snapshot has never been written, or Supabase is unreachable. The
+ * caller falls back to the figures stored in the CMS.
+ */
+
+const FEED_PATH = "feeds/santui.json";
+
+export interface SantuiDeclaration {
+  id: string;
+  name: string;
+  from: string;
+  people: string;
+  at: string;
+  text: string;
+  href: string;
+}
+
+export interface SantuiSnapshot {
+  total: number;
+  totalDisplay: string;
+  sourceUpdatedAt: string;
+  fetchedAt: string;
+  declarations: SantuiDeclaration[];
+}
+
+/**
+ * 466,911,794 -> "4.66 亿".
+ *
+ * Truncated, never rounded: 4.669… is reported as 4.66, because a registry
+ * count is a floor -- every declaration behind it is a real one, and rounding
+ * up would claim declarations that have not been made. This also matches how
+ * santui itself presents the figure.
+ */
+export function formatYi(total: number): string {
+  if (!Number.isFinite(total) || total <= 0) return "";
+  return `${(Math.floor(total / 1e6) / 100).toFixed(2)} 亿`;
+}
+
+function isUsable(value: unknown): value is SantuiSnapshot {
+  if (typeof value !== "object" || value === null) return false;
+  const row = value as Record<string, unknown>;
+  return typeof row.total === "number" && row.total > 0 && Array.isArray(row.declarations);
+}
+
+export async function getSantuiSnapshot(): Promise<SantuiSnapshot | null> {
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data, error } = await supabase
+      .from("cms_content_entries")
+      .select("data")
+      .eq("path", FEED_PATH)
+      .eq("locale", "zh")
+      .maybeSingle();
+    if (error || !data) return null;
+    return isUsable(data.data) ? (data.data as SantuiSnapshot) : null;
+  } catch {
+    // A missing table or an unreachable database is not a reason to fail the
+    // homepage; the CMS figures stand in.
+    return null;
+  }
+}
+
+/** Shapes a declaration for the 曙光 trail. */
+export function toFeedRow(row: SantuiDeclaration) {
+  return {
+    // santui's own statement id, grouped like the count beside it.
+    region: `No. ${Number(row.id).toLocaleString("en-US")}`,
+    name: [row.name, row.from].filter(Boolean).join(" · "),
+    text: row.text,
+    at: row.at
+  };
+}

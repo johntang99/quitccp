@@ -2023,10 +2023,15 @@
   font-size: 16px;
   line-height: 1.7;
   color: var(--dawn-onink);
-  /* The design keeps each card to a single line so the row stays even. */
-  white-space: nowrap;
+  /* Two lines: enough of a statement to be worth reading, and a fixed height so
+     the row stays even whether the text runs long or stops after a few words.
+     min-height reserves the second line that line-clamp alone would not. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  min-height: calc(2 * 1.7em);
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 .dawn-feed-who { font-size: 13px; color: #E6E1F8; }
 

@@ -28,10 +28,12 @@
     "redirects:validate": "tsx scripts/validate-redirects.ts",
     "redirects:load": "tsx scripts/load-redirects.ts",
     "content:seed:home": "tsx scripts/seed-home-content.ts",
-    "build:check": "node scripts/build-check.mjs"
+    "build:check": "node scripts/build-check.mjs",
+    "sync:santui": "tsx scripts/sync-santui.ts"
   },
   "devDependencies": {
-    "tsx": "^4.19.2"
+    "tsx": "^4.19.2",
+    "playwright": "^1.49.0"
   },
   "engines": {
     "node": ">=20.0.0"
