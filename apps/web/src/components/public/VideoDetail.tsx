@@ -59,7 +59,7 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
 
   return (
     <div className="wrap" style={{ paddingTop: 34, paddingBottom: 64, maxWidth: 900 }}>
-      <p style={{ fontFamily: "var(--mono)", fontSize: 12, color: "var(--muted)", display: "flex", gap: 8 }}>
+      <p style={{ fontFamily: "var(--mono)", fontSize: 13, color: "var(--muted)", display: "flex", gap: 8 }}>
         <a href="/" style={{ color: "var(--muted)" }}>首页</a>
         <span>/</span>
         <a href="/videos" style={{ color: "var(--muted)" }}>视频</a>
@@ -74,7 +74,7 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
       <h1
         style={{
           fontFamily: "var(--serif)",
-          fontWeight: 900,
+          fontWeight: 700,
           fontSize: "clamp(24px,3vw,36px)",
           lineHeight: 1.45,
           margin: "12px 0 14px"
@@ -84,7 +84,7 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
       </h1>
 
       {meta.length > 0 ? (
-        <p style={{ fontFamily: "var(--mono)", fontSize: 12, color: "var(--muted)", margin: "0 0 22px" }}>
+        <p style={{ fontFamily: "var(--mono)", fontSize: 13, color: "var(--muted)", margin: "0 0 22px" }}>
           {meta.join(" · ")}
         </p>
       ) : null}
@@ -115,12 +115,12 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
         <img
           src={video.coverImage}
           alt={video.coverImageAlt || video.title}
-          style={{ width: "100%", aspectRatio: "16 / 9", objectFit: "cover", background: "#E4E1D8", marginBottom: 10 }}
+          style={{ width: "100%", aspectRatio: "16 / 9", objectFit: "cover", background: "var(--rule)", marginBottom: 10 }}
         />
       ) : null}
 
       {embed && !host.reachableInChina ? (
-        <p style={{ fontFamily: "var(--mono)", fontSize: 11.5, color: "var(--muted)", margin: "0 0 26px" }}>
+        <p style={{ fontFamily: "var(--mono)", fontSize: 13, color: "var(--muted)", margin: "0 0 26px" }}>
           本片存放于 {host.label}，大陆需翻墙观看。
           {video.backupUrl ? (
             <>
@@ -146,7 +146,7 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
       ) : null}
 
       {video.sourceCredit ? (
-        <p style={{ fontFamily: "var(--mono)", fontSize: 11.5, color: "var(--muted)", marginTop: 28 }}>
+        <p style={{ fontFamily: "var(--mono)", fontSize: 13, color: "var(--muted)", marginTop: 28 }}>
           {video.sourceCredit}
         </p>
       ) : null}

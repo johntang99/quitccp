@@ -58,10 +58,10 @@ export function VideoCategoryPage({
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 40, flexWrap: "wrap" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 18, flexWrap: "wrap" }}>
-                <h1 style={{ margin: 0, fontFamily: SERIF, fontWeight: 900, fontSize: "clamp(30px, 3.6vw, 48px)", color: "var(--title)" }}>
+                <h1 style={{ margin: 0, fontFamily: SERIF, fontWeight: 700, fontSize: "clamp(30px, 3.6vw, 48px)", color: "var(--title)" }}>
                   {category.name}
                 </h1>
-                <span style={{ fontFamily: MONO, fontSize: 13, color: "var(--acc)" }}>
+                <span style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--acc)" }}>
                   {category.total} 部 · 第 {category.page} / {category.pageCount} 页
                 </span>
               </div>
@@ -114,7 +114,7 @@ export function VideoCategoryPage({
 
       <section className="vp-shell vp-section">
         <div className="vp-cat-head">
-          <span style={{ fontFamily: SERIF, fontWeight: 900, fontSize: "clamp(20px, 2.2vw, 24px)", color: "var(--title)" }}>
+          <span style={{ fontFamily: SERIF, fontWeight: 700, fontSize: "clamp(20px, 2.2vw, 24px)", color: "var(--title)" }}>
             全部影片
           </span>
           {category.videos.length > 0 ? (
@@ -167,13 +167,13 @@ function LeadCard({ card, sort }: { card: PublicVideoCard; sort: VideoSort }) {
                 oldest first makes it the earliest. */}
             <span className="vp-cat-flag">{sort === "oldest" ? "最早一期" : "最新一期"}</span>
             {dateOf(card) ? (
-              <span style={{ fontFamily: MONO, fontSize: 12, color: "#E6E1F8" }}>{dateOf(card)}</span>
+              <span style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--lav-text)" }}>{dateOf(card)}</span>
             ) : null}
           </span>
           <span
             style={{
               fontFamily: SERIF,
-              fontWeight: 900,
+              fontWeight: 700,
               fontSize: "clamp(20px, 2.4vw, 32px)",
               lineHeight: 1.4,
               color: "#fff"
@@ -193,7 +193,7 @@ function UpNext({ cards }: { cards: PublicVideoCard[] }) {
       <span
         style={{
           fontFamily: SERIF,
-          fontWeight: 900,
+          fontWeight: 700,
           fontSize: 18,
           color: "var(--title)",
           paddingBottom: 12,
@@ -229,7 +229,7 @@ function UpNext({ cards }: { cards: PublicVideoCard[] }) {
               {card.title}
             </span>
             {dateOf(card) ? (
-              <span style={{ fontFamily: MONO, fontSize: 11, color: "var(--muted)" }}>{dateOf(card)}</span>
+              <span style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--muted)" }}>{dateOf(card)}</span>
             ) : null}
           </span>
         </a>
@@ -257,7 +257,7 @@ function GridCard({ card }: { card: PublicVideoCard }) {
           {card.title}
         </span>
         {dateOf(card) ? (
-          <span style={{ marginTop: "auto", fontFamily: MONO, fontSize: 11, color: "var(--muted)" }}>
+          <span style={{ marginTop: "auto", fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--muted)" }}>
             {dateOf(card)}
           </span>
         ) : null}

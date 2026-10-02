@@ -35,7 +35,7 @@ function Kicker({ card, size = 13, featured = false }: { card: NewsCard; size?: 
       {card.category && card.publishedAt ? (
         <span style={{ width: 1, height: 10, background: T.divider }} aria-hidden="true" />
       ) : null}
-      <span style={{ fontFamily: T.mono, fontSize: size - 1, color: T.muted }}>{day(card.publishedAt)}</span>
+      <span style={{ fontFamily: T.mono, fontSize: size - 1, color: T.muted, whiteSpace: "nowrap" }}>{day(card.publishedAt)}</span>
       {featured ? (
         <>
           <span style={{ width: 1, height: 10, background: T.divider }} aria-hidden="true" />
@@ -77,8 +77,8 @@ export function NewsHero({ featured, latest }: { featured: NewsCard[]; latest: N
                   left: 14,
                   top: 14,
                   background: T.gold,
-                  color: "#1A1638",
-                  fontSize: 12,
+                  color: "var(--on-gold)",
+                  fontSize: 13,
                   fontWeight: 500,
                   padding: "5px 10px",
                   borderRadius: 3
@@ -88,7 +88,7 @@ export function NewsHero({ featured, latest }: { featured: NewsCard[]; latest: N
               </span>
             </div>
             <Kicker card={lead} featured />
-            <h2 style={{ margin: 0, fontFamily: T.serif, fontWeight: 900, fontSize: "clamp(24px, 2.4vw, 32px)", lineHeight: 1.38 }}>
+            <h2 style={{ margin: 0, fontFamily: T.serif, fontWeight: 700, fontSize: "clamp(24px, 2.4vw, 32px)", lineHeight: 1.38 }}>
               {lead.title}
             </h2>
             {lead.summary ? (
@@ -149,7 +149,7 @@ export function NewsHero({ featured, latest }: { featured: NewsCard[]; latest: N
               borderBottom: `2px solid ${T.ink}`
             }}
           >
-            <span style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: T.serif, fontWeight: 900, fontSize: 19 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: T.serif, fontWeight: 700, fontSize: 19 }}>
               <span
                 style={{ width: 7, height: 7, borderRadius: "50%", background: T.goldDeep, boxShadow: "0 0 0 4px rgba(201,160,78,0.22)" }}
                 aria-hidden="true"
@@ -162,7 +162,7 @@ export function NewsHero({ featured, latest }: { featured: NewsCard[]; latest: N
           </div>
           <div style={{ display: "flex", flexDirection: "column", position: "relative", paddingLeft: 18 }}>
             <span
-              style={{ position: "absolute", left: 3, top: 18, bottom: 18, width: 1, background: "#DDD6EA" }}
+              style={{ position: "absolute", left: 3, top: 18, bottom: 18, width: 1, background: "var(--lav-rule)" }}
               aria-hidden="true"
             />
             {latest.map((card, index) => (
@@ -188,11 +188,11 @@ export function NewsHero({ featured, latest }: { featured: NewsCard[]; latest: N
                     width: 7,
                     height: 7,
                     borderRadius: "50%",
-                    background: index === 0 ? T.goldDeep : "#DDD6EA"
+                    background: index === 0 ? T.goldDeep : "var(--lav-rule)"
                   }}
                   aria-hidden="true"
                 />
-                <span style={{ fontFamily: T.mono, fontSize: 11, color: T.mutedSoft }}>{shortDay(card.publishedAt)}</span>
+                <span style={{ fontFamily: T.mono, fontSize: 13, color: T.mutedSoft, whiteSpace: "nowrap" }}>{shortDay(card.publishedAt)}</span>
                 <span
                   style={{
                     fontFamily: T.serif,

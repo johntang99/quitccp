@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { notoSerifSC } from "./fonts";
+import { loadTheme, themeToCss } from "@/lib/public-theme";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import "./globals.css";
@@ -12,7 +14,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const theme = await loadTheme();
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -28,8 +31,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     // suppressHydrationWarning: the videos page writes the reader's remembered
     // background onto <html> before first paint, so the served markup and the
     // hydrating markup legitimately differ by that one attribute.
-    <html lang="zh-CN" suppressHydrationWarning>
+    <html
+      lang="zh-CN"
+      className={notoSerifSC.variable}
+      suppressHydrationWarning
+    >
       <head>
+        <style
+          id="theme-tokens"
+          dangerouslySetInnerHTML={{ __html: themeToCss(theme) }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}

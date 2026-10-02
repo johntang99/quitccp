@@ -1,0 +1,87 @@
+{
+  "colors": {
+    "paper": "#F4F3EF",
+    "card": "#FFFFFF",
+    "ink": "#191C1A",
+    "ink2": "#2A2060",
+    "inkSoft": "#4C524D",
+    "muted": "#8B8679",
+    "rule": "#DEDACF",
+    "ruleDark": "rgba(255,255,255,.14)",
+    "seal": "#4A3C96",
+    "sealDeep": "#382B7A",
+    "plumDeep": "#231A52",
+    "plumMid": "#3B2E7E",
+    "plumMenu": "#2C2168",
+    "gold": "#D6AC4E",
+    "goldLight": "#F0D48C",
+    "lavender": "#A79FD0",
+    "lavenderLight": "#C3BDE2"
+  },
+  "surfaces": {
+    "onGold": "#1A1638",
+    "bandDeep": "#241E4A",
+    "bandDeepest": "#17132F",
+    "inkBand": "#1A1726",
+    "inkDim": "#6B6578",
+    "inkMid": "#4A4458",
+    "goldInk": "#8E6A1A",
+    "goldMuted": "#C9A04E",
+    "creamText": "#E3D9C2",
+    "creamRule": "#CFC8BA",
+    "lavRule": "#DDD6EA",
+    "lavTint": "#D6D0F2",
+    "lavText": "#E6E1F8",
+    "lavMuted": "#B8B1C4",
+    "lavDim": "#8A8398",
+    "sealBright": "#3B3190",
+    "gradMid": "#362C88",
+    "gradTop": "#4739A0"
+  },
+  "gradients": {
+    "hero": "linear-gradient(168deg,#463792 0%,#3A2C7C 52%,#312566 100%)",
+    "band": "linear-gradient(200deg,#382B7A 0%,#271D5C 62%,#1F1750 100%)",
+    "band2": "linear-gradient(150deg,#372B75 0%,#251C5A 56%,#2B2066 100%)",
+    "gold": "linear-gradient(180deg,#F0D48C 0%,#D2A748 100%)"
+  },
+  "typography": {
+    "fonts": {
+      "heading": "serif-sc",
+      "body": "system-sc",
+      "mono": "plex-mono"
+    },
+    "size": {
+      "display": "40px",
+      "h2": "36px",
+      "h3": "22px",
+      "item": "18px",
+      "body": "16px",
+      "small": "14px",
+      "label": "13px"
+    },
+    "lineHeight": {
+      "heading": "1.3",
+      "h3": "1.4",
+      "item": "1.5",
+      "body": "1.8"
+    },
+    "tracking": {
+      "heading": "0.01em",
+      "body": "0.02em",
+      "label": "0.08em"
+    },
+    "measure": {
+      "body": "38em",
+      "lede": "32em"
+    }
+  },
+  "shape": {
+    "radius": "10px",
+    "shadow": "0 14px 30px -24px rgba(26,23,38,0.3)"
+  },
+  "spacing": {
+    "wrap": "1200px",
+    "sectionY": "72px",
+    "gutter": "32px"
+  }
+}

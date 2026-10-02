@@ -1,7 +1,7 @@
 import type { PublicVideoCard } from "@/lib/public-content";
 
-export const SERIF = "'Noto Serif SC', 'Songti SC', serif";
-export const MONO = "'JetBrains Mono', ui-monospace, Menlo, monospace";
+export const SERIF = "var(--serif)";
+export const MONO = "var(--mono)";
 
 export const videoHref = (slug: string) => `/videos/${encodeURIComponent(slug)}`;
 
@@ -51,7 +51,7 @@ export function Play({ size }: { size: number }) {
         height: size,
         borderRadius: "50%",
         background: "rgba(255,255,255,0.92)",
-        color: "#251E5E",
+        color: "var(--ink-2)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -82,7 +82,7 @@ export function Still({
         display: "block",
         borderRadius: radius,
         overflow: "hidden",
-        background: "#241E4A",
+        background: "var(--band-deep)",
         aspectRatio: "16 / 9"
       }}
     >
@@ -117,11 +117,11 @@ export function SectionHead({
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16, flexWrap: "wrap" }}>
       <span style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
-        <span style={{ fontFamily: SERIF, fontWeight: 900, fontSize: "clamp(22px, 2.4vw, 32px)", color: "var(--title)" }}>
+        <span style={{ fontFamily: SERIF, fontWeight: 700, fontSize: "clamp(22px, 2.4vw, 32px)", color: "var(--title)" }}>
           {name}
         </span>
         {count !== undefined ? (
-          <span style={{ fontFamily: MONO, fontSize: 12, color: "var(--acc)" }}>
+          <span style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--acc)" }}>
             {count} {unit}
           </span>
         ) : null}

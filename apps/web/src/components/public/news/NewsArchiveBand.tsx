@@ -36,10 +36,10 @@ export function NewsArchiveBand({ items }: { items: NewsCard[] }) {
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <span style={{ fontFamily: T.mono, fontSize: 12, letterSpacing: "0.24em", color: T.gold }}>
+            <span style={{ fontFamily: T.mono, fontSize: 13, letterSpacing: "0.24em", color: T.gold, whiteSpace: "nowrap" }}>
               EDITOR&apos;S ARCHIVE
             </span>
-            <span style={{ fontFamily: T.serif, fontWeight: 900, fontSize: "clamp(26px, 2.8vw, 36px)" }}>精彩保留</span>
+            <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: "clamp(26px, 2.8vw, 36px)" }}>精彩保留</span>
           </div>
           <span style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
             <span style={{ fontSize: 14, color: T.onDarkSoft }}>值得反复阅读的深度内容，长期置顶</span>
@@ -64,7 +64,7 @@ export function NewsArchiveBand({ items }: { items: NewsCard[] }) {
                 overflow: "hidden",
                 color: "#fff",
                 textDecoration: "none",
-                background: "#241E4A",
+                background: "var(--band-deep)",
                 boxShadow: "0 30px 60px -30px rgba(0,0,0,0.6)"
               }}
             >
@@ -90,7 +90,7 @@ export function NewsArchiveBand({ items }: { items: NewsCard[] }) {
                   left: 20,
                   top: 16,
                   fontFamily: T.serif,
-                  fontWeight: 900,
+                  fontWeight: 700,
                   fontSize: 28,
                   color: T.gold,
                   textShadow: "0 2px 10px rgba(0,0,0,0.4)"
@@ -109,8 +109,8 @@ export function NewsArchiveBand({ items }: { items: NewsCard[] }) {
                   gap: 8
                 }}
               >
-                <span style={{ fontSize: 12, color: T.onDark }}>
-                  {card.category} · <span style={{ fontFamily: T.mono }}>{day(card.publishedAt)}</span>
+                <span style={{ fontSize: 13, color: T.onDark }}>
+                  {card.category} · <span style={{ fontFamily: T.mono, whiteSpace: "nowrap" }}>{day(card.publishedAt)}</span>
                 </span>
                 <span
                   style={{

@@ -58,9 +58,9 @@ export function NewsListingPage({ listing }: { listing: NewsListing }) {
                     <span style={{ width: 1, height: 11, background: T.divider }} aria-hidden="true" />
                   </>
                 ) : null}
-                <span style={{ fontFamily: T.mono, fontSize: 12, color: T.muted }}>{day(lead.publishedAt)}</span>
+                <span style={{ fontFamily: T.mono, fontSize: 13, color: T.muted, whiteSpace: "nowrap" }}>{day(lead.publishedAt)}</span>
               </span>
-              <span style={{ fontFamily: T.serif, fontWeight: 900, fontSize: "clamp(22px, 2.4vw, 32px)", lineHeight: 1.4 }}>
+              <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: "clamp(22px, 2.4vw, 32px)", lineHeight: 1.4 }}>
                 {lead.title}
               </span>
               {lead.summary ? (
@@ -93,7 +93,7 @@ export function NewsListingPage({ listing }: { listing: NewsListing }) {
       <div className={`news-shell news-cat-body${showLead ? "" : " news-cat-body--flat"}`}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="news-cat-bar">
-            <span style={{ fontFamily: T.serif, fontWeight: 900, fontSize: 22 }}>全部文章</span>
+            <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 22 }}>全部文章</span>
             {/* 最新 / 最早. The design's second pill is 最热; nothing counts reads,
                 so there is no such order to offer. */}
             <span className="news-cat-sorts">
@@ -137,7 +137,7 @@ export function NewsListingPage({ listing }: { listing: NewsListing }) {
                     textDecoration: "none"
                   }}
                 >
-                  <span style={{ fontFamily: T.serif, fontWeight: 900, fontSize: 20, lineHeight: 1.1, color: T.goldDeep }}>
+                  <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 20, lineHeight: 1.1, color: T.goldDeep }}>
                     {index + 1}
                   </span>
                   <span style={{ fontFamily: T.serif, fontWeight: 600, fontSize: 15, lineHeight: 1.5 }}>
@@ -202,8 +202,8 @@ function Row({ item }: { item: NewsCard }) {
             {item.summary}
           </span>
         ) : null}
-        <span style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 2, fontSize: 12, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: T.mono, color: T.mutedSoft }}>{day(item.publishedAt)}</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 2, fontSize: 13, flexWrap: "wrap" }}>
+          <span style={{ fontFamily: T.mono, color: T.mutedSoft, whiteSpace: "nowrap" }}>{day(item.publishedAt)}</span>
           {item.category ? <span className="news-cat-tag">{item.category}</span> : null}
           <span style={{ marginLeft: "auto", color: T.seal, fontSize: 13 }}>阅读 →</span>
         </span>
@@ -245,7 +245,7 @@ function Pager({
         {page > 1 ? (
           <a className="news-cat-step" href={href(page - 1)} rel="prev">← 上一页</a>
         ) : (
-          <span className="news-cat-step" aria-disabled="true" style={{ color: "#B8B1C4" }}>← 上一页</span>
+          <span className="news-cat-step" aria-disabled="true" style={{ color: "var(--lav-muted)" }}>← 上一页</span>
         )}
         {pageNumbers(page, pageCount).map((entry, index) =>
           entry === "gap" ? (

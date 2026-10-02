@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ArticleVideo } from "@/components/public/ArticleVideo";
 import type { ArticleBodyRow } from "@/lib/public-content";
+import { ArticleAudio } from "@/components/public/ArticleAudio";
 
 /**
  * Inline markdown inside one block: links, bold, emphasis.
@@ -95,6 +96,11 @@ export function MarkdownBody({ rows }: { rows: ArticleBodyRow[] }) {
               {row.alt ? <figcaption>{row.alt}</figcaption> : null}
             </figure>
           );
+        }
+
+        if (row.type === "audio") {
+          if (!row.src) return null;
+          return <ArticleAudio key={`audio-${index}`} src={row.src} label={row.label} />;
         }
 
         if (!row.text) return null;

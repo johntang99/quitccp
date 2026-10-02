@@ -21,7 +21,7 @@ function RestList({ block, topRule }: { block: NewsCategoryBlock; topRule: boole
             textDecoration: "none"
           }}
         >
-          <span style={{ fontFamily: T.mono, fontSize: 11, color: T.mutedSoft }}>{day(item.publishedAt)}</span>
+          <span style={{ fontFamily: T.mono, fontSize: 13, color: T.mutedSoft, whiteSpace: "nowrap" }}>{day(item.publishedAt)}</span>
           <span
             style={{
               fontFamily: T.serif,
@@ -71,7 +71,7 @@ export function NewsCategoryPanel({
       >
         <a
           href={articleHref(block.lead.slug)}
-          style={{ position: "relative", display: "block", aspectRatio: "16 / 9", color: "#fff", textDecoration: "none", background: "#241E4A" }}
+          style={{ position: "relative", display: "block", aspectRatio: "16 / 9", color: "#fff", textDecoration: "none", background: "var(--band-deep)" }}
         >
           {block.lead.image ? (
             <img
@@ -102,16 +102,16 @@ export function NewsCategoryPanel({
             }}
           >
             <span style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-              <span style={{ fontFamily: T.serif, fontWeight: 900, fontSize: 22 }}>{block.name}</span>
-              <span style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.18em", color: T.gold }}>{block.en}</span>
+              <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 22 }}>{block.name}</span>
+              <span style={{ fontFamily: T.mono, fontSize: 13, letterSpacing: "0.18em", color: T.gold, whiteSpace: "nowrap" }}>{block.en}</span>
             </span>
             <span style={{ fontSize: 13, color: "#fff" }}>更多 →</span>
           </span>
           <span
             style={{ position: "absolute", left: 26, right: 26, bottom: 20, display: "flex", flexDirection: "column", gap: 6 }}
           >
-            <span style={{ fontFamily: T.mono, fontSize: 11, color: T.gold }}>{day(block.lead.publishedAt)}</span>
-            <span style={{ fontFamily: T.serif, fontWeight: 900, fontSize: 22, lineHeight: 1.45 }}>{block.lead.title}</span>
+            <span style={{ fontFamily: T.mono, fontSize: 13, color: T.gold, whiteSpace: "nowrap" }}>{day(block.lead.publishedAt)}</span>
+            <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 22, lineHeight: 1.45 }}>{block.lead.title}</span>
           </span>
         </a>
         <div style={{ display: "flex", flexDirection: "column", padding: "6px 26px 10px" }}>
@@ -144,8 +144,8 @@ export function NewsCategoryPanel({
         }}
       >
         <span style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-          <span style={{ fontFamily: T.serif, fontWeight: 900, fontSize: 22 }}>{block.name}</span>
-          <span style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.18em", color: T.seal }}>{block.en}</span>
+          <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 22 }}>{block.name}</span>
+          <span style={{ fontFamily: T.mono, fontSize: 13, letterSpacing: "0.18em", color: T.seal, whiteSpace: "nowrap" }}>{block.en}</span>
         </span>
         <a href={`/news/${block.slug}`} style={{ fontSize: 13, color: T.seal, textDecoration: "none", whiteSpace: "nowrap" }}>
           更多 →
@@ -165,8 +165,8 @@ export function NewsCategoryPanel({
           )}
         </div>
         <span style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <span style={{ fontFamily: T.mono, fontSize: 11, color: T.mutedSoft }}>{day(block.lead.publishedAt)}</span>
-          <span style={{ fontFamily: T.serif, fontWeight: 900, fontSize: 20, lineHeight: 1.5 }}>{block.lead.title}</span>
+          <span style={{ fontFamily: T.mono, fontSize: 13, color: T.mutedSoft, whiteSpace: "nowrap" }}>{day(block.lead.publishedAt)}</span>
+          <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 20, lineHeight: 1.5 }}>{block.lead.title}</span>
         </span>
       </a>
 

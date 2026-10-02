@@ -30,7 +30,7 @@ export function InvestigationsBand({ block }: { block: NewsCategoryBlock }) {
         href={articleHref(lead.slug)}
         style={{ position: "relative", display: "flex", flexDirection: "column", gap: 14, color: "#fff", textDecoration: "none" }}
       >
-        <div style={{ position: "relative", borderRadius: 8, overflow: "hidden", background: "#241E4A" }}>
+        <div style={{ position: "relative", borderRadius: 8, overflow: "hidden", background: "var(--band-deep)" }}>
           {lead.image ? (
             <img src={lead.image} alt="" style={{ width: "100%", aspectRatio: "16 / 9", objectFit: "cover", display: "block" }} />
           ) : (
@@ -46,7 +46,7 @@ export function InvestigationsBand({ block }: { block: NewsCategoryBlock }) {
               margin: "-32px 0 0 -32px",
               borderRadius: "50%",
               background: "rgba(255,255,255,0.92)",
-              color: "#2A2268",
+              color: "var(--pl-menu)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -58,12 +58,12 @@ export function InvestigationsBand({ block }: { block: NewsCategoryBlock }) {
           </span>
         </div>
         <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: T.onDark, flexWrap: "wrap" }}>
-          <span style={{ background: T.gold, color: "#1A1638", fontWeight: 500, padding: "3px 9px", borderRadius: 3 }}>
+          <span style={{ background: T.gold, color: "var(--on-gold)", fontWeight: 500, padding: "3px 9px", borderRadius: 3 }}>
             {lead.episode ? `第 ${lead.episode} 集 · 最新` : "最新"}
           </span>
-          <span style={{ fontFamily: T.mono }}>{day(lead.publishedAt)}</span>
+          <span style={{ fontFamily: T.mono, whiteSpace: "nowrap" }}>{day(lead.publishedAt)}</span>
         </span>
-        <span style={{ fontFamily: T.serif, fontWeight: 900, fontSize: 24, lineHeight: 1.45 }}>{lead.title}</span>
+        <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 24, lineHeight: 1.45 }}>{lead.title}</span>
       </a>
 
       <div style={{ position: "relative", display: "flex", flexDirection: "column" }}>
@@ -78,10 +78,10 @@ export function InvestigationsBand({ block }: { block: NewsCategoryBlock }) {
           }}
         >
           <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: "0.2em", color: T.gold }}>
+            <span style={{ fontFamily: T.sans, fontWeight: 500, fontSize: 13, letterSpacing: "0.08em", color: T.gold }}>
               INVESTIGATIONS · 特案专辑
             </span>
-            <span style={{ fontFamily: T.serif, fontWeight: 900, fontSize: 26 }}>{block.name}</span>
+            <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 26 }}>{block.name}</span>
           </span>
           <a href={`/news/${block.slug}`} style={{ fontSize: 13, color: T.gold, textDecoration: "none", whiteSpace: "nowrap" }}>
             全部集数 →
@@ -105,11 +105,11 @@ export function InvestigationsBand({ block }: { block: NewsCategoryBlock }) {
             <span style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
               {item.episode ? (
                 <>
-                  <span style={{ fontFamily: T.serif, fontWeight: 900, fontSize: 30, color: T.gold }}>{item.episode}</span>
-                  <span style={{ fontSize: 11, color: T.onDarkSoft, marginTop: 4 }}>集</span>
+                  <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 30, color: T.gold }}>{item.episode}</span>
+                  <span style={{ fontSize: 13, color: T.onDarkSoft, marginTop: 4 }}>集</span>
                 </>
               ) : (
-                <span style={{ fontFamily: T.mono, fontSize: 11, color: T.onDarkSoft }}>{day(item.publishedAt)}</span>
+                <span style={{ fontFamily: T.mono, fontSize: 13, color: T.onDarkSoft, whiteSpace: "nowrap" }}>{day(item.publishedAt)}</span>
               )}
             </span>
             <span
@@ -160,8 +160,8 @@ export function CommentaryBand({ block }: { block: NewsCategoryBlock }) {
         }}
       >
         <span style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-          <span style={{ fontFamily: T.serif, fontWeight: 900, fontSize: 22 }}>{block.name}</span>
-          <span style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: "0.18em", color: T.seal }}>OPINION</span>
+          <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 22 }}>{block.name}</span>
+          <span style={{ fontFamily: T.mono, fontSize: 13, letterSpacing: "0.18em", color: T.seal, whiteSpace: "nowrap" }}>OPINION</span>
         </span>
         <div style={{ borderRadius: 8, overflow: "hidden", background: T.rule, marginTop: 6 }}>
           {lead.image ? (
@@ -170,8 +170,8 @@ export function CommentaryBand({ block }: { block: NewsCategoryBlock }) {
             <div style={{ width: "100%", aspectRatio: "16 / 9" }} />
           )}
         </div>
-        <span style={{ fontFamily: T.mono, fontSize: 11, color: T.mutedSoft }}>{day(lead.publishedAt)}</span>
-        <span style={{ fontFamily: T.serif, fontWeight: 900, fontSize: 22, lineHeight: 1.45 }}>{lead.title}</span>
+        <span style={{ fontFamily: T.mono, fontSize: 13, color: T.mutedSoft, whiteSpace: "nowrap" }}>{day(lead.publishedAt)}</span>
+        <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 22, lineHeight: 1.45 }}>{lead.title}</span>
       </a>
 
       <div style={{ display: "flex", flexDirection: "column", padding: "28px 28px 20px" }}>
@@ -184,7 +184,7 @@ export function CommentaryBand({ block }: { block: NewsCategoryBlock }) {
             borderBottom: `2px solid ${T.ink}`
           }}
         >
-          <span style={{ fontFamily: T.serif, fontWeight: 900, fontSize: 18 }}>评论员专栏</span>
+          <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 18 }}>评论员专栏</span>
           <a href={`/news/${block.slug}`} style={{ fontSize: 13, color: T.seal, textDecoration: "none" }}>
             更多 →
           </a>
@@ -218,7 +218,7 @@ export function CommentaryBand({ block }: { block: NewsCategoryBlock }) {
                       alignItems: "center",
                       justifyContent: "center",
                       fontFamily: T.serif,
-                      fontWeight: 900,
+                      fontWeight: 700,
                       fontSize: 15,
                       flexShrink: 0
                     }}
@@ -237,7 +237,7 @@ export function CommentaryBand({ block }: { block: NewsCategoryBlock }) {
                   >
                     {name}
                   </span>
-                  <span style={{ fontFamily: T.mono, fontSize: 11, color: T.mutedSoft, marginLeft: "auto" }}>
+                  <span style={{ fontFamily: T.mono, fontSize: 13, color: T.mutedSoft, marginLeft: "auto", whiteSpace: "nowrap" }}>
                     {day(item.publishedAt)}
                   </span>
                 </span>

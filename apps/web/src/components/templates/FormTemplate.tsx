@@ -63,14 +63,14 @@ export function FormTemplate({ title, section, slug, content }: TemplatePageData
                   )}{" "}
                   <a
                     href={asString(safetyNotice.toolsHref, "/resources/tools")}
-                    style={{ color: "#8E6A1A", borderBottom: "1px solid rgba(142,106,26,.4)" }}
+                    style={{ color: "var(--gold-ink)", borderBottom: "1px solid rgba(142,106,26,.4)" }}
                   >
                     {asString(safetyNotice.toolsLabel, "免翻墙链接")}
                   </a>
                   {asString(safetyNotice.middleText, "，提交后建议清除浏览痕迹。")}{" "}
                   <a
                     href={asString(safetyNotice.privacyHref, "/services/privacy")}
-                    style={{ color: "#8E6A1A", borderBottom: "1px solid rgba(142,106,26,.4)" }}
+                    style={{ color: "var(--gold-ink)", borderBottom: "1px solid rgba(142,106,26,.4)" }}
                   >
                     {asString(safetyNotice.privacyLabel, "阅读完整的安全与隐私说明")}
                   </a>
@@ -84,7 +84,7 @@ export function FormTemplate({ title, section, slug, content }: TemplatePageData
                   你也可以用这些方式提交声明。电子邮件：{" "}
                   <a
                     href={`mailto:${OFFLINE_DECLARE_CHANNELS.email}`}
-                    style={{ color: "#8E6A1A", borderBottom: "1px solid rgba(142,106,26,.4)" }}
+                    style={{ color: "var(--gold-ink)", borderBottom: "1px solid rgba(142,106,26,.4)" }}
                   >
                     {OFFLINE_DECLARE_CHANNELS.email}
                   </a>
@@ -233,7 +233,7 @@ export function FormTemplate({ title, section, slug, content }: TemplatePageData
                 <img
                   src={asString(samplePanel.image, "https://www.tuidang.org/wp-content/uploads/2026/05/cert-sample.png")}
                   alt={asString(samplePanel.alt, "退党证明样本")}
-                  style={{ width: "100%", border: "1px solid var(--rule)", marginBottom: 14, background: "#E4E1D8" }}
+                  style={{ width: "100%", border: "1px solid var(--rule)", marginBottom: 14, background: "var(--rule)" }}
                 />
                 <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.75, margin: 0 }}>
                   {asString(samplePanel.caption, "中英文对照，含唯一编号与查验方式。")}

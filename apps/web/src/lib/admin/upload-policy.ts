@@ -29,6 +29,13 @@ export const ALLOWED_TYPES = new Map<string, string>([
   ["application/msword", "doc"],
   ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx"],
   ["audio/mpeg", "mp3"],
+  ["audio/mp3", "mp3"],
+  ["audio/mp4", "m4a"],
+  ["audio/x-m4a", "m4a"],
+  ["audio/aac", "m4a"],
+  ["audio/wav", "wav"],
+  ["audio/x-wav", "wav"],
+  ["audio/ogg", "ogg"],
   ["application/postscript", "ai"],
   ["image/vnd.adobe.photoshop", "psd"],
   ["application/octet-stream", ""]
@@ -37,7 +44,9 @@ export const ALLOWED_TYPES = new Map<string, string>([
 /** Extensions accepted when the browser reports a vague type. */
 const ALLOWED_EXTENSIONS = new Set([
   "jpg", "jpeg", "png", "webp", "gif", "avif",
-  "pdf", "zip", "rar", "doc", "docx", "mp3", "ai", "psd"
+  "pdf", "zip", "rar", "doc", "docx", "ai", "psd",
+  // Everything the article player can play -- see ArticleAudio.
+  "mp3", "m4a", "wav", "ogg"
 ]);
 
 export function extensionOf(filename: string): string {

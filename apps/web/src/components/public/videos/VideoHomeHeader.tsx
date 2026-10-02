@@ -17,7 +17,7 @@ export function VideoHomeHeader({ shelves }: { shelves: VideoLibraryShelf[] }) {
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 40, flexWrap: "wrap" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <h1 style={{ margin: 0, fontFamily: SERIF, fontWeight: 900, fontSize: "clamp(30px, 3.6vw, 48px)", color: "var(--title)" }}>
+            <h1 style={{ margin: 0, fontFamily: SERIF, fontWeight: 700, fontSize: "clamp(30px, 3.6vw, 48px)", color: "var(--title)" }}>
               影音节目
             </h1>
             <p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, color: "var(--muted)", maxWidth: 720 }}>

@@ -1,5 +1,6 @@
 import { getHomeNews, getHomeVideo, type HomeNewsLive, type HomeVideoLive } from "@/lib/public-content";
 import { getHomepageHeroContent } from "@/lib/public-settings";
+import { NoWrapTitles } from "@/components/public/NoWrapTitles";
 import { formatYi, getSantuiSnapshot, toFeedRow } from "@/lib/santui";
 import { HeroGallery, HeroVideo } from "@/components/public/HeroMedia";
 import { DawnBand } from "./DawnBand";
@@ -95,7 +96,7 @@ function MultiLine({ text }: { text: string }) {
     <>
       {lines.map((line, index) => (
         <span key={`${line}-${index}`}>
-          {line}
+          <NoWrapTitles text={line} />
           {index < lines.length - 1 ? <br /> : null}
         </span>
       ))}
@@ -320,6 +321,12 @@ export async function HomeTemplate({ content }: TemplatePageData) {
       <p className="eyebrow">{registry.eyebrow}</p>
       <p className="count">{registry.count}</p>
       <p className="count-label">{registry.countLabel}</p>
+      {santui ? (
+        <p className="count-source">
+          来源：全球退党服务中心登记册 · 更新于{" "}
+          <time dateTime={santui.fetchedAt}>{santui.fetchedAt.slice(0, 10)}</time>
+        </p>
+      ) : null}
       <a className="count-note" href={registry.noteHref} {...externalLinkProps(registry.noteHref)}>
         {registry.noteLabel}
       </a>
@@ -416,6 +423,7 @@ export async function HomeTemplate({ content }: TemplatePageData) {
           services={services}
           voices={voices}
           feed={streamRows}
+          updatedAt={santui?.fetchedAt ?? null}
         />
       ) : null}
 

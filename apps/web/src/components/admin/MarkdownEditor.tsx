@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { formatBytes, uploadFile } from "@/lib/admin/upload-client";
 
 /**
  * Markdown editor for article bodies.
@@ -134,6 +135,43 @@ function renderPreview(md: string): string {
         }
         return `<div class="md-video">▶ 认不出的视频地址${caption ? ` — ${caption}` : ""}</div>`;
       }
+      /*
+       * A linked recording previews as a player, as it will on the page.
+       *
+       * Without this the block fell through to the paragraph branch and an
+       * editor saw the italic words "下载链接" -- the same thing readers saw
+       * before the article renderer learned about audio. The preview has to
+       * agree with the page, or it is not a preview.
+       *
+       * Whatever else the block says is kept: returning only the player threw
+       * away any text sharing the block with the link, so a body written
+       * without a blank line between the recording and the next paragraph lost
+       * everything after it.
+       *
+       * The block was HTML-escaped above, so the address is unescaped before
+       * use, and only http(s) is allowed through: this is an editor's own
+       * screen, but an src is still an src.
+       */
+      const audioLink = t.match(/\[([^\]]*)\]\((https?:\/\/[^)\s]+?\.(?:mp3|m4a|wav|ogg)(?:\?[^)\s]*)?)\)/i);
+      if (audioLink) {
+        const raw = audioLink[2].replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+        if (/^https?:\/\//i.test(raw)) {
+          const label = audioLink[1].trim() || "下载";
+          const at = t.indexOf(audioLink[0]);
+          // The asterisks that usually wrap the link are markup, not words.
+          const tidy = (part: string) => part.replace(/^[*_\s]+|[*_\s]+$/g, "").trim();
+          const before = tidy(t.slice(0, at));
+          const after = tidy(t.slice(at + audioLink[0].length));
+          const player = `<figure class="md-audio"><audio src="${raw}" controls preload="none"></audio><figcaption>${label}</figcaption></figure>`;
+          return [
+            before ? `<p>${before.replace(/\n/g, "<br>")}</p>` : "",
+            player,
+            after ? `<p>${after.replace(/\n/g, "<br>")}</p>` : ""
+          ]
+            .filter(Boolean)
+            .join("");
+        }
+      }
       if (/^###\s+/.test(t)) return `<h3>${t.replace(/^###\s+/, "")}</h3>`;
       if (/^##\s+/.test(t)) return `<h2>${t.replace(/^##\s+/, "")}</h2>`;
       if (/^&gt;\s?/.test(t)) return `<blockquote>${t.replace(/^&gt;\s?/gm, "")}</blockquote>`;
@@ -159,6 +197,10 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
   handle
 ) {
   const [mode, setMode] = useState<Mode>("split");
+  const audioInput = useRef<HTMLInputElement>(null);
+  /** Percent while an audio file is uploading, null when idle. */
+  const [audioBusy, setAudioBusy] = useState<number | null>(null);
+  const [audioError, setAudioError] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
   /**
    * Where the caret was the last time the editor touched the textarea.
@@ -266,6 +308,44 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
         >
           ▶ 视频
         </Btn>
+        {/* Music arrives as a file, not a URL: 151 of the 160 歌曲 articles are
+            a recording plus a credit line, and before this the only way to add
+            one was to type the Markdown link by hand. The file goes straight to
+            Storage via a signed URL -- see lib/admin/upload-client. */}
+        <Btn
+          title="上传音频（MP3 / M4A / WAV / OGG）"
+          onClick={() => audioInput.current?.click()}
+        >
+          {audioBusy === null ? "♪ 音频" : `上传中 ${audioBusy}%`}
+        </Btn>
+        <input
+          ref={audioInput}
+          type="file"
+          accept="audio/*,.mp3,.m4a,.wav,.ogg"
+          style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
+          tabIndex={-1}
+          aria-hidden="true"
+          onChange={async (event) => {
+            const file = event.target.files?.[0];
+            // Cleared so picking the same file twice still fires a change.
+            event.target.value = "";
+            if (!file) return;
+            setAudioError("");
+            setAudioBusy(0);
+            try {
+              const result = await uploadFile(file, {
+                folder: "audio",
+                onProgress: (percent) => setAudioBusy(percent)
+              });
+              // The shape the article renderer turns into a player.
+              run("insert", `\n\n*[下载链接](${result.url})*\n\n`);
+            } catch (error) {
+              setAudioError((error as Error).message);
+            } finally {
+              setAudioBusy(null);
+            }
+          }}
+        />
         <Btn
           title="插入表格"
           onClick={() => run("insert", "\n| 列一 | 列二 |\n| --- | --- |\n| 内容 | 内容 |\n")}
@@ -318,6 +398,9 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
         <span>
           图片 {stats.images} · 视频 {stats.videos} · 链接 {stats.links}
         </span>
+        {/* An upload that fails must say so: the button returns to idle either
+            way, which on its own is indistinguishable from success. */}
+        {audioError ? <span style={{ color: "#b42318" }}>音频上传失败：{audioError}</span> : null}
       </div>
     </div>
   );

@@ -67,6 +67,7 @@ export type ArticleBodyRow =
   | { type: "p" | "h2" | "h3" | "blockquote"; text: string }
   | { type: "figure"; src: string; alt: string }
   | { type: "video"; src: string; caption: string }
+  | { type: "audio"; src: string; label: string }
   | { type: "table"; head: string[]; rows: string[][] };
 
 function stripInlineMarkdown(value: string): string {
@@ -237,7 +238,22 @@ export function markdownToBodyRows(markdown: string): ArticleBodyRow[] {
     // stripInlineMarkdown drops those, so pull them out and emit them as
     // figures after the paragraph they were embedded in.
     const embedded = [...line.matchAll(/!\[([^\]]*)]\(([^)\s]+)[^)]*\)/g)];
+    /*
+     * A linked recording becomes a player, not a line of text.
+     *
+     * 151 of the 160 歌曲 articles carry their music as a single markdown link
+     * to an .mp3 -- usually `*[下载链接](…mp3)*`. This has to be read before
+     * stripInlineMarkdown, which keeps the label and throws the address away:
+     * every piece of music on the site was reaching readers as the dead words
+     * "下载链接" with no way to hear or fetch anything.
+     */
+    const audioLinks = [...line.matchAll(/\[([^\]]*)]\((https?:\/\/[^)\s]+\.(?:mp3|m4a|wav|ogg))\)/gi)];
     let cleaned = stripInlineMarkdown(line);
+    for (const match of audioLinks) {
+      const label = match[1].trim();
+      if (label) cleaned = cleaned.split(label).join("");
+    }
+    cleaned = cleaned.trim();
     if (embedded.length > 0) {
       // The old site appends each photograph's caption to the same line as the
       // image, so what survives stripInlineMarkdown is the caption on its own.
@@ -250,9 +266,12 @@ export function markdownToBodyRows(markdown: string): ArticleBodyRow[] {
       cleaned = cleaned.trim();
     }
     if (cleaned) paragraphBuffer.push(cleaned);
-    if (embedded.length > 0) {
+    if (embedded.length > 0 || audioLinks.length > 0) {
       flushParagraph();
       for (const match of embedded) rows.push({ type: "figure", src: match[2], alt: match[1] });
+      for (const match of audioLinks) {
+        rows.push({ type: "audio", src: match[2], label: match[1].trim() || "下载" });
+      }
     }
   }
 

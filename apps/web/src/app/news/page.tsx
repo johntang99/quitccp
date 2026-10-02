@@ -35,16 +35,17 @@ export default async function NewsIndexPage() {
 
       <div className="news-shell news-body">
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 4 }}>
-          <span style={{ fontFamily: "'Noto Serif SC', serif", fontWeight: 900, fontSize: "clamp(24px, 2.6vw, 32px)" }}>
+          <span style={{ fontFamily: "var(--serif)", fontWeight: 700, fontSize: "clamp(24px, 2.6vw, 32px)" }}>
             按栏目浏览
           </span>
-          <span style={{ flexGrow: 1, height: 1, background: "#1A1726" }} aria-hidden="true" />
+          <span style={{ flexGrow: 1, height: 1, background: "var(--ink-band)" }} aria-hidden="true" />
           <span
             style={{
-              fontFamily: "'JetBrains Mono', ui-monospace, Menlo, monospace",
-              fontSize: 12,
-              letterSpacing: "0.2em",
-              color: "#6B6578",
+              fontFamily: "var(--sans)",
+              fontWeight: 500,
+              fontSize: 13,
+              letterSpacing: "0.08em",
+              color: "var(--ink-dim)",
               whiteSpace: "nowrap"
             }}
           >

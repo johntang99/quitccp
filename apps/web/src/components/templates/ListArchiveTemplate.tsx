@@ -289,7 +289,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
                       <a href={link.href}>
                         {link.label}
                         {link.count ? (
-                          <span style={{ color: "var(--muted)", fontFamily: "var(--mono)", fontSize: 11, marginLeft: 8 }}>{link.count}</span>
+                          <span style={{ color: "var(--muted)", fontFamily: "var(--mono)", fontSize: 13, marginLeft: 8 }}>{link.count}</span>
                         ) : null}
                       </a>
                     </li>

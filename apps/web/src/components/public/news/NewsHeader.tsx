@@ -35,7 +35,7 @@ export function NewsHeader({
     padding: "16px 0 14px",
     marginTop: -1,
     whiteSpace: "nowrap" as const,
-    color: on ? "#fff" : "#CFC8EE",
+    color: on ? "#fff" : "var(--lav-lt)",
     fontWeight: on ? 600 : 400,
     borderTop: `2px solid ${on ? T.gold : "transparent"}`
   });
@@ -44,7 +44,7 @@ export function NewsHeader({
       style={{
         position: "relative",
         overflow: "hidden",
-        background: "linear-gradient(135deg, #251E5E 0%, #362C88 55%, #4739A0 100%)",
+        background: "linear-gradient(135deg, var(--ink-2) 0%, var(--grad-mid) 55%, var(--grad-top) 100%)",
         color: "#fff"
       }}
     >
@@ -63,7 +63,7 @@ export function NewsHeader({
       <div className="news-shell news-masthead">
         {listing ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <span style={{ fontSize: 13, color: "#CFC8EE" }}>
+            <span style={{ fontSize: 13, color: "var(--lav-lt)" }}>
               <a href="/" style={{ color: "inherit", textDecoration: "none" }}>首页</a>
               <span style={{ opacity: 0.5 }}> / </span>
               <a href="/news" style={{ color: "inherit", textDecoration: "none" }}>新闻与报告</a>
@@ -71,20 +71,20 @@ export function NewsHeader({
               {listing.name}
             </span>
             <div style={{ display: "flex", alignItems: "baseline", gap: 18, flexWrap: "wrap" }}>
-              <h1 style={{ margin: 0, fontFamily: T.serif, fontWeight: 900, fontSize: "clamp(30px, 3.6vw, 48px)" }}>
+              <h1 style={{ margin: 0, fontFamily: T.serif, fontWeight: 700, fontSize: "clamp(30px, 3.6vw, 48px)" }}>
                 {listing.name}
               </h1>
-              <span style={{ fontFamily: T.mono, fontSize: 13, letterSpacing: "0.18em", color: T.gold }}>
+              <span style={{ fontFamily: T.sans, fontWeight: 500, fontSize: 13, letterSpacing: "0.08em", color: T.gold }}>
                 {listing.en} · {listing.total.toLocaleString("zh-CN")} 篇
               </span>
             </div>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <span style={{ fontFamily: T.mono, fontSize: 12, letterSpacing: "0.22em", color: T.gold }}>
+            <span style={{ fontFamily: T.sans, fontWeight: 500, fontSize: 13, letterSpacing: "0.08em", color: T.gold }}>
               NEWSROOM · {today}
             </span>
-            <h1 style={{ margin: 0, fontFamily: T.serif, fontWeight: 900, fontSize: "clamp(30px, 3.6vw, 48px)" }}>
+            <h1 style={{ margin: 0, fontFamily: T.serif, fontWeight: 700, fontSize: "clamp(30px, 3.6vw, 48px)" }}>
               新闻与报告
             </h1>
             <p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, color: T.onDark, maxWidth: 720 }}>

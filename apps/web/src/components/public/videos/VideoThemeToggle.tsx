@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 
 const THEMES = [
-  { key: "dark", label: "深色", swatch: "#2E2570" },
-  { key: "white", label: "白色", swatch: "#FFFFFF" },
-  { key: "grey", label: "灰白", swatch: "#F2EEE6" }
+  { key: "dark", label: "深色", swatch: "var(--pl-menu)" },
+  { key: "white", label: "白色", swatch: "var(--card)" },
+  { key: "grey", label: "灰白", swatch: "var(--paper)" }
 ] as const;
 
 const STORAGE_KEY = "quitccp.videoTheme";
@@ -55,7 +55,7 @@ export function VideoThemeToggle() {
         border: "1px solid var(--border)"
       }}
     >
-      <span style={{ fontSize: 12, color: "var(--muted)", padding: "0 8px 0 10px" }}>背景</span>
+      <span style={{ fontSize: 13, color: "var(--muted)", padding: "0 8px 0 10px" }}>背景</span>
       {THEMES.map((option) => {
         const on = theme === option.key;
         return (

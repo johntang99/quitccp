@@ -6,27 +6,27 @@
  * cannot drift apart -- they were exported from the same artboard.
  */
 export const T = {
-  ink: "#1A1726",
-  inkDeep: "#17132F",
-  paper: "#F2EEE6",
-  card: "#FFFEFA",
-  cardWarm: "#FAF7F1",
-  cardSand: "#F7F3EC",
-  rule: "#ECE6DA",
-  ruleSoft: "#D9D2C4",
-  seal: "#3B3190",
-  sealDeep: "#281F6E",
-  gold: "#F2D38A",
-  goldDeep: "#C9A04E",
-  muted: "#6B6578",
-  mutedSoft: "#8A8398",
-  body: "#4A4458",
-  onDark: "#D6D0F2",
-  onDarkSoft: "#B7B0D6",
-  divider: "#CFC8BA",
-  serif: "'Noto Serif SC', 'Songti SC', serif",
-  sans: "'Noto Sans SC', 'PingFang SC', sans-serif",
-  mono: "'JetBrains Mono', ui-monospace, Menlo, monospace"
+  ink: "var(--ink-band)",
+  inkDeep: "var(--band-deepest)",
+  paper: "var(--paper)",
+  card: "var(--card)",
+  cardWarm: "var(--paper)",
+  cardSand: "var(--paper)",
+  rule: "var(--rule)",
+  ruleSoft: "var(--rule)",
+  seal: "var(--seal-bright)",
+  sealDeep: "var(--pl-menu)",
+  gold: "var(--gold-lt)",
+  goldDeep: "var(--gold-muted)",
+  muted: "var(--ink-dim)",
+  mutedSoft: "var(--lav-dim)",
+  body: "var(--ink-mid)",
+  onDark: "var(--lav-tint)",
+  onDarkSoft: "var(--lav-lt)",
+  divider: "var(--cream-rule)",
+  serif: "var(--serif)",
+  sans: "var(--sans)",
+  mono: "var(--mono)"
 } as const;
 
 export function day(value: string | null): string {

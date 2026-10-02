@@ -34,7 +34,8 @@
     "materials:import:boards": "tsx scripts/import-materials-boards.ts",
     "materials:migrate:storage": "tsx scripts/migrate-material-storage.ts",
     "press:profile:pdf": "tsx scripts/build-org-profile-pdf.ts",
-    "culture:subcategories": "tsx scripts/seed-culture-subcategories.ts"
+    "culture:subcategories": "tsx scripts/seed-culture-subcategories.ts",
+    "audio:rehost": "tsx scripts/rehost-article-audio.ts"
   },
   "devDependencies": {
     "tsx": "^4.19.2",

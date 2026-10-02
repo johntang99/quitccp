@@ -35,7 +35,7 @@ export function FeatureBand({
               aspectRatio: "16 / 9",
               borderRadius: 14,
               overflow: "hidden",
-              background: "#241E4A",
+              background: "var(--band-deep)",
               boxShadow: "var(--shadow)"
             }}
           >
@@ -56,7 +56,7 @@ export function FeatureBand({
                 margin: "-46px 0 0 -46px",
                 borderRadius: "50%",
                 background: "rgba(255,255,255,0.95)",
-                color: "#251E5E",
+                color: "var(--ink-2)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -75,9 +75,9 @@ export function FeatureBand({
                   just the newest film and says so. */}
               <span
                 style={{
-                  background: "#F2D38A",
-                  color: "#1A1638",
-                  fontSize: 12,
+                  background: "var(--gold-lt)",
+                  color: "var(--on-gold)",
+                  fontSize: 13,
                   fontWeight: 500,
                   padding: "5px 10px",
                   borderRadius: 3
@@ -92,7 +92,7 @@ export function FeatureBand({
                   <span
                     key={meta}
                     style={{
-                      fontSize: 12,
+                      fontSize: 13,
                       color: "var(--muted)",
                       border: "1px solid var(--border)",
                       padding: "4px 10px",
@@ -106,7 +106,7 @@ export function FeatureBand({
             <span
               style={{
                 fontFamily: SERIF,
-                fontWeight: 900,
+                fontWeight: 700,
                 fontSize: "clamp(22px, 2.6vw, 34px)",
                 lineHeight: 1.35,
                 color: "var(--title)"
@@ -155,10 +155,10 @@ export function FeatureBand({
           }}
         >
           <span
-            style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: SERIF, fontWeight: 900, fontSize: 18, color: "var(--title)" }}
+            style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: SERIF, fontWeight: 700, fontSize: 18, color: "var(--title)" }}
           >
             <span
-              style={{ width: 7, height: 7, borderRadius: "50%", background: "#E0B85C", boxShadow: "0 0 0 4px rgba(224,184,92,0.22)" }}
+              style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--gold)", boxShadow: "0 0 0 4px rgba(224,184,92,0.22)" }}
               aria-hidden="true"
             />
             最新上线
@@ -186,7 +186,7 @@ export function FeatureBand({
               <Duration card={card} size={10} />
             </Still>
             <span style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-              <span style={{ fontSize: 11, color: "var(--acc)" }}>{kicker(card, seriesOf(card))}</span>
+              <span style={{ fontSize: 13, color: "var(--acc)" }}>{kicker(card, seriesOf(card))}</span>
               <span
                 style={{
                   fontFamily: SERIF,
@@ -228,8 +228,8 @@ export function LeadAndGrid({ shelf, note }: { shelf: VideoLibraryShelf; note?: 
             </span>
             <Duration card={lead} size={12} />
           </Still>
-          <span style={{ fontSize: 12, color: "var(--acc)" }}>{kicker(lead, shelf.name)}</span>
-          <span style={{ fontFamily: SERIF, fontWeight: 900, fontSize: 24, lineHeight: 1.45 }}>{lead.title}</span>
+          <span style={{ fontSize: 13, color: "var(--acc)" }}>{kicker(lead, shelf.name)}</span>
+          <span style={{ fontFamily: SERIF, fontWeight: 700, fontSize: 24, lineHeight: 1.45 }}>{lead.title}</span>
         </a>
         <div className="vp-grid-2">
           {rest.slice(0, 4).map((card) => (
@@ -244,7 +244,7 @@ export function LeadAndGrid({ shelf, note }: { shelf: VideoLibraryShelf; note?: 
                 </span>
                 <Duration card={card} />
               </Still>
-              <span style={{ fontSize: 11, color: "var(--acc)" }}>{kicker(card, shelf.name)}</span>
+              <span style={{ fontSize: 13, color: "var(--acc)" }}>{kicker(card, shelf.name)}</span>
               <span
                 style={{
                   fontFamily: SERIF,
@@ -281,8 +281,8 @@ export function PanelDuo({ shelves }: { shelves: VideoLibraryShelf[] }) {
             <div key={shelf.slug} className="vp-panel">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
                 <span style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-                  <span style={{ fontFamily: SERIF, fontWeight: 900, fontSize: 24, color: "var(--title)" }}>{shelf.name}</span>
-                  <span style={{ fontFamily: MONO, fontSize: 11, color: "var(--acc)" }}>{shelf.total} 部</span>
+                  <span style={{ fontFamily: SERIF, fontWeight: 700, fontSize: 24, color: "var(--title)" }}>{shelf.name}</span>
+                  <span style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--acc)" }}>{shelf.total} 部</span>
                 </span>
                 <a href={`/videos/${shelf.slug}`} style={{ fontSize: 13, color: "var(--acc)", textDecoration: "none" }}>
                   全部 →
@@ -307,7 +307,7 @@ export function PanelDuo({ shelves }: { shelves: VideoLibraryShelf[] }) {
                   <span
                     style={{ position: "absolute", left: 20, right: 20, bottom: 18, display: "flex", flexDirection: "column", gap: 6 }}
                   >
-                    <span style={{ fontSize: 12, color: "#F2D38A" }}>
+                    <span style={{ fontSize: 13, color: "var(--gold-lt)" }}>
                       {kicker(lead, shelf.name)}
                       {runtime(lead.durationSeconds) ? (
                         <>
@@ -316,7 +316,7 @@ export function PanelDuo({ shelves }: { shelves: VideoLibraryShelf[] }) {
                         </>
                       ) : null}
                     </span>
-                    <span style={{ fontFamily: SERIF, fontWeight: 900, fontSize: 21, lineHeight: 1.45 }}>{lead.title}</span>
+                    <span style={{ fontFamily: SERIF, fontWeight: 700, fontSize: 21, lineHeight: 1.45 }}>{lead.title}</span>
                   </span>
                 </Still>
               </a>
@@ -338,7 +338,7 @@ export function PanelDuo({ shelves }: { shelves: VideoLibraryShelf[] }) {
                   >
                     <Still card={card} radius={5} />
                     <span style={{ fontFamily: SERIF, fontWeight: 600, fontSize: 16, lineHeight: 1.45 }}>{card.title}</span>
-                    <span style={{ fontFamily: MONO, fontSize: 11, color: "var(--muted)" }}>
+                    <span style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--muted)" }}>
                       {runtime(card.durationSeconds)}
                     </span>
                   </a>
@@ -370,7 +370,7 @@ export function EpisodeRow({ shelf, note }: { shelf: VideoLibraryShelf; note?: s
       />
       <div className="vp-grid-4" style={{ position: "relative" }}>
         <span style={{ position: "absolute", left: 0, right: 0, top: -12, height: 2, background: "var(--rule)" }} aria-hidden="true" />
-        <span style={{ position: "absolute", left: 0, width: `${progress}%`, top: -12, height: 2, background: "#E0B85C" }} aria-hidden="true" />
+        <span style={{ position: "absolute", left: 0, width: `${progress}%`, top: -12, height: 2, background: "var(--gold)" }} aria-hidden="true" />
         {shown.map((card) => (
           <a
             key={card.slug}
@@ -384,10 +384,10 @@ export function EpisodeRow({ shelf, note }: { shelf: VideoLibraryShelf; note?: s
                   left: 10,
                   top: 10,
                   fontFamily: MONO,
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: 500,
-                  color: "#1A1638",
-                  background: "#F2D38A",
+                  color: "var(--on-gold)",
+                  background: "var(--gold-lt)",
                   padding: "3px 8px",
                   borderRadius: 3
                 }}
@@ -419,8 +419,8 @@ export function PanelPairs({ shelves }: { shelves: VideoLibraryShelf[] }) {
           <div key={shelf.slug} className="vp-panel" style={{ gap: 18 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
               <span style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-                <span style={{ fontFamily: SERIF, fontWeight: 900, fontSize: 24, color: "var(--title)" }}>{shelf.name}</span>
-                <span style={{ fontFamily: MONO, fontSize: 11, color: "var(--acc)" }}>{shelf.total} 部</span>
+                <span style={{ fontFamily: SERIF, fontWeight: 700, fontSize: 24, color: "var(--title)" }}>{shelf.name}</span>
+                <span style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--acc)" }}>{shelf.total} 部</span>
               </span>
               <a href={`/videos/${shelf.slug}`} style={{ fontSize: 13, color: "var(--acc)", textDecoration: "none" }}>
                 全部 →
@@ -474,7 +474,7 @@ export function CardRow({ shelf, note }: { shelf: VideoLibraryShelf; note?: stri
               <Duration card={card} />
             </Still>
             <span style={{ display: "flex", flexDirection: "column", gap: 6, padding: "14px 16px 16px" }}>
-              <span style={{ fontSize: 11, color: "var(--acc)" }}>{kicker(card, shelf.name)}</span>
+              <span style={{ fontSize: 13, color: "var(--acc)" }}>{kicker(card, shelf.name)}</span>
               <span style={{ fontFamily: SERIF, fontWeight: 600, fontSize: 16, lineHeight: 1.45 }}>{card.title}</span>
             </span>
           </a>

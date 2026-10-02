@@ -257,7 +257,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
           <div className="wrap" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center" }}>
             <div>
               <p className="eyebrow eyebrow--onink">{asString(verifyBand.eyebrow, "查询验证")}</p>
-              <h2 className="h2" style={{ color: "#F2F0E9" }}>
+              <h2 className="h2" style={{ color: "var(--paper)" }}>
                 {asString(verifyBand.title, "查验一份退党证明")}
               </h2>
               <p style={{ color: "var(--lav-lt)", fontSize: 15, lineHeight: 1.9, margin: "16px 0 0", maxWidth: "44ch" }}>
@@ -332,7 +332,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
                 <img
                   src={asString(certSamplePanel.image, "https://www.tuidang.org/wp-content/uploads/2026/07/signal-2026-07-22-11-53-42-724.jpg")}
                   alt={asString(certSamplePanel.alt, "退党证明颁发现场")}
-                  style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", background: "#E4E1D8", marginBottom: 14 }}
+                  style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", background: "var(--rule)", marginBottom: 14 }}
                 />
                 <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.75, margin: 0 }}>
                   {asString(certSamplePanel.caption, "2026 年 7 月，31 名华人在美国国会山领取退党证明。")}
@@ -1551,7 +1551,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
             <div className="sec-head">
               <div>
                 <p className="eyebrow eyebrow--onink">{asString(numbersBand.eyebrow, "数字与统计方法")}</p>
-                <h2 className="h2" style={{ color: "#F2F0E9" }}>
+                <h2 className="h2" style={{ color: "var(--paper)" }}>
                   {asString(numbersBand.heading, "这个数字是怎么统计的")}
                 </h2>
                 <p className="lede" style={{ color: "var(--lav-lt)" }}>
@@ -1836,7 +1836,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
                 ))}
               </div>
               <div style={{ background: "var(--grad-band)", borderRadius: 3, padding: "56px 34px", textAlign: "center", color: "var(--lav-lt)", marginBottom: 36 }}>
-                <p style={{ fontFamily: "var(--mono)", fontSize: 12, letterSpacing: ".14em", margin: "0 0 10px", color: "var(--lav)" }}>
+                <p style={{ fontFamily: "var(--mono)", fontSize: 13, letterSpacing: ".14em", margin: "0 0 10px", color: "var(--lav)" }}>
                   {asString(mapBlock.label, "地图")}
                 </p>
                 <p style={{ margin: "0 auto", fontSize: 14.5, lineHeight: 1.9, maxWidth: "44ch" }}>
@@ -2289,7 +2289,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
             <div className="sec-head">
               <div>
                 <p className="eyebrow eyebrow--onink">成为义工</p>
-                <h2 className="h2" style={{ color: "#F2F0E9" }}>
+                <h2 className="h2" style={{ color: "var(--paper)" }}>
                   绝大部分工作由志愿者完成
                 </h2>
                 <p className="lede" style={{ color: "var(--lav-lt)" }}>
@@ -2505,13 +2505,25 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
               </nav>
             </div>
             <aside className="side">
-              <div className="panel panel--seal">
-                <h4>参与联署</h4>
-                <p>签署前请先阅读联署全文。可选择匿名。</p>
-                <a className="btn btn--seal btn--sm" href="#">
-                  前往签署
-                </a>
-              </div>
+              {/* The signing form lives on endccp.com, not here. Editable in
+                  the CMS so the address can move without a deploy. */}
+              {(() => {
+                const sign = asRecord(payload.signPanel);
+                const signHref = asString(sign.buttonHref, "https://endccp.com/");
+                return (
+                  <div className="panel panel--seal">
+                    <h4>{asString(sign.title, "参与联署")}</h4>
+                    <p>{asString(sign.body, "签署前请先阅读联署全文。可选择匿名。")}</p>
+                    <a
+                      className="btn btn--seal btn--sm"
+                      href={signHref}
+                      {...externalLinkProps(signHref)}
+                    >
+                      {asString(sign.buttonLabel, "前往签署")}
+                    </a>
+                  </div>
+                );
+              })()}
               <div className="panel">
                 <h4>相关</h4>
                 <ul>

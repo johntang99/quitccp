@@ -21,24 +21,24 @@ export function VideoLibraryIndex({ shelves }: { shelves: VideoLibraryShelf[] })
       <h1
         style={{
           fontFamily: "var(--serif)",
-          fontWeight: 900,
+          fontWeight: 700,
           fontSize: "clamp(26px,3.4vw,40px)",
           margin: "0 0 8px"
         }}
       >
         影音库
       </h1>
-      <p style={{ fontFamily: "var(--mono)", fontSize: 12, color: "var(--muted)", margin: "0 0 34px" }}>
+      <p style={{ fontFamily: "var(--mono)", fontSize: 13, color: "var(--muted)", margin: "0 0 34px" }}>
         共 {total.toLocaleString("zh-CN")} 个节目 · {shelves.length} 个系列
       </p>
 
       {shelves.map((shelf) => (
         <section key={shelf.slug} style={{ marginBottom: 44 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 14 }}>
-            <h2 style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 800, margin: 0 }}>
+            <h2 style={{ fontFamily: "var(--serif)", fontSize: 22, fontWeight: 700, margin: 0 }}>
               {shelf.name}
             </h2>
-            <span style={{ fontFamily: "var(--mono)", fontSize: 12, color: "var(--muted)" }}>
+            <span style={{ fontFamily: "var(--mono)", fontSize: 13, color: "var(--muted)" }}>
               {shelf.total}
             </span>
             <a href={`/videos/${shelf.slug}`} style={{ marginLeft: "auto", fontSize: 13 }}>
@@ -59,7 +59,7 @@ export function VideoLibraryIndex({ shelves }: { shelves: VideoLibraryShelf[] })
                 href={`/videos/${encodeURIComponent(video.slug)}`}
                 style={{ textDecoration: "none", color: "inherit" }}
               >
-                <div style={{ position: "relative", background: "#E4E1D8", aspectRatio: "16 / 9", overflow: "hidden" }}>
+                <div style={{ position: "relative", background: "var(--rule)", aspectRatio: "16 / 9", overflow: "hidden" }}>
                   {video.coverImage ? (
                     <img
                       src={video.coverImage}
@@ -75,7 +75,7 @@ export function VideoLibraryIndex({ shelves }: { shelves: VideoLibraryShelf[] })
                         bottom: 6,
                         background: "rgba(0,0,0,.78)",
                         color: "#fff",
-                        fontSize: 11,
+                        fontSize: 13,
                         padding: "1px 5px",
                         borderRadius: 2
                       }}
@@ -87,7 +87,7 @@ export function VideoLibraryIndex({ shelves }: { shelves: VideoLibraryShelf[] })
                 <h3 style={{ fontSize: 14, lineHeight: 1.6, margin: "9px 0 3px", fontWeight: 700 }}>
                   {video.title}
                 </h3>
-                <p style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--muted)", margin: 0 }}>
+                <p style={{ fontFamily: "var(--mono)", fontSize: 13, color: "var(--muted)", margin: 0 }}>
                   {[video.episode, video.publishedAt?.slice(0, 10)].filter(Boolean).join(" · ")}
                 </p>
               </a>

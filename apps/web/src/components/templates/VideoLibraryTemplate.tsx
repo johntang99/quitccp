@@ -127,7 +127,7 @@ export function VideoLibraryTemplate({ title, section, slug, content }: Template
       <>
         <InteriorHead section={section} slug={slug} title={title} subtitle={subtitle} />
         <InteriorTabs section={section} slug={slug} />
-        <div style={{ background: "var(--grad-band2)", color: "#EDEBE4" }}>
+        <div style={{ background: "var(--grad-band2)", color: "var(--paper)" }}>
           <section className="sec" style={{ padding: "56px 0 0" }}>
             <div className="wrap">
               <article className="vhero">
@@ -143,7 +143,7 @@ export function VideoLibraryTemplate({ title, section, slug, content }: Template
                   <span className="tag" style={{ color: "var(--gold-lt)" }}>
                     {featuredTag}
                   </span>
-                  <h3 style={{ color: "#F2F0E9" }}>
+                  <h3 style={{ color: "var(--paper)" }}>
                     <a href={featuredHref} {...externalAttrs(featuredHref)}>
                       {featuredTitle}
                     </a>
@@ -165,7 +165,7 @@ export function VideoLibraryTemplate({ title, section, slug, content }: Template
                   <div className="sec-head">
                     <div>
                       <p className="eyebrow">{asString(group.eyebrow, asString(group.title))}</p>
-                      <h2 className="h2" style={{ color: "#F2F0E9", fontSize: 26 }}>
+                      <h2 className="h2" style={{ color: "var(--paper)", fontSize: 26 }}>
                         {asString(group.title)}
                       </h2>
                       <p className="lede" style={{ color: "var(--lav-lt)", fontSize: 14.5 }}>

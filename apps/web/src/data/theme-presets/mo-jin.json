@@ -1,0 +1,92 @@
+{
+  "colors": {
+    "paper": "#F5F2EA",
+    "card": "#FFFFFF",
+    "ink": "#191C1A",
+    "ink2": "#2E2A1C",
+    "inkSoft": "#4C524D",
+    "muted": "#8B8679",
+    "rule": "#DEDACF",
+    "ruleDark": "rgba(255,255,255,.14)",
+    "seal": "#4A4636",
+    "sealDeep": "#36331F",
+    "plumDeep": "#1E1C14",
+    "plumMid": "#3A3626",
+    "plumMenu": "#2A2719",
+    "gold": "#C39A3F",
+    "goldLight": "#E6CA8A",
+    "lavender": "#B3AC93",
+    "lavenderLight": "#D4CFBB"
+  },
+  "surfaces": {
+    "onGold": "#201E12",
+    "bandDeep": "#262316",
+    "bandDeepest": "#15130C",
+    "inkBand": "#1A1726",
+    "inkDim": "#6B6578",
+    "inkMid": "#4A4458",
+    "goldInk": "#8E6A1A",
+    "goldMuted": "#B9933E",
+    "creamText": "#E3DCC6",
+    "creamRule": "#CFC8BA",
+    "lavRule": "#E0DBCB",
+    "lavTint": "#D8D2BE",
+    "lavText": "#F0ECDF",
+    "lavMuted": "#BDB8A6",
+    "lavDim": "#8E8A7A",
+    "sealBright": "#4C4835",
+    "gradMid": "#3A3624",
+    "gradTop": "#514C36"
+  },
+  "gradients": {
+    "hero": "linear-gradient(168deg,#45412F 0%,#37331F 52%,#2A2718 100%)",
+    "band": "linear-gradient(200deg,#36331F 0%,#262316 62%,#1D1B10 100%)",
+    "band2": "linear-gradient(150deg,#34301E 0%,#242114 56%,#2A2718 100%)",
+    "gold": "linear-gradient(180deg,#E6CA8A 0%,#C39A3F 100%)"
+  },
+  "typography": {
+    "fonts": {
+      "heading": "serif-sc",
+      "body": "system-sc",
+      "mono": "plex-mono"
+    },
+    "size": {
+      "display": "40px",
+      "h2": "36px",
+      "h3": "22px",
+      "item": "18px",
+      "body": "16px",
+      "small": "14px",
+      "label": "13px"
+    },
+    "lineHeight": {
+      "heading": "1.3",
+      "h3": "1.4",
+      "item": "1.5",
+      "body": "1.8"
+    },
+    "tracking": {
+      "heading": "0.01em",
+      "body": "0.02em",
+      "label": "0.08em"
+    },
+    "measure": {
+      "body": "38em",
+      "lede": "32em"
+    }
+  },
+  "shape": {
+    "radius": "10px",
+    "shadow": "0 14px 30px -24px rgba(26,23,38,0.3)"
+  },
+  "spacing": {
+    "wrap": "1200px",
+    "sectionY": "72px",
+    "gutter": "32px"
+  },
+  "_preset": {
+    "id": "mo-jin",
+    "name": "墨金",
+    "description": "更克制的深墨底配旧金，适合长文阅读与打印。"
+  }
+}

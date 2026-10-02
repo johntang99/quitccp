@@ -1,6 +1,9 @@
+import { NoWrapTitles } from "@/components/public/NoWrapTitles";
 import { ArticleTools } from "@/components/public/ArticleTools";
+import { ArticleAudio } from "@/components/public/ArticleAudio";
 import { ArticleVideo } from "@/components/public/ArticleVideo";
 import { renderInline } from "@/components/public/MarkdownBody";
+import { externalLinkProps } from "@/lib/external-services";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString, asStringArray } from "./content-utils";
 
@@ -26,6 +29,8 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
     src?: string;
     alt?: string;
     caption?: string;
+    /** An audio row's link text. */
+    label?: string;
     head?: string[];
     rows?: string[][];
   }> = shouldUseFallbackBody
@@ -67,6 +72,8 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
         src: asString(row.src),
         alt: asString(row.alt),
         caption: asString(row.caption),
+        // An audio row's link text; without it every player read "下载".
+        label: asString(row.label),
         head: asStringArray(row.head, []),
         rows: Array.isArray(row.rows)
           ? (row.rows as unknown[]).map((cells) => asStringArray(cells, []))
@@ -138,7 +145,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
               {asString(breadcrumb.current, articleTag)}
             </p>
             <span className="tag">{articleTag}</span>
-            <h1 style={{ fontFamily: "var(--serif)", fontWeight: 900, fontSize: "clamp(28px,3.4vw,40px)", lineHeight: 1.45, margin: "12px 0 20px", letterSpacing: ".01em" }}>
+            <h1 style={{ fontFamily: "var(--serif)", fontWeight: 700, fontSize: "clamp(28px,3.4vw,40px)", lineHeight: 1.45, margin: "12px 0 20px", letterSpacing: ".01em" }}>
               {displayTitle}
             </h1>
             {dek ? <p className="dek">{dek}</p> : null}
@@ -152,10 +159,10 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
                 <img
                   src={heroFigureImage}
                   alt={asString(heroFigure.alt, "文章主图")}
-                  style={{ width: "100%", aspectRatio: "16 / 9", objectFit: "cover", background: "#E4E1D8" }}
+                  style={{ width: "100%", aspectRatio: "16 / 9", objectFit: "cover", background: "var(--rule)" }}
                 />
                 {heroCaptionLines.length > 0 ? (
-                  <figcaption style={{ fontFamily: "var(--mono)", fontSize: 11.5, color: "var(--muted)", marginTop: 11, lineHeight: 1.7 }}>
+                  <figcaption style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--muted)", marginTop: 11, lineHeight: 1.7 }}>
                     {heroCaptionLines.map((line, index) => (
                       <span key={line}>
                         {line}
@@ -223,6 +230,14 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
                   );
                 }
 
+                if (type === "audio") {
+                  const src = asString(row.src);
+                  if (!src) return null;
+                  return (
+                    <ArticleAudio key={`audio-${index}`} src={src} label={asString(row.label, "下载")} />
+                  );
+                }
+
                 const text = asString(row.text);
                 if (!text) return null;
                 const inline = renderInline(text);
@@ -253,7 +268,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
                   <img
                     src={inlineFigureImage}
                     alt={asString(inlineFigure.alt, "文章配图")}
-                    style={{ width: "100%", aspectRatio: "3 / 2", objectFit: "cover", background: "#E4E1D8" }}
+                    style={{ width: "100%", aspectRatio: "3 / 2", objectFit: "cover", background: "var(--rule)" }}
                   />
                   {inlineFigureCaptionLines.length > 0 ? (
                     <figcaption>
