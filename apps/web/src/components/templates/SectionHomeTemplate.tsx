@@ -374,7 +374,9 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
               {immigrationItems.map((row) => (
                 <article key={`${row.title}-${row.meta}`} className="arow">
                   <a href={row.href} style={{ display: "contents" }}>
-                    <img src={row.image} alt="" />
+                    {/* Empty src makes the browser re-request the page; the
+                        placeholder keeps the .arow grid's first column. */}
+                    {row.image ? <img src={row.image} alt="" /> : <span />}
                     <div>
                       <span className="tag">{row.tag}</span>
                       <h3>{row.title}</h3>
@@ -1136,15 +1138,13 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
       const raw = href.trim();
       return raw && raw !== "#" ? raw : fallback;
     };
-    const pressFallbackHref = (title: string) => {
-      if (title.includes("数据与统计")) return "/about/numbers";
-      if (title.includes("财务与治理")) return "/about/accountability";
-      if (title.includes("安全事件")) return "/about/accountability";
-      if (title.includes("机构简介")) return "/resources/press";
-      if (title.includes("图片")) return "/resources/press";
-      if (title.includes("标识")) return "/resources/press";
-      return "/resources/press";
-    };
+    /*
+     * A press card with nothing behind it stays a card, not a link.
+     *
+     * The previous fallback sent 机构简介, 可授权图片 and 标识与标准字 to
+     * /resources/press -- the page the reader is already on -- so clicking them
+     * silently reloaded. A journalist cannot tell that from a broken site.
+     */
     const heading = asString(payload.title, "媒体与记者");
     const subtitle = asString(payload.subtitle, "机构简介、数据说明、可授权图片与联络方式，供媒体与研究者引用。");
     const noticePanel = asRecord(payload.noticePanel);
@@ -1154,7 +1154,10 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
           title: asString(row.title),
           body: asString(row.body),
           badge: asString(row.badge),
-          href: resolveResourceHref(asString(row.href, "#"), pressFallbackHref(asString(row.title)))
+          href: (() => {
+            const raw = asString(row.href).trim();
+            return raw && raw !== "#" ? raw : "";
+          })()
         }))
       : [
           { title: "机构简介（一页）", body: "成立背景、服务内容、规模与法律地位，中英文版本。", badge: "PDF · 中／英", href: "#" },
@@ -1219,13 +1222,21 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
               </div>
             </div>
             <div className="pkit">
-              {kitItems.map((item) => (
-                <a key={item.title} className="pk" href={item.href}>
-                  <h3>{item.title}</h3>
-                  <p>{item.body}</p>
-                  <span className="meta">{item.badge}</span>
-                </a>
-              ))}
+              {kitItems.map((item) =>
+                item.href ? (
+                  <a key={item.title} className="pk" href={item.href} {...externalLinkProps(item.href)}>
+                    <h3>{item.title}</h3>
+                    <p>{item.body}</p>
+                    <span className="meta">{item.badge}</span>
+                  </a>
+                ) : (
+                  <div key={item.title} className="pk pk--soon">
+                    <h3>{item.title}</h3>
+                    <p>{item.body}</p>
+                    <span className="meta">{item.badge}</span>
+                  </div>
+                )
+              )}
             </div>
           </div>
         </section>

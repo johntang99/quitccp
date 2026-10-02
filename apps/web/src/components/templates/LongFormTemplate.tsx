@@ -353,7 +353,9 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
                 ).map((item, index) => (
                   <article key={`${item.title}-${item.meta}`} className="arow" style={index === 0 ? { paddingTop: 0 } : undefined}>
                     <a href={item.href} style={{ display: "contents" }}>
-                      <img src={item.image} alt="" />
+                      {/* Empty src makes the browser re-request the page; the
+                          placeholder keeps the .arow grid's first column. */}
+                      {item.image ? <img src={item.image} alt="" /> : <span />}
                       <div>
                         <span className="tag">{item.tag}</span>
                         <h3>{item.title}</h3>

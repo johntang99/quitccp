@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { PageFromRoute } from "@/components/PageFromRoute";
 import { TemplateRenderer } from "@/components/templates/TemplateRenderer";
+import { CulturePage } from "@/components/public/CulturePage";
 import {
   MaterialCategoryPage,
   MaterialDetailPage,
@@ -9,6 +10,7 @@ import {
 import {
   getMaterial,
   getMaterialCategories,
+  getCultureListing,
   getMaterialsByCategory,
   getRenderableArticle,
   getRenderablePage
@@ -53,6 +55,42 @@ export default async function ResourcesPage({ params, searchParams }: ResourcesP
     if (!category) notFound();
     const materials = await getMaterialsByCategory(category.slug);
     return <MaterialCategoryPage category={category} materials={materials} />;
+  }
+
+  if (slug === "culture") {
+    const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] ?? "" : value ?? "");
+    const filter = first(query.filter) || "all";
+    const page = Number(first(query.page)) || 1;
+    const [listing, stored] = await Promise.all([
+      getCultureListing(filter, page),
+      getRenderablePage("resources", "culture")
+    ]);
+    // Before the sub-categories are seeded there is nothing to show; fall back
+    // to the stored page rather than render an empty archive.
+    if (listing.total > 0) {
+      const content = (stored?.content ?? {}) as Record<string, unknown>;
+      const panel = (content.freeUsePanel ?? {}) as Record<string, string>;
+      const related = (content.relatedPanel ?? {}) as { title?: string; links?: { label: string; href: string }[] };
+      return (
+        <CulturePage
+          title={typeof content.title === "string" ? content.title : "中华传统文化"}
+          subtitle={typeof content.subtitle === "string" ? content.subtitle : ""}
+          listing={listing}
+          activeFilter={filter}
+          freeUse={
+            panel.title
+              ? {
+                  title: panel.title,
+                  body: panel.body ?? "",
+                  buttonLabel: panel.buttonLabel ?? "",
+                  buttonHref: panel.buttonHref ?? "/resources/downloads"
+                }
+              : undefined
+          }
+          related={related.title ? { title: related.title, links: related.links ?? [] } : undefined}
+        />
+      );
+    }
   }
 
   if (slug === "downloads") {

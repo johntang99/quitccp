@@ -96,6 +96,9 @@ function isLikelyStandaloneSubheading(lines: string[], index: number): boolean {
   return /[\p{Script=Han}A-Za-z0-9“”"'"'（）()《》·—\-？！?]/u.test(current);
 }
 
+/** The culture library's three categories, which are not news sections. */
+export const CULTURE_CATEGORY_NAMES = new Set(["传统文化文章", "诗词", "歌曲"]);
+
 export function markdownToBodyRows(markdown: string): ArticleBodyRow[] {
   const lines = markdown.replace(/\r/g, "").split("\n");
   const rows: ArticleBodyRow[] = [];
@@ -572,6 +575,11 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
               text: asString((row as Record<string, unknown>).text)
             }));
     const firstParagraph = bodyRows.find((row) => row.type === "p");
+    /** Every paragraph, for comparing a standfirst against what the body says. */
+    const bodyText = bodyRows
+      .filter((r): r is { type: "p" | "h2" | "h3" | "blockquote"; text: string } => "text" in r)
+      .map((r) => r.text)
+      .join(" ");
     const summary = asString(
       row.summary as string,
       firstParagraph && "text" in firstParagraph ? firstParagraph.text : ""
@@ -596,6 +604,11 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
     // The import touched all 15,514 rows at once, so updated_at would have put
     // today's date on a piece from 2011.
     const articleDate = asString(row.published_at) || asString(row.updated_at);
+    // 诗词 is laid out as verse; everything else keeps its prose paragraphs.
+    const isVerse = articleTag === "诗词";
+    const displayRows = isVerse
+      ? bodyRows.map((r) => ("text" in r && r.type === "p" ? { ...r, text: toVerseLines(r.text) } : r))
+      : bodyRows;
     const resolvedByline = [
       toDateLabel(articleDate),
       articleTag || "新闻与报告",
@@ -617,11 +630,16 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
         // showing it as the standfirst reprints the opening paragraph directly
         // above itself. Only show a standfirst that says something the body
         // does not already open with.
-        dek: isEchoOfBody(summary, firstParagraph && "text" in firstParagraph ? firstParagraph.text : "")
+        // Against the whole body, not just its first paragraph: a 诗词's summary
+        // is the entire poem collapsed onto one line, and the first paragraph is
+        // only 「作者：…」 -- too short to trip the check, so the poem printed
+        // twice, once as a standfirst and once as the body.
+        dek: isEchoOfBody(summary, bodyText)
           ? ""
           : summary || asString(fallbackContent.dek),
         byline: resolvedByline,
-        body: bodyRows,
+        body: displayRows,
+        verse: isVerse,
         tag: articleTag,
         // The seed's breadcrumb names a category too, and the template prefers
         // it over the tag -- so it has to be corrected here as well or the trail
@@ -634,10 +652,13 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
           ...asObject(fallbackContent.relatedSection),
           items: await getRelatedArticles(articleTag, normalizedSlug)
         },
+        // 中华传统文化 articles are not news: the trail used to claim
+        // 首页 / 新闻与报告 / 诗词 for every poem in the culture library.
         breadcrumb: {
           ...asObject(fallbackContent.breadcrumb),
-          sectionLabel: "新闻与报告",
-          sectionHref: "/news",
+          ...(CULTURE_CATEGORY_NAMES.has(articleTag)
+            ? { sectionLabel: "中华传统文化", sectionHref: "/resources/culture" }
+            : { sectionLabel: "新闻与报告", sectionHref: "/news" }),
           current: articleTag
         },
         heroFigure: heroImage
@@ -1003,6 +1024,27 @@ export async function getVideoLibrary(perShelf = 6): Promise<VideoLibraryShelf[]
  * not a letter, a digit or a Han character goes: the two copies of a URL can
  * differ by an underscore or a hyphen alone, which was enough to miss the match.
  */
+/**
+ * Lays a 诗词 out as verse: one clause per line, as the old site printed it.
+ *
+ * Classical Chinese verse is stored as running text -- 「新楼栉比映东月，古巷灯明
+ * 三退切。」 -- because that is how it arrives from the source. Rendered as prose
+ * it becomes a single wrapped line and stops reading as a poem at all. The
+ * clause boundaries are the line breaks, so the punctuation that marks them is
+ * what the line break replaces.
+ *
+ * Attribution lines (作者：…) are prose and are left whole.
+ */
+export function toVerseLines(text: string): string {
+  if (/^(作者|译者|编辑|文|注)[：:]/.test(text.trim())) return text;
+  const lines = text
+    .split(/(?<=[，。；！？])/)
+    .map((line) => line.replace(/[，。；！？]\s*$/, "").trim())
+    .filter(Boolean);
+  // Nothing to split on means it was not punctuated verse; leave it be.
+  return lines.length > 1 ? lines.join("\n") : text;
+}
+
 export function isEchoOfBody(summary: string, firstParagraph: string): boolean {
   const normalise = (value: string) => value.replace(/[^\p{Script=Han}\p{L}\p{N}]/gu, "");
   const a = normalise(summary);
@@ -1830,5 +1872,146 @@ export async function getMaterial(slug: string): Promise<PublicMaterial | null> 
     return toPublicMaterial(data as MaterialRow);
   } catch {
     return null;
+  }
+}
+
+/* ==========================================================================
+   中华传统文化 — read from the article library rather than from page JSON.
+
+   The page used to render ten hand-picked rows stored in
+   `pages/resources-culture.json`, which left 304 of the 314 published articles
+   unreachable, claimed 68 pages that all returned the same ten, and filtered by
+   matching titles against hardcoded names. Counts in the sidebar added up to
+   750 against 314 real articles.
+   ========================================================================== */
+
+/**
+ * The filters. 诗词 and 歌曲 are real categories an editor reassigns in 文章管理;
+ * 传统文化文章 is what is left over, so the three always sum to the whole.
+ *
+ * Named 传统文化文章 rather than plain 文章 because the admin lists it beside the
+ * news categories, where a bare 文章 says nothing about which library it means.
+ */
+export const CULTURE_FILTERS = [
+  { key: "all", label: "全部", slug: "culture" },
+  { key: "article", label: "传统文化文章", slug: "" },
+  { key: "poetry", label: "诗词", slug: "culture-poetry" },
+  { key: "music", label: "歌曲", slug: "culture-music" }
+] as const;
+
+export interface CultureRow {
+  slug: string;
+  title: string;
+  summary: string;
+  image: string;
+  date: string;
+  tag: string;
+}
+
+export interface CultureListing {
+  rows: CultureRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  pageCount: number;
+  counts: { all: number; article: number; poetry: number; music: number };
+}
+
+async function categoryIdBySlug(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  slug: string
+): Promise<string> {
+  const { data } = await supabase.from("cms_article_categories").select("id").eq("slug", slug).maybeSingle();
+  return data ? String(data.id) : "";
+}
+
+export async function getCultureListing(filterKey = "all", page = 1, pageSize = 10): Promise<CultureListing> {
+  const empty: CultureListing = {
+    rows: [],
+    total: 0,
+    page: 1,
+    pageSize,
+    pageCount: 1,
+    counts: { all: 0, article: 0, poetry: 0, music: 0 }
+  };
+  try {
+    const supabase = createSupabaseAdminClient();
+    const [plainId, poetryId, musicId] = await Promise.all([
+      categoryIdBySlug(supabase, "culture"),
+      categoryIdBySlug(supabase, "culture-poetry"),
+      categoryIdBySlug(supabase, "culture-music")
+    ]);
+    if (!plainId) return empty;
+
+    const countIn = async (categoryId: string) => {
+      if (!categoryId) return 0;
+      const { count } = await supabase
+        .from("cms_article_category_map")
+        .select("article_id, cms_articles!inner(status)", { count: "exact", head: true })
+        .eq("category_id", categoryId)
+        .eq("cms_articles.status", "published");
+      return count ?? 0;
+    };
+    const [article, poetry, music] = await Promise.all([
+      countIn(plainId),
+      countIn(poetryId),
+      countIn(musicId)
+    ]);
+    // The three are siblings and every article is in exactly one, so 全部 is
+    // their sum rather than a separate category to keep in step.
+    const counts = { article, poetry, music, all: article + poetry + music };
+
+    const filter = CULTURE_FILTERS.find((row) => row.key === filterKey) ?? CULTURE_FILTERS[0];
+    const total =
+      filter.key === "all" ? counts.all
+      : filter.key === "poetry" ? counts.poetry
+      : filter.key === "music" ? counts.music
+      : counts.article;
+    const pageCount = Math.max(1, Math.ceil(total / pageSize));
+    const current = Math.min(Math.max(1, page), pageCount);
+
+    const scope =
+      filter.key === "all"
+        ? [plainId, poetryId, musicId].filter(Boolean)
+        : [filter.key === "poetry" ? poetryId : filter.key === "music" ? musicId : plainId].filter(Boolean);
+    if (scope.length === 0) return { ...empty, counts };
+
+    const nameById = new Map<string, string>([
+      [plainId, "传统文化文章"],
+      [poetryId, "诗词"],
+      [musicId, "歌曲"]
+    ]);
+
+    const { data } = await supabase
+      .from("cms_articles")
+      .select(
+        "slug, title, summary, hero_image, published_at, cms_article_category_map!inner(category_id)"
+      )
+      .eq("status", "published")
+      .in("cms_article_category_map.category_id", scope)
+      .order("published_at", { ascending: false, nullsFirst: false })
+      // A tiebreaker: the import wrote whole batches on one timestamp, and
+      // without this the pager repeats and drops rows.
+      .order("id", { ascending: true })
+      .range((current - 1) * pageSize, current * pageSize - 1);
+
+    const rows: CultureRow[] = (data ?? []).map((row) => {
+      const r = row as Record<string, unknown>;
+      const maps = Array.isArray(r.cms_article_category_map) ? r.cms_article_category_map : [];
+      const categoryId = String((maps[0] as { category_id?: string })?.category_id ?? "");
+      return {
+        slug: asString(r.slug),
+        title: asString(r.title),
+        summary: asString(r.summary),
+        image: asString(r.hero_image),
+        date: asString(r.published_at).slice(0, 10),
+        // The row's own category, so 全部 shows which bucket each one is in.
+        tag: nameById.get(categoryId) ?? "传统文化文章"
+      };
+    });
+
+    return { rows, total, page: current, pageSize, pageCount, counts };
+  } catch {
+    return empty;
   }
 }

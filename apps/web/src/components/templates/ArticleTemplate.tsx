@@ -18,6 +18,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
       ? rawByline
       : ["2026-07-22", "华盛顿", "本站报导", "约 1,400 字"];
   const bodyRows = asObjectArray(payload.body);
+  const isVerse = payload.verse === true;
   const shouldUseFallbackBody = bodyRows.length === 0;
   const proseRows: Array<{
     type: string;
@@ -228,7 +229,13 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
                 if (type === "h2") return <h2 key={`${type}-${index}`}>{inline}</h2>;
                 if (type === "h3") return <h3 key={`${type}-${index}`}>{inline}</h3>;
                 if (type === "blockquote") return <blockquote key={`${type}-${index}`}>{inline}</blockquote>;
-                return <p key={`${type}-${index}`}>{inline}</p>;
+                // A 诗词's paragraphs carry their line breaks; honour them
+                // rather than letting the browser reflow the poem into prose.
+                return (
+                  <p key={`${type}-${index}`} style={isVerse ? { whiteSpace: "pre-line" } : undefined}>
+                    {inline}
+                  </p>
+                );
               })}
               {/* The mockup demonstrated link styling with a sentence about link
                   styling. Rendered unconditionally it became the last paragraph
@@ -275,7 +282,10 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
                 {relatedItems.map((item, index) => (
                   <article key={item.title} className="arow" style={index === 0 ? { paddingTop: 0 } : undefined}>
                     <a href={item.href} style={{ display: "contents" }}>
-                      <img src={item.image} alt="" />
+                      {/* An empty src makes the browser re-request the page.
+                          The placeholder keeps the .arow grid's first column,
+                          which the text otherwise collapses into. */}
+                      {item.image ? <img src={item.image} alt="" /> : <span />}
                       <div>
                         <span className="tag">{item.tag}</span>
                         <h3>{item.title}</h3>

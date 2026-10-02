@@ -99,7 +99,25 @@ export function downloadUrlFor(publicUrl: string, originalName: string): string 
   return `${publicUrl}?download=${encodeURIComponent(name)}`;
 }
 
-/** `<folder>/<timestamp>-<safe name>`, which cannot climb out of its prefix. */
+/**
+ * `<folder>/<timestamp>-<safe name>`, which cannot climb out of its prefix.
+ *
+ * When the filename is entirely non-ASCII -- 选择与救赎.zip, say -- sanitising
+ * leaves nothing, and every such upload would land as `file.zip`, telling
+ * whoever browses the bucket nothing and colliding in spirit with the next one.
+ * In that case the folder's own name stands in, so the key becomes
+ * `materials/xuanze-yu-jiushu/<ts>-xuanze-yu-jiushu.zip`.
+ *
+ * The reader is unaffected either way: the original name comes back through
+ * `?download=` -- see `downloadUrlFor`.
+ */
 export function objectPathFor(folder: string, filename: string): string {
-  return `${sanitizeFolder(folder)}/${Date.now()}-${sanitizeFilename(filename)}`;
+  const safeFolder = sanitizeFolder(folder);
+  let name = sanitizeFilename(filename);
+  if (name === "file" || name.startsWith("file.")) {
+    const leaf = safeFolder.slice(safeFolder.lastIndexOf("/") + 1);
+    const ext = extensionOf(filename);
+    if (leaf && leaf !== "general") name = ext ? `${leaf}.${ext}` : leaf;
+  }
+  return `${safeFolder}/${Date.now()}-${name}`;
 }

@@ -32,7 +32,9 @@
     "sync:santui": "tsx scripts/sync-santui.ts",
     "materials:import:promo": "tsx scripts/import-materials-promo.ts",
     "materials:import:boards": "tsx scripts/import-materials-boards.ts",
-    "materials:migrate:storage": "tsx scripts/migrate-material-storage.ts"
+    "materials:migrate:storage": "tsx scripts/migrate-material-storage.ts",
+    "press:profile:pdf": "tsx scripts/build-org-profile-pdf.ts",
+    "culture:subcategories": "tsx scripts/seed-culture-subcategories.ts"
   },
   "devDependencies": {
     "tsx": "^4.19.2",

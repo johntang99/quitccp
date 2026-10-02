@@ -3678,3 +3678,7 @@ img.bcover--photo {
 @media (max-width: 720px) {
   .vp-grid-2, .vp-grid-4 { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* A press-kit card with nothing behind it yet: present, clearly not clickable. */
+.pk--soon { cursor: default; opacity: .72; }
+.pk--soon:hover { border-color: var(--rule); }

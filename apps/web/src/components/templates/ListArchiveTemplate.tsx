@@ -1076,7 +1076,9 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
                   <article key={row.name}>
                     <blockquote>{row.quote}</blockquote>
                     <div className="who">
-                      <img src={row.image} alt={row.name} />
+                      {/* A portrait we do not have is simply absent: the row is
+                          flex, so nothing collapses without a placeholder. */}
+                      {row.image ? <img src={row.image} alt={row.name} /> : null}
                       <div>
                         <b>{row.name}</b>
                         <span style={{ whiteSpace: "pre-line" }}>{row.role}</span>
@@ -1331,7 +1333,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
                     <article key={profile.name} className="pcard">
                       <blockquote>{profile.quote}</blockquote>
                       <div className="who">
-                        <img src={profile.image} alt={profile.name} />
+                        {profile.image ? <img src={profile.image} alt={profile.name} /> : null}
                         <div>
                           <b>{profile.name}</b>
                           <span style={{ whiteSpace: "pre-line" }}>{profile.role}</span>
