@@ -29,7 +29,10 @@
     "redirects:load": "tsx scripts/load-redirects.ts",
     "content:seed:home": "tsx scripts/seed-home-content.ts",
     "build:check": "node scripts/build-check.mjs",
-    "sync:santui": "tsx scripts/sync-santui.ts"
+    "sync:santui": "tsx scripts/sync-santui.ts",
+    "materials:import:promo": "tsx scripts/import-materials-promo.ts",
+    "materials:import:boards": "tsx scripts/import-materials-boards.ts",
+    "materials:migrate:storage": "tsx scripts/migrate-material-storage.ts"
   },
   "devDependencies": {
     "tsx": "^4.19.2",

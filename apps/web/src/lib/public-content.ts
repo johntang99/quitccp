@@ -1680,3 +1680,155 @@ export async function getVideoHome(): Promise<VideoHome> {
     return { feature: null, featureCategory: "", featureIsFlagged: false, upnext: [], shelves: [], total: 0 };
   }
 }
+
+/* ==========================================================================
+   真相点资料 — the downloadable materials.
+
+   Read straight from `cms_materials`, so the counts on /resources/downloads are
+   counted rather than typed. Everything degrades to empty rather than throwing:
+   before 017 is run the page shows its static copy and no cards.
+   ========================================================================== */
+
+export interface PublicMaterialFile {
+  label: string;
+  url: string;
+  kind: string;
+}
+
+export interface PublicMaterial {
+  slug: string;
+  title: string;
+  summary: string;
+  bodyMarkdown: string;
+  coverImage: string;
+  coverImageAlt: string;
+  files: PublicMaterialFile[];
+  publishedAt: string | null;
+  categorySlug: string;
+  categoryName: string;
+}
+
+export interface PublicMaterialCategory {
+  slug: string;
+  name: string;
+  summary: string;
+  count: number;
+}
+
+function materialFiles(value: unknown): PublicMaterialFile[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((row): row is Record<string, unknown> => typeof row === "object" && row !== null)
+    .map((row) => ({
+      label: asString(row.label),
+      url: asString(row.url),
+      kind: asString(row.kind)
+    }))
+    // A row with no address is how an editor retires a download, so it must not
+    // reach the page as a dead button.
+    .filter((row) => row.url);
+}
+
+type MaterialRow = {
+  slug: unknown;
+  title: unknown;
+  summary: unknown;
+  body_markdown?: unknown;
+  cover_image: unknown;
+  cover_image_alt: unknown;
+  files: unknown;
+  published_at: unknown;
+  cms_material_category_map?: unknown;
+};
+
+function toPublicMaterial(row: MaterialRow): PublicMaterial {
+  const maps = Array.isArray(row.cms_material_category_map) ? row.cms_material_category_map : [];
+  const primary = maps
+    .slice()
+    .sort(
+      (a, b) =>
+        Number((a as { position?: number }).position ?? 0) - Number((b as { position?: number }).position ?? 0)
+    )[0] as { cms_material_categories?: { slug?: string; name?: string } } | undefined;
+  return {
+    slug: asString(row.slug),
+    title: asString(row.title),
+    summary: asString(row.summary),
+    bodyMarkdown: asString(row.body_markdown),
+    coverImage: asString(row.cover_image),
+    coverImageAlt: asString(row.cover_image_alt),
+    files: materialFiles(row.files),
+    publishedAt: row.published_at ? asString(row.published_at) : null,
+    categorySlug: asString(primary?.cms_material_categories?.slug),
+    categoryName: asString(primary?.cms_material_categories?.name)
+  };
+}
+
+const MATERIAL_SELECT =
+  "slug, title, summary, body_markdown, cover_image, cover_image_alt, files, published_at, cms_material_category_map(position, cms_material_categories(slug, name))";
+
+export async function getMaterialCategories(): Promise<PublicMaterialCategory[]> {
+  try {
+    const supabase = createSupabaseAdminClient();
+    const [{ data: categories, error }, { data: maps, error: mapError }] = await Promise.all([
+      supabase
+        .from("cms_material_categories")
+        .select("slug, name, summary, sort_order")
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("cms_material_category_map")
+        .select("cms_material_categories!inner(slug), cms_materials!inner(status)")
+        .eq("cms_materials.status", "published")
+    ]);
+    if (error || mapError) return [];
+
+    const counts = new Map<string, number>();
+    for (const row of maps ?? []) {
+      const slug = String(
+        (row as { cms_material_categories?: { slug?: string } }).cms_material_categories?.slug ?? ""
+      );
+      if (slug) counts.set(slug, (counts.get(slug) ?? 0) + 1);
+    }
+    return (categories ?? []).map((row) => ({
+      slug: asString(row.slug),
+      name: asString(row.name),
+      summary: asString(row.summary),
+      count: counts.get(asString(row.slug)) ?? 0
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getMaterialsByCategory(categorySlug?: string): Promise<PublicMaterial[]> {
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data, error } = await supabase
+      .from("cms_materials")
+      .select(MATERIAL_SELECT)
+      .eq("status", "published")
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("id", { ascending: true })
+      .limit(500);
+    if (error || !data) return [];
+    const rows = data.map((row) => toPublicMaterial(row as MaterialRow));
+    return categorySlug ? rows.filter((row) => row.categorySlug === categorySlug) : rows;
+  } catch {
+    return [];
+  }
+}
+
+export async function getMaterial(slug: string): Promise<PublicMaterial | null> {
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data, error } = await supabase
+      .from("cms_materials")
+      .select(MATERIAL_SELECT)
+      .eq("slug", slug)
+      .eq("status", "published")
+      .maybeSingle();
+    if (error || !data) return null;
+    return toPublicMaterial(data as MaterialRow);
+  } catch {
+    return null;
+  }
+}

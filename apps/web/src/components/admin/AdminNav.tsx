@@ -11,6 +11,8 @@ const LINKS = [
   { href: "/admin/categories", label: "文章分类" },
   { href: "/admin/videos", label: "视频管理" },
   { href: "/admin/video-categories", label: "视频分类" },
+  { href: "/admin/materials", label: "资料管理" },
+  { href: "/admin/material-categories", label: "资料分类" },
   { href: "/admin/media", label: "媒体资源" },
   { href: "/admin/settings", label: "站点设置" },
   { href: "/admin/audit", label: "审计日志" },

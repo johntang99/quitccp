@@ -48,14 +48,16 @@ async function audit(
 }
 
 export async function recordUploadedAsset(
-  input: { name: string; url: string; mimeType: string; byteSize: number },
+  // `assetType` distinguishes a downloadable file (a 展板 zip, a PDF) from an
+  // image, so the media library can list and filter them apart.
+  input: { name: string; url: string; mimeType: string; byteSize: number; assetType?: string },
   actorEmail: string
 ): Promise<MediaAsset> {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("cms_media_assets")
     .insert({
-      asset_type: "image",
+      asset_type: input.assetType ?? "image",
       name: input.name,
       storage_path: input.url,
       mime_type: input.mimeType,

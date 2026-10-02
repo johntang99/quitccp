@@ -7,7 +7,7 @@ the index, and content JSON only ever stores a public URL.**
 ## Flow
 
 ```
-ImagePickerModal  ──upload──▶  POST /api/admin/media/upload
+ImagePickerModal  ──upload──▶  browser ▶ Supabase Storage (signed URL)
                                    │
                                    ├─▶ Supabase Storage  (bucket: media)
                                    │      objectPath = <folder>/<ts>-<safe-name>
@@ -23,11 +23,42 @@ upload a file or pick one already in the library, and the public URL is written
 into the JSON field. Pasting a URL is still supported — that is how the existing
 `tuidang.org/wp-content/...` images are referenced.
 
+## Uploads never cross a function
+
+The browser uploads **straight to Supabase Storage** using a short-lived signed
+URL. Our API only issues the ticket:
+
+```
+browser ──[name, type, size]──▶ /uploads/sign ──▶ signed ticket
+browser ──────────[bytes]──────────────────────▶ Supabase Storage
+browser ──[path]──────────────▶ /uploads/register ──▶ cms_media_assets row
+```
+
+This is not an optimisation. A serverless request body is capped around 4.5MB in
+production, and the previous uploader read the bytes in the route with its own
+5MB limit -- so a 4.6MB image passed our check and then died at the edge, before
+the code that would have explained why ever ran. It worked locally, where no
+such limit exists. Measured against this project, Storage itself accepts at
+least 200MB.
+
+Going direct does not mean going unguarded: session, role, MFA, the type
+allow-list and the size cap are all checked before a ticket exists, and the
+destination path is built on the server rather than accepted from the client.
+
+**Filenames.** Storage keys must be ASCII -- Supabase rejects anything else with
+`Invalid key` -- so 历史重演惊人醒.zip cannot be stored under its own name. The
+reader still gets it: downloadable files carry `?download=<original name>`, and
+Supabase answers with `content-disposition: ...; filename*=UTF-8''...`. Images
+deliberately do **not** carry it, or every `<img>` would try to save itself.
+
 ## Pieces
 
 | file | role |
 |---|---|
-| `app/api/admin/media/upload/route.ts` | multipart → Storage → index row → `{ url }` |
+| `app/api/admin/content/uploads/sign/route.ts` | issues a signed upload ticket after the guards |
+| `app/api/admin/content/uploads/register/route.ts` | records the finished upload in `cms_media_assets` |
+| `lib/admin/upload-policy.ts` | the one place the limits and the allow-list live |
+| `lib/admin/upload-client.ts` | browser side: sign → PUT with progress → register |
 | `app/api/admin/media/list/route.ts` | library listing + `uploadEnabled` flag |
 | `app/api/admin/media/delete/route.ts` | removes the object **and** the index row |
 | `lib/admin/media-storage.ts` | storage/table helpers, audited |

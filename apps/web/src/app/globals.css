@@ -881,6 +881,34 @@
   box-shadow: 0 14px 34px rgba(35, 26, 82, 0.2);
 }
 
+/* A cover image in place of the lettered block. Same footprint, so the 230px
+   column and the 3:4 shape hold whichever one a book carries.
+
+   `contain`, not `cover`: these are real book jackets whose artwork carries the
+   title, and their proportions vary (0.71 to 0.85 against the box's 0.75), so
+   filling the box would crop the lettering off the edge of one or the other.
+   The band behind the letterboxing is the page ground itself, so the jacket
+   reads as floating on the page rather than sitting in a box. Both selectors
+   name the element because `.bcover` / `.bitem .c` are declared further down
+   with their own gradient, and at equal specificity the later rule would win. */
+img.bcover--photo {
+  display: block;
+  object-fit: contain;
+  padding: 0;
+  background: var(--paper);
+  box-shadow: 0 14px 34px rgba(35, 26, 82, 0.2);
+}
+.bitem img.c--photo {
+  display: block;
+  object-fit: contain;
+  padding: 0;
+  background: var(--paper);
+}
+/* The card's text used to sit inside the same <a> as the cover; now that the
+   format pills are their own links, the body and pill row are siblings. */
+.bitem p { margin-top: 0; }
+.bitem .fmt { margin-top: 12px; }
+
 .bhero h2 {
   font-family: var(--serif);
   font-weight: 900;

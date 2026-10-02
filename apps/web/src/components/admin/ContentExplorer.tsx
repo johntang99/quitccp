@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AboutSectionsEditor } from "./AboutSectionsEditor";
 import { HomeSectionsEditor } from "@/components/admin/HomeSectionsEditor";
+import { BooksEditor } from "@/components/admin/BooksEditor";
 import { ImagePickerModal } from "@/components/admin/ImagePickerModal";
 
 interface ContentFileItem {
@@ -63,6 +64,7 @@ function parseJsonValue(raw: string): unknown | null {
 }
 
 const HOME_PATH = "pages/home.json";
+const BOOKS_PATH = "pages/resources-index.json";
 
 /**
  * Display-only rename of the homepage group. The underlying section stays
@@ -896,7 +898,9 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
   const previewPath = guessPreviewPath(activePath);
   const isHomeEditor = activePath === HOME_PATH;
   const isAboutBlockEditor = activePath === ABOUT_INDEX_PATH;
-  const isStructuredEditor = !isAboutBlockEditor && !isHomeEditor && structuredFields.length > 0;
+  const isBooksEditor = activePath === BOOKS_PATH;
+  const isStructuredEditor =
+    !isAboutBlockEditor && !isHomeEditor && !isBooksEditor && structuredFields.length > 0;
   const hasAboutDefaults = activePath === ABOUT_INDEX_PATH || Boolean(ABOUT_PAGE_DEFAULT_CONTENTS[activePath]);
 
   return (
@@ -1006,6 +1010,15 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
                   jsonDrafts={homeJsonDrafts}
                   jsonErrors={homeJsonErrors}
                   onJsonDraft={updateHomeJsonDraft}
+                  onPickImage={(keyPath, label) => {
+                    setImagePickerField(keyPath);
+                    setImagePickerLabel(label);
+                  }}
+                />
+              ) : isBooksEditor ? (
+                <BooksEditor
+                  data={activeData}
+                  updateField={updateField}
                   onPickImage={(keyPath, label) => {
                     setImagePickerField(keyPath);
                     setImagePickerLabel(label);

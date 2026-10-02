@@ -431,23 +431,18 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
       const raw = href.trim();
       return raw && raw !== "#" ? raw : fallback;
     };
-    const bookDetailHrefByTitle: Record<string, string> = {
-      "《解体党文化》": "/resources/book-jieti-dangwenhua",
-      "《魔鬼在统治着我们的世界》": "/resources/book-mogui-shijie",
-      "《共产主义的终极目的》": "/resources/book-gongchanzhuyi-zhongji"
-    };
-    const resolveBookDetailHref = (href: string, title: string) => {
-      const mapped = bookDetailHrefByTitle[title];
-      if (mapped) return mapped;
-      const raw = href.trim();
-      return raw && raw !== "#" ? raw : "/resources";
-    };
-    const fallbackByFormatLabel = (label: string) => {
-      if (label.includes("影音")) return "/videos/jiuping";
-      if (label.includes("在线阅读")) return "/resources";
-      if (label.includes("PDF") || label.includes("EPUB") || label.includes("音频") || label.includes("多语")) return "/resources/downloads";
-      return "/resources";
-    };
+    /**
+     * A format pill is only shown when it has somewhere real to go.
+     *
+     * These books are published elsewhere -- 大纪元 and 新唐人 -- and not every
+     * edition exists for every title: 《魔鬼在统治着我们的世界》 has no PDF we can
+     * link, 《解体党文化》 has no EPUB. The page used to paper over that by
+     * sending every unresolved pill to /resources/downloads, so a reader who
+     * clicked PDF landed on a page with no PDF on it. A button that does not go
+     * where it says is worse than an absent one.
+     */
+    const withRealHref = <T extends { href: string }>(rows: T[]) =>
+      rows.filter((row) => row.href.trim() && row.href.trim() !== "#");
     const heading = asString(payload.title, "书籍与文集");
     const subtitle = asString(
       payload.subtitle,
@@ -455,82 +450,35 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
     );
     const featuredBook = asRecord(payload.featuredBook);
     const featuredFormats = asObjectArray(featuredBook.formats).length
-      ? asObjectArray(featuredBook.formats).map((row) => ({
+      ? withRealHref(asObjectArray(featuredBook.formats).map((row) => ({
           label: asString(row.label),
-          href: resolveResourceHref(asString(row.href, "#"), fallbackByFormatLabel(asString(row.label)))
-        }))
-      : [
-          { label: "在线阅读", href: "#" },
-          { label: "PDF", href: "#" },
-          { label: "EPUB", href: "#" },
-          { label: "音频版", href: "#" },
-          { label: "影音版", href: "/videos/jiuping" },
-          { label: "多语种译本", href: "#" }
-        ];
-    const featuredToc = asObjectArray(featuredBook.toc).length
-      ? asObjectArray(featuredBook.toc).map((row) => ({
-          index: asString(row.index),
-          title: asString(row.title),
-          href: resolveResourceHref(asString(row.href, "#"), `/resources?book=jiuping&chapter=${encodeURIComponent(asString(row.index))}`)
-        }))
-      : [
-          { index: "一", title: "评共产党是什么", href: "#" },
-          { index: "二", title: "评中国共产党是怎样起家的", href: "#" },
-          { index: "三", title: "评中国共产党的暴政", href: "#" },
-          { index: "四", title: "评共产党是反宇宙的力量", href: "#" },
-          { index: "五", title: "评江泽民与中共相互利用迫害法轮功", href: "#" },
-          { index: "六", title: "评中国共产党破坏民族文化", href: "#" },
-          { index: "七", title: "评中国共产党的杀人历史", href: "#" },
-          { index: "八", title: "评中国共产党的邪教本质", href: "#" },
-          { index: "九", title: "评中国共产党的流氓本性", href: "#" }
-        ];
+          href: asString(row.href)
+        })))
+      : [{ label: "影音版", href: "/videos/jiuping" }];
+    const featuredToc = asObjectArray(featuredBook.toc).map((row) => ({
+      index: asString(row.index),
+      title: asString(row.title),
+      href: asString(row.href)
+    }));
     const otherWorksSection = asRecord(payload.otherWorksSection);
     const otherWorks = asObjectArray(payload.otherWorks).length
       ? asObjectArray(payload.otherWorks).map((row) => ({
           coverText: asString(row.coverText),
+          image: asString(row.image),
+          imageAlt: asString(row.imageAlt),
           title: asString(row.title),
           body: asString(row.body),
-          href: resolveBookDetailHref(asString(row.href, "#"), asString(row.title)),
-          formats: asObjectArray(row.formats).map((fmt) => ({
-            label: asString(fmt.label),
-            href: resolveResourceHref(asString(fmt.href, "#"), fallbackByFormatLabel(asString(fmt.label)))
-          }))
+          href: asString(row.href),
+          formats: withRealHref(
+            asObjectArray(row.formats).map((fmt) => ({
+              label: asString(fmt.label),
+              href: asString(fmt.href)
+            }))
+          )
         }))
-      : [
-          {
-            coverText: "解体\n党文化",
-            title: "《解体党文化》",
-            body: "分析党文化如何进入语言、教育、思维方式与日常生活。「要做中华儿女，不做马列子孙」——对党文化的清醒反思与抛弃。",
-            href: "/resources/book-jieti-dangwenhua",
-            formats: [
-              { label: "在线阅读", href: "#" },
-              { label: "PDF", href: "#" },
-              { label: "音频", href: "#" }
-            ]
-          },
-          {
-            coverText: "魔鬼在\n统治着\n我们的\n世界",
-            title: "《魔鬼在统治着我们的世界》",
-            body: "共产主义的本质到底是什么？它为什么似乎处处与人类为敌？含全书文字版、系列报导与学者综述。",
-            href: "/resources/book-mogui-shijie",
-            formats: [
-              { label: "在线阅读", href: "#" },
-              { label: "PDF", href: "#" },
-              { label: "音频", href: "#" }
-            ]
-          },
-          {
-            coverText: "共产主义的\n终极目的",
-            title: "《共产主义的终极目的》",
-            body: "共产主义的终极目的是什么？人类的出路在哪里？全书文字版与播报版。",
-            href: "/resources/book-gongchanzhuyi-zhongji",
-            formats: [
-              { label: "在线阅读", href: "#" },
-              { label: "PDF", href: "#" },
-              { label: "音频", href: "#" }
-            ]
-          }
-        ];
+      : // No hardcoded stand-ins: the three titles that used to live here linked
+        // to /resources/book-* routes that were never built and 404'd.
+        [];
     const relatedSection = asRecord(payload.relatedSection);
     const relatedArticles = asObjectArray(payload.relatedArticles).length
       ? asObjectArray(payload.relatedArticles).map((row) => ({
@@ -571,9 +519,17 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
         <section className="sec" style={{ padding: "52px 0 0" }}>
           <div className="wrap">
             <div className="bhero">
-              <div className="bcover" style={{ whiteSpace: "pre-line" }}>
-                {asString(featuredBook.coverText, "九评\n共产党")}
-              </div>
+              {asString(featuredBook.image) ? (
+                <img
+                  className="bcover bcover--photo"
+                  src={asString(featuredBook.image)}
+                  alt={asString(featuredBook.imageAlt)}
+                />
+              ) : (
+                <div className="bcover" style={{ whiteSpace: "pre-line" }}>
+                  {asString(featuredBook.coverText, "九评\n共产党")}
+                </div>
+              )}
               <div>
                 <p className="yr">{asString(featuredBook.yearLine, "2004 年首次发表 · 已译为 30 余种语言")}</p>
                 <h2>{asString(featuredBook.title, "《九评共产党》")}</h2>
@@ -595,7 +551,11 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
                 </p>
                 <div className="toc">
                   {featuredToc.map((entry) => (
-                    <a key={`${entry.index}-${entry.title}`} href={entry.href}>
+                    <a
+                      key={`${entry.index}-${entry.title}`}
+                      href={entry.href}
+                      {...externalLinkProps(entry.href)}
+                    >
                       <b>{entry.index}</b>
                       <span>{entry.title}</span>
                     </a>
@@ -610,20 +570,32 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
             <div className="blist">
               {otherWorks.map((work) => (
                 <article key={work.title} className="bitem">
-                  <a href={work.href}>
-                    <div className="c" style={{ whiteSpace: "pre-line" }}>
-                      {work.coverText}
-                    </div>
+                  {/* The cover and title link to the book; each format pill is its
+                      own link. They cannot be nested -- an <a> inside an <a> is
+                      invalid and the inner one stops being clickable. */}
+                  <a href={work.href} {...externalLinkProps(work.href)}>
+                    {work.image ? (
+                      <img className="c c--photo" src={work.image} alt={work.imageAlt} />
+                    ) : (
+                      <div className="c" style={{ whiteSpace: "pre-line" }}>
+                        {work.coverText}
+                      </div>
+                    )}
                     <h3>{work.title}</h3>
-                    <p>{work.body}</p>
-                    <div className="fmt">
-                      {work.formats.map((fmt) => (
-                        <span key={`${work.title}-${fmt.label}`} className="pill">
-                          {fmt.label}
-                        </span>
-                      ))}
-                    </div>
                   </a>
+                  <p>{work.body}</p>
+                  <div className="fmt">
+                    {work.formats.map((fmt) => (
+                      <a
+                        key={`${work.title}-${fmt.label}`}
+                        className="pill"
+                        href={fmt.href}
+                        {...externalLinkProps(fmt.href)}
+                      >
+                        {fmt.label}
+                      </a>
+                    ))}
+                  </div>
                 </article>
               ))}
             </div>
@@ -1050,21 +1022,34 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
         <section className="sec" style={{ padding: "52px 0 0" }}>
           <div className="wrap">
             <div className="bhero">
-              <div className="bcover" style={{ whiteSpace: "pre-line" }}>
-                {asString(featuredIssue.coverText, "回归\n2026\n春季号")}
-              </div>
+              {asString(featuredIssue.image) ? (
+                <img
+                  className="bcover bcover--photo"
+                  src={asString(featuredIssue.image)}
+                  alt={asString(featuredIssue.imageAlt)}
+                />
+              ) : (
+                <div className="bcover" style={{ whiteSpace: "pre-line" }}>
+                  {asString(featuredIssue.coverText, "回归\n创刊号")}
+                </div>
+              )}
               <div>
-                <p className="yr">{asString(featuredIssue.yearLine, "2015 年创刊 · 季刊 · 纸本与电子版同步发行")}</p>
-                <h2>{asString(featuredIssue.title, "《回归》：二十年，四亿六千万份声明")}</h2>
+                <p className="yr">{asString(featuredIssue.yearLine, "2025 年 10 月创刊 · 月刊")}</p>
+                <h2>{asString(featuredIssue.title, "《回归》")}</h2>
                 <p>
                   {asString(
                     featuredIssue.body,
-                    "本期封面专题回顾退党大潮的二十年轨迹，并收录服务点纪实、学者综述与当事人自述。"
+                    "《回归》由全球退党服务中心主办，内容以人物故事为主体，兼及时政、经济、历史与文化。"
                   )}
                 </p>
                 <div className="fmt">
                   {featuredActions.map((action) => (
-                    <a key={action.label} className="pill" href={action.href}>
+                    <a
+                      key={action.label}
+                      className="pill"
+                      href={action.href}
+                      {...externalLinkProps(action.href)}
+                    >
                       {action.label}
                     </a>
                   ))}
@@ -1088,13 +1073,21 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
             </div>
             <div className="isgrid">
               {issues.map((issue) => (
-                <a key={issue.title} className="issue" href={issue.href}>
-                  {issue.archiveText ? (
-                    <div className="c" style={{ whiteSpace: "pre-line" }}>
-                      {issue.archiveText}
-                    </div>
-                  ) : (
+                <a
+                  key={issue.title}
+                  className="issue"
+                  href={issue.href}
+                  {...externalLinkProps(issue.href)}
+                >
+                  {/* No cover, no <img>: a blank src renders as a broken image,
+                      which is how this grid looked while the issues were
+                      invented and their covers did not exist. */}
+                  {issue.image ? (
                     <img src={issue.image} alt="" />
+                  ) : (
+                    <div className="c" style={{ whiteSpace: "pre-line" }}>
+                      {issue.archiveText || issue.title}
+                    </div>
                   )}
                   <h3>{issue.title}</h3>
                   <p>{issue.summary}</p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { formatBytes, uploadFile } from "@/lib/admin/upload-client";
 
 interface MediaItem {
   id: string;
@@ -17,7 +18,17 @@ interface ImagePickerModalProps {
   onSelect: (url: string) => void;
 }
 
-const MAX_UPLOAD_MB = 5;
+/**
+ * 200MB, matching the shared upload policy.
+ *
+ * The old ceiling was 5MB and enforced here only. That was both too small for
+ * a print-resolution 展板 and quietly broken: the bytes went through our own API
+ * route, and a serverless request body is capped around 4.5MB in production --
+ * so a 4.6MB image passed this check and then died at the edge, before the code
+ * that would have explained why ever ran. Uploads now go browser -> Storage
+ * directly and never cross a function.
+ */
+const MAX_UPLOAD_MB = 200;
 
 async function readPayload(response: Response) {
   const text = await response.text();
@@ -41,6 +52,8 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
   const [uploadEnabled, setUploadEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  // A large image takes long enough that a label alone reads as a hang.
+  const [progress, setProgress] = useState<number | null>(null);
   const [status, setStatus] = useState("");
   const [pastedUrl, setPastedUrl] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
@@ -76,20 +89,17 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
       return;
     }
     setUploading(true);
-    setStatus("正在上传…");
+    setProgress(0);
+    setStatus(`正在上传 ${formatBytes(file.size)}…`);
     try {
-      const body = new FormData();
-      body.append("file", file);
-      body.append("folder", "home");
-      const response = await fetch("/api/admin/media/upload", { method: "POST", body });
-      const payload = await readPayload(response);
-      if (!response.ok) throw new Error(String(payload.error || "上传失败"));
-      onSelect(String(payload.url));
+      const result = await uploadFile(file, { folder: "home", onProgress: setProgress });
+      onSelect(result.url);
       onClose();
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "上传失败");
     } finally {
       setUploading(false);
+      setProgress(null);
     }
   };
 
@@ -155,7 +165,7 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
             disabled={!uploadEnabled || uploading}
             onClick={() => fileInput.current?.click()}
           >
-            {uploading ? "上传中…" : `上传图片（≤ ${MAX_UPLOAD_MB}MB）`}
+            {uploading ? `上传中 ${progress ?? 0}%` : `上传图片（≤ ${MAX_UPLOAD_MB}MB）`}
           </button>
           <input
             ref={fileInput}

@@ -1,7 +1,18 @@
 import { notFound } from "next/navigation";
 import { PageFromRoute } from "@/components/PageFromRoute";
 import { TemplateRenderer } from "@/components/templates/TemplateRenderer";
-import { getRenderableArticle } from "@/lib/public-content";
+import {
+  MaterialCategoryPage,
+  MaterialDetailPage,
+  MaterialsIndexPage
+} from "@/components/public/MaterialPages";
+import {
+  getMaterial,
+  getMaterialCategories,
+  getMaterialsByCategory,
+  getRenderableArticle,
+  getRenderablePage
+} from "@/lib/public-content";
 
 interface ResourcesPageProps {
   params: Promise<{ slug?: string[] }>;
@@ -22,6 +33,60 @@ export default async function ResourcesPage({ params, searchParams }: ResourcesP
   const resolved = await params;
   const query = await searchParams;
   const slug = resolved.slug?.[0];
+
+  /*
+   * 真相点资料 has two levels under /resources/downloads, so the deeper segments
+   * are handled before the CMS-page branch -- which keys off slug[0] alone and
+   * would otherwise render the download index for every path beneath it.
+   */
+  if (slug === "downloads" && resolved.slug && resolved.slug.length > 1) {
+    const [, categorySlug, materialSlug] = resolved.slug;
+
+    if (materialSlug) {
+      const material = await getMaterial(materialSlug);
+      if (!material) notFound();
+      return <MaterialDetailPage material={material} />;
+    }
+
+    const categories = await getMaterialCategories();
+    const category = categories.find((row) => row.slug === categorySlug);
+    if (!category) notFound();
+    const materials = await getMaterialsByCategory(category.slug);
+    return <MaterialCategoryPage category={category} materials={materials} />;
+  }
+
+  if (slug === "downloads") {
+    const [categories, page] = await Promise.all([
+      getMaterialCategories(),
+      getRenderablePage("resources", "downloads")
+    ]);
+    // Before 017 is run there are no categories; fall through to the stored
+    // page rather than showing an empty grid.
+    if (categories.length > 0) {
+      const content = (page?.content ?? {}) as Record<string, unknown>;
+      const reuse = (content.reuseNotice ?? {}) as { title?: string; body?: string };
+      // Only tiles that actually go somewhere: the stored list still carries
+      // three placeholders whose href is "#".
+      const links = (Array.isArray(content.assets) ? content.assets : [])
+        .map((row) => (typeof row === "object" && row !== null ? (row as Record<string, unknown>) : {}))
+        .map((row) => ({
+          title: typeof row.title === "string" ? row.title : "",
+          body: typeof row.body === "string" ? row.body : "",
+          badge: typeof row.badge === "string" ? row.badge : "",
+          href: typeof row.href === "string" ? row.href : ""
+        }))
+        .filter((row) => row.title && row.href && row.href !== "#");
+      return (
+        <MaterialsIndexPage
+          title={typeof content.title === "string" ? content.title : "真相点资料下载"}
+          subtitle={typeof content.subtitle === "string" ? content.subtitle : ""}
+          categories={categories}
+          links={links}
+          notice={reuse.title ? { title: reuse.title, body: reuse.body ?? "" } : undefined}
+        />
+      );
+    }
+  }
 
   if (!slug || RESOURCE_PAGES.has(slug)) {
     return <PageFromRoute section="resources" slug={slug} query={query} />;
