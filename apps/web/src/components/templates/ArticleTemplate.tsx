@@ -162,7 +162,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
                   style={{ width: "100%", aspectRatio: "16 / 9", objectFit: "cover", background: "var(--rule)" }}
                 />
                 {heroCaptionLines.length > 0 ? (
-                  <figcaption style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--muted)", marginTop: 11, lineHeight: 1.7 }}>
+                  <figcaption style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--muted)", marginTop: 11, lineHeight: "var(--lh-body)" }}>
                     {heroCaptionLines.map((line, index) => (
                       <span key={line}>
                         {line}
@@ -333,7 +333,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
             </div>
             <div className="panel">
               <h4 id="article-reuse">{asString(reusePanel.title, "转载条款")}</h4>
-              <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.85, margin: 0 }}>
+              <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: "var(--lh-body)", margin: 0 }}>
                 {asString(reusePanel.body, "本文可自由转载、翻译与再制作，无需事先取得授权，注明来源即可。")}
               </p>
             </div>

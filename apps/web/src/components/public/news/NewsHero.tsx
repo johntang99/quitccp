@@ -97,7 +97,7 @@ export function NewsHero({ featured, latest }: { featured: NewsCard[]; latest: N
                   margin: 0,
                   fontFamily: T.serif,
                   fontSize: 15,
-                  lineHeight: 1.8,
+                  lineHeight: "var(--lh-body)",
                   color: T.body,
                   display: "-webkit-box",
                   WebkitLineClamp: 3,

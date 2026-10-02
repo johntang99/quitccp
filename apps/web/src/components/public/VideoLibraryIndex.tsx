@@ -84,7 +84,7 @@ export function VideoLibraryIndex({ shelves }: { shelves: VideoLibraryShelf[] })
                     </span>
                   ) : null}
                 </div>
-                <h3 style={{ fontSize: 14, lineHeight: 1.6, margin: "9px 0 3px", fontWeight: 700 }}>
+                <h3 style={{ fontSize: 14, lineHeight: "var(--lh-body)", margin: "9px 0 3px", fontWeight: 700 }}>
                   {video.title}
                 </h3>
                 <p style={{ fontFamily: "var(--mono)", fontSize: 13, color: "var(--muted)", margin: 0 }}>

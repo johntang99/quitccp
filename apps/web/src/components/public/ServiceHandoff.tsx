@@ -44,7 +44,7 @@ export function ServiceHandoff({
         {eyebrow}
       </p>
       <h2 style={{ fontFamily: "var(--serif)", fontSize: 30, margin: "0 0 14px" }}>{heading}</h2>
-      <p style={{ lineHeight: 1.8, color: "var(--muted)", marginBottom: 26 }}>{body}</p>
+      <p style={{ lineHeight: "var(--lh-body)", color: "var(--muted)", marginBottom: 26 }}>{body}</p>
 
       <div style={{ display: "grid", gap: 18 }}>
         {actions.map((action) => (
@@ -63,7 +63,7 @@ export function ServiceHandoff({
                   fontSize: 13,
                   color: "var(--muted)",
                   margin: "10px 0 0",
-                  lineHeight: 1.7,
+                  lineHeight: "var(--lh-body)",
                   maxWidth: "46ch"
                 }}
               >
@@ -81,7 +81,7 @@ export function ServiceHandoff({
           marginTop: 26,
           paddingTop: 16,
           borderTop: "1px solid var(--rule)",
-          lineHeight: 1.7
+          lineHeight: "var(--lh-body)"
         }}
       >
         {destinationNote}

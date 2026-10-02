@@ -279,7 +279,7 @@ export function DeclareForm({ copy, children }: { copy: DeclareFormCopy; childre
               fontSize: 13,
               color: "var(--muted)",
               margin: "22px 0 0",
-              lineHeight: 1.7,
+              lineHeight: "var(--lh-body)",
               maxWidth: "34ch"
             }}
           >
@@ -294,7 +294,7 @@ export function DeclareForm({ copy, children }: { copy: DeclareFormCopy; childre
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p role="alert" style={{ color: "var(--seal)", fontSize: 13, margin: "8px 0 0", lineHeight: 1.7 }}>
+    <p role="alert" style={{ color: "var(--seal)", fontSize: 13, margin: "8px 0 0", lineHeight: "var(--lh-body)" }}>
       {message}
     </p>
   );
@@ -332,7 +332,7 @@ function DeclareReceipt({ receipt, steps }: { receipt: Receipt; steps: string[] 
           </p>
         ) : null}
 
-        <p style={{ color: "var(--muted)", lineHeight: 1.8 }}>
+        <p style={{ color: "var(--muted)", lineHeight: "var(--lh-body)" }}>
           这是你的登记编号。如果日后需要联系我们查询或更正，请记下它。我们不会向你索取
           任何身份证件或联系方式。
         </p>

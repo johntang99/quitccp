@@ -22,6 +22,16 @@ const font = (role: string) => FONT_ROLES[role] ?? FONT_ROLES["system-sc"];
  * Render the theme as the :root block the stylesheets consume. The legacy token
  * names (--paper, --seal, --grad-hero …) are kept verbatim so the 4,400 lines of
  * existing CSS keep working untouched; the --fs-/--lh-/--tr- scale is additive.
+ *
+ * Roles, for anyone reading this palette for the first time:
+ *   primary    --seal    #4A3C96   印章紫 — links, active nav, buttons, rules
+ *   secondary  --gold    #D6AC4E   CTA fills and accents
+ *              --gold-ink #8E6A1A  the same role for gold TEXT on light grounds;
+ *                                  the bright gold measures under 2:1 there
+ *   backdrop   --paper / --card    page ground and card ground
+ *              --pl-deep           the inverse (dark band) ground
+ * The full table is in _roles in data/theme.json, and the generic names are
+ * emitted below as aliases.
  */
 export function themeToCss(theme: Theme): string {
   const c = theme.colors;
@@ -52,5 +62,14 @@ export function themeToCss(theme: Theme): string {
 --lav-rule:${s.lavRule};--lav-tint:${s.lavTint};--lav-text:${s.lavText};
 --lav-muted:${s.lavMuted};--lav-dim:${s.lavDim};
 --seal-bright:${s.sealBright};--grad-mid:${s.gradMid};--grad-top:${s.gradTop};
+/* Generic design-system aliases. The descriptive names above stay the source of
+   truth -- this site has three purples doing different jobs, which primary/
+   primary-dark cannot express -- but these let anyone who thinks in
+   primary/secondary/backdrop find the right colour. See _roles in theme.json. */
+--primary:var(--seal);--primary-dark:var(--seal-deep);--primary-bright:var(--seal-bright);
+--secondary:var(--gold);--secondary-light:var(--gold-lt);--secondary-dark:var(--gold-ink);
+--backdrop-primary:var(--paper);--backdrop-secondary:var(--card);--backdrop-inverse:var(--pl-deep);
+--text-primary:var(--ink);--text-secondary:var(--ink-soft);--text-muted:var(--muted);
+--text-on-inverse:var(--lav-lt);--border:var(--rule);--border-inverse:var(--rule-dark);
 }`;
 }

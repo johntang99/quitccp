@@ -1104,7 +1104,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
                   </a>
                 ))}
               </div>
-              <p style={{ fontSize: 13.5, color: "var(--muted)", margin: "22px 0 0", lineHeight: 1.85, maxWidth: "72ch" }}>
+              <p style={{ fontSize: 13.5, color: "var(--muted)", margin: "22px 0 0", lineHeight: "var(--lh-body)", maxWidth: "72ch" }}>
                 {archiveNote}
                 <a href={archiveNoteLinkHref} style={{ color: "var(--seal)" }}>
                   {archiveNoteLinkLabel}
@@ -1347,7 +1347,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
               <aside className="side">
                 <div className="panel">
                   <h4>{asString(aboutPanel.title, "关于本栏目")}</h4>
-                  <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.85, margin: "0 0 14px" }}>
+                  <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: "var(--lh-body)", margin: "0 0 14px" }}>
                     {asString(aboutPanel.body)}
                   </p>
                 </div>
@@ -1495,7 +1495,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
                   </div>
                   <div className="panel">
                     <h4>{asString(notePanel.title, "说明")}</h4>
-                    <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.85, margin: 0 }}>
+                    <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: "var(--lh-body)", margin: 0 }}>
                       {asString(notePanel.body)}
                     </p>
                   </div>

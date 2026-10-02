@@ -54,6 +54,9 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const [previewPath, setPreviewPath] = useState("/");
+  const [view, setView] = useState<"form" | "json">("form");
+  const [draftJson, setDraftJson] = useState("");
+  const [jsonError, setJsonError] = useState("");
   const frame = useRef<HTMLIFrameElement>(null);
 
   const css = useMemo(() => themeToCss(theme), [theme]);
@@ -78,6 +81,33 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
     el?.addEventListener("load", apply);
     return () => el?.removeEventListener("load", apply);
   }, [css, previewPath]);
+
+  function openJson() {
+    // Strip the documentation blocks: they are the same in every theme and only
+    // get in the way when someone is editing values by hand.
+    const { _roles, _fonts, ...editable } = theme as Record<string, unknown>;
+    void _roles;
+    void _fonts;
+    setDraftJson(JSON.stringify(editable, null, 2));
+    setJsonError("");
+    setView("json");
+  }
+
+  function applyJson(text: string) {
+    setDraftJson(text);
+    try {
+      const parsed = JSON.parse(text);
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        throw new Error("顶层必须是一个对象 { }");
+      }
+      // Keep the doc blocks and anything the paste omitted; the server merges
+      // over the defaults again on save, so a partial object can never strip tokens.
+      setTheme({ ...theme, ...parsed } as Theme);
+      setJsonError("");
+    } catch (err) {
+      setJsonError(err instanceof Error ? err.message : String(err));
+    }
+  }
 
   async function save() {
     setBusy(true);
@@ -143,6 +173,24 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
   return (
     <div className="theme-editor">
       <div className="theme-panel">
+        {view === "json" ? (
+          <section className="admin-card">
+            <h3>JSON</h3>
+            <p className="theme-hint">
+              与表单是同一份设置，改哪边都一样。保存后写入数据库（cms_site_settings 的 site.theme），
+              <strong>不会修改代码里的 theme.json 文件</strong>——那个文件是随代码发布的默认值，
+              只有「恢复默认」才会回到它。缺少的字段会自动用默认值补齐。
+            </p>
+            <textarea
+              className="theme-json"
+              spellCheck={false}
+              value={draftJson}
+              onChange={(e) => applyJson(e.target.value)}
+            />
+            {jsonError ? <p className="theme-json-error">JSON 有误：{jsonError}</p> : null}
+          </section>
+        ) : (
+        <>
         <section className="admin-card">
           <h3>预设</h3>
           <p className="theme-hint">套用预设会替换下面所有颜色，保存后才会生效。</p>
@@ -272,6 +320,8 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
             ))}
           </div>
         </section>
+        </>
+        )}
       </div>
 
       <div className="theme-preview">
@@ -285,6 +335,13 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
           </select>
           <span className="theme-spacer" />
           {status ? <span className="theme-status">{status}</span> : null}
+          <button
+            type="button"
+            onClick={() => (view === "json" ? setView("form") : openJson())}
+            disabled={busy}
+          >
+            {view === "json" ? "表单编辑" : "JSON 编辑"}
+          </button>
           <button type="button" onClick={reset} disabled={busy}>恢复默认</button>
           <button type="button" className="theme-save" onClick={save} disabled={busy || !dirty}>
             {busy ? "保存中…" : dirty ? "保存并生效" : "已是最新"}

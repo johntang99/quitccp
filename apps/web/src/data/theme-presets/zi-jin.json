@@ -1,4 +1,29 @@
 {
+  "_roles": {
+    "_about": "Generic design-system names for this site's palette. Nothing in the app reads this block — it is documentation, so someone expecting primary/secondary/backdrop naming can find their way around. The values name the token each role maps to; themeToCss() also emits --primary, --secondary etc. as aliases.",
+    "primary": "colors.seal          #4A3C96  印章紫 — links, active nav, buttons, rules",
+    "primaryDark": "colors.sealDeep      #382B7A  pressed and deep-band variant",
+    "primaryBright": "surfaces.sealBright  #3B3190  on dark grounds",
+    "secondary": "colors.gold          #D6AC4E  CTA fills, accents",
+    "secondaryLight": "colors.goldLight     #F0D48C  gold text on dark grounds",
+    "secondaryDark": "surfaces.goldInk     #8E6A1A  gold text on LIGHT grounds (contrast-safe)",
+    "backdropPrimary": "colors.paper         #F4F3EF  page ground",
+    "backdropSecondary": "colors.card          #FFFFFF  cards and panels",
+    "backdropInverse": "colors.plumDeep      #231A52  dark bands",
+    "textPrimary": "colors.ink           #191C1A  body and headings",
+    "textSecondary": "colors.inkSoft       #4C524D  supporting copy",
+    "textMuted": "colors.muted         #8B8679  captions, metadata",
+    "textOnInverse": "colors.lavenderLight #C3BDE2  copy on dark bands",
+    "border": "colors.rule          #DEDACF  hairlines and dividers",
+    "borderInverse": "colors.ruleDark               dividers on dark bands"
+  },
+  "_fonts": {
+    "_about": "typography.fonts holds a ROLE ID, not a font name — next/font compiles faces at build time, so a name typed here would not load. This block says what each role resolves to. To add a face, add it to app/fonts.ts AND FONT_ROLES in lib/theme-css.ts together.",
+    "serif-sc": "思源宋体 简 Noto Serif SC 700 — self-hosted webfont, falls back to 宋体 Songti SC. Used for headings.",
+    "system-sc": "系统黑体 — 苹方 PingFang SC (Mac) / 冬青黑体 Hiragino Sans GB / 微软雅黑 Microsoft YaHei (Windows). No download. Used for body text.",
+    "system-serif-sc": "系统宋体 — 宋体 Songti SC / SimSun. No download. Available, not currently used.",
+    "plex-mono": "IBM Plex Mono — Latin only, no Chinese glyphs. Digits, dates and English only, never Chinese."
+  },
   "colors": {
     "paper": "#F4F3EF",
     "card": "#FFFFFF",

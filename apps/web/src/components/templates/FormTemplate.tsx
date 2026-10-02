@@ -223,7 +223,7 @@ export function FormTemplate({ title, section, slug, content }: TemplatePageData
                   先看常见问题
                 </a>
               </div>
-              <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 18, lineHeight: 1.7, maxWidth: "52ch" }}>
+              <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 18, lineHeight: "var(--lh-body)", maxWidth: "52ch" }}>
                 办理入口将在新窗口打开 service.tuidang.org 或干净世界，界面与本站不同，属于正常情况。
               </p>
             </div>
@@ -235,7 +235,7 @@ export function FormTemplate({ title, section, slug, content }: TemplatePageData
                   alt={asString(samplePanel.alt, "退党证明样本")}
                   style={{ width: "100%", border: "1px solid var(--rule)", marginBottom: 14, background: "var(--rule)" }}
                 />
-                <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.75, margin: 0 }}>
+                <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: "var(--lh-body)", margin: 0 }}>
                   {asString(samplePanel.caption, "中英文对照，含唯一编号与查验方式。")}
                 </p>
               </div>
@@ -466,7 +466,7 @@ export function FormTemplate({ title, section, slug, content }: TemplatePageData
               </div>
               <div className="panel">
                 <h4>{asString(onsitePanel.title, "当面办理")}</h4>
-                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.85, margin: "0 0 16px" }}>
+                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: "var(--lh-body)", margin: "0 0 16px" }}>
                   {asString(onsitePanel.body, "全球一百多个服务点均可协助处理变更与补办，无需预约。")}
                 </p>
                 <a className="btn btn--line btn--sm" href={asString(onsitePanel.buttonHref, "/about/network")}>
@@ -475,7 +475,7 @@ export function FormTemplate({ title, section, slug, content }: TemplatePageData
               </div>
               <div className="panel">
                 <h4>{asString(reminderPanel.title, "提醒")}</h4>
-                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.85, margin: 0 }}>
+                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: "var(--lh-body)", margin: 0 }}>
                   {asString(reminderPanel.body, "办理退党证明的费用只在本中心的官方办理页面支付。我们不会通过私人账户或中介收款，也不会主动打电话、发短信向你索取银行卡号、验证码或密码。")}
                 </p>
               </div>

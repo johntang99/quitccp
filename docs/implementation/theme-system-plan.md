@@ -110,6 +110,29 @@ Three deliberate differences from the clinic:
   get an incoherent page.
 - **`measure` is in `em`, not `ch`.** See §6.
 
+### Generic role names
+
+The descriptive token names stay the source of truth — this site has three purples doing
+different jobs, which `primary` / `primary-dark` cannot express. But the palette is also
+published under the generic names a designer expects, as a `_roles` block in `theme.json`
+(documentation) and as CSS aliases emitted by `themeToCss()` (usable):
+
+| role | token | value | used for |
+|---|---|---|---|
+| `--primary` | `--seal` | `#4A3C96` | links, active nav, buttons, rules |
+| `--primary-dark` | `--seal-deep` | `#382B7A` | pressed, deep bands |
+| `--secondary` | `--gold` | `#D6AC4E` | CTA fills, accents |
+| `--secondary-dark` | `--gold-ink` | `#8E6A1A` | gold **text on light grounds** |
+| `--backdrop-primary` | `--paper` | `#F4F3EF` | page ground |
+| `--backdrop-secondary` | `--card` | `#FFFFFF` | cards and panels |
+| `--backdrop-inverse` | `--pl-deep` | `#231A52` | dark bands |
+| `--text-primary` / `-secondary` / `-muted` | `--ink` / `--ink-soft` / `--muted` | | copy tiers |
+| `--border` | `--rule` | `#DEDACF` | hairlines |
+
+**`--secondary` is not usable as text on a light ground.** The bright gold measures
+1.95:1 against the hero card — effectively unreadable. `--secondary-dark` is the same role
+at 4.6:1, and is what the hero eyebrow uses.
+
 ---
 
 ## 3. Phase 0 — lift the tokens into the app, change nothing visually
@@ -329,3 +352,27 @@ line-heights, tracking, measure, shape and spacing, with a live same-origin prev
 tracks every keystroke. Writes `site.theme` to `cms_site_settings`; **「恢复默认」 deletes
 the row** rather than writing defaults into it, so reverting is total. Round-trip verified:
 preview → save → public site → reset.
+
+
+### Ingrid's acceptance list — final status
+
+| # | her check | status |
+|---|---|---|
+| 1 | Windows 上標題不再是 SimSun | done |
+| 2 | Network 裏能看到 Noto 字體載入 | done |
+| 3 | CSS 裏搜不到 `font-weight: 900` | done — 0 |
+| 4 | h1–h3 行距在 1.25–1.4 | done — 0 hardcoded left |
+| 5 | 內文只有一個行距 | done — 1.80 everywhere (was 1.65/1.70/1.80/1.85/1.90/1.95) |
+| 6 | 沒有小於 12px 的字號 | done — 0 |
+| 7 | 中文不再使用 IBM Plex Mono | done — 0, verified in-browser |
+| 8 | 中文字距不超過 0.1em | done — 0 |
+| 9 | 文案裏沒有用空格代替標點 | **not done** — editorial, needs a pass over article copy |
+| 10 | 中英文與數字之間空格統一 | **not done** — editorial |
+| 11 | 390px 標題不拆專有名詞 | done — `NoWrapTitles`, verified at 1440/834/390 |
+| 12 | 簡體頁不混用繁體 Logo | **not done** — the logo artwork reads 全球退**黨服務**中心 on a `zh-CN` page. Needs new artwork, not code |
+| 13 | 另設 zh-Hant 繁體版 | **not done** — out of scope, larger piece of work |
+| 14 | 窄屏下語言列和 Logo 有左右邊距 | done — two `padding: Npx 0` shorthands were resetting `.wrap`'s gutter below 600px |
+| 15 | 每個統計數字有來源和更新日期 | partial — the hero 退党数字 cites the santui sync date; the smaller 统计 figures do not |
+
+Nine of fifteen were code; six are done, two remain editorial (9, 10), one needs artwork
+(12), one is a separate project (13), and one is partial (15).

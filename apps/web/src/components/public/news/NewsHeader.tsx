@@ -87,7 +87,7 @@ export function NewsHeader({
             <h1 style={{ margin: 0, fontFamily: T.serif, fontWeight: 700, fontSize: "clamp(30px, 3.6vw, 48px)" }}>
               新闻与报告
             </h1>
-            <p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, color: T.onDark, maxWidth: 720 }}>
+            <p style={{ margin: 0, fontSize: 15, lineHeight: "var(--lh-body)", color: T.onDark, maxWidth: 720 }}>
               机构公告、调查报告、专题评论、国际声援与三退新闻。全部内容注明来源与日期，可自由转载与翻译。
             </p>
           </div>

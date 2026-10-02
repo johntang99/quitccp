@@ -20,7 +20,7 @@ export function VideoHomeHeader({ shelves }: { shelves: VideoLibraryShelf[] }) {
             <h1 style={{ margin: 0, fontFamily: SERIF, fontWeight: 700, fontSize: "clamp(30px, 3.6vw, 48px)", color: "var(--title)" }}>
               影音节目
             </h1>
-            <p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, color: "var(--muted)", maxWidth: 720 }}>
+            <p style={{ margin: 0, fontSize: 15, lineHeight: "var(--lh-body)", color: "var(--muted)", maxWidth: 720 }}>
               现场纪录、当事人访谈、调查影像与系列专题。全部节目可自由下载、转载与再制作。
             </p>
           </div>

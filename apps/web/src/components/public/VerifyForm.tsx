@@ -191,7 +191,7 @@ export function VerifyForm({ copy }: { copy: VerifyFormCopy }) {
           <p style={{ fontFamily: "var(--mono)", fontSize: 15, margin: "0 0 12px" }}>
             {result.serialNumber}
           </p>
-          <p style={{ lineHeight: 1.8, marginBottom: result.issuedAt ? 12 : 0 }}>
+          <p style={{ lineHeight: "var(--lh-body)", marginBottom: result.issuedAt ? 12 : 0 }}>
             {OUTCOME_COPY[result.outcome].body}
           </p>
           {result.issuedAt ? (

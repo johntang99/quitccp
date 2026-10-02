@@ -260,7 +260,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
               <h2 className="h2" style={{ color: "var(--paper)" }}>
                 {asString(verifyBand.title, "查验一份退党证明")}
               </h2>
-              <p style={{ color: "var(--lav-lt)", fontSize: 15, lineHeight: 1.9, margin: "16px 0 0", maxWidth: "44ch" }}>
+              <p style={{ color: "var(--lav-lt)", fontSize: 15, lineHeight: "var(--lh-body)", margin: "16px 0 0", maxWidth: "44ch" }}>
                 {asString(
                   verifyBand.body,
                   "在本中心的查验系统输入证明编号，即可核实签发日期与状态。此入口对所有人开放，受理机构无需与本中心联系即可自行查验。"
@@ -281,7 +281,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
               >
                 {asString(verifyBand.buttonLabel, "前往查验")}
               </a>
-              <p style={{ color: "var(--lav-lt)", fontSize: 13, lineHeight: 1.8, margin: "14px 0 0", maxWidth: "36ch" }}>
+              <p style={{ color: "var(--lav-lt)", fontSize: 13, lineHeight: "var(--lh-body)", margin: "14px 0 0", maxWidth: "36ch" }}>
                 {asString(
                   verifyBand.note,
                   "查验需要证明编号（TD 开头的 16 位数字）、姓名与出生日期。仅适用于 2020 年 8 月 18 日之后办理的证明。"
@@ -334,7 +334,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
                   alt={asString(certSamplePanel.alt, "退党证明颁发现场")}
                   style={{ width: "100%", aspectRatio: "4 / 3", objectFit: "cover", background: "var(--rule)", marginBottom: 14 }}
                 />
-                <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.75, margin: 0 }}>
+                <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: "var(--lh-body)", margin: 0 }}>
                   {asString(certSamplePanel.caption, "2026 年 7 月，31 名华人在美国国会山领取退党证明。")}
                 </p>
               </div>
@@ -1839,7 +1839,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
                 <p style={{ fontFamily: "var(--mono)", fontSize: 13, letterSpacing: ".14em", margin: "0 0 10px", color: "var(--lav)" }}>
                   {asString(mapBlock.label, "地图")}
                 </p>
-                <p style={{ margin: "0 auto", fontSize: 14.5, lineHeight: 1.9, maxWidth: "44ch" }}>
+                <p style={{ margin: "0 auto", fontSize: 14.5, lineHeight: "var(--lh-body)", maxWidth: "44ch" }}>
                   {asString(
                     mapBlock.text,
                     "此处为可交互地图。点选任一服务点可查看地址、开放时间与联络方式。具体到街道的位置信息是否公开，需由安全评估后决定。"
@@ -2210,7 +2210,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
                 <h2 style={{ fontFamily: "var(--serif)", fontSize: 30, margin: "0 0 14px" }}>
                   到捐助页面完成
                 </h2>
-                <p style={{ lineHeight: 1.8, color: "var(--muted)", marginBottom: 26 }}>
+                <p style={{ lineHeight: "var(--lh-body)", color: "var(--muted)", marginBottom: 26 }}>
                   捐助由本中心的捐助页面受理，支持每月定期捐助与单次捐助。本中心为美国注册的
                   501(c)(3) 非营利组织，捐款可依法抵税。
                 </p>
@@ -2224,7 +2224,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
                     marginTop: 26,
                     paddingTop: 16,
                     borderTop: "1px solid var(--rule)",
-                    lineHeight: 1.7
+                    lineHeight: "var(--lh-body)"
                   }}
                 >
                   链接将在新窗口打开 www.tuidang.org 的捐助页面。
@@ -2248,7 +2248,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
                   <span>可依法抵税</span>
                 </div>
               </div>
-              <p style={{ fontSize: 13.5, color: "var(--muted)", marginTop: 16, lineHeight: 1.8 }}>
+              <p style={{ fontSize: 13.5, color: "var(--muted)", marginTop: 16, lineHeight: "var(--lh-body)" }}>
                 财务报表经独立会计师事务所审计，年度 Form 990 公开可查。<a href="/about" style={{ color: "var(--seal)" }}>查看财务与问责</a>
               </p>
             </div>
@@ -2359,7 +2359,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
               <div className="panel">
                 <h4>征签进度</h4>
                 <p style={{ fontFamily: "var(--mono)", fontSize: 30, color: "var(--seal)", margin: "0 0 6px", letterSpacing: "-.01em" }}>2,481,036</p>
-                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", margin: 0, lineHeight: 1.8 }}>人已签署，覆盖 90 多个国家与地区。</p>
+                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", margin: 0, lineHeight: "var(--lh-body)" }}>人已签署，覆盖 90 多个国家与地区。</p>
               </div>
             </aside>
           </div>

@@ -87,7 +87,7 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
               </div>
               <div className="panel">
                 <h4>完整问答</h4>
-                <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.75, marginTop: 0 }}>
+                <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: "var(--lh-body)", marginTop: 0 }}>
                   以下解答由 tuidang.org 维护，为准。
                 </p>
                 <ul>
@@ -380,7 +380,7 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
                   stored items carry no links of their own. */}
               <div className="panel">
                 <h4>政策原文</h4>
-                <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.75, marginTop: 0 }}>
+                <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: "var(--lh-body)", marginTop: 0 }}>
                   以下说明由 tuidang.org 维护，为准。
                 </p>
                 <ul>
@@ -419,7 +419,7 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
               </div>
               <div className="panel">
                 <h4>{asString(reminderPanel.title, "提醒")}</h4>
-                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.85, margin: 0 }}>
+                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: "var(--lh-body)", margin: 0 }}>
                   {asString(
                     reminderPanel.body,
                     "本中心不代办移民手续，也不与任何移民中介合作。退党证明只通过本中心的官方渠道办理，请勿相信任何自称可以代办、加急或包过的机构与个人。"
@@ -610,7 +610,7 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
               </div>
               <div className="panel">
                 <h4>{asString(reminderPanel.title, "提醒")}</h4>
-                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: 1.85, margin: 0 }}>
+                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: "var(--lh-body)", margin: 0 }}>
                   {asString(
                     reminderPanel.body,
                     "本中心从不通过任何工具索取你的身份证件、银行信息或密码。若有页面向你索取这些，那不是我们的站点。"

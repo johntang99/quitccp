@@ -118,7 +118,7 @@ export function FeatureBand({
               <span
                 style={{
                   fontSize: 15,
-                  lineHeight: 1.7,
+                  lineHeight: "var(--lh-body)",
                   color: "var(--muted)",
                   maxWidth: 680,
                   display: "-webkit-box",

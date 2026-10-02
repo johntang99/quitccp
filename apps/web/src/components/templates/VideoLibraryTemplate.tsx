@@ -148,7 +148,7 @@ export function VideoLibraryTemplate({ title, section, slug, content }: Template
                       {featuredTitle}
                     </a>
                   </h3>
-                  <p style={{ color: "var(--lav-lt)", fontSize: 14.5, lineHeight: 1.9, margin: "0 0 20px" }}>{featuredSummary}</p>
+                  <p style={{ color: "var(--lav-lt)", fontSize: 14.5, lineHeight: "var(--lh-body)", margin: "0 0 20px" }}>{featuredSummary}</p>
                   <p className="meta" style={{ color: "var(--lav)" }}>
                     {featuredMeta}
                   </p>

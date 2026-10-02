@@ -136,7 +136,7 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
       )}
 
       {showDescription ? (
-        <p style={{ fontSize: 17, lineHeight: 1.9, margin: "0 0 20px" }}>{video.description}</p>
+        <p style={{ fontSize: 17, lineHeight: "var(--lh-body)", margin: "0 0 20px" }}>{video.description}</p>
       ) : null}
 
       {body.length > 0 ? (

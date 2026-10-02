@@ -66,7 +66,7 @@ export function NewsListingPage({ listing }: { listing: NewsListing }) {
               {lead.summary ? (
                 <span
                   className="news-clamp-5"
-                  style={{ fontFamily: T.serif, fontSize: 15, lineHeight: 1.85, color: T.body }}
+                  style={{ fontFamily: T.serif, fontSize: 15, lineHeight: "var(--lh-body)", color: T.body }}
                 >
                   {lead.summary}
                 </span>
@@ -198,7 +198,7 @@ function Row({ item }: { item: NewsCard }) {
           {item.title}
         </span>
         {item.summary ? (
-          <span className="news-clamp-2" style={{ fontSize: 14, lineHeight: 1.75, color: T.muted }}>
+          <span className="news-clamp-2" style={{ fontSize: 14, lineHeight: "var(--lh-body)", color: T.muted }}>
             {item.summary}
           </span>
         ) : null}

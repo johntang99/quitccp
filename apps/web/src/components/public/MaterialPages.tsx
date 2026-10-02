@@ -151,7 +151,7 @@ export function MaterialDetailPage({ material }: { material: PublicMaterial }) {
             </div>
             <div className="panel">
               <h4>使用说明</h4>
-              <p style={{ fontSize: 13.5, lineHeight: 1.85, margin: 0, color: "var(--ink-soft)" }}>
+              <p style={{ fontSize: 13.5, lineHeight: "var(--lh-body)", margin: 0, color: "var(--ink-soft)" }}>
                 可自由下载、印制、转载、翻译与再制作，无需事先取得授权，也不需要通知我们。注明来源即可。
               </p>
             </div>
