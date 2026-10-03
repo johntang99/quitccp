@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/admin/AdminShell";
+import { MaterialTabs } from "@/components/admin/MaterialTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { listMaterialCategories } from "@/lib/admin/material-repository";
 
@@ -13,6 +14,7 @@ export default async function MaterialCategoriesPage({ searchParams }: PageProps
 
   return (
     <AdminShell user={user}>
+      <MaterialTabs active="categories" />
       <section className="admin-card">
         <h2 style={{ marginTop: 0 }}>资料分类 Material categories</h2>
         <p>

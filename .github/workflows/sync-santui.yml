@@ -6,14 +6,18 @@
 # browser on a schedule instead and writes a snapshot to Supabase, which the
 # site reads. See scripts/sync-santui.ts.
 #
-# Hourly: the source itself updates a few times a day (the figure moved ~34,000
-# in a day against 466 million), so this is already far finer than the data.
+# Measured rate: ~9,800 declarations a day against 466 million, so the figure
+# shown on the homepage (4.66 亿) changes about three times a year. Six-hourly is
+# already far finer than the data.
 name: Sync santui registry
 
+# The schedule moved to Vercel Cron (vercel.json -> /api/cron/santui), which
+# drives a hosted browser over a WebSocket. GitHub's scheduled runs were missing
+# several hours at a time, and GitHub disables schedules outright after 60 days
+# with no commits. This workflow is kept, without a schedule, as the manual
+# fallback: it runs the same script against a real browser on a real runner, so
+# it still works if the hosted-browser vendor is down.
 on:
-  schedule:
-    - cron: "17 * * * *"
-  # So it can be run by hand after a deploy, or to recover from a failed run.
   workflow_dispatch:
 
 concurrency:

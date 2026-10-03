@@ -1,7 +1,11 @@
 import Link from "next/link";
 
-/** The four article screens, as one tab bar. */
-export function ArticleTabs({ active }: { active: "search" | "latest" | "stats" | "new" }) {
+/** The article screens, as one tab bar. */
+export function ArticleTabs({
+  active
+}: {
+  active: "search" | "latest" | "stats" | "new" | "categories";
+}) {
   const tabs = [
     { key: "search", href: "/admin/articles", label: "查找与修改" },
     { key: "latest", href: "/admin/articles/latest", label: "最新 100 篇" },
@@ -9,7 +13,10 @@ export function ArticleTabs({ active }: { active: "search" | "latest" | "stats" 
     // 新建文章 is a tab rather than a button off to the right: it is one of the
     // four screens, and putting it in the row means the bar shows where you are
     // while writing instead of going blank.
-    { key: "new", href: "/admin/articles/new", label: "新建文章" }
+    { key: "new", href: "/admin/articles/new", label: "新建文章" },
+    // 分类 belongs with the articles it organises, not in the sidebar: an editor
+    // reaches for it while filing a piece, not as a separate errand.
+    { key: "categories", href: "/admin/categories", label: "文章分类" }
   ] as const;
   return (
     <nav className="admin-tabs">

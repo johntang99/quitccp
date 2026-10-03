@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/admin/AdminShell";
+import { ArticleTabs } from "@/components/admin/ArticleTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { listCategories } from "@/lib/admin/repository";
 
@@ -13,6 +14,7 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
 
   return (
     <AdminShell user={user}>
+      <ArticleTabs active="categories" />
       <section className="admin-card">
         <h2 style={{ marginTop: 0 }}>分类管理</h2>
         <p>

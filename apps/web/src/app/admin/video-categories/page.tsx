@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/admin/AdminShell";
+import { VideoTabs } from "@/components/admin/VideoTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { listVideoCategories } from "@/lib/admin/video-repository";
 
@@ -13,6 +14,7 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
 
   return (
     <AdminShell user={user}>
+      <VideoTabs active="categories" />
       <section className="admin-card">
         <h2 style={{ marginTop: 0 }}>视频分类 Video categories</h2>
         <p>

@@ -227,3 +227,72 @@ There is no staleness guard in the app: `getSantuiSnapshot()` accepts any snapsh
 positive total, so a dead sync keeps showing the last figure indefinitely. The 更新于 date
 under the headline figure is currently the only visible signal — if it stops advancing,
 the sync has stopped.
+
+
+## Where the schedule runs (and why it moved off GitHub Actions)
+
+**The source needs a real browser.** Every path on santui.tuidang.org answers plain HTTP
+with `403` and a Cloudflare challenge — `/`, `/stat/statics` and the 精彩推荐 page alike.
+That rules out anything that can only make HTTP requests, including **Supabase `pg_cron` +
+`pg_net`**, a plain Vercel route, and a free-plan Cloudflare Worker.
+
+**GitHub Actions was missing runs.** On 2026-10-03 the last sync was 00:32 UTC with three
+hourly runs skipped. GitHub also disables scheduled workflows after 60 days with no
+commits, which would stop this silently once the project goes quiet.
+
+**The data does not need hourly.** Measured rate: ~9,800 declarations/day against 466
+million. The homepage figure (4.66 亿) changes roughly three times a year; the twelve
+rotating 声明 are the only part that moves day to day.
+
+So: **Vercel Cron every six hours**, driving a hosted browser over a WebSocket.
+
+```
+vercel.json  crons: [{ path: "/api/cron/santui", schedule: "17 */6 * * *" }]
+       │
+       ▼
+/api/cron/santui   playwright-core, no browser binaries (~13MB)
+       │  chromium.connectOverCDP(BROWSER_WS_ENDPOINT)
+       ▼
+hosted browser (Browserbase / Browserless)
+       │
+       ▼
+lib/santui-scrape.ts  ── shared with scripts/sync-santui.ts
+       ▼
+cms_content_entries['feeds/santui.json'] → revalidatePath("/", "layout")
+```
+
+### Required environment variables
+
+| name | what |
+|---|---|
+| `BROWSER_WS_ENDPOINT` | the vendor's WebSocket URL, including its token |
+| `BROWSER_WS_MODE` | `cdp` (default) or `playwright` — Browserbase and Browserless v2 are CDP |
+| `CRON_SECRET` | Vercel sends it as `Authorization: Bearer …`; the route rejects callers without it |
+
+The route also accepts an **admin session**, so a run can be triggered by hand while
+signed in to the CMS.
+
+### vercel.json lives in apps/web
+
+Vercel reads `vercel.json` from the project's Root Directory, and this project's is
+**`apps/web`** (Settings → Build and Deployment → Root Directory). So the cron config is
+`apps/web/vercel.json`. A copy at the repo root would be silently ignored — there was one
+briefly, and it has been removed.
+
+### The scrape itself is shared, not duplicated
+
+`apps/web/src/lib/santui-scrape.ts` holds the Cloudflare wait, the `<TOTAL>` read and the
+精彩推荐 DOM parsing. It imports no browser — the caller passes in an open page — so the
+same code serves the local script and the serverless route, and the two cannot drift.
+
+### GitHub Actions is kept as the manual fallback
+
+The workflow still exists with `workflow_dispatch` only, no schedule. It runs the same
+script against a real browser on a real runner, so it is the recovery path if the
+hosted-browser vendor is unavailable.
+
+### Measured
+
+Connected to a browser over a WebSocket and ran a full pass: total read, 15 rows fetched,
+12 declarations stored, **12/12 with 标题**, in **0.9s**. The route sets
+`maxDuration = 300`, which is the Vercel Pro ceiling and far more than a run needs.
