@@ -1,5 +1,6 @@
 import { AdminShell } from "@/components/admin/AdminShell";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
+import { can } from "@/lib/admin/permissions";
 import { listSettings } from "@/lib/admin/repository";
 
 interface AdminSettingsPageProps {
@@ -8,6 +9,16 @@ interface AdminSettingsPageProps {
 
 export default async function AdminSettingsPage({ searchParams }: AdminSettingsPageProps) {
   const user = await requireAdminSessionUser();
+  if (!can(user, "settings.write")) {
+    return (
+      <AdminShell user={user}>
+        <section className="admin-card">
+          <h2 style={{ marginTop: 0 }}>站点设置</h2>
+          <p>你的账号没有权限打开这个页面。需要管理员或超级管理员权限。</p>
+        </section>
+      </AdminShell>
+    );
+  }
   const rows = await listSettings(user.email);
   const params = await searchParams;
   const searchSyncState = params.searchSync ?? "";

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
+import { getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
+import { can } from "@/lib/admin/permissions";
 
 /**
  * Publish now: drop every cached page and rebuild on the next request.
@@ -17,7 +18,7 @@ import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin
 export async function POST(request: Request) {
   const user = await getAdminSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!adminCanWrite(user)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!can(user, "publish.revalidate")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   requireAdminMfa(user);
 
   try {

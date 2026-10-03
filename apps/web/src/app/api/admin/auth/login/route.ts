@@ -8,6 +8,7 @@ import {
   recordAdminLoginFailure,
   recordAdminLoginSuccess
 } from "@/lib/admin/user-repository";
+import { createSupabaseAuthClient } from "@/lib/supabase/auth-client";
 import { isMfaRequired } from "@/lib/security/mfa-policy";
 import { verifyPassword } from "@/lib/security/password";
 import { verifyTotpCode } from "@/lib/security/totp";
@@ -40,7 +41,26 @@ export async function POST(request: Request) {
   }
   if (isAccountLocked(user)) redirect("/admin/login?error=locked");
 
-  const passwordOk = verifyPassword(password, user.passwordHash, user.passwordSalt);
+  /*
+   * Supabase Auth first; the legacy PBKDF2 hash is the fallback.
+   *
+   * An account that has been migrated has a Supabase identity and signs in
+   * there, which sets the session cookies and is what the rest of the admin
+   * reads. An account that has not been migrated still has only its row in
+   * cms_admin_users, so it falls through to the old check and gets the old
+   * signed cookie. Both work; nobody is locked out by the order of the rollout.
+   */
+  let supabaseSignedIn = false;
+  try {
+    const supabase = await createSupabaseAuthClient();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    supabaseSignedIn = !error;
+  } catch {
+    supabaseSignedIn = false;
+  }
+
+  const passwordOk =
+    supabaseSignedIn || verifyPassword(password, user.passwordHash, user.passwordSalt);
   if (!passwordOk) {
     await recordAdminLoginFailure(user);
     redirect("/admin/login?error=1");
@@ -73,6 +93,12 @@ export async function POST(request: Request) {
     // every existing session past the MFA gate.
     enforceMfa
   );
+
+  if (supabaseSignedIn) {
+    // Supabase set its own session cookies during signInWithPassword; minting
+    // the legacy one as well would leave two sessions to reason about.
+    redirect("/admin/dashboard");
+  }
 
   const cookieStore = await cookies();
   cookieStore.set(adminAuthCookieName, token, {

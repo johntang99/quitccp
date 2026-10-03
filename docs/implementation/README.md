@@ -18,6 +18,7 @@ Working notes for the quitccp build. Grouped by what you came here to do.
 | [santui-registry-sync.md](./santui-registry-sync.md) | how the 实时登记册 count and declarations are pulled from santui.tuidang.org, hourly, via GitHub Actions |
 | [media-uploads.md](./media-uploads.md) | Storage holds the bytes, a table holds the index, content JSON holds a URL |
 | [article-categories.md](./article-categories.md) | the news categories and how articles are assigned |
+| [user-management-plan.md](./user-management-plan.md) | 用户与权限 — roles, who may add whom, password reset, and the MFA hole that must be closed first |
 | [theme-system-plan.md](./theme-system-plan.md) | 排版与主题 — the plan for one editable theme controlling colours, fonts, sizes and spacing, and why it is not just a JSON file |
 | [public-service-intake.md](./public-service-intake.md) | what the public forms accept and where it goes |
 | [services-link-out-map.md](./services-link-out-map.md) | every link that leaves for santui / service / www.tuidang.org, and the two data feeds |

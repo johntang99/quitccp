@@ -3941,3 +3941,20 @@ img.bcover--photo {
 .dash-alert { margin: 12px 0 0; padding: 12px 14px; border: 1px solid #F0C2BC; border-radius: 8px; background: #FEF3F2; color: #912018; font-size: 13px; line-height: 2; }
 .dash-alert code { background: rgba(145,32,24,.08); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
 .dash-note code { background: rgba(26,23,38,.06); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+
+/* ---- Admin: user management ------------------------------------------- */
+.users-error { margin: 8px 0 0; padding: 8px 12px; border-radius: 6px; background: #FEF3F2; color: #912018; font-size: 13px; }
+.users-ok { margin: 8px 0 0; padding: 8px 12px; border-radius: 6px; background: #ECFDF3; color: #05603A; font-size: 13px; }
+.users-new { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; align-items: end; }
+.users-new label { display: grid; gap: 4px; font-size: 13px; }
+.users-inline { display: flex; gap: 6px; align-items: center; margin: 0 0 4px; }
+.users-inline .admin-input { min-width: 0; }
+.users-actions { display: grid; gap: 4px; }
+.users-self { margin-left: 6px; font-size: 12px; color: var(--ink-dim); }
+.users-warn { margin-left: 6px; font-size: 12px; color: #B54708; }
+.users-muted { font-size: 12px; color: var(--ink-dim); }
+.users-danger { color: #B42318; border-color: #F0C2BC !important; }
+.account-form { display: grid; gap: 12px; max-width: 340px; }
+.account-form label { display: grid; gap: 4px; font-size: 13px; }
+.admin-auth { max-width: 380px; margin: 60px auto; padding: 0 20px; display: grid; gap: 14px; font-family: var(--sans); }
+.admin-auth h1 { margin: 0; font-size: 22px; }

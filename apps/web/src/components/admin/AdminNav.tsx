@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { can, type Capability } from "@/lib/admin/permissions";
+import type { AdminRole } from "@/lib/admin/types";
 
 const LINKS = [
   { href: "/admin/dashboard", label: "Dashboard" },
@@ -13,10 +15,12 @@ const LINKS = [
   { href: "/admin/videos", label: "视频管理", owns: ["/admin/video-categories"] },
   { href: "/admin/materials", label: "资料管理", owns: ["/admin/material-categories"] },
   { href: "/admin/media", label: "媒体资源" },
-  { href: "/admin/theme", label: "主题与排版" },
-  { href: "/admin/settings", label: "站点设置" },
-  { href: "/admin/audit", label: "审计日志" },
-  { href: "/admin/revisions", label: "修订历史" },
+  { href: "/admin/theme", label: "主题与排版", needs: "theme.write" },
+  { href: "/admin/settings", label: "站点设置", needs: "settings.write" },
+  { href: "/admin/users", label: "用户管理", needs: "users.view" },
+  { href: "/admin/audit", label: "审计日志", needs: "audit.read" },
+  { href: "/admin/revisions", label: "修订历史", needs: "revisions.restore" },
+  { href: "/admin/account", label: "我的账号" },
   { href: "/admin/logout", label: "退出" }
 ] as const;
 
@@ -27,15 +31,22 @@ const LINKS = [
  * /admin/video-categories must not light 视频管理 just because /admin/videos
  * shares its first characters, while /admin/videos/<id> must.
  */
-export function AdminNav() {
+/**
+ * Entries the signed-in user cannot open are not rendered.
+ *
+ * The pages and routes refuse them anyway; hiding the link is so nobody is
+ * invited to a dead end. The server check is the real one -- this is courtesy.
+ */
+export function AdminNav({ role }: { role: AdminRole }) {
   const pathname = usePathname() ?? "";
+  const visible = LINKS.filter((link) => !("needs" in link) || can({ role }, link.needs as Capability));
   const matches = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const isActive = (link: { href: string; owns?: readonly string[] }) =>
     matches(link.href) || (link.owns ?? []).some(matches);
 
   return (
     <nav>
-      {LINKS.map((link) => (
+      {visible.map((link) => (
         <Link key={link.href} href={link.href} className={isActive(link) ? "on" : undefined}>
           {link.label}
         </Link>

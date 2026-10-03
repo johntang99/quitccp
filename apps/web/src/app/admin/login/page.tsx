@@ -39,6 +39,9 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
           登录
         </button>
       </form>
+      <p style={{ color: "#555", fontSize: 13 }}>
+        <a href="/admin/forgot">忘记密码？</a>
+      </p>
       <p style={{ color: "#555" }}>
         数据库账号登录，支持{mfaRequired ? " TOTP、" : " "}多次失败锁定与 JWT 会话。
       </p>

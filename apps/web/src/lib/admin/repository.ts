@@ -43,6 +43,21 @@ function resolveTemplateKind(section: string, slug: string) {
   return seed?.template ?? "section-home";
 }
 
+/**
+ * Public alias for the audit writer, so modules outside this file (the user
+ * management routes) record actions the same way every other write does.
+ */
+export async function recordAdminAudit(
+  actorEmail: string,
+  action: string,
+  targetType: string,
+  targetId: string,
+  accessMode: "read" | "write",
+  detail: Record<string, unknown> = {}
+) {
+  return createAudit(actorEmail, action, targetType, targetId, accessMode, detail);
+}
+
 async function createAudit(
   actorEmail: string,
   action: string,

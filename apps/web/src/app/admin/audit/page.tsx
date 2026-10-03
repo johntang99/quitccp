@@ -1,9 +1,20 @@
 import { AdminShell } from "@/components/admin/AdminShell";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
+import { can } from "@/lib/admin/permissions";
 import { listAudits } from "@/lib/admin/repository";
 
 export default async function AdminAuditPage() {
   const user = await requireAdminSessionUser();
+  if (!can(user, "audit.read")) {
+    return (
+      <AdminShell user={user}>
+        <section className="admin-card">
+          <h2 style={{ marginTop: 0 }}>审计日志</h2>
+          <p>你的账号没有权限打开这个页面。需要管理员或超级管理员权限。</p>
+        </section>
+      </AdminShell>
+    );
+  }
   const rows = await listAudits(user.email);
   return (
     <AdminShell user={user}>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
+import { getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
+import { can } from "@/lib/admin/permissions";
 import { upsertSettingRecord } from "@/lib/admin/repository";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { THEME_SETTING_KEY, loadTheme, mergeTheme } from "@/lib/public-theme";
@@ -14,7 +15,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const user = await getAdminSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!adminCanWrite(user)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!can(user, "theme.write")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   requireAdminMfa(user);
 
   let body: unknown;
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
 export async function DELETE() {
   const user = await getAdminSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!adminCanWrite(user)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!can(user, "theme.write")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   requireAdminMfa(user);
 
   const supabase = createSupabaseAdminClient();

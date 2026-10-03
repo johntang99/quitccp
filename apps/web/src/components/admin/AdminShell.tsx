@@ -14,7 +14,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
         <p className="admin-userline">
           {user.email} · {user.role}
         </p>
-        <AdminNav />
+        <AdminNav role={user.role} />
       </aside>
       <main className="admin-main">{children}</main>
     </div>
