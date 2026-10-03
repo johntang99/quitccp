@@ -231,7 +231,7 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
     }));
     const reportSection = asRecord(payload.reportSection);
     const reportItems = asObjectArray(reportSection.items).map((row) => ({
-      href: asString(row.href, "/news/article"),
+      href: asString(row.href),
       image: asString(row.image),
       tag: asString(row.tag),
       title: asString(row.title),
@@ -323,49 +323,36 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
                   </article>
                 ))}
               </div>
-              <p className="eyebrow" style={{ marginTop: 56 }}>
-                {asString(reportSection.eyebrow, "相关报导")}
-              </p>
-              <h2 className="h2" style={{ marginBottom: 26, fontSize: 26 }}>
-                {asString(reportSection.title, "议会行动与个案报导")}
-              </h2>
-              <div className="arch">
-                {(reportItems.length > 0
-                  ? reportItems
-                  : [
-                      {
-                        href: "/news/article",
-                        image: "https://www.tuidang.org/wp-content/uploads/2026/07/signal-2026-07-22-11-53-42-724.jpg",
-                        tag: "国际声援",
-                        title: "美议员在国会表彰退党运动及全球退党中心",
-                        summary: "田纳西州联邦众议员表彰退党运动，声明载入《国会议事录》。",
-                        meta: "2026-07-21 · 华盛顿"
-                      },
-                      {
-                        href: "/news/article",
-                        image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.29-P.png",
-                        tag: "政策梳理",
-                        title: "美国第 444 号决议：天意已决，华人关键时刻",
-                        summary: "决议原文、通过经过，以及它在实务上意味着什么、不意味着什么。",
-                        meta: "2026-07-15"
-                      }
-                    ]
-                ).map((item, index) => (
-                  <article key={`${item.title}-${item.meta}`} className="arow" style={index === 0 ? { paddingTop: 0 } : undefined}>
-                    <a href={item.href} style={{ display: "contents" }}>
-                      {/* Empty src makes the browser re-request the page; the
-                          placeholder keeps the .arow grid's first column. */}
-                      {item.image ? <img src={item.image} alt="" /> : <span />}
-                      <div>
-                        <span className="tag">{item.tag}</span>
-                        <h3>{item.title}</h3>
-                        <p>{item.summary}</p>
-                        <p className="meta">{item.meta}</p>
-                      </div>
-                    </a>
-                  </article>
-                ))}
-              </div>
+              {reportItems.length > 0 ? (
+                <>
+                <p className="eyebrow" style={{ marginTop: 56 }}>
+                  {asString(reportSection.eyebrow, "相关报导")}
+                </p>
+                <h2 className="h2" style={{ marginBottom: 26, fontSize: 26 }}>
+                  {asString(reportSection.title, "议会行动与个案报导")}
+                </h2>
+                <div className="arch">
+                  {(reportItems.length > 0
+                    ? reportItems
+                    : []
+                  ).map((item, index) => (
+                    <article key={`${item.title}-${item.meta}`} className="arow" style={index === 0 ? { paddingTop: 0 } : undefined}>
+                      <a href={item.href} style={{ display: "contents" }}>
+                        {/* Empty src makes the browser re-request the page; the
+                            placeholder keeps the .arow grid's first column. */}
+                        {item.image ? <img src={item.image} alt="" /> : <span />}
+                        <div>
+                          <span className="tag">{item.tag}</span>
+                          <h3>{item.title}</h3>
+                          <p>{item.summary}</p>
+                          <p className="meta">{item.meta}</p>
+                        </div>
+                      </a>
+                    </article>
+                  ))}
+                </div>
+                </>
+              ) : null}
               <nav className="pager">
                 {pager.map((label, index) => (
                   <a key={`${label}-${index}`} className={index === 0 ? "on" : undefined} href="#">

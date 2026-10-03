@@ -544,7 +544,11 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
     const fallbackContent = asObject(fallback.content);
     if (!data) {
       const virtual = listMapped;
-      if (!virtual) return normalizedSlug === "article" ? fallback : null;
+      // /news/article used to serve the prototype's sample article -- an invented
+      // ceremony, publicly reachable, on a site whose whole claim is documentary
+      // accuracy. The seed content is still the page *skeleton* for virtual
+      // articles; it is simply no longer served as an article in its own right.
+      if (!virtual) return null;
       return {
         section: "news",
         slug: virtual.slug,
@@ -698,7 +702,11 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
       }
     };
   } catch {
-    return normalizedSlug === "article" ? fallback : null;
+    // /news/article used to serve the prototype's sample article -- an invented
+    // ceremony, publicly reachable, on a site whose whole claim is documentary
+    // accuracy. The seed content is still the page *skeleton* for virtual
+    // articles; it is simply no longer served as an article in its own right.
+    return null;
   }
 }
 

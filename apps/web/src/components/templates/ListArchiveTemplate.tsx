@@ -5,29 +5,23 @@ import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString, asStringArray } from "./content-utils";
 import { resolveNewsArticleHref } from "@/lib/news-linking";
 
-const sampleRows = [
-  {
-    slug: "annual-impact-report",
-    title: "年度影响力报告：登记数据与分布",
-    date: "2026-08-01",
-    tag: "更新",
-    summary: "支持筛选、分页、排序和结果统计。"
-  },
-  {
-    slug: "witness-story",
-    title: "见证者口述：离开组织后的真实经历",
-    date: "2026-07-25",
-    tag: "专题",
-    summary: "支持筛选、分页、排序和结果统计。"
-  },
-  {
-    slug: "policy-update",
-    title: "相关政策更新与公开说明",
-    date: "2026-07-10",
-    tag: "说明",
-    summary: "支持筛选、分页、排序和结果统计。"
-  }
-];
+/**
+ * Empty on purpose.
+ *
+ * This used to hold invented articles -- plausible headlines with 2026 dates --
+ * that rendered whenever a list page had no content of its own. On a site whose
+ * entire claim is documentary accuracy, a made-up report is the one thing we
+ * cannot ship. A list with nothing in it now renders nothing.
+ */
+const sampleRows: {
+  slug?: string;
+  href?: string;
+  image?: string;
+  title: string;
+  date?: string;
+  tag?: string;
+  summary?: string;
+}[] = [];
 
 const NEWS_MENU_SLUGS = new Set(["index", "announcements", "investigations", "commentary", "solidarity", "stories", "notable"]);
 
@@ -104,60 +98,14 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
     const cultureRows = asObjectArray(payload.items).length
       ? asObjectArray(payload.items).map((row) => ({
           slug: asString(row.slug),
-          href: asString(row.href, "/news/article"),
+          href: asString(row.href),
           title: asString(row.title),
           date: asString(row.date),
           tag: asString(row.tag),
           summary: asString(row.summary),
           image: asString(row.image, "https://picsum.photos/seed/culture/400/260")
         }))
-      : [
-          {
-            slug: "cangjie-story",
-            href: "/news/article",
-            title: "祭仓颉　找回迷失的神性",
-            date: "2026-05-07",
-            tag: "传统故事",
-            summary: "从造字传说说起，谈汉字与敬天信神的关系，以及文字被简化之后失去的东西。",
-            image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.29-P.png"
-          },
-          {
-            slug: "steamed-sheep-story",
-            href: "/news/article",
-            title: "一只蒸羊照见天理帐本",
-            date: "2026-04-10",
-            tag: "传统故事",
-            summary: "一则古代故事，与「举头三尺有神明」这句话在传统社会中的实际分量。",
-            image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.23-P.png"
-          },
-          {
-            slug: "wutai-poetry-case",
-            href: "/news/article",
-            title: "千年微光：从乌台诗案到人性觉醒的文明回响",
-            date: "2026-06-22",
-            tag: "文化专题",
-            summary: "从宋代文字狱谈起，看知识人在压力之下的选择，以及这些选择如何被后世记住。",
-            image: "https://www.tuidang.org/wp-content/uploads/2026/07/id14813875-LD108599-1-scaled.jpg"
-          },
-          {
-            slug: "fan-zhongyan",
-            href: "/news/article",
-            title: "范仲淹：先天下之忧而忧",
-            date: "2026-03-15",
-            tag: "历史人物",
-            summary: "从他的仕途起伏，看传统士人「以天下为己任」这句话的具体含义。",
-            image: "https://www.tuidang.org/wp-content/uploads/2026/06/2026.06.10-J.jpg"
-          },
-          {
-            slug: "poetry-quiet-view",
-            href: "/news/article",
-            title: "诗词：静中奇景",
-            date: "2026-02-19",
-            tag: "诗词",
-            summary: "",
-            image: "https://www.tuidang.org/wp-content/uploads/2026/07/id14814223-LD109739-scaled.jpg"
-          }
-        ];
+      : [];
     const matchesCultureFilter = (row: { tag: string; title: string }) => {
       if (activeFilter === "全部") return true;
       if (activeFilter === "传统故事") return row.tag.includes("传统故事");
@@ -321,94 +269,83 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
   }
 
   if (section === "involve" && slug === "stories") {
+    // Driven by the CMS, like every other list on the site. The four articles
+    // that used to be written into this branch were invented -- named
+    // volunteers, datelines, word counts -- and all four linked to the
+    // placeholder article page. Editors fill this from 内容管理; until they do,
+    // the list, its filters and its pager render nothing rather than fiction.
+    const storyRows = rows;
+    const storyFilters = asStringArray(payload.filters, []);
+    const storyPager = asStringArray(payload.pager, []);
     return (
       <>
         <InteriorHead
           section={section}
           slug={slug}
           title={asString(payload.title, "在服务点的人")}
-          subtitle={asString(payload.subtitle, "现场纪实、义工自述与长期跟踪报导。含原「三退义工」与「义工风采」全部内容。")}
+          subtitle={asString(
+            payload.subtitle,
+            "现场纪实、义工自述与长期跟踪报导。含原「三退义工」与「义工风采」全部内容。"
+          )}
         />
         <InteriorTabs section={section} slug={slug} />
         <section className="sec" style={{ paddingTop: 52 }}>
           <div className="wrap cols">
             <article>
-              <div className="filters">
-                <a className="chip on" href="#">
-                  全部
-                </a>
-                <a className="chip" href="#">
-                  现场纪实
-                </a>
-                <a className="chip" href="#">
-                  义工自述
-                </a>
-                <a className="chip" href="#">
-                  影片
-                </a>
-                <a className="chip" href="#">
-                  《九评》20 周年系列
-                </a>
-              </div>
-              <div className="arch">
-                <article className="arow" style={{ paddingTop: 0 }}>
-                  <a href="/news/article" style={{ display: "contents" }}>
-                    <div className="athumb">
-                      <img className="athumb-img" src="https://www.tuidang.org/wp-content/uploads/2026/06/2026.06.10-J.jpg" alt="" />
-                      <span className="play">▶ 影片</span>
-                    </div>
-                    <div>
-                      <span className="tag">现场纪实</span>
-                      <h3>济州岛三退义工面对挑衅，威而不惧</h3>
-                      <p>今年五月有九万中国人搭邮轮抵达济州岛。义工们轮班在码头、免税店与景点前守候。</p>
-                      <p className="meta">2026-06-10 · 11 分</p>
-                    </div>
-                  </a>
-                </article>
-                <article className="arow">
-                  <a href="/news/article" style={{ display: "contents" }}>
-                    <img className="athumb-img" src="https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.23-P.png" alt="" />
-                    <div>
-                      <span className="tag">现场纪实</span>
-                      <h3>真相改变人心</h3>
-                      <p>两位纽约华人在真相点了解事实后，最终选择三退的经过。</p>
-                      <p className="meta">2026-05-30 · 纽约</p>
-                    </div>
-                  </a>
-                </article>
-                <article className="arow">
-                  <a href="/news/article" style={{ display: "contents" }}>
-                    <img className="athumb-img" src="https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.29-P.png" alt="" />
-                    <div>
-                      <span className="tag">义工自述</span>
-                      <h3>邵玉华：半生悲苦成智慧，春风化雨劝三退</h3>
-                      <p>从大饥荒、文革到九〇年代下岗，再到成为义工。</p>
-                      <p className="meta">2026-05-10</p>
-                    </div>
-                  </a>
-                </article>
-                <article className="arow">
-                  <a href="/news/article" style={{ display: "contents" }}>
-                    <img className="athumb-img" src="https://www.tuidang.org/wp-content/uploads/2026/07/id14813875-LD108599-1-scaled.jpg" alt="" />
-                    <div>
-                      <span className="tag">现场纪实</span>
-                      <h3>讲真相，救人急——纽约真相点三退故事</h3>
-                      <p>海外义工不必面对直接的暴力，但长年风雨无阻同样需要毅力。</p>
-                      <p className="meta">2026-05-22</p>
-                    </div>
-                  </a>
-                </article>
-              </div>
-              <nav className="pager">
-                <a className="on" href="#">
-                  1
-                </a>
-                <a href="#">2</a>
-                <a href="#">3</a>
-                <a href="#">…</a>
-                <a href="#">42</a>
-                <a href="#">下一页 →</a>
-              </nav>
+              {storyFilters.length > 0 ? (
+                <div className="filters">
+                  {storyFilters.map((label, index) => (
+                    <a key={label} className={index === 0 ? "chip on" : "chip"} href="#">
+                      {label}
+                    </a>
+                  ))}
+                </div>
+              ) : null}
+              {storyRows.length > 0 ? (
+                <div className="arch">
+                  {storyRows.map((row, index) => (
+                    <article
+                      className="arow"
+                      key={row.slug || row.title || index}
+                      style={index === 0 ? { paddingTop: 0 } : undefined}
+                    >
+                      <Link
+                        href={
+                          resolveNewsArticleHref({
+                            href: row.href,
+                            slug: row.slug,
+                            title: row.title
+                          }) as Route
+                        }
+                        style={{ display: "contents" }}
+                      >
+                        {row.image ? (
+                          <img className="athumb-img" src={row.image} alt="" />
+                        ) : (
+                          renderNoImageSlot("row")
+                        )}
+                        <div>
+                          {row.tag ? <span className="tag">{row.tag}</span> : null}
+                          <h3>{row.title}</h3>
+                          {row.summary ? <p>{row.summary}</p> : null}
+                          {row.date ? <p className="meta">{row.date}</p> : null}
+                        </div>
+                      </Link>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className="muted">这里还没有内容。</p>
+              )}
+              {storyRows.length > 0 && storyPager.length > 0 ? (
+                <nav className="pager">
+                  {storyPager.map((item, index) => (
+                    <a key={item} className={index === 0 ? "on" : ""} href="#">
+                      {item}
+                    </a>
+                  ))}
+                </nav>
+              ) : null}
             </article>
             <aside className="side">
               <div className="panel panel--seal">
@@ -474,7 +411,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
     if (slug === "index") {
       const baseItems = asObjectArray(payload.items).map((row) => ({
         slug: asString(row.slug),
-        href: asString(row.href, "/news/article"),
+        href: asString(row.href),
         image: asString(row.image),
         tag: asString(row.tag),
         title: asString(row.title),
@@ -506,267 +443,87 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
         summary: asString(frontLeadPayload.summary, fallbackLead.summary),
         meta: asString(frontLeadPayload.meta, fallbackLead.meta)
       };
-      const fallbackFrontList = [
-        {
-          slug: "bomb-threat-statement",
-          href: "/news/article",
-          thumb: "https://www.tuidang.org/wp-content/uploads/2026/06/2026.06.10-J.jpg",
-          tag: "机构公告与声明",
-          title: "严正声明：本中心多次收到炸弹恐怖攻击等威胁信",
-          meta: "2026-06-10 · 纽约"
-        },
-        {
-          slug: "investigation-report-361",
-          href: "/news/article",
-          thumb: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.23-P.png",
-          tag: "追查国际调查报告",
-          title: "361 名法轮功学员炼钢炉虐杀惨案调查报告",
-          meta: "2026-02 · 录音取证"
-        },
-        {
-          slug: "feature-rewritten-70-years",
-          href: "/news/article",
-          thumb: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.29-P.png",
-          tag: "专题报导",
-          title: "专题：被改写的七十年——从大饥荒到今天的官方叙事",
-          meta: "2026-07-29 · 上下篇"
-        },
-        {
-          slug: "jejudo-volunteer-story",
-          href: "/news/article",
-          thumb: "https://www.tuidang.org/wp-content/uploads/2026/07/id14813875-LD108599-1-scaled.jpg",
-          tag: "三退新闻与故事",
-          title: "济州岛三退义工面对挑衅，威而不惧",
-          meta: "2026-06-10 · 影片 11 分"
-        }
-      ];
       const frontListRaw = asObjectArray(payload.frontList);
       const frontList =
         frontListRaw.length > 0
           ? frontListRaw.map((row) => ({
               slug: asString(row.slug),
-              href: asString(row.href, "/news/article"),
+              href: asString(row.href),
               thumb: asString(row.thumb, asString(row.image)),
               tag: asString(row.tag),
               title: asString(row.title),
               meta: asString(row.meta)
             }))
-          : fallbackFrontList;
+          : [];
 
       const briefItems = asObjectArray(payload.briefItems).length
         ? asObjectArray(payload.briefItems).map((row) => ({
             slug: asString(row.slug),
-            href: asString(row.href, "/news/article"),
+            href: asString(row.href),
             date: asString(row.date),
             title: asString(row.title)
           }))
-        : [
-            { slug: "daily-1", href: "/news/article", date: "08-12", title: "全球服务点单周新增声明逾二十六万份" },
-            { slug: "daily-2", href: "/news/article", date: "08-08", title: "欧洲议会通过决议，关注强制器官摘取问题" },
-            { slug: "daily-3", href: "/news/article", date: "08-11", title: "地方财政困局之下，基层治理正在发生什么" },
-            { slug: "daily-4", href: "/news/article", date: "08-06", title: "隐瞒军旅身份，入境美国被捕承认是中校及党员" },
-            { slug: "daily-5", href: "/news/article", date: "08-09", title: "留学生在海外读到不同的报道后，选择声明退出" },
-            { slug: "daily-6", href: "/news/article", date: "08-05", title: "广西洪涝十余日，救助物资迟迟未至，灾民逃荒自救" }
-          ];
+        : [];
 
       const solidarity = asRecord(payload.solidaritySection);
       const solidarityItems = asObjectArray(solidarity.items).length
         ? asObjectArray(solidarity.items).map((row) => ({
             slug: asString(row.slug),
-            href: asString(row.href, "/news/article"),
+            href: asString(row.href),
             image: asString(row.image),
             title: asString(row.title),
             summary: asString(row.summary),
             meta: asString(row.meta)
           }))
-        : [
-            {
-              slug: "us-resolution-444",
-              href: "/news/article",
-              image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.29-P.png",
-              title: "美国国会通过第 444 号决议",
-              summary: "决议指出中共对全球稳定与和平构成严重威胁，从事系统性欺骗与反人类罪行。",
-              meta: "2026-06 · 华盛顿"
-            },
-            {
-              slug: "eu-resolution",
-              href: "/news/article",
-              image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.23-P.png",
-              title: "欧洲议会通过决议，关注强制器官摘取问题",
-              summary: "要求成员国审视与中国的器官移植相关合作，并对责任人采取措施。",
-              meta: "2026-06-25 · 布鲁塞尔"
-            },
-            {
-              slug: "auckland-voices",
-              href: "/news/article",
-              image: "https://www.tuidang.org/wp-content/uploads/2026/06/2026.06.10-J.jpg",
-              title: "反制中共干预与跨境压制，纽澳台嘉宾奥克兰同场发声",
-              summary: "来自新西兰、澳洲与台湾的学者与议员讨论跨境压制的形式与应对。",
-              meta: "2026-02-23 · 奥克兰"
-            }
-          ];
+        : [];
 
       const investigations = asRecord(payload.investigationsSection);
       const investigationItems = asObjectArray(investigations.items).length
         ? asObjectArray(investigations.items).map((row) => ({
             slug: asString(row.slug),
-            href: asString(row.href, "/news/article"),
+            href: asString(row.href),
             title: asString(row.title),
             facts: asStringArray(row.facts, []),
             actions: asStringArray(row.actions, [])
           }))
-        : [
-            {
-              slug: "investigation-361",
-              href: "/news/article",
-              title: "361 名法轮功学员炼钢炉虐杀惨案调查报告",
-              facts: ["调查报告", "录音取证", "2026-02"],
-              actions: ["在线阅读", "PDF"]
-            },
-            {
-              slug: "iron-evidence",
-              href: "/news/article",
-              title: "《铁证如山》：中共活体摘取法轮功学员器官罪恶追查",
-              facts: ["系列调查片", "32 集", "含电子书"],
-              actions: ["▶ 观看", "电子书"]
-            },
-            {
-              slug: "tiananmen-incident",
-              href: "/news/article",
-              title: "「天安门自焚」伪案追查报告",
-              facts: ["调查报告", "影像分析", "2026-05-18"],
-              actions: ["在线阅读", "PDF"]
-            },
-            {
-              slug: "accountability-list",
-              href: "/news/article",
-              title: "参与迫害的公安、检察与司法人员责任调查名单",
-              facts: ["责任人名单", "可检索", "2026-04-02"],
-              actions: ["查询数据库", "PDF"]
-            }
-          ];
+        : [];
 
       const commentary = asRecord(payload.commentarySection);
       const commentaryItems = asObjectArray(commentary.items).length
         ? asObjectArray(commentary.items).map((row) => ({
             slug: asString(row.slug),
-            href: asString(row.href, "/news/article"),
+            href: asString(row.href),
             image: asString(row.image),
             tag: asString(row.tag),
             title: asString(row.title),
             summary: asString(row.summary),
             meta: asString(row.meta)
           }))
-        : [
-            {
-              slug: "feature-70-years",
-              href: "/news/article",
-              image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.29-P.png",
-              tag: "专题报导",
-              title: "专题：被改写的七十年——从大饥荒到今天的官方叙事",
-              summary: "分上下两篇，梳理官方叙事的形成过程与几次关键改写。",
-              meta: "2026-07-29 · 上下篇"
-            },
-            {
-              slug: "flood-special",
-              href: "/news/article",
-              image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.23-P.png",
-              tag: "特别报导",
-              title: "广西洪涝十余日，救助物资迟迟未至，灾民逃荒自救",
-              summary: "多位当地居民描述灾后处境，与官方通报存在明显出入。",
-              meta: "2026-07-23"
-            },
-            {
-              slug: "language-column",
-              href: "/news/article",
-              image: "https://www.tuidang.org/wp-content/uploads/2026/07/id14814223-LD109739-scaled.jpg",
-              tag: "名家专栏",
-              title: "党文化如何塑造日常语言",
-              summary: "从常用词汇的来源谈起，讨论语言与思维方式的关系。",
-              meta: "2026-07-11 · 专栏"
-            }
-          ];
+        : [];
 
       const announcements = asRecord(payload.announcementsSection);
       const announcementItems = asObjectArray(announcements.items).length
         ? asObjectArray(announcements.items).map((row) => ({
             slug: asString(row.slug),
-            href: asString(row.href, "/news/article"),
+            href: asString(row.href),
             date: asString(row.date),
             badge: asString(row.badge),
             title: asString(row.title)
           }))
-        : [
-            {
-              slug: "announce-1",
-              href: "/news/article",
-              date: "2026-06-10",
-              badge: "机构声明",
-              title: "严正声明：本中心多次收到炸弹恐怖攻击等威胁信"
-            },
-            {
-              slug: "announce-2",
-              href: "/news/article",
-              date: "2026-07-15",
-              badge: "年度报告",
-              title: "二〇二五年度工作报告与三退登记数据"
-            },
-            {
-              slug: "announce-3",
-              href: "/news/article",
-              date: "2026-03-18",
-              badge: "登记数据",
-              title: "二〇二六年前两月，二百一十五万中国人声明三退"
-            },
-            {
-              slug: "announce-4",
-              href: "/news/article",
-              date: "2026-02-04",
-              badge: "机构声明",
-              title: "关于冒用本中心名义收费办理证明的声明"
-            }
-          ];
+        : [];
 
       const stories = asRecord(payload.storiesSection);
       const storyItems = asObjectArray(stories.items).length
         ? asObjectArray(stories.items).map((row) => ({
             slug: asString(row.slug),
-            href: asString(row.href, "/news/article"),
+            href: asString(row.href),
             image: asString(row.image),
             title: asString(row.title),
             summary: asString(row.summary),
             meta: asString(row.meta),
             isVideo: Boolean(row.isVideo)
           }))
-        : [
-            {
-              slug: "story-1",
-              href: "/news/article",
-              image: "https://www.tuidang.org/wp-content/uploads/2026/06/2026.06.10-J.jpg",
-              title: "济州岛三退义工面对挑衅，威而不惧",
-              summary: "今年五月有九万中国人搭邮轮抵达济州岛。义工们轮班在码头与免税店前守候。",
-              meta: "2026-06-10 · 11 分",
-              isVideo: true
-            },
-            {
-              slug: "story-2",
-              href: "/news/article",
-              image: "https://www.tuidang.org/wp-content/uploads/2026/07/id14813875-LD108599-1-scaled.jpg",
-              title: "【三退洪声】大陆记者：我在党媒说了太多假话，今天说句真话",
-              summary: "黑龙江某报记者、前国安人员、高校教师等人的声明与自述。含音频节目。",
-              meta: "2026-05-22 · 音频",
-              isVideo: false
-            },
-            {
-              slug: "story-3",
-              href: "/news/article",
-              image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.29-P.png",
-              title: "留学生在海外读到不同的报道后，选择声明退出",
-              summary: "几位在日本与欧洲的中国留学生，讲述从怀疑到查证的过程。",
-              meta: "2026-07-29",
-              isVideo: false
-            }
-          ];
+        : [];
 
       const notable = asRecord(payload.notableSection);
       const testimonials = asObjectArray(notable.testimonials).length
@@ -1120,7 +877,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
       const rows = asObjectArray(payload.noticeRows)
         .map((row) => ({
           slug: asString(row.slug),
-          href: asString(row.href, "/news/article"),
+          href: asString(row.href),
           date: asString(row.date),
           badge: asString(row.badge),
           title: asString(row.title),
@@ -1200,7 +957,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
           const inferredVideo = mappedActions.some((item) => item.label.includes("▶") || item.label.includes("观看"));
           return {
             slug: asString(row.slug),
-            href: asString(row.href, "/news/article"),
+            href: asString(row.href),
             image: asString(row.image),
             isVideo: typeof row.isVideo === "boolean" ? row.isVideo : inferredVideo,
             title: asString(row.title),
@@ -1372,7 +1129,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
     const filters = asStringArray(payload.filters, ["全部", "最新"]);
     const newsRowsRaw = asObjectArray(payload.items).map((row) => ({
       slug: asString(row.slug),
-      href: asString(row.href, "/news/article"),
+      href: asString(row.href),
       image: section === "news" ? asString(row.image) : asString(row.image, "https://picsum.photos/seed/news/640/420"),
       tag: asString(row.tag),
       title: asString(row.title),

@@ -71,5 +71,8 @@ export function resolveNewsArticleHref({
       : title?.trim()
         ? toNewsArticleSlug(title)
         : "";
-  return slugCandidate ? `/news/${encodeURIComponent(slugCandidate)}` : "/news/article";
+  // The placeholder article page has been deleted, so falling back to it would
+  // be a link to a 404. The news index is a real destination and an honest
+  // one: we could not identify the article, here is where they live.
+  return slugCandidate ? `/news/${encodeURIComponent(slugCandidate)}` : "/news";
 }

@@ -102,7 +102,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
   const relatedSection = asRecord(payload.relatedSection);
   const relatedItems = asObjectArray(relatedSection.items).length
     ? asObjectArray(relatedSection.items).map((row) => ({
-        href: asString(row.href, "/news/article"),
+        href: asString(row.href),
         image: asString(row.image),
         tag: asString(row.tag),
         title: asString(row.title),
@@ -291,26 +291,28 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
                 </a>
               ))}
             </div>
-            <div style={{ marginTop: 56 }}>
-              <p className="eyebrow">{asString(relatedSection.eyebrow, "相关报导")}</p>
-              <div className="arch">
-                {relatedItems.map((item, index) => (
-                  <article key={item.title} className="arow" style={index === 0 ? { paddingTop: 0 } : undefined}>
-                    <a href={item.href} style={{ display: "contents" }}>
-                      {/* An empty src makes the browser re-request the page.
-                          The placeholder keeps the .arow grid's first column,
-                          which the text otherwise collapses into. */}
-                      {item.image ? <img src={item.image} alt="" /> : <span />}
-                      <div>
-                        <span className="tag">{item.tag}</span>
-                        <h3>{item.title}</h3>
-                        <p className="meta">{item.meta}</p>
-                      </div>
-                    </a>
-                  </article>
-                ))}
+            {relatedItems.length > 0 ? (
+              <div style={{ marginTop: 56 }}>
+                <p className="eyebrow">{asString(relatedSection.eyebrow, "相关报导")}</p>
+                <div className="arch">
+                  {relatedItems.map((item, index) => (
+                    <article key={item.title} className="arow" style={index === 0 ? { paddingTop: 0 } : undefined}>
+                      <a href={item.href} style={{ display: "contents" }}>
+                        {/* An empty src makes the browser re-request the page.
+                            The placeholder keeps the .arow grid's first column,
+                            which the text otherwise collapses into. */}
+                        {item.image ? <img src={item.image} alt="" /> : <span />}
+                        <div>
+                          <span className="tag">{item.tag}</span>
+                          <h3>{item.title}</h3>
+                          <p className="meta">{item.meta}</p>
+                        </div>
+                      </a>
+                    </article>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : null}
           </article>
           <aside className="side">
             <div className="panel panel--seal">

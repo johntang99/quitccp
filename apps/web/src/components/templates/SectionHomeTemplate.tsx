@@ -155,39 +155,14 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
     const immigrationSection = asRecord(payload.immigrationSection);
     const immigrationItems = asObjectArray(immigrationSection.items).length
       ? asObjectArray(immigrationSection.items).map((row) => ({
-          href: asString(row.href, "/news/article"),
+          href: asString(row.href),
           image: asString(row.image),
           tag: asString(row.tag),
           title: asString(row.title),
           summary: asString(row.summary),
           meta: asString(row.meta)
         }))
-      : [
-          {
-            href: "/news/article",
-            image: "https://www.tuidang.org/wp-content/uploads/2026/07/signal-2026-07-22-11-53-42-724.jpg",
-            tag: "政策梳理",
-            title: "美国第 444 号决议与华人身份申请的关系",
-            summary: "决议原文、通过经过，以及它在实务上意味着什么、不意味着什么。",
-            meta: "2026-07-22 · 华盛顿"
-          },
-          {
-            href: "/news/article",
-            image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.29-P.png",
-            tag: "相关报导",
-            title: "在美国办绿卡被卡，党员退党要抓紧",
-            summary: "近年身份申请中与党籍相关的审查趋势，以及当事人的处理经过。",
-            meta: "2026-06-18"
-          },
-          {
-            href: "/news/article",
-            image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.23-P.png",
-            tag: "相关报导",
-            title: "华人海外要站稳脚跟，「退党证明」已不是选择题",
-            summary: "受理机构如何看待退党证明，以及提交时应注意什么。",
-            meta: "2026-05-30"
-          }
-        ];
+      : [];
     const contactSection = asRecord(payload.contactSection);
     const contactPrimaryAction = asRecord(contactSection.primaryAction);
     const contactSecondaryAction = asRecord(contactSection.secondaryAction);
@@ -356,39 +331,41 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
             </aside>
           </div>
         </section>
-        <section className="sec" style={{ paddingTop: 0 }}>
-          <div className="wrap">
-            <div className="sec-head">
-              <div>
-                <p className="eyebrow">{asString(immigrationSection.eyebrow, "移民相关政策与问题")}</p>
-                <h2 className="h2">{asString(immigrationSection.title, "与身份申请有关的说明与报导")}</h2>
-                <p className="lede">
-                  {asString(immigrationSection.lede, "以下为公开报导与政策梳理，供参考。本中心不提供法律意见，具体个案请咨询有执照的移民律师。")}
-                </p>
+        {immigrationItems.length > 0 ? (
+          <section className="sec" style={{ paddingTop: 0 }}>
+            <div className="wrap">
+              <div className="sec-head">
+                <div>
+                  <p className="eyebrow">{asString(immigrationSection.eyebrow, "移民相关政策与问题")}</p>
+                  <h2 className="h2">{asString(immigrationSection.title, "与身份申请有关的说明与报导")}</h2>
+                  <p className="lede">
+                    {asString(immigrationSection.lede, "以下为公开报导与政策梳理，供参考。本中心不提供法律意见，具体个案请咨询有执照的移民律师。")}
+                  </p>
+                </div>
+                <a className="more" href={asString(immigrationSection.moreHref, "/news")}>
+                  {asString(immigrationSection.moreLabel, "全部相关报导 →")}
+                </a>
               </div>
-              <a className="more" href={asString(immigrationSection.moreHref, "/news")}>
-                {asString(immigrationSection.moreLabel, "全部相关报导 →")}
-              </a>
+              <div className="arch">
+                {immigrationItems.map((row) => (
+                  <article key={`${row.title}-${row.meta}`} className="arow">
+                    <a href={row.href} style={{ display: "contents" }}>
+                      {/* Empty src makes the browser re-request the page; the
+                          placeholder keeps the .arow grid's first column. */}
+                      {row.image ? <img src={row.image} alt="" /> : <span />}
+                      <div>
+                        <span className="tag">{row.tag}</span>
+                        <h3>{row.title}</h3>
+                        <p>{row.summary}</p>
+                        <p className="meta">{row.meta}</p>
+                      </div>
+                    </a>
+                  </article>
+                ))}
+              </div>
             </div>
-            <div className="arch">
-              {immigrationItems.map((row) => (
-                <article key={`${row.title}-${row.meta}`} className="arow">
-                  <a href={row.href} style={{ display: "contents" }}>
-                    {/* Empty src makes the browser re-request the page; the
-                        placeholder keeps the .arow grid's first column. */}
-                    {row.image ? <img src={row.image} alt="" /> : <span />}
-                    <div>
-                      <span className="tag">{row.tag}</span>
-                      <h3>{row.title}</h3>
-                      <p>{row.summary}</p>
-                      <p className="meta">{row.meta}</p>
-                    </div>
-                  </a>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
         <section className="sec" style={{ paddingTop: 0 }}>
           <div className="wrap">
             <div className="give">
@@ -484,7 +461,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
     const relatedSection = asRecord(payload.relatedSection);
     const relatedArticles = asObjectArray(payload.relatedArticles).length
       ? asObjectArray(payload.relatedArticles).map((row) => ({
-          href: asString(row.href, "/news/article"),
+          href: asString(row.href),
           slug: asString(row.slug),
           image: asString(row.image),
           tag: asString(row.tag),
@@ -492,26 +469,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
           summary: asString(row.summary),
           meta: asString(row.meta)
         }))
-      : [
-          {
-            href: "/news/article",
-            slug: "",
-            image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.29-P.png",
-            tag: "学者综述",
-            title: "《九评》发表二十周年：一场没有武力的觉醒运动",
-            summary: "回顾二十年间三退人数的变化，以及这场运动与以往政治运动的根本差别。",
-            meta: "2024-12-08"
-          },
-          {
-            href: "/news/article",
-            slug: "",
-            image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.23-P.png",
-            tag: "名家专栏",
-            title: "党文化如何塑造日常语言",
-            summary: "从常用词汇的来源谈起，讨论语言与思维方式的关系。",
-            meta: "2026-07-11"
-          }
-        ];
+      : [];
     const reuseNotice = asRecord(payload.reuseNotice);
 
     return (
@@ -604,44 +562,46 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
           </div>
         </section>
 
-        <section className="sec" style={{ padding: "64px 0 0" }}>
-          <div className="wrap">
-            <div className="sec-head">
-              <div>
-                <p className="eyebrow">{asString(relatedSection.eyebrow, "延伸阅读")}</p>
-                <h2 className="h2" style={{ fontSize: 24 }}>
-                  {asString(relatedSection.title, "学者综述与相关报导")}
-                </h2>
-                <p className="lede">{asString(relatedSection.lede, "围绕上述著作的评论、学者分析与新闻关注汇编。")}</p>
+        {relatedArticles.length > 0 ? (
+          <section className="sec" style={{ padding: "64px 0 0" }}>
+            <div className="wrap">
+              <div className="sec-head">
+                <div>
+                  <p className="eyebrow">{asString(relatedSection.eyebrow, "延伸阅读")}</p>
+                  <h2 className="h2" style={{ fontSize: 24 }}>
+                    {asString(relatedSection.title, "学者综述与相关报导")}
+                  </h2>
+                  <p className="lede">{asString(relatedSection.lede, "围绕上述著作的评论、学者分析与新闻关注汇编。")}</p>
+                </div>
+                <a className="more" href={asString(relatedSection.moreHref, "/news/commentary")}>
+                  {asString(relatedSection.moreLabel, "全部相关文章 →")}
+                </a>
               </div>
-              <a className="more" href={asString(relatedSection.moreHref, "/news/commentary")}>
-                {asString(relatedSection.moreLabel, "全部相关文章 →")}
-              </a>
+              <div className="arch">
+                {relatedArticles.map((row) => (
+                  <article key={`${row.title}-${row.meta}`} className="arow">
+                    <a
+                      href={resolveNewsArticleHref({
+                        href: row.href,
+                        slug: row.slug,
+                        title: row.title
+                      })}
+                      style={{ display: "contents" }}
+                    >
+                      <img src={row.image} alt="" />
+                      <div>
+                        <span className="tag">{row.tag}</span>
+                        <h3>{row.title}</h3>
+                        <p>{row.summary}</p>
+                        <p className="meta">{row.meta}</p>
+                      </div>
+                    </a>
+                  </article>
+                ))}
+              </div>
             </div>
-            <div className="arch">
-              {relatedArticles.map((row) => (
-                <article key={`${row.title}-${row.meta}`} className="arow">
-                  <a
-                    href={resolveNewsArticleHref({
-                      href: row.href,
-                      slug: row.slug,
-                      title: row.title
-                    })}
-                    style={{ display: "contents" }}
-                  >
-                    <img src={row.image} alt="" />
-                    <div>
-                      <span className="tag">{row.tag}</span>
-                      <h3>{row.title}</h3>
-                      <p>{row.summary}</p>
-                      <p className="meta">{row.meta}</p>
-                    </div>
-                  </a>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
 
         <section className="sec" style={{ padding: "0 0 88px" }}>
           <div className="wrap">
@@ -2460,49 +2420,67 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
                 <p>联署书要求各国政府正视中共对信仰群体、异议人士与少数族群的侵害，并对参与迫害的责任人采取相应措施。全文公开，签署前请先阅读。</p>
                 <h2>签署方式</h2>
                 <p>可在线签署，也可在各地服务点与活动现场纸本签署。签署人可选择是否公开姓名——选择不公开的，我们只计入总数，不显示任何信息。</p>
-                <h2>历次行动</h2>
               </div>
-              <div className="arch" style={{ marginTop: 24 }}>
-                <article className="arow" style={{ paddingTop: 0 }}>
-                  <a href="/news/article" style={{ display: "contents" }}>
-                    <img src="https://www.tuidang.org/wp-content/uploads/2026/07/id14813875-LD108599-1-scaled.jpg" alt="" />
-                    <div>
-                      <span className="tag">环美车游</span>
-                      <h3>完成夏威夷之旅，End CCP 车队走遍全美 50 州</h3>
-                      <p>三十余名义工从纽约出发，完成第六季车游，至此走遍美国五十州。</p>
-                      <p className="meta">2024-11-23</p>
+              {(() => {
+                // 历次行动 was three invented campaign reports -- a fifty-state
+                // car tour, a petition tally, an Auckland panel -- each one
+                // linking to the placeholder article page. Editors supply these
+                // from 内容管理 as `items`; with none, the heading and the list
+                // are both omitted rather than filled with plausible fiction.
+                const actionRows = asObjectArray(payload.items).map((row) => ({
+                  slug: asString(row.slug),
+                  href: asString(row.href),
+                  image: asString(row.image),
+                  title: asString(row.title),
+                  summary: asString(row.summary),
+                  date: asString(row.date),
+                  tag: asString(row.tag)
+                }));
+                if (actionRows.length === 0) return null;
+                const actionPager = asStringArray(payload.pager, []);
+                return (
+                  <>
+                    <div className="prose" style={{ fontSize: 16, marginTop: 40 }}>
+                      <h2>{asString(payload.actionsTitle, "历次行动")}</h2>
                     </div>
-                  </a>
-                </article>
-                <article className="arow">
-                  <a href="/news/article" style={{ display: "contents" }}>
-                    <img src="https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.29-P.png" alt="" />
-                    <div>
-                      <span className="tag">征签纪实</span>
-                      <h3>「打倒中共恶魔」征签每年过百万</h3>
-                      <p>参与征签的义工谈他对这件事的理解。</p>
-                      <p className="meta">2025-05-02</p>
+                    <div className="arch" style={{ marginTop: 24 }}>
+                      {actionRows.map((row, index) => (
+                        <article
+                          className="arow"
+                          key={row.slug || row.title || index}
+                          style={index === 0 ? { paddingTop: 0 } : undefined}
+                        >
+                          <a
+                            href={resolveNewsArticleHref({
+                              href: row.href,
+                              slug: row.slug,
+                              title: row.title
+                            })}
+                            style={{ display: "contents" }}
+                          >
+                            {row.image ? <img src={row.image} alt="" /> : null}
+                            <div>
+                              {row.tag ? <span className="tag">{row.tag}</span> : null}
+                              <h3>{row.title}</h3>
+                              {row.summary ? <p>{row.summary}</p> : null}
+                              {row.date ? <p className="meta">{row.date}</p> : null}
+                            </div>
+                          </a>
+                        </article>
+                      ))}
                     </div>
-                  </a>
-                </article>
-                <article className="arow">
-                  <a href="/news/article" style={{ display: "contents" }}>
-                    <img src="https://www.tuidang.org/wp-content/uploads/2026/06/2026.06.10-J.jpg" alt="" />
-                    <div>
-                      <span className="tag">国际研讨</span>
-                      <h3>反制中共干预与跨境压制，纽澳台嘉宾奥克兰同场发声</h3>
-                      <p className="meta">2026-02-23 · 奥克兰</p>
-                    </div>
-                  </a>
-                </article>
-              </div>
-              <nav className="pager">
-                <a className="on" href="#">
-                  1
-                </a>
-                <a href="#">2</a>
-                <a href="#">下一页 →</a>
-              </nav>
+                    {actionPager.length > 0 ? (
+                      <nav className="pager">
+                        {actionPager.map((item, index) => (
+                          <a key={item} className={index === 0 ? "on" : ""} href="#">
+                            {item}
+                          </a>
+                        ))}
+                      </nav>
+                    ) : null}
+                  </>
+                );
+              })()}
             </div>
             <aside className="side">
               {/* The signing form lives on endccp.com, not here. Editable in
