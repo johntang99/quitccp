@@ -49,6 +49,17 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   return { articles, videos, materials, pages, declarations, declarationsPending, audits };
 }
 
+/**
+ * The cron interval, in hours, as configured in apps/web/vercel.json
+ * ("17 *&#47;6 * * *"). Keep the two in step: the dashboard decides whether the
+ * sync is healthy by comparing the snapshot's age against this.
+ */
+export const SYNC_INTERVAL_HOURS = 6;
+/** One missed run plus slack. Past this the job is late, not merely between runs. */
+const LATE_AFTER = SYNC_INTERVAL_HOURS * 2 + 2;
+/** Several missed runs: something is broken, not slow. */
+const STALE_AFTER = 24;
+
 export interface SyncStatus {
   ok: boolean;
   /** null when the job has never run, or the row is unreadable. */
@@ -65,12 +76,13 @@ export interface SyncStatus {
 }
 
 /**
- * Is the hourly santui job alive?
+ * Is the santui job alive?
  *
- * The schedule is hourly, but GitHub's queue routinely runs a scheduled job
- * half an hour late and may skip one entirely, so an hour of silence is normal
- * and three is not. Nothing else on the site notices when this job dies -- the
- * figure simply freezes -- which is why it is on the dashboard.
+ * Vercel Cron runs it every SYNC_INTERVAL_HOURS hours, so a snapshot that is
+ * merely a few hours old is healthy, not late -- the window has to allow for a
+ * full interval plus a missed run. Nothing else on the site notices when this
+ * job dies: the figure simply freezes at whatever it last read, which is why
+ * the state is surfaced here.
  */
 export async function getSyncStatus(): Promise<SyncStatus> {
   const snap = await getSantuiSnapshot();
@@ -81,7 +93,8 @@ export async function getSyncStatus(): Promise<SyncStatus> {
     };
   }
   const ageHours = (Date.now() - new Date(snap.fetchedAt).getTime()) / 3_600_000;
-  const state = ageHours <= 3 ? "fresh" : ageHours <= 24 ? "late" : "stale";
+  const state =
+    ageHours <= LATE_AFTER ? "fresh" : ageHours <= STALE_AFTER ? "late" : "stale";
   const newest = snap.declarations[0]?.at ?? null;
   return {
     ok: state === "fresh",

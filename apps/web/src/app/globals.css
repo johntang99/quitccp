@@ -3938,3 +3938,6 @@ img.bcover--photo {
 .dash-sync b { display: block; font-size: 19px; font-variant-numeric: tabular-nums; }
 .dash-sync span { display: block; margin-top: 4px; font-size: 13px; color: var(--ink-dim); }
 .dash-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.dash-alert { margin: 12px 0 0; padding: 12px 14px; border: 1px solid #F0C2BC; border-radius: 8px; background: #FEF3F2; color: #912018; font-size: 13px; line-height: 2; }
+.dash-alert code { background: rgba(145,32,24,.08); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+.dash-note code { background: rgba(26,23,38,.06); padding: 1px 5px; border-radius: 4px; font-size: 12px; }

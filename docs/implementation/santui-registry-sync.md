@@ -291,8 +291,59 @@ The workflow still exists with `workflow_dispatch` only, no schedule. It runs th
 script against a real browser on a real runner, so it is the recovery path if the
 hosted-browser vendor is unavailable.
 
-### Measured
+### The vendor: Browserless
 
-Connected to a browser over a WebSocket and ran a full pass: total read, 15 rows fetched,
-12 declarations stored, **12/12 with 标题**, in **0.9s**. The route sets
-`maxDuration = 300`, which is the Vercel Pro ceiling and far more than a run needs.
+`wss://production-sfo.browserless.io/chromium?token=…` with `BROWSER_WS_MODE=cdp`. It was
+chosen over Browserbase for two reasons, both found by reading their docs rather than
+assuming:
+
+- **Browserbase has no static connect URL.** It requires an SDK call to create a session
+  first, then connects to the URL that returns — which would mean extra code and two more
+  secrets. Browserless publishes a static URL, so it drops straight into one env var.
+- **Its free tier fits.** Browserless gives 1,000 units/month free, where a unit is up to
+  30 seconds of browser time. A run takes ~3–5s, so **1 unit per run**: 120 units/month at
+  six-hourly, or 720 if it were hourly — both inside the free allowance. Browserbase's free
+  tier is 1 browser hour with a **one-minute minimum per session**, so the same six-hourly
+  schedule would bill 2 hours and need the $20/month plan.
+
+### Verified in production, 2026-10-03
+
+The run triggered from Vercel's Cron Jobs page returned `200`, and the snapshot it wrote
+carries `updated_by: cron:santui` — the route's own signature, which the local script and
+the GitHub workflow never write. So the whole chain is proven, not inferred:
+
+| step | evidence |
+|---|---|
+| Vercel Cron fires | `GET 200 /api/cron/santui` in the project logs |
+| the secret works | an unauthenticated `GET` returns `401` |
+| Browserless connects | run succeeded from the serverless function |
+| **Cloudflare cleared from a datacenter IP** | real data returned, no challenge |
+| Supabase written | `updated_by: cron:santui` |
+| 标题 captured | **12/12** |
+| homepage revalidated | production rendered the new titles immediately |
+
+Four local runs through Browserless took **2.9–4.9s** each, every one returning 12/12
+titles and never seeing a challenge. The route allows `maxDuration = 300` (the Vercel Pro
+ceiling), which is far more than a run needs.
+
+### How it is monitored
+
+The admin dashboard (`/admin/dashboard`) carries a 登记册同步 panel: the figure, the exact
+total, how many 声明 are in rotation, how long ago the last sync ran, and a状态 badge.
+
+`SYNC_INTERVAL_HOURS` in `lib/admin/dashboard.ts` **must match the cron in
+`apps/web/vercel.json`** — the badge thresholds derive from it:
+
+| badge | when |
+|---|---|
+| 正常运行 | age ≤ one interval × 2 + 2h (14h at six-hourly) |
+| 有延迟 | age ≤ 24h |
+| 疑似停止 | older |
+
+The window has to allow a full interval plus one missed run, or a healthy job reads as
+late. When the badge is not 正常运行 the panel prints an ordered checklist: the Vercel
+cron, the Browserless unit balance, the three env vars, and the GitHub workflow as the
+manual fallback.
+
+**Nothing on the public site notices when this job dies** — the figure simply freezes at
+whatever it last read, with no error. That panel is the only signal.

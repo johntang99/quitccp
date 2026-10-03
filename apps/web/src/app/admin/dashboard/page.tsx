@@ -2,7 +2,12 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { RevalidateButton } from "@/components/admin/RevalidateButton";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
-import { getDashboardStats, getRecentArticles, getSyncStatus } from "@/lib/admin/dashboard";
+import {
+  SYNC_INTERVAL_HOURS,
+  getDashboardStats,
+  getRecentArticles,
+  getSyncStatus
+} from "@/lib/admin/dashboard";
 
 const SYNC_LABEL: Record<string, { text: string; tone: string }> = {
   fresh: { text: "正常运行", tone: "#157347" },
@@ -83,15 +88,28 @@ export default async function AdminDashboardPage() {
               <div><b>{ago(sync.ageHours)}</b><span>上次同步</span></div>
             </div>
             <p className="dash-note">
+              每 {SYNC_INTERVAL_HOURS} 小时自动同步一次（UTC 时间每 {SYNC_INTERVAL_HOURS} 小时的 17 分）。
+              由 Vercel Cron 定时触发 <code>/api/cron/santui</code>，通过 Browserless
+              的云端浏览器抓取 —— santui.tuidang.org 有 Cloudflare 验证，普通请求会被挡，
+              必须用真实浏览器。平时不需要做任何事，它会一直自己跑。
+            </p>
+            <p className="dash-note">
               上次同步：{sync.fetchedAt ? new Date(sync.fetchedAt).toLocaleString("zh-CN") : "—"}
               {sync.sourceUpdatedAt ? `　来源站更新于：${sync.sourceUpdatedAt}` : ""}
               {sync.newest ? `　最新一条声明：${sync.newest}` : ""}
             </p>
             {sync.state !== "fresh" ? (
-              <p className="dash-note" style={{ color: "#B42318" }}>
-                每小时应同步一次。超过 3 小时没有更新，多半是 GitHub Actions 的定时任务停了
-                （仓库 60 天无提交会被自动停用），请到 Actions 页面手动运行一次
-                「Sync santui registry」。
+              <p className="dash-alert">
+                <b>同步可能已经停了。</b>首页的退党数字和下面的声明会一直停在上次抓到的内容，
+                不会报错。请按顺序检查：
+                <br />1. Vercel → 项目 → Settings → Cron Jobs，确认 <code>/api/cron/santui</code>
+                还在、并且是 Enabled；点「Run」手动跑一次，看 View Logs 里是不是 200。
+                <br />2. browserless.io → 账号首页，看本月 Units 是不是用完了
+                （免费额度 1,000，每次同步约 1 个 Unit）。
+                <br />3. Vercel 环境变量 <code>BROWSER_WS_ENDPOINT</code>、
+                <code>BROWSER_WS_MODE</code>、<code>CRON_SECRET</code> 是否还在。
+                <br />4. 都正常但还是不行：GitHub Actions 里的「Sync santui registry」
+                仍保留着，可手动运行一次作为应急。
               </p>
             ) : null}
           </>
