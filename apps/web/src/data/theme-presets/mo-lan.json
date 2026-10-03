@@ -61,7 +61,8 @@
     "lavDim": "#848A9A",
     "sealBright": "#30408A",
     "gradMid": "#2B3780",
-    "gradTop": "#3A4A9C"
+    "gradTop": "#3A4A9C",
+    "apricot": "#F7EFE2"
   },
   "gradients": {
     "hero": "linear-gradient(168deg,#31408F 0%,#273377 52%,#1E2760 100%)",

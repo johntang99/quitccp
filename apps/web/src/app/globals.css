@@ -2081,9 +2081,9 @@ img.bcover--photo {
      min-height reserves the second line that line-clamp alone would not. */
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  min-height: calc(2 * 1.7em);
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  min-height: calc(3 * var(--lh-body) * 1em);
   overflow: hidden;
 }
 .dawn-feed-who { font-size: 13px; color: var(--lav-text); }
@@ -3599,23 +3599,25 @@ img.bcover--photo {
    backgrounds; every colour is a custom property so the switch is one attribute
    on the wrapper rather than three copies of the markup. */
 .vp {
-  --bg: linear-gradient(180deg, var(--pl-menu) 0%, var(--seal-deep) 45%, var(--ink-2) 100%);
-  --head: rgba(20,14,60,0.35);
-  --glow: rgba(120,98,230,0.35);
-  --text: #EEEBF8;
-  --title: var(--card);
-  --muted: var(--lav-lt);
-  --acc: var(--gold-lt);
-  --panel: rgba(255,255,255,0.06);
-  --border: rgba(255,255,255,0.12);
-  --rule: rgba(255,255,255,0.12);
-  --shadow: 0 40px 80px -50px rgba(10,6,40,0.85);
-  --chip-bg: rgba(255,255,255,0.06);
-  --chip-fg: var(--lav-text);
-  --chip-bd: rgba(255,255,255,0.22);
-  --on-bg: var(--gold-lt);
-  --on-fg: var(--on-gold);
-  --field: rgba(255,255,255,0.08);
+  /* 杏色 is the default: the video pages open on the same warm ground as the
+     rest of the site, and 深色 is a choice the reader makes. */
+  --bg: var(--apricot);
+  --head: var(--rule);
+  --glow: rgba(242,211,138,0.18);
+  --text: var(--ink-band);
+  --title: var(--ink-band);
+  --muted: var(--ink-dim);
+  --acc: var(--seal-bright);
+  --panel: var(--card);
+  --border: var(--rule);
+  --rule: var(--rule);
+  --shadow: 0 1px 2px rgba(26,23,38,0.05), 0 24px 50px -34px rgba(26,23,38,0.32);
+  --chip-bg: var(--card);
+  --chip-fg: #3A3548;
+  --chip-bd: var(--rule);
+  --on-bg: var(--seal-bright);
+  --on-fg: var(--card);
+  --field: var(--card);
 
   position: relative;
   overflow: hidden;
@@ -3632,13 +3634,36 @@ img.bcover--photo {
   --chip-bg: var(--card); --chip-fg: #3A3548; --chip-bd: var(--lav-rule);
   --on-bg: var(--seal-bright); --on-fg: var(--card); --field: var(--card);
 }
-:root[data-vp-theme="grey"] .vp {
-  --bg: var(--paper); --head: var(--rule); --glow: rgba(242,211,138,0.18);
-  --text: var(--ink-band); --title: var(--ink-band); --muted: var(--ink-dim); --acc: var(--seal-bright);
-  --panel: var(--card); --border: var(--rule); --rule: var(--rule);
-  --shadow: 0 1px 2px rgba(26,23,38,0.05), 0 24px 50px -34px rgba(26,23,38,0.32);
-  --chip-bg: var(--card); --chip-fg: #3A3548; --chip-bd: var(--rule);
-  --on-bg: var(--seal-bright); --on-fg: var(--card); --field: var(--card);
+:root[data-vp-theme="dark"] .vp {
+  --bg: linear-gradient(180deg, var(--pl-menu) 0%, var(--seal-deep) 45%, var(--ink-2) 100%);
+  --head: rgba(20,14,60,0.35); --glow: rgba(120,98,230,0.35);
+  --text: #EEEBF8; --title: var(--card); --muted: var(--lav-lt); --acc: var(--gold-lt);
+  --panel: rgba(255,255,255,0.06); --border: rgba(255,255,255,0.12); --rule: rgba(255,255,255,0.12);
+  --shadow: 0 40px 80px -50px rgba(10,6,40,0.85);
+  --chip-bg: rgba(255,255,255,0.06); --chip-fg: var(--lav-text); --chip-bd: rgba(255,255,255,0.22);
+  --on-bg: var(--gold-lt); --on-fg: var(--on-gold); --field: rgba(255,255,255,0.08);
+}
+
+/* The masthead does not follow the 背景 switch.
+   That switch changes the reading surface -- the grid of programmes below -- not
+   the page's identity, so on 白色 and 杏色 the band stays the brand purple. Every
+   colour token is restated here because the theme above has just rewritten them
+   to dark-on-light values, which would be invisible on this band. */
+:root:not([data-vp-theme="dark"]) .vp-head {
+  --head: linear-gradient(180deg, var(--pl-menu) 0%, var(--seal-deep) 100%);
+  --text: var(--lav-text);
+  --title: var(--card);
+  --muted: var(--lav-lt);
+  --acc: var(--gold-lt);
+  --border: rgba(255,255,255,0.12);
+  --rule: rgba(255,255,255,0.12);
+  --chip-bg: rgba(255,255,255,0.06);
+  --chip-fg: var(--lav-text);
+  --chip-bd: rgba(255,255,255,0.22);
+  --on-bg: var(--gold-lt);
+  --on-fg: var(--on-gold);
+  --field: rgba(255,255,255,0.08);
+  color: var(--text);
 }
 
 .vp-glow { position: absolute; left: 50%; top: -420px; width: 1400px; height: 900px; margin-left: -700px; border-radius: 50%; background: radial-gradient(closest-side, var(--glow), rgba(0,0,0,0) 100%); pointer-events: none; }
@@ -3878,3 +3903,21 @@ img.bcover--photo {
 .theme-preview iframe { width: 100%; height: calc(100vh - 210px); min-height: 520px; border: 1px solid #D8D3E0; border-radius: 8px; background: #fff; }
 .theme-json { width: 100%; min-height: calc(100vh - 330px); padding: 10px; border: 1px solid #D8D3E0; border-radius: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 12px; line-height: 1.6; resize: vertical; }
 .theme-json-error { margin: 8px 0 0; font-size: 12px; color: #B3261E; }
+
+/* The declarant's own 标题 (退党团队 / 退团队 / 三退声明…) sits above the
+   attribution: titles run to a dozen characters, so putting it inline would
+   wrap the line and break the fixed card height the marquee depends on. */
+.dawn-feed-who { display: flex; align-items: baseline; min-width: 0; }
+/* One row, and it must stay one row: the marquee loops on a fixed card height,
+   so the line elides instead of wrapping. 标题 and 声明人 lead, so what gets cut
+   on the longest entries is the tail (来自). */
+/* The 标题 keeps its full width -- most are three or four characters and should
+   never be clipped -- but never more than 60% of the row, so a thirteen-character
+   one cannot starve the 声明人 beside it. The 声明人 takes the remaining space and
+   elides its tail (来自) first. */
+.dawn-feed-kind {
+  flex: 0 0 auto; max-width: 60%; font-weight: 500; color: var(--gold-lt);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dawn-feed-by { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dawn-feed-by::before { content: " · "; white-space: pre; }

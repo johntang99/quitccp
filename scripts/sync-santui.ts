@@ -61,6 +61,12 @@ function loadEnvFileIfPresent(filePath: string) {
 export interface SantuiDeclaration {
   /** santui's own post id, e.g. 34433563. */
   id: string;
+  /**
+   * 标题 -- what the declarant called their own statement, so it varies:
+   * 退党团队 / 退团队 / 三退声明 / 退出中共共青团和少先队组织. It says which
+   * organisations were quit, which "退" alone cannot.
+   */
+  title: string;
   /** 声明人 as published, already partially masked at the source. */
   name: string;
   /** 来自, e.g. 河北 / 大陆 / 加拿大. */
@@ -144,6 +150,7 @@ async function readDeclarations(page: Page, pageNo: number): Promise<SantuiDecla
       const when = field(li, "时间");
       return {
         id: id,
+        title: (link.textContent || "").replace(/\\s+/g, " ").trim(),
         name: field(li, "声明人"),
         from: field(li, "来自"),
         people: field(li, "人数"),

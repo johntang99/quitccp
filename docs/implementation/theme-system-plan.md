@@ -376,3 +376,35 @@ preview → save → public site → reset.
 
 Nine of fifteen were code; six are done, two remain editorial (9, 10), one needs artwork
 (12), one is a separate project (13), and one is partial (15).
+
+
+### Editing the theme as JSON
+
+`/admin/theme` has a **JSON 编辑** toggle beside the preview. It is the same state as the
+form — edit either, the live preview follows both — and it saves through the same
+validated endpoint.
+
+The direction of control, which is easy to get backwards:
+
+```
+apps/web/src/data/theme.json        the default, shipped with the code (git)
+            |  fallback when no row exists
+            v
+cms_site_settings['site.theme']     the override, written by the admin
+            |
+            v
+   <style> :root{…} </style>        emitted per request by the root layout
+```
+
+Editing in the admin writes the **DB row**, never the file — on Vercel the filesystem is
+read-only, so the file can only change through a deploy. 「恢复默认」 deletes the row and
+the file takes over again.
+
+A partial object is safe: the endpoint merges it over the defaults before storing, so
+pasting `{"colors":{"seal":"#1E7A4B"}}` stores a complete theme with only that colour
+changed. Verified end to end — partial save → full row in the DB → only `--seal` moved on
+the public site → reset removed the row.
+
+Note the older generic route at `/admin/settings` can also write `site.theme` by hand
+(key + raw JSON). That path does **no** theme validation and **no** merge, so a partial or
+malformed paste there can leave the site missing tokens. Prefer the theme page.

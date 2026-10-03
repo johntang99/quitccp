@@ -20,7 +20,7 @@ interface DawnBandProps {
   /** 见证者; rendered as the band's fourth card. Omitted when hidden. */
   voices: HomeContent["voices"];
   /** Declaration rows for the feed; only the first `feedCount` are shown. */
-  feed: { region: string; name: string; text: string; at: string }[];
+  feed: { region: string; name: string; text: string; at: string; kind?: string }[];
   /** ISO timestamp of the last santui sync, when one is available. */
   updatedAt?: string | null;
 }
@@ -116,7 +116,10 @@ export function DawnBand({ registry, services, voices, feed, updatedAt }: DawnBa
                     <span>{entry.at}</span>
                   </div>
                   <p>{entry.text}</p>
-                  <span className="dawn-feed-who">退 · {entry.name}</span>
+                  <span className="dawn-feed-who">
+                    <b className="dawn-feed-kind">{entry.kind ?? "三退声明"}</b>
+                    <span className="dawn-feed-by">{entry.name}</span>
+                  </span>
                 </article>
               ))}
               {rows.map((entry, index) => (
@@ -130,7 +133,10 @@ export function DawnBand({ registry, services, voices, feed, updatedAt }: DawnBa
                     <span>{entry.at}</span>
                   </div>
                   <p>{entry.text}</p>
-                  <span className="dawn-feed-who">退 · {entry.name}</span>
+                  <span className="dawn-feed-who">
+                    <b className="dawn-feed-kind">{entry.kind ?? "三退声明"}</b>
+                    <span className="dawn-feed-by">{entry.name}</span>
+                  </span>
                 </article>
               ))}
             </div>

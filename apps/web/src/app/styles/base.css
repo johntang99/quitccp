@@ -86,7 +86,13 @@ a{color:inherit;text-decoration:none}
 
 /* ---------- header: menu row ---------- */
 .menubar{
-  position:sticky;top:0;z-index:60;background:rgba(244,243,239,.96);
+  position:sticky;top:0;z-index:60;
+  /* Derived from --paper, not a frozen copy of it: this bar used to hardcode
+     rgba(244,243,239,.96), so changing the page ground in the theme left a
+     cool strip sitting on a warm page. Solid first as the fallback for anything
+     without color-mix. */
+  background:var(--paper);
+  background:color-mix(in srgb, var(--paper) 96%, transparent);
   backdrop-filter:blur(10px);border-bottom:1px solid var(--rule);
 }
 .menubar-in{display:flex;align-items:center;gap:22px;height:54px}

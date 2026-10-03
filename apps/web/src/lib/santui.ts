@@ -14,6 +14,11 @@ const FEED_PATH = "feeds/santui.json";
 
 export interface SantuiDeclaration {
   id: string;
+  /**
+   * 标题 as the declarant wrote it -- 退党团队 / 退团队 / 三退声明. Optional
+   * because snapshots written before the scraper captured it have no title.
+   */
+  title?: string;
   name: string;
   from: string;
   people: string;
@@ -69,10 +74,18 @@ export async function getSantuiSnapshot(): Promise<SantuiSnapshot | null> {
 
 /** Shapes a declaration for the 曙光 trail. */
 export function toFeedRow(row: SantuiDeclaration) {
+  const people = Number(row.people);
   return {
     // santui's own statement id, grouped like the count beside it.
     region: `No. ${Number(row.id).toLocaleString("en-US")}`,
-    name: [row.name, row.from].filter(Boolean).join(" · "),
+    // The declarant's own 标题. "三退声明" stands in for the handful of rows
+    // that have none, rather than the bare "退" every card used to show.
+    kind: (row.title || "").trim() || "三退声明",
+    // 声明人 · 人数 · 来自, in santui's own order. The count is only worth
+    // showing when a statement speaks for more than one person; "1人" is noise.
+    name: [row.name, Number.isFinite(people) && people > 1 ? `${people}人` : "", row.from]
+      .filter(Boolean)
+      .join(" · "),
     text: row.text,
     at: row.at
   };

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { upsertSettingRecord } from "@/lib/admin/repository";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
@@ -30,6 +31,12 @@ export async function POST(request: Request) {
     { settingKey: THEME_SETTING_KEY, valueJson: JSON.stringify(theme) },
     user.email
   );
+
+  // The tokens are emitted by the root layout, so every page carries a copy of
+  // them. Without this the homepage's `revalidate = 300` means a saved theme
+  // does not reach production for up to five minutes -- and only then if someone
+  // happens to request the page.
+  revalidatePath("/", "layout");
   return NextResponse.json({ ok: true, theme });
 }
 
@@ -46,5 +53,6 @@ export async function DELETE() {
     .delete()
     .eq("setting_key", THEME_SETTING_KEY);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  revalidatePath("/", "layout");
   return NextResponse.json({ ok: true, theme: await loadTheme() });
 }

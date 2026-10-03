@@ -26,6 +26,7 @@ const SURFACE_LABELS: Record<string, string> = {
   creamRule: "米色分隔线", lavRule: "淡紫分隔线", lavTint: "淡紫块",
   lavText: "淡紫字", lavMuted: "淡紫·弱", lavDim: "淡紫·更弱",
   sealBright: "亮紫", gradMid: "渐变·中", gradTop: "渐变·亮",
+  apricot: "杏色（视频页底色）",
 };
 
 const SIZE_LABELS: Record<string, string> = {

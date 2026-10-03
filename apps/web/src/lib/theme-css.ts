@@ -62,6 +62,7 @@ export function themeToCss(theme: Theme): string {
 --lav-rule:${s.lavRule};--lav-tint:${s.lavTint};--lav-text:${s.lavText};
 --lav-muted:${s.lavMuted};--lav-dim:${s.lavDim};
 --seal-bright:${s.sealBright};--grad-mid:${s.gradMid};--grad-top:${s.gradTop};
+--apricot:${s.apricot};
 /* Generic design-system aliases. The descriptive names above stay the source of
    truth -- this site has three purples doing different jobs, which primary/
    primary-dark cannot express -- but these let anyone who thinks in

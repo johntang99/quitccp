@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 const THEMES = [
   { key: "dark", label: "深色", swatch: "var(--pl-menu)" },
   { key: "white", label: "白色", swatch: "var(--card)" },
-  { key: "grey", label: "灰白", swatch: "var(--paper)" }
+  { key: "grey", label: "杏色", swatch: "var(--apricot)" }
 ] as const;
 
 const STORAGE_KEY = "quitccp.videoTheme";
@@ -24,10 +24,10 @@ const STORAGE_KEY = "quitccp.videoTheme";
  * remembered choice back to 深色 on every load.
  */
 export function VideoThemeToggle() {
-  const [theme, setTheme] = useState<string>("dark");
+  const [theme, setTheme] = useState<string>("grey");
 
   useEffect(() => {
-    setTheme(document.documentElement.dataset.vpTheme || "dark");
+    setTheme(document.documentElement.dataset.vpTheme || "grey");
   }, []);
 
   const pick = (key: string) => {

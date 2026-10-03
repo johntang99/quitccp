@@ -358,7 +358,10 @@ export async function HomeTemplate({ content }: TemplatePageData) {
               <p className="entry-body">{entry.text}</p>
               <div className="entry-foot">
                 <span className="seal seal--sm">退</span>
-                <span>{entry.name}</span>
+                <span>
+                  {"kind" in entry && entry.kind ? `${entry.kind} · ` : ""}
+                  {entry.name}
+                </span>
               </div>
             </article>
           ))}

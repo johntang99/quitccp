@@ -174,3 +174,56 @@ The site keeps serving the last good snapshot throughout, so a broken scrape
 shows stale numbers rather than an empty band. **The real fix is upstream**: the
 two sites belong to the same organisation, so a small JSON endpoint on santui
 would replace this whole job with a plain `fetch()`.
+
+
+## 声明 cards: what is captured and shown
+
+Each 精彩推荐 row carries six fields. The card shows five of them:
+
+| source field | stored as | on the card |
+|---|---|---|
+| 标题 (the link text) | `title` | **yes** — gold line above the attribution |
+| 声明人 | `name` | yes |
+| 人数 | `people` | **yes** — rendered as `4人` |
+| 来自 | `from` | yes |
+| 时间 | `at` | date only; the time of day is dropped |
+| ID | `id` | yes, as `No. 34,438,344` |
+| （全文） | `href` | stored, not linked — the card is deliberately not clickable |
+
+**标题 is written by the declarant, so it varies**: 退党团队, 退团队, 三退声明,
+自愿退出中共党、团、队组织, 退出中共共青团和少先队组织. It is the only field that says
+*which* organisations were quit, which the old hardcoded "退" could not. Rows without one
+fall back to 三退声明.
+
+### Card layout
+
+The statement shows **three lines**, clamped. Declarations run to hundreds of characters,
+so three lines is a window, not the whole text — the marquee needs every card the same
+height (191px) to loop without jumping.
+
+标题 and attribution share one row: `标题 · 声明人 · 人数 · 来自`. The row never wraps,
+for the same height reason, so a long line elides instead. How the space is divided:
+
+- **标题 keeps its full width, capped at 60% of the row.** Most are three or four
+  characters and must never be clipped; the occasional thirteen-character one
+  (退出中共共青团和少先队组织) is capped so it cannot starve the name beside it.
+- **声明人 takes what is left and elides its tail**, so 来自 is what disappears first.
+
+At 1440px, 2 of 20 cards elide; at 390px (where cards narrow to 280px), 8 of 20 do. The
+alternative would be moving 来自 up to the ID/date row, which buys about three characters
+— not enough for the longest entries, and it crowds a row that is already tight on a phone.
+
+**人数 only appears when a statement speaks for more than one person.** "1人" is noise.
+
+## Knowing if the sync has stopped
+
+Two things worth being aware of:
+
+- **GitHub disables scheduled workflows in a repository with no commit activity for 60
+  days.** If development pauses, this job stops silently and nothing says so.
+- A failed run is only visible in the Actions tab; there is no alert.
+
+There is no staleness guard in the app: `getSantuiSnapshot()` accepts any snapshot with a
+positive total, so a dead sync keeps showing the last figure indefinitely. The 更新于 date
+under the headline figure is currently the only visible signal — if it stops advancing,
+the sync has stopped.
