@@ -3,6 +3,7 @@ import type { Route } from "next";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { getPublicNav } from "@/lib/public-settings";
 import { EXTERNAL_LINK_PROPS, EXTERNAL_SERVICES } from "@/lib/external-services";
+import { SITE_LANGUAGES } from "@/lib/site-languages";
 
 export async function SiteHeader() {
   const navItems = await getPublicNav();
@@ -11,14 +12,30 @@ export async function SiteHeader() {
       <div className="topbar">
         <div className="wrap topbar-in">
           <div className="langs" aria-label="语言切换">
-            <a className="on" href="#">
-              中文
-            </a>
-            <a href="#">English</a>
-            <a href="#">Deutsch</a>
-            <a href="#">한국어</a>
-            <a href="#">日本語</a>
-            <a href="#">Română</a>
+            {SITE_LANGUAGES.map((lang) =>
+              lang.href ? (
+                <a
+                  key={lang.label}
+                  href={lang.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {lang.label}
+                </a>
+              ) : (
+                /* No site yet, or this one. Rendered as plain text rather than a
+                   dead link -- a reader who clicks and lands on an error learns
+                   something worse than "not ready". */
+                <span
+                  key={lang.label}
+                  className={lang.current ? "on" : "soon"}
+                  title={lang.note}
+                >
+                  {lang.label}
+                  {lang.current ? "" : <small>（即将推出）</small>}
+                </span>
+              )
+            )}
           </div>
           <div className="topbar-right">
             <Link className="tb-link" href="/resources/tools">

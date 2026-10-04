@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { EXTERNAL_LINK_PROPS, EXTERNAL_SERVICES } from "@/lib/external-services";
+import { SITE_LANGUAGES } from "@/lib/site-languages";
 
 export function SiteFooter() {
   return (
@@ -16,16 +17,22 @@ export function SiteFooter() {
               <br />
               40-46 Main Street, Flushing, NY 11354
             </p>
+            {/* The same list as the header: the footer used to show three
+                languages where the header showed six, so a reader could not tell
+                which was the real set. */}
             <div className="acct-links" style={{ marginTop: 20 }}>
-              <a className="pill" style={{ background: "transparent", borderColor: "rgba(255,255,255,.2)", color: "var(--lav)" }} href="#">
-                中文
-              </a>
-              <a className="pill" style={{ background: "transparent", borderColor: "rgba(255,255,255,.2)", color: "var(--lav)" }} href="#">
-                English
-              </a>
-              <a className="pill" style={{ background: "transparent", borderColor: "rgba(255,255,255,.2)", color: "var(--lav)" }} href="#">
-                Deutsch
-              </a>
+              {SITE_LANGUAGES.filter((lang) => lang.href).map((lang) => (
+                <a
+                  key={lang.label}
+                  className="pill"
+                  style={{ background: "transparent", borderColor: "rgba(255,255,255,.2)", color: "var(--lav)" }}
+                  href={lang.href as string}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {lang.label}
+                </a>
+              ))}
             </div>
           </div>
           <div>

@@ -1477,6 +1477,29 @@ mark {
   border-radius: 2px;
 }
 
+/*
+ * Languages rendered as <span> rather than <a>: the current one, and any with no
+ * site yet.
+ *
+ * base.css colours this row with `.langs a`, which a span does not match -- so
+ * without these they inherit near-black text on the dark topbar and vanish.
+ */
+.langs .on {
+  color: var(--gold-lt);
+}
+
+/* Present and legible, but plainly not something to click. */
+.langs .soon {
+  color: var(--lav);
+  opacity: 0.55;
+  cursor: default;
+}
+
+.langs .soon small {
+  font-size: 0.82em;
+  margin-left: 2px;
+}
+
 /* Search results: the type/sort controls above the list. */
 .search-controls {
   display: flex;
