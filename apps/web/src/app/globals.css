@@ -3670,6 +3670,77 @@ mark {
   background: linear-gradient(135deg, var(--ink-2) 0%, var(--grad-mid) 55%, var(--grad-top) 100%); color: #fff; padding-top: clamp(44px, 4.4vw, 64px); padding-bottom: clamp(48px, 5vw, 72px); }
 .news-archive-grid { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 
+/*
+ * 精彩保留 cards: photo above, headline on a white card below.
+ *
+ * Same construction as .news-cat-lead further down -- white card, generous
+ * radius, the page's two-layer shadow -- so the band reads as part of this page
+ * rather than a separate component. The photo is shown as it is: no scrim, which
+ * the old overlaid-headline version needed to stay legible.
+ */
+.news-archive-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: 12px;
+  overflow: hidden;
+  color: var(--ink-band);
+  text-decoration: none;
+  box-shadow: 0 2px 4px rgba(26, 23, 38, 0.06), 0 30px 60px -34px rgba(26, 23, 38, 0.55);
+  transition: transform 0.18s, box-shadow 0.18s;
+}
+
+.news-archive-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(26, 23, 38, 0.06), 0 38px 70px -34px rgba(26, 23, 38, 0.65);
+}
+
+.news-archive-thumb {
+  display: block;
+  aspect-ratio: 16 / 9;
+  background: var(--band-deep);
+  overflow: hidden;
+}
+
+.news-archive-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.news-archive-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px 20px;
+}
+
+/* --gold-ink, not --gold: the ordinary gold is a light-on-dark colour and all
+   but disappears against a white card. */
+.news-archive-num {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--gold-ink);
+  letter-spacing: 0.06em;
+}
+
+.news-archive-title {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: var(--lh-h3);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.news-archive-card:hover .news-archive-title {
+  color: var(--seal);
+}
+
 /* --- 栏目文章列表 -----------------------------------------------------------
    docs/prototypes/news/news-category-display-html. */
 /* The lead card straddles the gradient's lower edge. */
@@ -3732,10 +3803,15 @@ mark {
   .news-commentary { grid-template-columns: minmax(0, 1fr); }
   .news-archive-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+/* After the 1180px block on purpose: both match on a phone and the later rule
+   wins. The archive cards carry a photo and a body, so falling to one column at
+   860px made the band twice as tall as it needed to be on a tablet. */
+@media (max-width: 640px) {
+  .news-archive-grid { grid-template-columns: minmax(0, 1fr); }
+}
 @media (max-width: 860px) {
   .news-hero { grid-template-columns: minmax(0, 1fr); }
   .news-hero-second { border-left: 0; border-top: 1px solid var(--rule); }
-  .news-archive-grid { grid-template-columns: minmax(0, 1fr); }
   .news-panel-row { grid-template-columns: minmax(0, 1fr); }
   .news-panel-lead { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .news-commentary-cols { grid-template-columns: minmax(0, 1fr); gap: 0; }

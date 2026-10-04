@@ -2,15 +2,21 @@ import type { NewsCard } from "@/lib/public-content";
 import { T, articleHref } from "./newsTokens";
 
 /**
- * 精彩保留 — six full-bleed cards on the same blue the masthead uses.
+ * 精彩保留 — six cards on the same blue the masthead uses.
+ *
+ * Photo on top, headline beneath it on a white card, the way .news-cat-lead and
+ * .news-cat-row already work elsewhere on this page. The earlier version laid
+ * the headline over the photo and needed a heavy dark scrim to stay readable,
+ * which meant every image was shown through a filter: these are photographs of
+ * people at rallies and press conferences, and dimming them to make room for
+ * text is the wrong trade.
  *
  * Numbered in gold, which is what gives the band its rhythm; the number is the
- * position in the set, not anything stored.
+ * position in the set, not anything stored. It sits in the body rather than on
+ * the photo -- without the scrim there is no telling what it would land on.
  *
- * No category or date on the cards. This band is the standing selection rather
- * than the news feed -- its whole argument is that these pieces are still worth
- * reading -- and stamping a date on each one invites the opposite reading. The
- * image, the number and the headline are what the reader needs.
+ * No category or date. This band is the standing selection rather than the news
+ * feed, and its whole argument is that these pieces are still worth reading.
  */
 export function NewsArchiveBand({ items }: { items: NewsCard[] }) {
   if (items.length === 0) return null;
@@ -58,76 +64,13 @@ export function NewsArchiveBand({ items }: { items: NewsCard[] }) {
 
         <div className="news-archive-grid">
           {items.map((card, index) => (
-            <a
-              key={card.slug}
-              href={articleHref(card.slug)}
-              style={{
-                position: "relative",
-                display: "block",
-                aspectRatio: "16 / 9",
-                borderRadius: 10,
-                overflow: "hidden",
-                color: "#fff",
-                textDecoration: "none",
-                background: "var(--band-deep)",
-                boxShadow: "0 30px 60px -30px rgba(0,0,0,0.6)"
-              }}
-            >
-              {card.image ? (
-                <img
-                  src={card.image}
-                  alt=""
-                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              ) : null}
-              <span
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  background:
-                    "linear-gradient(180deg, rgba(23,19,47,0.15) 0%, rgba(23,19,47,0.35) 40%, rgba(23,19,47,0.95) 100%)"
-                }}
-                aria-hidden="true"
-              />
-              <span
-                style={{
-                  position: "absolute",
-                  left: 20,
-                  top: 16,
-                  fontFamily: T.serif,
-                  fontWeight: 700,
-                  fontSize: 28,
-                  color: T.gold,
-                  textShadow: "0 2px 10px rgba(0,0,0,0.4)"
-                }}
-              >
-                {String(index + 1).padStart(2, "0")}
+            <a key={card.slug} href={articleHref(card.slug)} className="news-archive-card">
+              <span className="news-archive-thumb">
+                {card.image ? <img src={card.image} alt="" /> : null}
               </span>
-              <span
-                style={{
-                  position: "absolute",
-                  left: 20,
-                  right: 20,
-                  bottom: 18,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 8
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: T.serif,
-                    fontWeight: 700,
-                    fontSize: 19,
-                    lineHeight: 1.5,
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden"
-                  }}
-                >
-                  {card.title}
-                </span>
+              <span className="news-archive-body">
+                <span className="news-archive-num">{String(index + 1).padStart(2, "0")}</span>
+                <span className="news-archive-title">{card.title}</span>
               </span>
             </a>
           ))}
