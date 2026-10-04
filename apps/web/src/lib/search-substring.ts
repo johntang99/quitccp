@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { SIMPLIFIED_TO_TRADITIONAL, TRADITIONAL_TO_SIMPLIFIED } from "@/lib/zh-variants";
 
 /**
  * Substring search across articles, videos and materials.
@@ -80,8 +81,36 @@ function splitTerms(query: string): string[] {
     .slice(0, 6); // a sane ceiling; each term is another AND condition
 }
 
+function mapChars(text: string, table: Readonly<Record<string, string>>): string {
+  let out = "";
+  for (const ch of text) out += table[ch] ?? ch;
+  return out;
+}
+
+/**
+ * Every script a term might have been written in.
+ *
+ * Readers in Taiwan, Hong Kong and much of the diaspora type traditional
+ * characters; this archive is written almost entirely in simplified. Before
+ * this, 退黨 found 3 articles where 退党 found 1,667, 聲明 found none at all
+ * where 声明 found 183, and nothing in the interface explained why. A reader
+ * would reasonably conclude the site had nothing on the subject.
+ *
+ * Conversion runs both ways so the handful of traditional-titled pieces are
+ * reachable from a simplified query too. Duplicates collapse, so a term with no
+ * variant forms -- most Latin text, and Han characters shared by both scripts --
+ * costs one condition exactly as before.
+ */
+export function termVariants(term: string): string[] {
+  const forms = new Set<string>([term]);
+  forms.add(mapChars(term, TRADITIONAL_TO_SIMPLIFIED));
+  forms.add(mapChars(term, SIMPLIFIED_TO_TRADITIONAL));
+  return [...forms].filter(Boolean);
+}
+
+/** True when some script variant of every term appears. */
 function containsAll(haystack: string | null | undefined, terms: string[]): boolean {
-  return terms.every((term) => contains(haystack, term));
+  return terms.every((term) => termVariants(term).some((form) => contains(haystack, form)));
 }
 
 /**
@@ -221,7 +250,10 @@ async function searchOneType(
   limit: number
 ): Promise<SubstringSearchResult[]> {
   const supabase = createSupabaseAdminClient();
-  const needles = terms.map((term) => `%${escapeLike(escapeForOr(term))}%`);
+  // One entry per term, each holding every script form that term could take.
+  const needleGroups = terms.map((term) =>
+    termVariants(term).map((form) => `%${escapeLike(escapeForOr(form))}%`)
+  );
 
   const base = () => {
     let q = supabase
@@ -243,19 +275,40 @@ async function searchOneType(
    * It is also the only form Postgres can answer from an index here, because
    * spreading terms across columns would need a concatenated column to match on.
    */
+  /**
+   * Builds `every term present, in some script` for one field.
+   *
+   * Reads as AND over terms of OR over that term's variants. Separate filters on
+   * a PostgREST query are ANDed, so on a single field each term can be its own
+   * `or(...)` group; across several fields the whole conjunction has to be
+   * written out per field and OR-ed, because a term matching in the title and
+   * another in the description is not a match for the phrase someone typed.
+   */
+  const conjunctionFor = (field: string) =>
+    needleGroups
+      .map((group) =>
+        group.length === 1
+          ? `${field}.ilike.${group[0]}`
+          : `or(${group.map((needle) => `${field}.ilike.${needle}`).join(",")})`
+      )
+      .join(",");
+
   const run = async (fields: string[]) => {
     let query = base();
     if (fields.length === 1) {
-      // One field: repeat the filter, which PostgREST ANDs.
-      for (const needle of needles) query = query.ilike(fields[0], needle);
+      for (const group of needleGroups) {
+        query =
+          group.length === 1
+            ? query.ilike(fields[0], group[0])
+            : query.or(group.map((needle) => `${fields[0]}.ilike.${needle}`).join(","));
+      }
     } else {
-      // Several fields: (all terms in A) OR (all terms in B).
       query = query.or(
         fields
           .map((field) =>
-            needles.length === 1
-              ? `${field}.ilike.${needles[0]}`
-              : `and(${needles.map((needle) => `${field}.ilike.${needle}`).join(",")})`
+            needleGroups.length === 1 && needleGroups[0].length === 1
+              ? `${field}.ilike.${needleGroups[0][0]}`
+              : `and(${conjunctionFor(field)})`
           )
           .join(",")
       );
