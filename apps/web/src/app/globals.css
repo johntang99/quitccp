@@ -3668,7 +3668,17 @@ mark {
      in the middle of the page read as a different site rather than a
      different section. */
   background: linear-gradient(135deg, var(--ink-2) 0%, var(--grad-mid) 55%, var(--grad-top) 100%); color: #fff; padding-top: clamp(44px, 4.4vw, 64px); padding-bottom: clamp(48px, 5vw, 72px); }
-.news-archive-grid { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.news-archive-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* 16px was tighter than anything else on this page, which runs 22-28px, and
+     the cards read as one block rather than six. Rows get more than columns:
+     each card ends in a body, so without it the headline of one sits almost on
+     the photo of the next. */
+  column-gap: clamp(20px, 2vw, 28px);
+  row-gap: clamp(28px, 2.8vw, 38px);
+}
 
 /*
  * 精彩保留 cards: photo above, headline on a white card below.
