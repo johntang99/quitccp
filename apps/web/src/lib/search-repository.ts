@@ -47,6 +47,9 @@ interface MeiliHit {
   title: string;
   summary?: string;
   section?: string;
+  /** Written by lib/search-index; absent on documents from the old shape. */
+  type?: SearchResultType;
+  href?: string;
   _rankingScore?: number;
 }
 
@@ -84,20 +87,30 @@ function getMeiliConfig() {
   };
 }
 
+const MEILI_TYPE_LABEL: Record<SearchResultType, string> = {
+  article: "新闻与报告",
+  video: "视频",
+  material: "资料"
+};
+
 function toSearchRowsFromMeili(hits: MeiliHit[]): SearchArticleResult[] {
-  return hits.map((hit) => ({
-    id: String(hit.id),
-    slug: String(hit.slug),
-    title: String(hit.title),
-    excerpt: String(hit.summary ?? ""),
-    section: String(hit.section ?? "news"),
-    score: Number(hit._rankingScore ?? 0),
-    // The index holds articles only today; when videos and materials are added
-    // to it, this reads the type off the document instead.
-    type: "article" as SearchResultType,
-    href: `/news/${encodeURIComponent(String(hit.slug))}`,
-    typeLabel: "新闻与报告"
-  }));
+  return hits.map((hit) => {
+    // Documents indexed before the multi-type shape carry neither field; they
+    // are articles, and fall back to the article URL rather than vanishing.
+    const type: SearchResultType = hit.type ?? "article";
+    const href = hit.href ?? `/news/${encodeURIComponent(String(hit.slug))}`;
+    return {
+      id: String(hit.id),
+      slug: String(hit.slug),
+      title: String(hit.title),
+      excerpt: String(hit.summary ?? ""),
+      section: type === "article" ? "news" : type,
+      score: Number(hit._rankingScore ?? 0),
+      type,
+      href,
+      typeLabel: MEILI_TYPE_LABEL[type]
+    };
+  });
 }
 
 async function searchWithPgTrgm(
@@ -156,7 +169,7 @@ async function searchWithMeilisearch(
       limit,
       offset,
       filter: [`locale = "${locale}"`, `status = "published"`],
-      attributesToRetrieve: ["id", "slug", "title", "summary", "section"],
+      attributesToRetrieve: ["id", "slug", "title", "summary", "section", "type", "href"],
       showRankingScore: true
     })
   });
