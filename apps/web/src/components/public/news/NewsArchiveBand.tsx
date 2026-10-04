@@ -1,11 +1,16 @@
 import type { NewsCard } from "@/lib/public-content";
-import { T, articleHref, day } from "./newsTokens";
+import { T, articleHref } from "./newsTokens";
 
 /**
- * 精彩保留 — six full-bleed cards on a near-black band.
+ * 精彩保留 — six full-bleed cards on the same blue the masthead uses.
  *
  * Numbered in gold, which is what gives the band its rhythm; the number is the
  * position in the set, not anything stored.
+ *
+ * No category or date on the cards. This band is the standing selection rather
+ * than the news feed -- its whole argument is that these pieces are still worth
+ * reading -- and stamping a date on each one invites the opposite reading. The
+ * image, the number and the headline are what the reader needs.
  */
 export function NewsArchiveBand({ items }: { items: NewsCard[] }) {
   if (items.length === 0) return null;
@@ -109,9 +114,6 @@ export function NewsArchiveBand({ items }: { items: NewsCard[] }) {
                   gap: 8
                 }}
               >
-                <span style={{ fontSize: 13, color: T.onDark }}>
-                  {card.category} · <span style={{ fontFamily: T.mono, whiteSpace: "nowrap" }}>{day(card.publishedAt)}</span>
-                </span>
                 <span
                   style={{
                     fontFamily: T.serif,

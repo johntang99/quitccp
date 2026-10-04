@@ -3663,7 +3663,11 @@ mark {
 .news-hero-second { display: flex; flex-direction: column; padding: 28px 24px; border-left: 1px solid var(--rule); }
 .news-hero-latest { display: flex; flex-direction: column; padding: 28px 24px; border-left: 1px solid var(--rule); background: var(--paper); border-radius: 0 12px 12px 0; }
 
-.news-archive-band { margin-top: clamp(48px, 5vw, 72px); position: relative; overflow: hidden; background: var(--band-deepest); color: #fff; padding-top: clamp(44px, 4.4vw, 64px); padding-bottom: clamp(48px, 5vw, 72px); }
+.news-archive-band { margin-top: clamp(48px, 5vw, 72px); position: relative; overflow: hidden;
+  /* The same blue the masthead uses, not --band-deepest: a near-black slab
+     in the middle of the page read as a different site rather than a
+     different section. */
+  background: linear-gradient(135deg, var(--ink-2) 0%, var(--grad-mid) 55%, var(--grad-top) 100%); color: #fff; padding-top: clamp(44px, 4.4vw, 64px); padding-bottom: clamp(48px, 5vw, 72px); }
 .news-archive-grid { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 
 /* --- 栏目文章列表 -----------------------------------------------------------
