@@ -74,7 +74,7 @@ function contains(haystack: string | null | undefined, needle: string): boolean 
  *
  * Both space characters are handled: a Chinese IME produces the full-width one.
  */
-function splitTerms(query: string): string[] {
+export function splitTerms(query: string): string[] {
   return query
     .split(/[\s\u3000]+/)
     .map((term) => term.trim())

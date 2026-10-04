@@ -1463,6 +1463,20 @@ img.bcover--photo {
   padding: 10px;
 }
 
+/*
+ * Searched words inside a result.
+ *
+ * A tinted background rather than a colour change: the result list already uses
+ * colour for links and type labels, and one more would compete with them. The
+ * default browser mark is a flat yellow that fights the apricot page.
+ */
+mark {
+  background: color-mix(in srgb, var(--gold) 34%, transparent);
+  color: inherit;
+  padding: 0 1px;
+  border-radius: 2px;
+}
+
 /* Search results: the type/sort controls above the list. */
 .search-controls {
   display: flex;

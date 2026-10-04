@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { searchPublishedArticlesWithMeta, type SearchArticleResult } from "@/lib/search-repository";
 import type { SearchResultType } from "@/lib/search-substring";
+import { SearchHighlight } from "@/components/public/SearchHighlight";
 
 /**
  * A full-text scan over 120MB of prose can take the better part of a minute for
@@ -165,9 +166,15 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                         {formatDate(item.publishedAt) ? ` · ${formatDate(item.publishedAt)}` : ""}
                       </p>
                       <h3>
-                        <Link href={item.href as Route}>{item.title}</Link>
+                        <Link href={item.href as Route}>
+                          <SearchHighlight text={item.title} query={query} />
+                        </Link>
                       </h3>
-                      {item.excerpt ? <p>{item.excerpt}</p> : null}
+                      {item.excerpt ? (
+                        <p>
+                          <SearchHighlight text={item.excerpt} query={query} />
+                        </p>
+                      ) : null}
                     </div>
                   </article>
                 ))}
