@@ -39,6 +39,14 @@ export interface SubstringSearchResult {
   /** 新闻与报告 / 视频 / 资料 — shown on the result card. */
   typeLabel: string;
   publishedAt: string | null;
+  /**
+   * The cover image, or null when the row has none.
+   *
+   * Null is common and expected: 61% of published articles carry no hero image.
+   * The result list collapses the thumbnail column rather than showing a gap,
+   * so this being null is a layout, not a defect.
+   */
+  image: string | null;
   score: number;
 }
 
@@ -203,14 +211,14 @@ const TYPES: TypeConfig[] = [
   {
     type: "article",
     table: "cms_articles",
-    select: "id, slug, title, summary, published_at",
+    select: "id, slug, title, summary, published_at, hero_image",
     tiers: [["title"], ["summary"], ["body_plain"]],
     localeFiltered: true
   },
   {
     type: "video",
     table: "cms_videos",
-    select: "id, slug, title, description, published_at",
+    select: "id, slug, title, description, published_at, cover_image",
     tiers: [["title"], ["description", "speaker"], ["body_markdown"]],
     localeFiltered: false
   },
@@ -219,7 +227,7 @@ const TYPES: TypeConfig[] = [
     table: "cms_materials",
     // The public URL needs the category slug, so it is joined here.
     select:
-      "id, slug, title, summary, published_at, cms_material_category_map(cms_material_categories(slug))",
+      "id, slug, title, summary, published_at, cover_image, cms_material_category_map(cms_material_categories(slug))",
     tiers: [["title"], ["summary"], ["body_markdown"]],
     localeFiltered: true
   }
@@ -232,6 +240,18 @@ function materialHref(row: Record<string, unknown>): string | null {
   const slug = String(row.slug ?? "");
   if (!category || !slug) return null;
   return `/resources/downloads/${encodeURIComponent(category)}/${encodeURIComponent(slug)}`;
+}
+
+/**
+ * The cover image for a row, whichever column its table keeps it in.
+ *
+ * Articles call it hero_image, videos and materials cover_image. Empty string is
+ * the default in all three tables, so it has to be treated as "no image" rather
+ * than passed through as an src that would render a broken picture.
+ */
+function imageFrom(row: Record<string, unknown>): string | null {
+  const value = String(row.hero_image ?? row.cover_image ?? "").trim();
+  return value ? value : null;
 }
 
 function toResult(
@@ -260,6 +280,7 @@ function toResult(
     href,
     typeLabel: TYPE_LABEL[config.type],
     publishedAt: row.published_at ? String(row.published_at) : null,
+    image: imageFrom(row),
     score: scoreRow(terms, title, summary)
   };
 }

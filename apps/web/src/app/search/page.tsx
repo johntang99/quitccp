@@ -173,10 +173,18 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             ) : (
               <div className="arch">
                 {rows.map((item) => (
-                  <article key={item.id} className="arow">
-                    <div className="athumb">
-                      <div className="sectionCard" />
-                    </div>
+                  <article
+                    key={item.id}
+                    className={item.image ? "arow" : "arow arow--noimg"}
+                  >
+                    {/* No image means no column for one. The empty grey box that
+                        used to sit here regardless was a prototype placeholder
+                        that read as a picture which had failed to load. */}
+                    {item.image ? (
+                      <div className="athumb">
+                        <img src={item.image} alt="" loading="lazy" decoding="async" />
+                      </div>
+                    ) : null}
                     <div>
                       <p className="meta">
                         {item.typeLabel}

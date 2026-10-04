@@ -117,11 +117,17 @@ export async function SiteHeader() {
           </nav>
 
           <form className="search" action="/search" method="get">
-            <svg viewBox="0 0 24 24" aria-hidden>
-              <circle cx="11" cy="11" r="7" />
-              <path d="m16.5 16.5 4 4" />
-            </svg>
             <input type="search" name="q" placeholder="搜索新闻、报告与资料" aria-label="站内搜索" />
+            {/* A real submit button, not the decorative icon it replaced: the
+                magnifier now does what it looks like it does. Enter still works
+                -- this is a plain GET form, so the button adds a way in rather
+                than changing the existing one. */}
+            <button type="submit" className="search-go" aria-label="搜索">
+              <svg viewBox="0 0 24 24" aria-hidden>
+                <circle cx="11" cy="11" r="7" />
+                <path d="m16.5 16.5 4 4" />
+              </svg>
+            </button>
           </form>
         </div>
       </div>

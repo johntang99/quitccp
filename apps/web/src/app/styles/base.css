@@ -111,6 +111,18 @@ a{color:inherit;text-decoration:none}
   font-family:var(--sans);font-size:14px;
 }
 .search input::placeholder{color:var(--muted)}
+/* The magnifier is the submit control, so it has to look and behave like one:
+   a real button, big enough to hit, and it darkens on hover. */
+.search-go{
+  background:none;border:0;display:flex;align-items:center;
+  justify-content:center;cursor:pointer;flex:none;color:inherit;
+  /* The icon is 15px, which is far too small a target to hit. Padding grows the
+     clickable area to 31px square and the negative margin takes the space back,
+     so the pill does not change size. */
+  padding:8px;margin:-8px -8px -8px 0;
+}
+.search-go:hover svg{stroke:var(--seal)}
+.search-go:focus-visible{outline:2px solid var(--seal);outline-offset:3px;border-radius:50%}
 
 /* ---------- buttons ---------- */
 .btn{
@@ -456,11 +468,25 @@ a{color:inherit;text-decoration:none}
 .arow{display:grid;grid-template-columns:200px 1fr;gap:26px;padding:26px 0;border-top:1px solid var(--rule)}
 .arow:first-child{border-top:0;padding-top:0}
 .arow img{width:200px;height:130px;object-fit:cover;background:var(--rule)}
+/* A result with no cover image gives its text the whole row. Without this the
+   text would be squeezed into the 200px thumbnail column. */
+.arow--noimg{grid-template-columns:1fr}
 .arow h3{font-family:var(--serif);font-weight:700;font-size:20px;line-height:var(--lh-h3);margin:9px 0 8px}
 .arow a:hover h3{color:var(--seal)}
 .arow p{font-size:14.5px;color:var(--ink-soft);margin:0;line-height:var(--lh-body)}
+/* Excerpts sometimes carry a bare URL, and a URL has no break opportunities. A
+   grid track sized 1fr still honours its item's min-content width, so one such
+   link in one result stretched the whole results column past the viewport and
+   put a horizontal scrollbar on the page. min-width:0 lets the column shrink;
+   overflow-wrap lets the URL itself break rather than being clipped. */
+.arow>div{min-width:0}
+.arow h3,.arow p{overflow-wrap:anywhere}
 .arow .meta{margin-top:11px}
-.athumb{position:relative}
+/* Line the thumbnail's top edge up with the first line of the category text
+   beside it. The offset is the 11px top margin .meta carries plus the ~3px of
+   half-leading that sits above the glyphs on its first line -- without it the
+   picture floats 14px higher than the text it belongs to. */
+.athumb{position:relative;padding-top:14px}
 
 /* --- filters --- */
 .filters{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:34px}
@@ -574,6 +600,9 @@ a{color:inherit;text-decoration:none}
 @media(max-width:600px){
   .arow{grid-template-columns:1fr}
   .arow img{width:100%;height:200px}
+  /* Stacked, the picture sits above the text rather than beside it, so there is
+     no line to meet and the offset would just be a gap. */
+  .athumb{padding-top:0}
   .vgrid,.rgrid,.people{grid-template-columns:1fr}
   .stat4{grid-template-columns:1fr}
   .stat4 div{border-left:0;border-top:1px solid var(--rule)}

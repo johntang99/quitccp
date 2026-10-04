@@ -18,6 +18,14 @@ export interface SearchArticleResult {
   /** Shown on the result card, and what the 最新 sort orders by. Null for
    *  anything unpublished or undated. */
   publishedAt: string | null;
+  /**
+   * Thumbnail for the result card, or null for none.
+   *
+   * Only the substring backend -- the one that actually serves the site -- fills
+   * this in. The others leave it null and the card simply has no picture, which
+   * is the same thing that happens for the many rows that have no image anyway.
+   */
+  image?: string | null;
 }
 
 export type SearchBackend = "pg_trgm" | "meilisearch" | "substring" | "fallback_ilike";
@@ -255,7 +263,8 @@ async function searchWithBackend(
       type: row.type,
       href: row.href,
       typeLabel: row.typeLabel,
-      publishedAt: row.publishedAt
+      publishedAt: row.publishedAt,
+      image: row.image
     }));
   }
   return searchWithIlikeFallback(query, locale, limit, offset);
