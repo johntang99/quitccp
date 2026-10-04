@@ -62,14 +62,37 @@ function contains(haystack: string | null | undefined, needle: string): boolean 
 }
 
 /**
+ * Splits a query into the terms every result must contain.
+ *
+ * Without this, "法轮功 迫害" is one literal substring -- space included -- and
+ * matches only where those characters sit together, which is essentially never:
+ * the query returned 0 results while 94 articles carry both words in the title.
+ * Chinese is unsegmented, so a single term stays a single term; the split is for
+ * the spaces a person actually typed.
+ *
+ * Both space characters are handled: a Chinese IME produces the full-width one.
+ */
+function splitTerms(query: string): string[] {
+  return query
+    .split(/[\s\u3000]+/)
+    .map((term) => term.trim())
+    .filter(Boolean)
+    .slice(0, 6); // a sane ceiling; each term is another AND condition
+}
+
+function containsAll(haystack: string | null | undefined, terms: string[]): boolean {
+  return terms.every((term) => contains(haystack, term));
+}
+
+/**
  * Title beats summary beats body, and newer beats older within a tier.
  *
  * The weights are gaps rather than increments so a title match can never be
  * displaced by a row that happens to mention the term twice further down.
  */
-function scoreRow(query: string, title: string, summary: string): number {
-  if (contains(title, query)) return 100;
-  if (contains(summary, query)) return 10;
+function scoreRow(terms: string[], title: string, summary: string): number {
+  if (containsAll(title, terms)) return 100;
+  if (containsAll(summary, terms)) return 10;
   return 1;
 }
 
@@ -164,7 +187,7 @@ function materialHref(row: Record<string, unknown>): string | null {
 function toResult(
   config: TypeConfig,
   row: Record<string, unknown>,
-  query: string
+  terms: string[]
 ): SubstringSearchResult | null {
   const title = String(row.title ?? "");
   const summary = String(row.summary ?? row.description ?? "");
@@ -187,18 +210,18 @@ function toResult(
     href,
     typeLabel: TYPE_LABEL[config.type],
     publishedAt: row.published_at ? String(row.published_at) : null,
-    score: scoreRow(query, title, summary)
+    score: scoreRow(terms, title, summary)
   };
 }
 
 async function searchOneType(
   config: TypeConfig,
-  query: string,
+  terms: string[],
   locale: string,
   limit: number
 ): Promise<SubstringSearchResult[]> {
   const supabase = createSupabaseAdminClient();
-  const needle = `%${escapeLike(escapeForOr(query))}%`;
+  const needles = terms.map((term) => `%${escapeLike(escapeForOr(term))}%`);
 
   const base = () => {
     let q = supabase
@@ -211,10 +234,33 @@ async function searchOneType(
     return q;
   };
 
+  /**
+   * Every term must appear, and all of them in the same field.
+   *
+   * Requiring one field to hold the lot is the conservative reading of a
+   * multi-word query: someone typing 法轮功 迫害 wants pieces about both, not a
+   * piece whose title mentions one while its body happens to mention the other.
+   * It is also the only form Postgres can answer from an index here, because
+   * spreading terms across columns would need a concatenated column to match on.
+   */
   const run = async (fields: string[]) => {
-    const { data, error } = await base().or(
-      fields.map((field) => `${field}.ilike.${needle}`).join(",")
-    );
+    let query = base();
+    if (fields.length === 1) {
+      // One field: repeat the filter, which PostgREST ANDs.
+      for (const needle of needles) query = query.ilike(fields[0], needle);
+    } else {
+      // Several fields: (all terms in A) OR (all terms in B).
+      query = query.or(
+        fields
+          .map((field) =>
+            needles.length === 1
+              ? `${field}.ilike.${needles[0]}`
+              : `and(${needles.map((needle) => `${field}.ilike.${needle}`).join(",")})`
+          )
+          .join(",")
+      );
+    }
+    const { data, error } = await query;
     if (error) throw error;
     return (data ?? []) as unknown as Record<string, unknown>[];
   };
@@ -229,7 +275,7 @@ async function searchOneType(
     if (results.length >= limit) break;
     const rows = await run(tier);
     for (const row of rows) {
-      const result = toResult(config, row, query);
+      const result = toResult(config, row, terms);
       if (!result || seen.has(result.id)) continue;
       seen.add(result.id);
       results.push(result);
@@ -251,13 +297,13 @@ export async function searchEverythingBySubstring(
   query: string,
   options: { locale?: string; limit?: number } = {}
 ): Promise<SubstringSearchResult[]> {
-  const normalized = query.trim();
-  if (!normalized) return [];
+  const terms = splitTerms(query);
+  if (terms.length === 0) return [];
   const locale = options.locale ?? "zh";
   const limit = options.limit ?? 30;
 
   const settled = await Promise.allSettled(
-    TYPES.map((config) => searchOneType(config, normalized, locale, limit))
+    TYPES.map((config) => searchOneType(config, terms, locale, limit))
   );
 
   const merged: SubstringSearchResult[] = [];
