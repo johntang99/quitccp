@@ -1349,26 +1349,30 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
             }))
           }))
         : [
+            /*
+             * The funding split that used to sit here -- 项目支出 84% / 行政 10% /
+             * 筹款 6%, with "经独立会计师事务所审计，报表全文可下载" beneath it -- was
+             * prototype text. Nobody confirmed the ratios, nothing on the site
+             * was downloadable, and an unverified spending breakdown on a
+             * 501(c)(3) page is the one kind of placeholder a reader is most
+             * entitled to trust. Real figures belong in 内容管理, from the filing.
+             */
             {
               title: "注册与法律地位",
               value: "501(c)(3)",
-              body: "在美国注册的非营利组织，捐款可依法抵税。年度 Form 990 公开可查。",
+              body: "在美国注册的非营利组织，捐款可依法抵税。纳税识别号（EIN）03-0581933。",
               bars: []
             },
             {
-              title: "资金使用（上一财年）",
-              value: "",
-              body: "经独立会计师事务所审计，报表全文可下载。",
-              bars: [
-                { width: 132, text: "项目支出 84%", tone: "b1" },
-                { width: 16, text: "行政 10%", tone: "b2" },
-                { width: 10, text: "筹款 6%", tone: "b3" }
-              ]
+              title: "向谁申报",
+              value: "美国国税局",
+              body: "年度 Form 990 依法向 IRS 申报，并依法成为公开记录。查阅不需要经过我们。",
+              bars: []
             },
             {
               title: "安全与威胁记录",
               value: "公开档案",
-              body: "本机构多次收到炸弹恐吓等威胁信。相关事件、报案与处理经过全部公开记录。",
+              body: "本机构多次收到炸弹恐吓等威胁信。相关事件、报案与处理经过记录在案。",
               bars: []
             }
           ];
@@ -1377,12 +1381,19 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
       accountabilityLinksRaw.length > 0
         ? accountabilityLinksRaw.map((row) => ({ label: asString(row.label), href: asString(row.href, "#") }))
         : [
-            { label: "财务报表与 Form 990", href: "#" },
-            { label: "年度工作报告", href: "#" },
-            { label: "统计方法说明", href: "#" },
-            { label: "安全事件档案", href: "#" },
-            { label: "隐私与数据保护", href: "/services/privacy" },
-            { label: "Candid 透明度认证", href: "#" }
+            // Official registries rather than files we host: the records live
+            // with the IRS, which is both more verifiable and safer for the
+            // people named in them.
+            {
+              label: "IRS 免税组织查询（按 EIN 03-0581933 查）",
+              href: "https://www.irs.gov/charities-non-profits/tax-exempt-organization-search"
+            },
+            {
+              label: "ProPublica Nonprofit Explorer",
+              href: "https://projects.propublica.org/nonprofits/organizations/30581933"
+            },
+            { label: "统计方法说明", href: "/about/numbers" },
+            { label: "隐私与数据保护", href: "/services/privacy" }
           ];
 
     const team = asRecord(payload.team);
@@ -1888,18 +1899,11 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
           }))
         }))
       : [
-          { title: "注册与法律地位", value: "501(c)(3)", body: "在美国注册的非营利组织，捐款可依法抵税。年度 Form 990 公开可查。", bars: [] },
-          {
-            title: "资金使用（上一财年）",
-            value: "",
-            body: "",
-            bars: [
-              { width: 132, text: "项目支出 84%", tone: "b1" },
-              { width: 16, text: "行政 10%", tone: "b2" },
-              { width: 10, text: "筹款 6%", tone: "b3" }
-            ]
-          },
-          { title: "安全与威胁记录", value: "公开档案", body: "本机构多次收到炸弹恐吓等威胁信。事件、报案与处理经过全部公开记录。", bars: [] }
+          // See the note on the other copy of these cells: the funding split
+          // was never verified, so it is not asserted here either.
+          { title: "注册与法律地位", value: "501(c)(3)", body: "在美国注册的非营利组织，捐款可依法抵税。纳税识别号（EIN）03-0581933。", bars: [] },
+          { title: "向谁申报", value: "美国国税局", body: "年度 Form 990 依法向 IRS 申报，并依法成为公开记录。查阅不需要经过我们。", bars: [] },
+          { title: "安全与威胁记录", value: "公开档案", body: "本机构多次收到炸弹恐吓等威胁信。相关事件、报案与处理经过记录在案。", bars: [] }
         ];
     const summaryLinks = asObjectArray(payload.summaryLinks).length
       ? asObjectArray(payload.summaryLinks).map((row) => ({ label: asString(row.label), href: asString(row.href, "#") }))
