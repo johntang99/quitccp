@@ -3,7 +3,14 @@ import type { Route } from "next";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { getPublicNav } from "@/lib/public-settings";
 import { EXTERNAL_LINK_PROPS, EXTERNAL_SERVICES } from "@/lib/external-services";
-import { SITE_LANGUAGES } from "@/lib/site-languages";
+import { SITE_LANGUAGES, SITE_SOCIALS } from "@/lib/site-languages";
+
+/** Icon paths, keyed by the label in SITE_SOCIALS. */
+const SOCIAL_ICON: Record<string, string> = {
+  Facebook: "M14 8.5V6.8c0-.8.2-1.2 1.4-1.2H17V2.6c-.3 0-1.2-.1-2.3-.1-2.4 0-4 1.4-4 4.1v1.9H8v3h2.7V21H14v-8.5h2.6l.4-3H14z",
+  "X": "M17.5 3h3l-6.6 7.5L21.8 21h-6l-4.7-6.1L5.6 21h-3l7-8L2.5 3h6.2l4.3 5.6L17.5 3zm-1.1 16.2h1.7L7.7 4.7H5.9l10.5 14.5z",
+  YouTube: "M22.5 7.5a2.8 2.8 0 0 0-1.9-2C18.9 5 12 5 12 5s-6.9 0-8.6.5a2.8 2.8 0 0 0-1.9 2A29 29 0 0 0 1 12a29 29 0 0 0 .5 4.5 2.8 2.8 0 0 0 1.9 2C5.1 19 12 19 12 19s6.9 0 8.6-.5a2.8 2.8 0 0 0 1.9-2A29 29 0 0 0 23 12a29 29 0 0 0-.5-4.5zM9.8 15.2V8.8l5.7 3.2-5.7 3.2z",
+};
 
 export async function SiteHeader() {
   const navItems = await getPublicNav();
@@ -42,26 +49,19 @@ export async function SiteHeader() {
               免翻墙链接
             </Link>
             <div className="socials" aria-label="社交渠道">
-              <a href="#" aria-label="Facebook">
-                <svg viewBox="0 0 24 24">
-                  <path d="M14 8.5V6.8c0-.8.2-1.2 1.4-1.2H17V2.6c-.3 0-1.2-.1-2.3-.1-2.4 0-4 1.4-4 4.1v1.9H8v3h2.7V21H14v-8.5h2.6l.4-3H14z" />
-                </svg>
-              </a>
-              <a href="#" aria-label="X">
-                <svg viewBox="0 0 24 24">
-                  <path d="M17.5 3h3l-6.6 7.5L21.8 21h-6l-4.7-6.1L5.6 21h-3l7-8L2.5 3h6.2l4.3 5.6L17.5 3zm-1.1 16.2h1.7L7.7 4.7H5.9l10.5 14.5z" />
-                </svg>
-              </a>
-              <a href="#" aria-label="YouTube">
-                <svg viewBox="0 0 24 24">
-                  <path d="M22.5 7.5a2.8 2.8 0 0 0-1.9-2C18.9 5 12 5 12 5s-6.9 0-8.6.5a2.8 2.8 0 0 0-1.9 2A29 29 0 0 0 1 12a29 29 0 0 0 .5 4.5 2.8 2.8 0 0 0 1.9 2C5.1 19 12 19 12 19s6.9 0 8.6-.5a2.8 2.8 0 0 0 1.9-2A29 29 0 0 0 23 12a29 29 0 0 0-.5-4.5zM9.8 15.2V8.8l5.7 3.2-5.7 3.2z" />
-                </svg>
-              </a>
-              <a href="#" aria-label="Telegram">
-                <svg viewBox="0 0 24 24">
-                  <path d="M21.9 4.3 18.6 20c-.2 1.1-.9 1.4-1.8.9l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5.1L18 6.6c.4-.4-.1-.6-.6-.2L7.2 13l-4.9-1.5c-1.1-.3-1.1-1 .2-1.5l19.1-7.4c.9-.3 1.7.2 1.3 1.7z" />
-                </svg>
-              </a>
+              {SITE_SOCIALS.map((s) => (
+                <a
+                  key={s.label}
+                  href={s.href}
+                  aria-label={s.label}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <svg viewBox="0 0 24 24">
+                    <path d={SOCIAL_ICON[s.label]} />
+                  </svg>
+                </a>
+              ))}
             </div>
           </div>
         </div>

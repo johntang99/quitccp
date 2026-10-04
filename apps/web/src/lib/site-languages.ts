@@ -31,3 +31,26 @@ export const SITE_LANGUAGES: readonly SiteLanguage[] = [
   { label: "日本語", href: "https://www.quitccp.jp/" },
   { label: "Română", href: "https://ro.tuidang.org/" }
 ];
+
+/**
+ * The organisation's social accounts.
+ *
+ * Taken from tuidang.org, which is where these are actually published, and each
+ * loaded to confirm it is the right account (2026-10-04). Before this they were
+ * all `href="#"` on every page of the site -- a reader clicking the Facebook
+ * icon stayed where they were, which reads as broken rather than unfinished.
+ *
+ * Telegram is deliberately absent. The icon was in the prototype, tuidang.org
+ * has no Telegram link, and the owner confirmed there is no account: an icon for
+ * a channel that does not exist is a promise the organisation cannot keep.
+ */
+export interface SiteSocial {
+  label: string;
+  href: string;
+}
+
+export const SITE_SOCIALS: readonly SiteSocial[] = [
+  { label: "Facebook", href: "https://www.facebook.com/tuidang99/" },
+  { label: "X", href: "https://x.com/quitccp1" },
+  { label: "YouTube", href: "https://www.youtube.com/channel/UC1vENGNAdWWW399VYKWqxuQ" }
+];
