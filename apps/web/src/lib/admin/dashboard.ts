@@ -1,6 +1,8 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { formatYi, getSantuiSnapshot } from "@/lib/santui";
 import { listArticles } from "@/lib/admin/repository";
+import { searchPublishedArticlesWithMeta } from "@/lib/search-repository";
+import { meiliConfig } from "@/lib/search-index";
 import type { ArticleRecord } from "@/lib/admin/types";
 
 /**
@@ -117,4 +119,129 @@ export async function getRecentArticles(limit = 6): Promise<ArticleRecord[]> {
   } catch {
     return [];
   }
+}
+
+/* ------------------------------------------------------------------ search */
+
+export type SearchBackendName = "meilisearch" | "substring" | "pg_trgm" | "fallback_ilike";
+
+export interface SearchStatus {
+  ok: boolean;
+  /** What SEARCH_PRIMARY_BACKEND asks for. */
+  configured: SearchBackendName;
+  /** What actually answered a probe query just now. */
+  effective: SearchBackendName;
+  /** Whether a Meilisearch host is configured at all. */
+  meiliConfigured: boolean;
+  /** Documents in the index, null when there is no index to ask. */
+  indexed: number | null;
+  /** Rows the index should hold, counted from the database. */
+  expected: number;
+  /** Probe latency in milliseconds. */
+  probeMs: number;
+  probeResults: number;
+  /**
+   * normal   — serving, and the index matches the database
+   * drifted  — serving from an index that disagrees with the database
+   * fallback — the configured backend failed and something else answered
+   * nomeili  — running on substring with no Meilisearch configured (fine)
+   * down     — nothing answered
+   */
+  state: "normal" | "drifted" | "fallback" | "nomeili" | "down";
+}
+
+/**
+ * Is search healthy, and is it answering from current data?
+ *
+ * Written because nothing noticed when it was not. Search was broken in
+ * production for weeks -- 法轮功 returned nothing while 410 articles carried it
+ * in the title -- and the index behind it had been seven weeks stale while
+ * reporting success, because a sync that dies partway still looks like a sync
+ * that ran. Both failures are silent by nature: search keeps answering, the
+ * answers are just wrong.
+ *
+ * So this runs a real query rather than reading a status flag, and compares the
+ * index against the database rather than trusting either on its own.
+ */
+export async function getSearchStatus(): Promise<SearchStatus> {
+  const configured = ((process.env.SEARCH_PRIMARY_BACKEND ?? "substring")
+    .trim()
+    .toLowerCase() || "substring") as SearchBackendName;
+  const meiliConfigured = Boolean(process.env.MEILI_HOST?.trim());
+
+  // A term every copy of this archive contains, so an empty result is a fault
+  // rather than a quiet corpus.
+  const probeStarted = Date.now();
+  let effective: SearchBackendName = configured;
+  let probeResults = 0;
+  try {
+    const probe = await searchPublishedArticlesWithMeta("三退", { locale: "zh", limit: 5 });
+    effective = probe.meta.effectiveBackend as SearchBackendName;
+    probeResults = probe.results.length;
+  } catch {
+    probeResults = 0;
+  }
+  const probeMs = Date.now() - probeStarted;
+
+  let indexed: number | null = null;
+  if (meiliConfigured) {
+    try {
+      const { host, key, index } = meiliConfig();
+      const headers: Record<string, string> = {};
+      if (key) headers.authorization = `Bearer ${key}`;
+      const res = await fetch(`${host}/indexes/${encodeURIComponent(index)}/stats`, { headers });
+      if (res.ok) indexed = Number((await res.json()).numberOfDocuments ?? 0);
+    } catch {
+      indexed = null;
+    }
+  }
+
+  const expected = await countSearchableRows();
+
+  const state: SearchStatus["state"] =
+    probeResults === 0
+      ? "down"
+      : effective !== configured
+        ? "fallback"
+        : !meiliConfigured
+          ? "nomeili"
+          : indexed === null || Math.abs(indexed - expected) > Math.max(10, expected * 0.01)
+            ? "drifted"
+            : "normal";
+
+  return {
+    ok: state === "normal" || state === "nomeili",
+    configured,
+    effective,
+    meiliConfigured,
+    indexed,
+    expected,
+    probeMs,
+    probeResults,
+    state
+  };
+}
+
+/** What the index ought to contain: every published article, video and material. */
+async function countSearchableRows(): Promise<number> {
+  const supabase = createSupabaseAdminClient();
+  const counts = await Promise.all(
+    (
+      [
+        ["cms_articles", true],
+        ["cms_videos", false],
+        ["cms_materials", true]
+      ] as const
+    ).map(async ([table, localeFiltered]) => {
+      try {
+        let q = supabase.from(table).select("id", { count: "exact", head: true });
+        if (localeFiltered) q = q.eq("locale", "zh");
+        const { count } = await q;
+        return count ?? 0;
+      } catch {
+        return 0;
+      }
+    })
+  );
+  return counts.reduce((a, b) => a + b, 0);
 }
