@@ -1463,6 +1463,27 @@ img.bcover--photo {
   padding: 10px;
 }
 
+/* Search results: the type/sort controls above the list. */
+.search-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.search-sort {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* The pager wraps each number so an elision can sit beside it. */
+.pager span {
+  display: inline;
+}
+
 /*
  * 权限对照表 — deliberately compact.
  *

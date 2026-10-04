@@ -15,6 +15,9 @@ export interface SearchArticleResult {
    *  shapes, so the backend decides rather than the page guessing. */
   href: string;
   typeLabel: string;
+  /** Shown on the result card, and what the 最新 sort orders by. Null for
+   *  anything unpublished or undated. */
+  publishedAt: string | null;
 }
 
 export type SearchBackend = "pg_trgm" | "meilisearch" | "substring" | "fallback_ilike";
@@ -50,6 +53,7 @@ interface MeiliHit {
   /** Written by lib/search-index; absent on documents from the old shape. */
   type?: SearchResultType;
   href?: string;
+  published_at?: string | null;
   _rankingScore?: number;
 }
 
@@ -108,7 +112,8 @@ function toSearchRowsFromMeili(hits: MeiliHit[]): SearchArticleResult[] {
       score: Number(hit._rankingScore ?? 0),
       type,
       href,
-      typeLabel: MEILI_TYPE_LABEL[type]
+      typeLabel: MEILI_TYPE_LABEL[type],
+      publishedAt: hit.published_at ?? null
     };
   });
 }
@@ -138,7 +143,8 @@ async function searchWithPgTrgm(
     score: Number(row.score ?? 0),
     type: "article" as SearchResultType,
     href: `/news/${encodeURIComponent(String(row.slug))}`,
-    typeLabel: "新闻与报告"
+    typeLabel: "新闻与报告",
+    publishedAt: null
   }));
 }
 
@@ -169,7 +175,9 @@ async function searchWithMeilisearch(
       limit,
       offset,
       filter: [`locale = "${locale}"`, `status = "published"`],
-      attributesToRetrieve: ["id", "slug", "title", "summary", "section", "type", "href"],
+      attributesToRetrieve: [
+        "id", "slug", "title", "summary", "section", "type", "href", "published_at"
+      ],
       showRankingScore: true
     })
   });
@@ -208,7 +216,8 @@ async function searchWithIlikeFallback(
     score: 0,
     type: "article" as SearchResultType,
     href: `/news/${encodeURIComponent(String(row.slug))}`,
-    typeLabel: "新闻与报告"
+    typeLabel: "新闻与报告",
+    publishedAt: null
   }));
 }
 
@@ -238,7 +247,8 @@ async function searchWithBackend(
       score: row.score,
       type: row.type,
       href: row.href,
-      typeLabel: row.typeLabel
+      typeLabel: row.typeLabel,
+      publishedAt: row.publishedAt
     }));
   }
   return searchWithIlikeFallback(query, locale, limit, offset);
