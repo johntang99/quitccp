@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSessionUser } from "@/lib/admin/auth";
 import { syncSearchIndex } from "@/lib/search-index";
+import { pruneSearchMisses } from "@/lib/search-misses";
 
 /**
  * Keeps the search index in step with the database.
@@ -39,10 +40,16 @@ export async function GET(request: Request) {
   const denied = await authorise(request);
   if (denied) return NextResponse.json({ error: denied }, { status: 401 });
 
+  const url0 = new URL(request.url);
+  // Expiring old misses is independent of Meilisearch, so it happens before the
+  // early return below: with no MEILI_HOST there is no index to sync, but the
+  // table still needs its 60-day window honoured.
+  const pruned = url0.searchParams.get("mode") === "full" ? await pruneSearchMisses() : 0;
+
   if (!process.env.MEILI_HOST) {
     // Not an error: the site runs on the substring backend until a Meilisearch
     // host exists, and a cron that fails loudly for that reason is just noise.
-    return NextResponse.json({ ok: true, skipped: "MEILI_HOST is not set" });
+    return NextResponse.json({ ok: true, skipped: "MEILI_HOST is not set", prunedMisses: pruned });
   }
 
   const url = new URL(request.url);
@@ -67,6 +74,7 @@ export async function GET(request: Request) {
       since: since ?? null,
       indexed: result.total,
       removed: result.removed,
+      prunedMisses: pruned,
       byType: result.byType,
       index: result.index,
       elapsedMs: Date.now() - startedAt

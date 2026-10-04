@@ -1,5 +1,7 @@
 import Link from "next/link";
+import type { Route } from "next";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { MISS_RETENTION_DAYS, listSearchMisses } from "@/lib/search-misses";
 import { RevalidateButton } from "@/components/admin/RevalidateButton";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import {
@@ -43,10 +45,11 @@ const num = (n: number) => (n < 0 ? "未知" : n.toLocaleString("zh-CN"));
 
 export default async function AdminDashboardPage() {
   const user = await requireAdminSessionUser();
-  const [stats, sync, search, recent] = await Promise.all([
+  const [stats, sync, search, misses, recent] = await Promise.all([
     getDashboardStats(),
     getSyncStatus(),
     getSearchStatus(),
+    listSearchMisses(12),
     getRecentArticles(6)
   ]);
   const badge = SYNC_LABEL[sync.state];
@@ -194,6 +197,35 @@ export default async function AdminDashboardPage() {
               ? "　请检查 Meilisearch 服务是否还在运行、MEILI_HOST 是否可达。"
               : ""}
           </p>
+        ) : null}
+        {misses.length > 0 ? (
+          <>
+            <h4 style={{ margin: "18px 0 6px", fontSize: 14 }}>读者搜了却没找到的词</h4>
+            <p className="dash-note" style={{ marginTop: 0 }}>
+              只记录「没有任何结果」的搜索，并且只保留词本身和次数——不记录是谁搜的、
+              从哪里搜的、什么时候搜的，{MISS_RETENTION_DAYS} 天不再出现就自动删除。
+              这里出现次数多的词，通常意味着站内缺这类内容，或者用词和读者的说法对不上
+              （后者可以加进同义词表）。
+            </p>
+            <div style={{ overflowX: "auto" }}>
+              <table className="admin-table perm-table" style={{ maxWidth: 560 }}>
+                <thead>
+                  <tr><th>搜索词</th><th style={{ width: 70 }}>次数</th><th style={{ width: 110 }}>最近一次</th></tr>
+                </thead>
+                <tbody>
+                  {misses.map((m) => (
+                    <tr key={m.query}>
+                      <td>
+                        <Link href={`/search?q=${encodeURIComponent(m.query)}` as Route}>{m.query}</Link>
+                      </td>
+                      <td style={{ textAlign: "center" }}>{m.hits}</td>
+                      <td>{m.lastSeen.slice(0, 10)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         ) : null}
         {search.state === "drifted" ? (
           <p className="dash-alert">

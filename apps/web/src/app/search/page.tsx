@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { after } from "next/server";
 import type { Route } from "next";
 import { searchPublishedArticlesWithMeta, type SearchArticleResult } from "@/lib/search-repository";
 import type { SearchResultType } from "@/lib/search-substring";
 import { SearchHighlight } from "@/components/public/SearchHighlight";
+import { recordSearchMiss } from "@/lib/search-misses";
 
 /**
  * A full-text scan over 120MB of prose can take the better part of a minute for
@@ -64,6 +66,21 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   // The search gave up on the slow tier partway. Saying 没有匹配结果 here would
   // be a wrong answer, not a slow one.
   const incomplete = execution?.meta.truncated ?? false;
+
+  /*
+   * Note what the archive could not answer.
+   *
+   * Only genuine misses: a search cut short by the database found nothing
+   * because it stopped looking, which says nothing about missing content and
+   * would fill the table with noise.
+   *
+   * Inside `after()`, so it runs once the reader already has the page. Recording
+   * a miss must not add a millisecond to the search that missed, and must never
+   * be able to fail it.
+   */
+  if (query && all.length === 0 && !incomplete) {
+    after(() => recordSearchMiss(query));
+  }
 
   const filtered: SearchArticleResult[] =
     type === "all" ? all : all.filter((row) => row.type === (type as SearchResultType));
