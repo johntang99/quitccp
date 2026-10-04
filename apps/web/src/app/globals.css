@@ -1477,6 +1477,20 @@ mark {
   border-radius: 2px;
 }
 
+/* A whole card that is a link, matching how .act a behaves. */
+.card--link {
+  color: inherit;
+  transition: border-color 0.18s;
+}
+
+.card--link:hover {
+  border-color: var(--seal);
+}
+
+.card--link:hover h3 {
+  color: var(--seal);
+}
+
 /*
  * Languages rendered as <span> rather than <a>: the current one, and any with no
  * site yet.

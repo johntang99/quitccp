@@ -2149,6 +2149,24 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
 
   if (section === "involve" && slug === "index") {
     const involveTitleRaw = asString(payload.title);
+    /**
+     * 义工故事 cards, from the CMS.
+     *
+     * Each one must carry an href. A card with no link is what this section used
+     * to be -- three invented stories a reader could not click, under a heading
+     * promising more -- and a card describing one article while linking to
+     * another is worse still. Anything without both a title and a destination is
+     * dropped rather than rendered as dead text.
+     */
+    const storyCards = asObjectArray(payload.stories)
+      .map((row) => ({
+        tag: asString(row.tag),
+        title: asString(row.title),
+        body: asString(row.body),
+        foot: asString(row.foot),
+        href: asString(row.href)
+      }))
+      .filter((row) => row.title && row.href);
     const involveTitle = !involveTitleRaw || involveTitleRaw === "让服务点能一直开着。" ? "让服务点 能一直开着。" : involveTitleRaw;
     return (
       <>
@@ -2325,6 +2343,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
           </div>
         </section>
 
+        {storyCards.length > 0 ? (
         <section className="sec" style={{ paddingTop: 52 }}>
           <div className="wrap">
             <div className="sec-head">
@@ -2336,28 +2355,28 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
                 全部义工故事 →
               </a>
             </div>
+            {/* Driven by the CMS. These three cards were written into the
+                template -- invented volunteer stories with invented running
+                times, and no link on any of them, because there was nothing to
+                link to. Editors fill `stories` from 内容管理; each entry points
+                at a real article. */}
             <div className="cards3">
-              <article className="card">
-                <p className="card-tag">济州岛</p>
-                <h3>在码头与免税店前轮班守候</h3>
-                <p>从早班到晚班，义工们记录下每天遇到的人、被拒绝的次数，和那些停下来问问题的旅客。</p>
-                <p className="card-foot">纪实 · 11 分影片</p>
-              </article>
-              <article className="card">
-                <p className="card-tag">台北</p>
-                <h3>十年如一日的真相点</h3>
-                <p>台北车站前的服务点已经开了十年。义工说，最难的不是被拒绝，是被认出来。</p>
-                <p className="card-foot">纪实 · 18 分影片</p>
-              </article>
-              <article className="card">
-                <p className="card-tag">纽约</p>
-                <h3>把纸本声明一份份录入系统的人</h3>
-                <p>不是所有声明都来自网站。有人手写，有人托人带出来，有人只留下一个代号。</p>
-                <p className="card-foot">纪实 · 文字</p>
-              </article>
+              {storyCards.map((card, index) => (
+                /* The anchor is the card, not something inside it: with
+                   `display: contents` the link has no box of its own, so only
+                   the words were clickable and the rest of the card -- most of
+                   its area -- did nothing. Same shape as `.act a`. */
+                <a className="card card--link" href={card.href} key={card.href || index}>
+                  {card.tag ? <p className="card-tag">{card.tag}</p> : null}
+                  <h3>{card.title}</h3>
+                  {card.body ? <p>{card.body}</p> : null}
+                  {card.foot ? <p className="card-foot">{card.foot}</p> : null}
+                </a>
+              ))}
             </div>
           </div>
         </section>
+        ) : null}
 
         <section className="sec" style={{ paddingTop: 52 }}>
           <div className="wrap">
