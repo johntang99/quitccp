@@ -26,6 +26,8 @@ export interface SearchExecutionMeta {
   primaryBackend: SearchBackend;
   effectiveBackend: SearchBackend;
   dualReadEnabled: boolean;
+  /** A scan was cut short by its time budget, so results may be incomplete. */
+  truncated: boolean;
 }
 
 interface SearchRpcRow {
@@ -226,7 +228,11 @@ async function searchWithBackend(
   query: string,
   locale: string,
   limit: number,
-  offset: number
+  offset: number,
+  // Carried in a caller-owned box rather than module state: several searches run
+  // at once in one process, and a shared flag would attribute one request's
+  // timeout to another's results.
+  truncatedOut: { value: boolean } = { value: false }
 ): Promise<SearchArticleResult[]> {
   if (backend === "meilisearch") {
     return searchWithMeilisearch(query, locale, limit, offset);
@@ -235,8 +241,9 @@ async function searchWithBackend(
     return searchWithPgTrgm(query, locale, limit, offset);
   }
   if (backend === "substring") {
-    const rows = await searchEverythingBySubstring(query, { locale, limit });
-    return rows.map((row) => ({
+    const outcome = await searchEverythingBySubstring(query, { locale, limit });
+    truncatedOut.value = truncatedOut.value || outcome.truncated;
+    return outcome.results.map((row) => ({
       id: row.id,
       // The slug is no longer how a result is addressed -- href is -- but the
       // field stays because callers and the JSON API still read it.
@@ -280,7 +287,8 @@ export async function searchPublishedArticlesWithMeta(
       meta: {
         primaryBackend: getConfiguredPrimaryBackend(),
         effectiveBackend: getConfiguredPrimaryBackend(),
-        dualReadEnabled: envFlag("SEARCH_DUAL_READ", false)
+        dualReadEnabled: envFlag("SEARCH_DUAL_READ", false),
+        truncated: false
       }
     };
   }
@@ -293,9 +301,10 @@ export async function searchPublishedArticlesWithMeta(
 
   let effectiveBackend: SearchBackend = primaryBackend;
   let results: SearchArticleResult[];
+  const truncatedOut = { value: false };
 
   try {
-    results = await searchWithBackend(primaryBackend, normalizedQuery, locale, limit, offset);
+    results = await searchWithBackend(primaryBackend, normalizedQuery, locale, limit, offset, truncatedOut);
   } catch (primaryError) {
     // Substring is the floor: it needs no index, no extension and no running
     // service, so it answers whenever the database is reachable at all. The old
@@ -304,10 +313,10 @@ export async function searchPublishedArticlesWithMeta(
     const secondaryBackend: SearchBackend =
       primaryBackend === "substring" ? "fallback_ilike" : "substring";
     try {
-      results = await searchWithBackend(secondaryBackend, normalizedQuery, locale, limit, offset);
+      results = await searchWithBackend(secondaryBackend, normalizedQuery, locale, limit, offset, truncatedOut);
       effectiveBackend = secondaryBackend;
     } catch {
-      results = await searchWithBackend("fallback_ilike", normalizedQuery, locale, limit, offset);
+      results = await searchWithBackend("fallback_ilike", normalizedQuery, locale, limit, offset, truncatedOut);
       effectiveBackend = "fallback_ilike";
     }
 
@@ -333,7 +342,8 @@ export async function searchPublishedArticlesWithMeta(
     meta: {
       primaryBackend,
       effectiveBackend,
-      dualReadEnabled
+      dualReadEnabled,
+      truncated: truncatedOut.value
     }
   };
 }

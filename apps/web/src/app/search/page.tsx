@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { searchPublishedArticles, type SearchArticleResult } from "@/lib/search-repository";
+import { searchPublishedArticlesWithMeta, type SearchArticleResult } from "@/lib/search-repository";
 import type { SearchResultType } from "@/lib/search-substring";
 
 interface SearchPageProps {
@@ -48,9 +48,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const type = TYPE_TABS.some((tab) => tab.key === resolved.type) ? resolved.type! : "all";
   const page = Math.max(1, Number(resolved.page ?? "1") || 1);
 
-  const all = query
-    ? await searchPublishedArticles(query, { locale: "zh", limit: MAX_RESULTS })
-    : [];
+  const execution = query
+    ? await searchPublishedArticlesWithMeta(query, { locale: "zh", limit: MAX_RESULTS })
+    : null;
+  const all = execution?.results ?? [];
+  // The search gave up on the slow tier partway. Saying 没有匹配结果 here would
+  // be a wrong answer, not a slow one.
+  const incomplete = execution?.meta.truncated ?? false;
 
   const filtered: SearchArticleResult[] =
     type === "all" ? all : all.filter((row) => row.type === (type as SearchResultType));
@@ -133,7 +137,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             ) : null}
 
             {rows.length === 0 ? (
-              <p>{query ? "没有匹配结果。" : "请输入关键词。"}</p>
+              <p>
+                {!query
+                  ? "请输入关键词。"
+                  : incomplete
+                    ? "这次搜索用时过长，已经停下，所以还没有找到结果——不代表站内没有相关内容。请把关键词写得更具体一些，或者改用标题里会出现的词。"
+                    : "没有匹配结果。"}
+              </p>
             ) : (
               <div className="arch">
                 {rows.map((item) => (
@@ -191,6 +201,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             {capped ? (
               <p className="muted" style={{ marginTop: 16 }}>
                 换用更具体的关键词，或再加一个词缩小范围，例如「三退 义工」。
+              </p>
+            ) : null}
+            {incomplete && rows.length > 0 ? (
+              <p className="muted" style={{ marginTop: 16 }}>
+                这次搜索用时较长，上面是已经找到的部分结果，可能还有没列出的内容。
               </p>
             ) : null}
           </article>

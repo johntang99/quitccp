@@ -102,11 +102,11 @@ function mapChars(text: string, table: Readonly<Record<string, string>>): string
  * variant forms -- most Latin text, and Han characters shared by both scripts --
  * costs one condition exactly as before.
  */
-export function termVariants(term: string): string[] {
+export function termVariants(term: string, withSynonyms = true): string[] {
   const forms = new Set<string>();
   // Synonyms first, then every script form of each: a reader typing 三退 in
   // traditional should still reach an article that says 退黨.
-  for (const synonym of synonymsOf(term)) {
+  for (const synonym of withSynonyms ? synonymsOf(term) : [term]) {
     forms.add(synonym);
     forms.add(mapChars(synonym, TRADITIONAL_TO_SIMPLIFIED));
     forms.add(mapChars(synonym, SIMPLIFIED_TO_TRADITIONAL));
@@ -184,6 +184,42 @@ interface TypeConfig {
   localeFiltered: boolean;
 }
 
+/**
+ * Which tiers get synonym expansion.
+ *
+ * Titles and summaries do; full text does not. Every extra form is another
+ * pattern tested against every row, and across 120MB of article bodies that is
+ * the whole cost of a search: expanding 三退 to its four synonyms took a body
+ * scan from 2.0s to 7.0s, and real queries like 中共 冰岛 reached 5s.
+ *
+ * Giving it up in the body costs little. An editor names a piece by the term the
+ * piece is about, so a synonym earns its keep in the title; an article whose
+ * body happens to say 退党 while the reader typed 三退 is usually also one whose
+ * title says so. Two-character Chinese terms cannot use the trigram index from
+ * migration 020 either -- that needs three characters -- so the body tier is
+ * exactly where the saving is needed and least is lost.
+ */
+const SYNONYM_TIERS = 2;
+
+/**
+ * How long the whole search may spend before giving up on the expensive tier.
+ *
+ * The body tier is best-effort by design. Two-character Chinese terms -- 中共,
+ * 香港, 疫情, among the most natural things to type -- cannot use the trigram
+ * index from migration 020, which needs three characters, so matching them in
+ * the body is a sequential pass over 120MB of prose. 中共 冰岛 took six seconds
+ * that way.
+ *
+ * A reader waiting six seconds for thirteen results is worse served than one
+ * given the title and summary matches immediately. So the cheap tiers always
+ * run, and the body tier only gets whatever time is left; if it overruns, the
+ * search returns what it already has rather than making everyone wait for the
+ * long tail.
+ */
+const TIME_BUDGET_MS = 2500;
+/** Below this there is no point starting a scan that cannot finish. */
+const MIN_TIER_BUDGET_MS = 400;
+
 const TYPES: TypeConfig[] = [
   {
     type: "article",
@@ -249,17 +285,25 @@ function toResult(
   };
 }
 
+interface TypeOutcome {
+  results: SubstringSearchResult[];
+  /** The body tier was cut short, so there may be matches not listed. */
+  truncated: boolean;
+}
+
 async function searchOneType(
   config: TypeConfig,
   terms: string[],
   locale: string,
   limit: number
-): Promise<SubstringSearchResult[]> {
+): Promise<TypeOutcome> {
   const supabase = createSupabaseAdminClient();
-  // One entry per term, each holding every script form that term could take.
-  const needleGroups = terms.map((term) =>
-    termVariants(term).map((form) => `%${escapeLike(escapeForOr(form))}%`)
-  );
+  // One entry per term, each holding every form that term could take. Built per
+  // tier because the cheap tiers can afford synonyms and the body tier cannot.
+  const needlesFor = (withSynonyms: boolean) =>
+    terms.map((term) =>
+      termVariants(term, withSynonyms).map((form) => `%${escapeLike(escapeForOr(form))}%`)
+    );
 
   const base = () => {
     let q = supabase
@@ -290,7 +334,7 @@ async function searchOneType(
    * written out per field and OR-ed, because a term matching in the title and
    * another in the description is not a match for the phrase someone typed.
    */
-  const conjunctionFor = (field: string) =>
+  const conjunctionFor = (field: string, needleGroups: string[][]) =>
     needleGroups
       .map((group) =>
         group.length === 1
@@ -299,7 +343,7 @@ async function searchOneType(
       )
       .join(",");
 
-  const run = async (fields: string[]) => {
+  const run = async (fields: string[], needleGroups: string[][], budgetMs?: number) => {
     let query = base();
     if (fields.length === 1) {
       for (const group of needleGroups) {
@@ -314,10 +358,15 @@ async function searchOneType(
           .map((field) =>
             needleGroups.length === 1 && needleGroups[0].length === 1
               ? `${field}.ilike.${needleGroups[0][0]}`
-              : `and(${conjunctionFor(field)})`
+              : `and(${conjunctionFor(field, needleGroups)})`
           )
           .join(",")
       );
+    }
+    if (budgetMs !== undefined) {
+      // Abort rather than wait. The caller keeps whatever the earlier tiers
+      // found; a partial answer now beats a complete one nobody waited for.
+      query = query.abortSignal(AbortSignal.timeout(budgetMs));
     }
     const { data, error } = await query;
     if (error) throw error;
@@ -326,13 +375,34 @@ async function searchOneType(
 
   const results: SubstringSearchResult[] = [];
   const seen = new Set<string>();
+  const startedAt = Date.now();
+  let truncated = false;
 
-  for (const tier of config.tiers) {
-    // Each tier is skipped once the page is full, so the body scan -- the only
-    // slow one, around 2.3s across 15,515 articles -- runs just for queries that
-    // the title and summary could not answer.
+  for (const [index, tier] of config.tiers.entries()) {
+    // Each tier is skipped once the page is full, so the body scan runs only for
+    // queries the title and summary could not answer.
     if (results.length >= limit) break;
-    const rows = await run(tier);
+
+    const isBodyTier = index >= SYNONYM_TIERS;
+    const remaining = TIME_BUDGET_MS - (Date.now() - startedAt);
+    if (isBodyTier && remaining < MIN_TIER_BUDGET_MS) {
+      truncated = true;
+      break;
+    }
+
+    let rows: Record<string, unknown>[];
+    try {
+      rows = await run(tier, needlesFor(!isBodyTier), isBodyTier ? remaining : undefined);
+    } catch (error) {
+      // A timed-out body scan is an expected outcome, not a failure: the cheap
+      // tiers have already answered and those results stand.
+      if (isBodyTier) {
+        truncated = true;
+        break;
+      }
+      throw error;
+    }
+
     for (const row of rows) {
       const result = toResult(config, row, terms);
       if (!result || seen.has(result.id)) continue;
@@ -340,7 +410,7 @@ async function searchOneType(
       results.push(result);
     }
   }
-  return results;
+  return { results, truncated };
 }
 
 /**
@@ -352,12 +422,24 @@ async function searchOneType(
  * type failing does not take the others down: a search that returns the videos
  * is better than a search that returns an error.
  */
+export interface SubstringSearchOutcome {
+  results: SubstringSearchResult[];
+  /**
+   * True when a body scan was cut short by the time budget.
+   *
+   * The page needs this to tell "nothing matched" apart from "we stopped
+   * looking". Reporting 没有匹配结果 for a query with thirteen real matches is
+   * not a slow search, it is a wrong answer.
+   */
+  truncated: boolean;
+}
+
 export async function searchEverythingBySubstring(
   query: string,
   options: { locale?: string; limit?: number } = {}
-): Promise<SubstringSearchResult[]> {
+): Promise<SubstringSearchOutcome> {
   const terms = splitTerms(query);
-  if (terms.length === 0) return [];
+  if (terms.length === 0) return { results: [], truncated: false };
   const locale = options.locale ?? "zh";
   const limit = options.limit ?? 30;
 
@@ -366,13 +448,19 @@ export async function searchEverythingBySubstring(
   );
 
   const merged: SubstringSearchResult[] = [];
+  let truncated = false;
   for (const outcome of settled) {
-    if (outcome.status === "fulfilled") merged.push(...outcome.value);
-    else {
+    if (outcome.status === "fulfilled") {
+      merged.push(...outcome.value.results);
+      truncated = truncated || outcome.value.truncated;
+    } else {
       // eslint-disable-next-line no-console
       console.warn("[search-substring] one content type failed", outcome.reason);
     }
   }
 
-  return dedupeByTitle(merged.sort(byScoreThenRecency)).slice(0, limit);
+  return {
+    results: dedupeByTitle(merged.sort(byScoreThenRecency)).slice(0, limit),
+    truncated
+  };
 }
