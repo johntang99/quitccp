@@ -185,40 +185,19 @@ interface TypeConfig {
 }
 
 /**
- * Which tiers get synonym expansion.
+ * Synonyms expand in every tier, body text included.
  *
- * Titles and summaries do; full text does not. Every extra form is another
- * pattern tested against every row, and across 120MB of article bodies that is
- * the whole cost of a search: expanding 三退 to its four synonyms took a body
- * scan from 2.0s to 7.0s, and real queries like 中共 冰岛 reached 5s.
+ * The owner's decision, 2026-10-04: finding the result matters more than how
+ * long it takes. Restricting synonyms to the title made the worst case faster
+ * and the answers thinner -- 1,573 articles say 退党 without ever saying 三退,
+ * and many of them say it only in the body.
  *
- * Giving it up in the body costs little. An editor names a piece by the term the
- * piece is about, so a synonym earns its keep in the title; an article whose
- * body happens to say 退党 while the reader typed 三退 is usually also one whose
- * title says so. Two-character Chinese terms cannot use the trigram index from
- * migration 020 either -- that needs three characters -- so the body tier is
- * exactly where the saving is needed and least is lost.
+ * The cost is real and worth naming: every form is another pattern tested
+ * against every row, and two-character Chinese terms -- 中共, 香港, 疫情 -- cannot
+ * use the trigram indexes from migration 020, which need three characters. A
+ * body scan for those is a sequential pass over 120MB of prose.
  */
-const SYNONYM_TIERS = 2;
-
-/**
- * How long the whole search may spend before giving up on the expensive tier.
- *
- * The body tier is best-effort by design. Two-character Chinese terms -- 中共,
- * 香港, 疫情, among the most natural things to type -- cannot use the trigram
- * index from migration 020, which needs three characters, so matching them in
- * the body is a sequential pass over 120MB of prose. 中共 冰岛 took six seconds
- * that way.
- *
- * A reader waiting six seconds for thirteen results is worse served than one
- * given the title and summary matches immediately. So the cheap tiers always
- * run, and the body tier only gets whatever time is left; if it overruns, the
- * search returns what it already has rather than making everyone wait for the
- * long tail.
- */
-const TIME_BUDGET_MS = 2500;
-/** Below this there is no point starting a scan that cannot finish. */
-const MIN_TIER_BUDGET_MS = 400;
+const SYNONYM_TIERS = Number.POSITIVE_INFINITY;
 
 const TYPES: TypeConfig[] = [
   {
@@ -343,7 +322,7 @@ async function searchOneType(
       )
       .join(",");
 
-  const run = async (fields: string[], needleGroups: string[][], budgetMs?: number) => {
+  const run = async (fields: string[], needleGroups: string[][]) => {
     let query = base();
     if (fields.length === 1) {
       for (const group of needleGroups) {
@@ -363,11 +342,6 @@ async function searchOneType(
           .join(",")
       );
     }
-    if (budgetMs !== undefined) {
-      // Abort rather than wait. The caller keeps whatever the earlier tiers
-      // found; a partial answer now beats a complete one nobody waited for.
-      query = query.abortSignal(AbortSignal.timeout(budgetMs));
-    }
     const { data, error } = await query;
     if (error) throw error;
     return (data ?? []) as unknown as Record<string, unknown>[];
@@ -375,7 +349,6 @@ async function searchOneType(
 
   const results: SubstringSearchResult[] = [];
   const seen = new Set<string>();
-  const startedAt = Date.now();
   let truncated = false;
 
   for (const [index, tier] of config.tiers.entries()) {
@@ -384,18 +357,18 @@ async function searchOneType(
     if (results.length >= limit) break;
 
     const isBodyTier = index >= SYNONYM_TIERS;
-    const remaining = TIME_BUDGET_MS - (Date.now() - startedAt);
-    if (isBodyTier && remaining < MIN_TIER_BUDGET_MS) {
-      truncated = true;
-      break;
-    }
 
     let rows: Record<string, unknown>[];
     try {
-      rows = await run(tier, needlesFor(!isBodyTier), isBodyTier ? remaining : undefined);
+      rows = await run(tier, needlesFor(true));
     } catch (error) {
-      // A timed-out body scan is an expected outcome, not a failure: the cheap
-      // tiers have already answered and those results stand.
+      /*
+       * Nothing here imposes a deadline -- the search waits as long as the
+       * database is willing to work. But the database has its own statement
+       * timeout, and when it ends a scan the earlier tiers have usually found
+       * something. Those results stand, and `truncated` tells the page to say
+       * the search was cut short rather than claim nothing matched.
+       */
       if (isBodyTier) {
         truncated = true;
         break;

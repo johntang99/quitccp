@@ -3,6 +3,14 @@ import type { Route } from "next";
 import { searchPublishedArticlesWithMeta, type SearchArticleResult } from "@/lib/search-repository";
 import type { SearchResultType } from "@/lib/search-substring";
 
+/**
+ * A full-text scan over 120MB of prose can take the better part of a minute for
+ * a rare two-character term, and returning the result matters more than
+ * returning quickly. Vercel's default would cut that off well before the
+ * database does.
+ */
+export const maxDuration = 60;
+
 interface SearchPageProps {
   searchParams: Promise<{ q?: string; page?: string; sort?: string; type?: string }>;
 }
