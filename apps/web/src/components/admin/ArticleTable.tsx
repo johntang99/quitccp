@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { actorLabel, listAdminDisplayNames } from "@/lib/admin/user-admin-repository";
 import type { ArticleRecord } from "@/lib/admin/types";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -17,7 +18,7 @@ function day(value: string | null): string {
  * The article rows, shared by 查找与修改 and 最新 100 篇 so the two cannot drift.
  * `selectable` adds the checkboxes the bulk bar reads.
  */
-export function ArticleTable({
+export async function ArticleTable({
   rows,
   selectable = true,
   numbered = false,
@@ -33,6 +34,7 @@ export function ArticleTable({
    */
   dateColumn?: "published" | "updated";
 }) {
+  const actorNames = await listAdminDisplayNames();
   return (
     <div className="admin-table-wrap">
       <table className="admin-table">
@@ -47,6 +49,7 @@ export function ArticleTable({
             <th>状态</th>
             <th style={{ width: 44, textAlign: "center" }} title="重要">重要</th>
             <th style={{ width: 62, textAlign: "center" }} title="精彩保留">精彩</th>
+            <th>编辑</th>
             <th>{dateColumn === "updated" ? "更新" : "发布"}</th>
             <th />
           </tr>
@@ -54,7 +57,7 @@ export function ArticleTable({
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={10} style={{ color: "#8a90a0", padding: 24, textAlign: "center" }}>
+              <td colSpan={11} style={{ color: "#8a90a0", padding: 24, textAlign: "center" }}>
                 没有符合条件的文章。
               </td>
             </tr>
@@ -113,6 +116,17 @@ export function ArticleTable({
                 </td>
                 <td style={{ textAlign: "center" }} title={row.editorArchive ? "精彩保留" : ""}>
                   {row.editorArchive ? <span style={{ color: "#1f7a4d", fontSize: 15 }}>✦</span> : null}
+                </td>
+                {/* 编辑 in the masthead sense: the person who handled the piece
+                    for us. The 作者 column above is the public byline -- the
+                    writer, often someone outside the organisation. */}
+                <td style={{ color: "#8a90a0", whiteSpace: "nowrap" }} title={row.createdBy || undefined}>
+                  {actorLabel(row.createdBy, actorNames)}
+                  {row.updatedBy && row.updatedBy !== row.createdBy ? (
+                    <div style={{ fontSize: 11 }} title={`最后修改：${row.updatedBy}`}>
+                      改：{actorLabel(row.updatedBy, actorNames)}
+                    </div>
+                  ) : null}
                 </td>
                 <td style={{ color: "#8a90a0", whiteSpace: "nowrap" }}>
                   {day(dateColumn === "updated" ? row.updatedAt : row.publishedAt)}

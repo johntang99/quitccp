@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "slug and title are required" }, { status: 400 });
   }
   if ((status === "published" || status === "archived") && !canBulkPublish(user)) {
-    return NextResponse.json({ error: "Only super_admin/content_admin can publish/archive" }, { status: 403 });
+    return NextResponse.json({ error: "只有管理员或超级管理员可以发布或归档。编辑请先「保存草稿」，再请管理员发布。" }, { status: 403 });
   }
 
   await upsertVideoRecord(

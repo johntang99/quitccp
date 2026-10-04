@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     }
 
     if ((action === "publish" || action === "archive") && !canBulkPublish(user)) {
-      return NextResponse.json({ error: "Insufficient role for publish/archive" }, { status: 403 });
+      return NextResponse.json({ error: "只有管理员或超级管理员可以发布或归档。编辑请先「保存草稿」，再请管理员发布。" }, { status: 403 });
     }
     const nextStatus =
       action === "publish" ? "published" : action === "archive" ? "archived" : "draft";

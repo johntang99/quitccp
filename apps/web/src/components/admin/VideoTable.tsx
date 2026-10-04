@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DeleteVideoButton } from "./DeleteVideoButton";
+import { actorLabel, listAdminDisplayNames } from "@/lib/admin/user-admin-repository";
 import { hostOf } from "@/lib/video-host";
 import type { VideoListRow } from "@/lib/admin/video-repository";
 
@@ -23,7 +24,7 @@ function duration(seconds: number | null): string {
  * One row per video, shared by 查找与修改 and 最新 100 个 — the same arrangement
  * ArticleTable gives articles, so the two admins read alike.
  */
-export function VideoTable({
+export async function VideoTable({
   rows,
   selectable = false,
   bulkFormId
@@ -33,6 +34,7 @@ export function VideoTable({
   /** Associates the row checkboxes with a bulk form that lives outside the table. */
   bulkFormId?: string;
 }) {
+  const actorNames = await listAdminDisplayNames();
   return (
     <div className="admin-table-wrap">
       <table className="admin-table">
@@ -48,6 +50,7 @@ export function VideoTable({
             <th style={{ width: 44, textAlign: "center" }} title="重要">重要</th>
             <th style={{ width: 62, textAlign: "center" }} title="精彩保留">精彩</th>
             <th>来源</th>
+            <th>创建人</th>
             <th>发布时间</th>
             <th style={{ width: 150 }}>操作</th>
           </tr>
@@ -55,7 +58,7 @@ export function VideoTable({
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={selectable ? 11 : 10} style={{ color: "#8a90a0", padding: 24, textAlign: "center" }}>
+              <td colSpan={selectable ? 12 : 11} style={{ color: "#8a90a0", padding: 24, textAlign: "center" }}>
                 没有符合条件的视频。
               </td>
             </tr>
@@ -121,6 +124,15 @@ export function VideoTable({
                       {host.label} ↗
                     </a>
                   )}
+                </td>
+                {/* Who added it to the CMS; 来源 above is where the video is hosted. */}
+                <td style={{ color: "#8a90a0", whiteSpace: "nowrap" }} title={row.createdBy || undefined}>
+                  {actorLabel(row.createdBy, actorNames)}
+                  {row.updatedBy && row.updatedBy !== row.createdBy ? (
+                    <div style={{ fontSize: 11 }} title={`最后修改：${row.updatedBy}`}>
+                      改：{actorLabel(row.updatedBy, actorNames)}
+                    </div>
+                  ) : null}
                 </td>
                 <td className="muted" style={{ whiteSpace: "nowrap" }}>
                   {row.publishedAt ? row.publishedAt.slice(0, 10) : "—"}

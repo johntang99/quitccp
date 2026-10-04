@@ -1,6 +1,13 @@
+import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { PermissionTables } from "@/components/admin/PermissionTables";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
-import { ROLE_LABELS, assignableRoles, can, canManageRole } from "@/lib/admin/permissions";
+import {
+  ROLE_LABELS,
+  assignableRoles,
+  can,
+  canModifyAccountOfRole
+} from "@/lib/admin/permissions";
 import { MIN_PASSWORD_LENGTH, listManagedUsers } from "@/lib/admin/user-admin-repository";
 
 interface PageProps {
@@ -27,7 +34,12 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
   return (
     <AdminShell user={user}>
       <section className="admin-card">
-        <h2 style={{ marginTop: 0 }}>用户管理</h2>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+          <h2 style={{ marginTop: 0, marginBottom: 0 }}>用户管理</h2>
+          <Link href="/admin/users/guide" className="admin-btn admin-btn-sm">
+            用户管理说明
+          </Link>
+        </div>
         <p>
           {user.role === "super_admin"
             ? "超级管理员可以添加管理员和编辑。"
@@ -76,7 +88,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
           </thead>
           <tbody>
             {users.map((row) => {
-              const mayManage = canManageRole(user, row.role);
+              const mayManage = canModifyAccountOfRole(user, row.role);
               const isSelf = row.id === user.id;
               return (
                 <tr key={row.id}>
@@ -133,7 +145,9 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                             {row.isActive ? "停用" : "恢复"}
                           </button>
                         </form>
-                        {user.role === "super_admin" ? (
+                        {/* Shown only when the server would actually allow it,
+                            so the button and the rule never disagree. */}
+                        {canModifyAccountOfRole(user, row.role) ? (
                           <form method="post" action="/api/admin/users" className="users-inline">
                             <input type="hidden" name="intent" value="delete" />
                             <input type="hidden" name="id" value={row.id} />
@@ -150,6 +164,16 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
             })}
           </tbody>
         </table>
+      </section>
+
+      <section className="admin-card">
+        <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+          <h3 style={{ marginTop: 0, marginBottom: 0 }}>谁能做什么</h3>
+          <Link href="/admin/users/guide" className="admin-btn admin-btn-sm">
+            完整说明 →
+          </Link>
+        </div>
+        <PermissionTables />
       </section>
     </AdminShell>
   );

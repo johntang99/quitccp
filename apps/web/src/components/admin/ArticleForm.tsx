@@ -42,7 +42,6 @@ interface ArticleFormProps {
   categories: { name: string; slug: string }[];
   authors: string[];
   /** Name of the signed-in editor, used as the default byline on a new article. */
-  currentUser: string;
   mode: "new" | "edit";
 }
 
@@ -55,11 +54,20 @@ function toLocalInput(iso: string | null): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function ArticleForm({ initial, categories, authors, currentUser, mode }: ArticleFormProps) {
-  const [v, setV] = useState<ArticleFormValues>({
-    ...initial,
-    author: initial.author || (mode === "new" ? currentUser : "")
-  });
+export function ArticleForm({ initial, categories, authors, mode }: ArticleFormProps) {
+  /*
+   * 作者 starts empty on a new article.
+   *
+   * It used to default to the signed-in account's email prefix, so a piece typed
+   * in by an editor went out bylined "editor" -- an internal account identifier
+   * presented to readers as the person who wrote it. On a site whose standing is
+   * its documentary accuracy, a wrong byline is not a cosmetic defect.
+   *
+   * 作者 is an editorial claim about who wrote the piece, often someone outside
+   * the organisation entirely. Who typed it into the CMS is a separate question,
+   * and 创建人 (created_by, migration 019) now answers it properly.
+   */
+  const [v, setV] = useState<ArticleFormValues>({ ...initial });
   const [picker, setPicker] = useState<null | "hero" | "body">(null);
   // Lets the picker drop its image where the caret is, not at the end.
   const editor = useRef<MarkdownEditorHandle>(null);

@@ -58,6 +58,10 @@ export interface ArticleRecord {
   legacyUrl?: string;
   legacyId?: number;
   updatedAt: string;
+  /** Email of the account that first saved this row. Empty for rows predating 019. */
+  createdBy: string;
+  /** Email of the account that last saved it. */
+  updatedBy: string;
 }
 
 export interface MediaRecord {

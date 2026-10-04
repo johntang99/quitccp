@@ -34,11 +34,14 @@ export interface ArticleSearchFilters {
 const SELECT_BASE =
   "id, slug, title, subtitle, section, locale, status, summary, hero_image, author, published_at, " +
   "updated_at, legacy_id";
-/** With the flags 015 adds. Asked for first; dropped if the migration has not run. */
-const SELECT = `${SELECT_BASE}, featured, editor_archive`;
+/**
+ * With the columns 015 and 019 add. Asked for first; dropped together if either
+ * migration has not run, since the retry below falls back to SELECT_BASE whole.
+ */
+const SELECT = `${SELECT_BASE}, featured, editor_archive, created_by, updated_by`;
 
 function isMissingFlagColumn(error: unknown): boolean {
-  return /featured|editor_archive/.test(JSON.stringify(error ?? ""));
+  return /featured|editor_archive|created_by|updated_by/.test(JSON.stringify(error ?? ""));
 }
 
 export interface ArticleSearchResult {
@@ -172,7 +175,9 @@ async function runSearch(
       sourceUrl: "",
       publishedAt: row.published_at ? String(row.published_at) : null,
       legacyId: row.legacy_id ? Number(row.legacy_id) : undefined,
-      updatedAt: String(row.updated_at)
+      updatedAt: String(row.updated_at),
+      createdBy: String(row.created_by ?? ""),
+      updatedBy: String(row.updated_by ?? "")
     }))
   };
 }

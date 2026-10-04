@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { can } from "@/lib/admin/permissions";
 import { listSettings, upsertSettingRecord } from "@/lib/admin/repository";
+import { readFormData } from "@/lib/admin/form-request";
 
 export async function GET() {
   const user = await getAdminSessionUser();
@@ -16,7 +17,10 @@ export async function POST(request: Request) {
   if (!can(user, "settings.write")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   requireAdminMfa(user);
 
-  const formData = await request.formData();
+  const formData = await readFormData(request);
+  if (!formData) {
+    return NextResponse.json({ error: "Expected form data" }, { status: 400 });
+  }
   const id = String(formData.get("id") ?? "");
   const settingKey = String(formData.get("settingKey") ?? "").trim();
   const valueJson = String(formData.get("valueJson") ?? "{}");

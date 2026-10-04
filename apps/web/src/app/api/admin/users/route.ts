@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
-import { can, canManageRole } from "@/lib/admin/permissions";
+import {
+  OWNER_EMAIL,
+  can,
+  canManageRole,
+  canModifyAccountOfRole
+} from "@/lib/admin/permissions";
 import { recordAdminAudit } from "@/lib/admin/repository";
 import {
   countActiveSuperAdmins,
@@ -69,8 +74,17 @@ export async function POST(request: Request) {
     const id = String(form.get("id") ?? "");
     const target = id ? await findManagedUserById(id) : null;
     if (!target) return back(request, "账号不存在。");
-    // Authority over the account as it stands today.
-    if (!canManageRole(actor, target.role)) return back(request, "你没有权限修改这个账号。");
+    // Authority over the account as it stands today. Acting on your own row is
+    // allowed through here and then refused per intent below, so the message you
+    // get is the specific one ("不能修改自己的角色") rather than a generic denial.
+    if (target.id !== actor.id && !canModifyAccountOfRole(actor, target.role)) {
+      return back(
+        request,
+        target.role === "super_admin"
+          ? `超级管理员之间不能互相修改，只有所有者账号（${OWNER_EMAIL}）可以。`
+          : "你没有权限修改这个账号。"
+      );
+    }
 
     if (intent === "role") {
       const role = String(form.get("role") ?? "") as AdminRole;
@@ -132,6 +146,10 @@ export async function POST(request: Request) {
     }
 
     if (intent === "delete") {
+      // Nobody deletes their own account -- not an editor, not an admin, not the
+      // owner. It is the one destructive act with no second pair of eyes, and
+      // the usual reason to want it (leaving) is served by deactivation, which
+      // keeps the audit trail attached to a real row.
       if (target.id === actor.id) return back(request, "不能删除自己的账号。");
       if (target.role === "super_admin" && target.isActive && (await countActiveSuperAdmins()) <= 1) {
         return back(request, "这是最后一个超级管理员，不能删除。");

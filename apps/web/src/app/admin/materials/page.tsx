@@ -3,6 +3,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { MaterialTabs } from "@/components/admin/MaterialTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { listMaterialCategories, searchMaterials } from "@/lib/admin/material-repository";
+import { actorLabel, listAdminDisplayNames } from "@/lib/admin/user-admin-repository";
 
 interface PageProps {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -15,7 +16,7 @@ export default async function AdminMaterialsPage({ searchParams }: PageProps) {
   const user = await requireAdminSessionUser();
   const params = await searchParams;
 
-  const [result, categories] = await Promise.all([
+  const [result, categories, actorNames] = await Promise.all([
     searchMaterials({
       q: params.q,
       category: params.category,
@@ -23,7 +24,8 @@ export default async function AdminMaterialsPage({ searchParams }: PageProps) {
       page: Number(params.page ?? "1") || 1,
       pageSize: Number(params.pageSize ?? "20") || 20
     }),
-    listMaterialCategories()
+    listMaterialCategories(),
+    listAdminDisplayNames()
   ]);
 
   return (
@@ -77,13 +79,14 @@ export default async function AdminMaterialsPage({ searchParams }: PageProps) {
                     <th>分类</th>
                     <th>文件</th>
                     <th>状态</th>
+                    <th>创建人</th>
                     <th>发布时间</th>
                   </tr>
                 </thead>
                 <tbody>
                   {result.rows.length === 0 ? (
                     <tr>
-                      <td colSpan={6} style={{ color: "#777" }}>没有符合条件的资料。</td>
+                      <td colSpan={7} style={{ color: "#777" }}>没有符合条件的资料。</td>
                     </tr>
                   ) : (
                     result.rows.map((row) => (
@@ -104,6 +107,15 @@ export default async function AdminMaterialsPage({ searchParams }: PageProps) {
                         <td>{row.categories.join("、") || <span style={{ color: "#bbb" }}>未分类</span>}</td>
                         <td>{row.fileCount}</td>
                         <td>{STATUS_LABEL[row.status] ?? row.status}</td>
+                        {/* Who added it to the CMS. */}
+                        <td style={{ color: "#888", whiteSpace: "nowrap" }} title={row.createdBy || undefined}>
+                          {actorLabel(row.createdBy, actorNames)}
+                          {row.updatedBy && row.updatedBy !== row.createdBy ? (
+                            <div style={{ fontSize: 11 }} title={`最后修改：${row.updatedBy}`}>
+                              改：{actorLabel(row.updatedBy, actorNames)}
+                            </div>
+                          ) : null}
+                        </td>
                         <td style={{ whiteSpace: "nowrap" }}>{row.publishedAt ? row.publishedAt.slice(0, 10) : "—"}</td>
                       </tr>
                     ))

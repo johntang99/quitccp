@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { searchEverythingBySubstring, type SearchResultType } from "@/lib/search-substring";
 
 export interface SearchArticleResult {
   id: string;
@@ -7,9 +8,16 @@ export interface SearchArticleResult {
   excerpt: string;
   section: string;
   score: number;
+  /** Which content type this is. Only the substring backend fills it in; the
+   *  article-only backends are always "article". */
+  type: SearchResultType;
+  /** Where the result goes. Articles, videos and materials have different URL
+   *  shapes, so the backend decides rather than the page guessing. */
+  href: string;
+  typeLabel: string;
 }
 
-export type SearchBackend = "pg_trgm" | "meilisearch" | "fallback_ilike";
+export type SearchBackend = "pg_trgm" | "meilisearch" | "substring" | "fallback_ilike";
 
 export interface SearchExecutionMeta {
   primaryBackend: SearchBackend;
@@ -53,15 +61,21 @@ function envFlag(name: string, fallback = false): boolean {
 }
 
 function getConfiguredPrimaryBackend(): SearchBackend {
-  const raw = (process.env.SEARCH_PRIMARY_BACKEND ?? "pg_trgm").trim().toLowerCase();
+  const raw = (process.env.SEARCH_PRIMARY_BACKEND ?? "substring").trim().toLowerCase();
   if (raw === "meilisearch") return "meilisearch";
   if (raw === "pg_trgm") return "pg_trgm";
-  return "pg_trgm";
+  if (raw === "substring") return "substring";
+  // Unrecognised values used to fall through to pg_trgm, which is the one
+  // backend that cannot answer a Chinese query. Substring always answers.
+  return "substring";
 }
 
 function getMeiliConfig() {
   const host = process.env.MEILI_HOST?.trim();
-  const apiKey = process.env.MEILI_MASTER_KEY?.trim() || process.env.MEILI_SEARCH_API_KEY?.trim() || "";
+  // Search-only key first. Both variables exist in the same deployment -- the
+  // sync job needs the master key -- so preferring the master key here meant
+  // every public search ran with credentials that can also delete the index.
+  const apiKey = process.env.MEILI_SEARCH_API_KEY?.trim() || process.env.MEILI_MASTER_KEY?.trim() || "";
   const index = process.env.MEILI_INDEX_ARTICLES?.trim() || "articles";
   return {
     host,
@@ -77,7 +91,12 @@ function toSearchRowsFromMeili(hits: MeiliHit[]): SearchArticleResult[] {
     title: String(hit.title),
     excerpt: String(hit.summary ?? ""),
     section: String(hit.section ?? "news"),
-    score: Number(hit._rankingScore ?? 0)
+    score: Number(hit._rankingScore ?? 0),
+    // The index holds articles only today; when videos and materials are added
+    // to it, this reads the type off the document instead.
+    type: "article" as SearchResultType,
+    href: `/news/${encodeURIComponent(String(hit.slug))}`,
+    typeLabel: "新闻与报告"
   }));
 }
 
@@ -103,7 +122,10 @@ async function searchWithPgTrgm(
     title: String(row.title),
     excerpt: String(row.summary ?? ""),
     section: "news",
-    score: Number(row.score ?? 0)
+    score: Number(row.score ?? 0),
+    type: "article" as SearchResultType,
+    href: `/news/${encodeURIComponent(String(row.slug))}`,
+    typeLabel: "新闻与报告"
   }));
 }
 
@@ -170,7 +192,10 @@ async function searchWithIlikeFallback(
     title: String(row.title),
     excerpt: String(row.summary ?? ""),
     section: String(row.section ?? "news"),
-    score: 0
+    score: 0,
+    type: "article" as SearchResultType,
+    href: `/news/${encodeURIComponent(String(row.slug))}`,
+    typeLabel: "新闻与报告"
   }));
 }
 
@@ -186,6 +211,22 @@ async function searchWithBackend(
   }
   if (backend === "pg_trgm") {
     return searchWithPgTrgm(query, locale, limit, offset);
+  }
+  if (backend === "substring") {
+    const rows = await searchEverythingBySubstring(query, { locale, limit });
+    return rows.map((row) => ({
+      id: row.id,
+      // The slug is no longer how a result is addressed -- href is -- but the
+      // field stays because callers and the JSON API still read it.
+      slug: row.href.split("/").pop() ?? "",
+      title: row.title,
+      excerpt: row.excerpt,
+      section: row.type === "article" ? "news" : row.type,
+      score: row.score,
+      type: row.type,
+      href: row.href,
+      typeLabel: row.typeLabel
+    }));
   }
   return searchWithIlikeFallback(query, locale, limit, offset);
 }
@@ -233,7 +274,12 @@ export async function searchPublishedArticlesWithMeta(
   try {
     results = await searchWithBackend(primaryBackend, normalizedQuery, locale, limit, offset);
   } catch (primaryError) {
-    const secondaryBackend: SearchBackend = primaryBackend === "pg_trgm" ? "meilisearch" : "pg_trgm";
+    // Substring is the floor: it needs no index, no extension and no running
+    // service, so it answers whenever the database is reachable at all. The old
+    // chain fell back to pg_trgm, which is precisely the backend that returns
+    // nothing for Chinese -- a fallback that fails quietly is worse than none.
+    const secondaryBackend: SearchBackend =
+      primaryBackend === "substring" ? "fallback_ilike" : "substring";
     try {
       results = await searchWithBackend(secondaryBackend, normalizedQuery, locale, limit, offset);
       effectiveBackend = secondaryBackend;
@@ -247,7 +293,8 @@ export async function searchPublishedArticlesWithMeta(
   }
 
   if (dualReadEnabled && effectiveBackend !== "fallback_ilike") {
-    const secondary: SearchBackend = effectiveBackend === "pg_trgm" ? "meilisearch" : "pg_trgm";
+    const secondary: SearchBackend =
+      effectiveBackend === "meilisearch" ? "substring" : "meilisearch";
     void searchWithBackend(secondary, normalizedQuery, locale, limit, offset)
       .then((secondaryRows) => {
         logDualReadDiff(normalizedQuery, effectiveBackend, secondary, results, secondaryRows);

@@ -98,17 +98,32 @@ async function syncMeilisearch(locales: string[], batchSize: number): Promise<{ 
   await ensureIndex(meiliHost, meiliKey, indexUid);
   await configureIndex(meiliHost, meiliKey, indexUid);
 
-  let offset = 0;
+  /*
+   * Keyset pagination, not OFFSET.
+   *
+   * `.range(offset, …)` makes Postgres walk every skipped row, so the cost grows
+   * with each batch until the statement times out. That is not theoretical: it
+   * is why this index held 10,000 of 15,515 articles and had not moved since
+   * 2026-08-13 -- the sync died around offset 7,500 every time it was run, and
+   * the failure looked like an error message rather than a short index.
+   *
+   * Ordering by id (the primary key, unique and never null) also makes the walk
+   * stable; `legacy_id` is null on anything created in this CMS, so rows could be
+   * visited twice or skipped entirely.
+   */
+  let cursor: string | null = null;
   let totalIndexed = 0;
   let lastTaskUid: number | null = null;
 
   while (true) {
-    const { data, error } = await supabase
+    let query = supabase
       .from("cms_articles")
       .select("id, slug, title, summary, body_plain, section, locale, status, published_at")
       .in("locale", locales)
-      .order("legacy_id", { ascending: true })
-      .range(offset, offset + batchSize - 1);
+      .order("id", { ascending: true })
+      .limit(batchSize);
+    if (cursor) query = query.gt("id", cursor);
+    const { data, error } = await query;
     if (error) throw error;
 
     const rows = (data ?? []) as SearchDocumentRow[];
@@ -123,7 +138,7 @@ async function syncMeilisearch(locales: string[], batchSize: number): Promise<{ 
     );
     lastTaskUid = task.taskUid;
     totalIndexed += rows.length;
-    offset += rows.length;
+    cursor = String(rows[rows.length - 1].id);
 
     if (rows.length < batchSize) break;
   }

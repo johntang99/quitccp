@@ -21,7 +21,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <span>搜索</span>
           </p>
           <h1>搜索结果</h1>
-          <p className="sub">关键词：{query || "（未输入）"}</p>
+          <p className="sub">
+            关键词：{query || "（未输入）"}
+            {query ? `　共 ${results.length} 条` : ""}
+          </p>
         </div>
       </section>
       <section className="sec">
@@ -37,10 +40,15 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                       <div className="sectionCard" />
                     </div>
                     <div>
-                      <p className="meta">新闻与报告</p>
-                      <h3>{item.title}</h3>
-                      <p>{item.excerpt}</p>
-                      <Link href={`/news/${item.slug}` as Route}>打开页面</Link>
+                      {/* The label and the link both come from the backend: a
+                          video and a material do not live under /news, and this
+                          page used to call every result 新闻与报告 and send it
+                          there regardless. */}
+                      <p className="meta">{item.typeLabel}</p>
+                      <h3>
+                        <Link href={item.href as Route}>{item.title}</Link>
+                      </h3>
+                      {item.excerpt ? <p>{item.excerpt}</p> : null}
                     </div>
                   </article>
                 ))}

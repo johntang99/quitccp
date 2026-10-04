@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import type { AdminRole } from "./types";
 
@@ -191,4 +192,43 @@ export async function countActiveSuperAdmins(): Promise<number> {
     .eq("is_active", true);
   if (error) throw error;
   return count ?? 0;
+}
+
+/**
+ * email -> display name, for the 创建人 columns.
+ *
+ * Content rows store an email because that is what survives an account being
+ * renamed or deleted; the lists want a person's name. Looked up once per request
+ * (`cache`) and shared by every table on the page -- the staff table is tiny, so
+ * this is one small query, not one per row.
+ *
+ * Never throws: a column that cannot resolve a name falls back to the email, and
+ * a failure here must not take down the article list.
+ */
+export const listAdminDisplayNames = cache(async (): Promise<Record<string, string>> => {
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data, error } = await supabase.from("cms_admin_users").select("email, name");
+    if (error) throw error;
+    const out: Record<string, string> = {};
+    for (const row of data ?? []) {
+      const email = String(row.email ?? "").toLowerCase();
+      const name = row.name ? String(row.name).trim() : "";
+      if (email && name) out[email] = name;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+});
+
+/**
+ * How an actor is shown in a list: their name, else the part of the email before
+ * the @, else a dash. The full email stays available as a title attribute at the
+ * call site, so the exact account is still recoverable.
+ */
+export function actorLabel(email: string, names: Record<string, string>): string {
+  const key = (email ?? "").trim().toLowerCase();
+  if (!key) return "—";
+  return names[key] ?? key.split("@")[0];
 }

@@ -44,7 +44,6 @@ export default async function EditArticlePage({ params, searchParams }: EditArti
 
       <ArticleForm
         mode="edit"
-        currentUser={user.email.split("@")[0]}
         categories={categories}
         authors={authors}
         initial={{

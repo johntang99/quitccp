@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     }
     if (action === "published" || action === "draft" || action === "archived") {
       if ((action === "published" || action === "archived") && !canBulkPublish(user)) {
-        return back("只有 super_admin／content_admin 可以发布或归档。");
+        return back("只有管理员或超级管理员可以发布或归档。编辑请先「保存草稿」，再请管理员发布。");
       }
       const changed = await bulkSetVideoStatus(ids, action);
       const label = action === "published" ? "已发布" : action === "draft" ? "草稿" : "已归档";

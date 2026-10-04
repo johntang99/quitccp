@@ -43,6 +43,8 @@ export interface MaterialListRow {
   categories: string[];
   publishedAt: string | null;
   updatedAt: string;
+  createdBy: string;
+  updatedBy: string;
 }
 
 export interface MaterialRecord {
@@ -137,31 +139,40 @@ export async function searchMaterials(filters: MaterialSearchFilters): Promise<{
   const page = Math.max(1, filters.page ?? 1);
   const pageSize = Math.min(100, Math.max(5, filters.pageSize ?? 20));
 
-  let query = supabase
-    .from("cms_materials")
-    .select(
-      "id, slug, title, summary, cover_image, status, featured, files, published_at, updated_at, cms_material_category_map(position, cms_material_categories(id, slug, name))",
-      { count: "exact" }
-    );
+  const BASE_COLUMNS =
+    "id, slug, title, summary, cover_image, status, featured, files, published_at, updated_at, " +
+    "cms_material_category_map(position, cms_material_categories(id, slug, name))";
+  /** 019 adds these; asked for first and dropped if the migration has not run. */
+  const WITH_AUTHORSHIP = `${BASE_COLUMNS}, created_by, updated_by`;
 
-  if (filters.q?.trim()) {
-    const term = `%${filters.q.trim()}%`;
-    query = query.or(`title.ilike.${term},summary.ilike.${term},slug.ilike.${term}`);
+  const run = async (columns: string) => {
+    let query = supabase.from("cms_materials").select(columns, { count: "exact" });
+    if (filters.q?.trim()) {
+      const term = `%${filters.q.trim()}%`;
+      query = query.or(`title.ilike.${term},summary.ilike.${term},slug.ilike.${term}`);
+    }
+    if (filters.status) query = query.eq("status", filters.status);
+    return query
+      .order("published_at", { ascending: false, nullsFirst: false })
+      // A tiebreaker, because the import writes a whole batch on one timestamp
+      // and without this the pager repeats and drops rows. Same fix as articles.
+      .order("id", { ascending: true })
+      .range((page - 1) * pageSize, page * pageSize - 1);
+  };
+
+  let { data, error, count } = await run(WITH_AUTHORSHIP);
+  if (error && /created_by|updated_by/.test(JSON.stringify(error))) {
+    ({ data, error, count } = await run(BASE_COLUMNS));
   }
-  if (filters.status) query = query.eq("status", filters.status);
-
-  const { data, error, count } = await query
-    .order("published_at", { ascending: false, nullsFirst: false })
-    // A tiebreaker, because the import writes a whole batch on one timestamp
-    // and without this the pager repeats and drops rows. Same fix as articles.
-    .order("id", { ascending: true })
-    .range((page - 1) * pageSize, page * pageSize - 1);
   if (error) {
     if (missingTable(error)) return { ready: false, rows: [], total: 0, page, pageSize };
     throw error;
   }
 
-  let rows: MaterialListRow[] = (data ?? []).map((row) => {
+  // The select is now built from a constant rather than a literal, which defeats
+  // the client's column inference; the shape is read through `row` by hand below.
+  const dataRows = (data ?? []) as unknown as Record<string, any>[];
+  let rows: MaterialListRow[] = dataRows.map((row) => {
     const maps = Array.isArray(row.cms_material_category_map) ? row.cms_material_category_map : [];
     return {
       id: String(row.id),
@@ -176,7 +187,9 @@ export async function searchMaterials(filters: MaterialSearchFilters): Promise<{
         .map((m) => (m as Record<string, { name?: string } | undefined>).cms_material_categories?.name ?? "")
         .filter(Boolean),
       publishedAt: row.published_at ? String(row.published_at) : null,
-      updatedAt: String(row.updated_at)
+      updatedAt: String(row.updated_at),
+      createdBy: String(row.created_by ?? ""),
+      updatedBy: String(row.updated_by ?? "")
     };
   });
 
@@ -242,7 +255,7 @@ export interface MaterialInput {
   categoryIds: string[];
 }
 
-export async function saveMaterial(input: MaterialInput): Promise<string> {
+export async function saveMaterial(input: MaterialInput, actorEmail: string): Promise<string> {
   const supabase = createSupabaseAdminClient();
 
   const row: Record<string, unknown> = {
@@ -262,13 +275,43 @@ export async function saveMaterial(input: MaterialInput): Promise<string> {
   if (input.publishedAt !== undefined) row.published_at = input.publishedAt;
   else if (input.status === "published") row.published_at = new Date().toISOString();
 
+  // Set once at insert, then only ever touched on the update side, so an edit
+  // records the editor rather than reassigning authorship.
   let id = input.id;
+  if (id) row.updated_by = actorEmail;
+  else {
+    row.created_by = actorEmail;
+    row.updated_by = actorEmail;
+  }
+
+  // A database that has not had 019 applied yet saves everything else rather
+  // than refusing the edit, matching how articles and videos behave.
+  const withoutAuthorship = () => {
+    const copy = { ...row };
+    delete copy.created_by;
+    delete copy.updated_by;
+    return copy;
+  };
+  const missingAuthorship = (error: unknown) =>
+    /created_by|updated_by/.test(JSON.stringify(error ?? ""));
+
   if (id) {
-    const { error } = await supabase.from("cms_materials").update(row).eq("id", id);
+    let { error } = await supabase.from("cms_materials").update(row).eq("id", id);
+    if (error && missingAuthorship(error)) {
+      ({ error } = await supabase.from("cms_materials").update(withoutAuthorship()).eq("id", id));
+    }
     if (error) throw error;
   } else {
-    const { data, error } = await supabase.from("cms_materials").insert(row).select("id").single();
+    let { data, error } = await supabase.from("cms_materials").insert(row).select("id").single();
+    if (error && missingAuthorship(error)) {
+      ({ data, error } = await supabase
+        .from("cms_materials")
+        .insert(withoutAuthorship())
+        .select("id")
+        .single());
+    }
     if (error) throw error;
+    if (!data) throw new Error("保存失败：数据库没有返回新建资料的 id。");
     id = String(data.id);
   }
 

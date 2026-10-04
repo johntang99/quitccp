@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
   const status = text("status") || "draft";
   if ((status === "published" || status === "archived") && !canBulkPublish(user)) {
-    return reject("只有 super_admin／content_admin 可以发布或归档。");
+    return reject("只有管理员或超级管理员可以发布或归档。编辑请先「保存草稿」，再请管理员发布。");
   }
 
   const known = await listVideoCategories();
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       category,
       featured: flag("featured"),
       editorArchive: flag("editorArchive")
-    });
+    }, user.email);
   } catch (error) {
     return reject(error instanceof Error ? error.message : "保存失败。");
   }

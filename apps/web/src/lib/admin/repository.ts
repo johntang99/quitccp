@@ -225,7 +225,7 @@ function encodeArticleCursor(updatedAt: string): string {
  */
 const ARTICLE_EDITORIAL_COLUMNS =
   "subtitle, hero_image, hero_image_alt, hero_credit, author, translator, source_title, source_url, " +
-  "published_at, featured, editor_archive";
+  "published_at, featured, editor_archive, created_by, updated_by";
 
 function isMissingPosition(error: unknown): boolean {
   return JSON.stringify(error ?? "").includes("position");
@@ -233,7 +233,9 @@ function isMissingPosition(error: unknown): boolean {
 
 function isMissingEditorialColumn(error: unknown): boolean {
   const text = JSON.stringify(error ?? "");
-  return /subtitle|hero_image|hero_credit|source_title|source_url|translator|featured|editor_archive/.test(text);
+  return /subtitle|hero_image|hero_credit|source_title|source_url|translator|featured|editor_archive|created_by|updated_by/.test(
+    text
+  );
 }
 
 interface ArticleRow {
@@ -260,6 +262,8 @@ interface ArticleRow {
   published_at?: string | null;
   featured?: boolean | null;
   editor_archive?: boolean | null;
+  created_by?: string | null;
+  updated_by?: string | null;
 }
 
 /** Builds an ArticleRecord from a row, tolerating columns that do not exist yet. */
@@ -293,7 +297,9 @@ function toArticleRecord(
     editorArchive: Boolean(row.editor_archive),
     legacyUrl: row.legacy_url ? String(row.legacy_url) : undefined,
     legacyId: row.legacy_id ? Number(row.legacy_id) : undefined,
-    updatedAt: String(row.updated_at)
+    updatedAt: String(row.updated_at),
+    createdBy: String(row.created_by ?? ""),
+    updatedBy: String(row.updated_by ?? "")
   };
 }
 
@@ -325,7 +331,8 @@ export async function listArticles(
    */
   const MIGRATION_GROUPS = [
     ["subtitle", "hero_image", "hero_image_alt", "hero_credit", "author", "translator", "source_title", "source_url", "published_at"],
-    ["featured", "editor_archive"]
+    ["featured", "editor_archive"],
+    ["created_by", "updated_by"]
   ];
   const withoutMissing = (error: unknown) => {
     const text = JSON.stringify(error ?? "");
@@ -579,7 +586,9 @@ async function setArticleTaxonomy(
 }
 
 export async function upsertArticleRecord(
-  input: Omit<ArticleRecord, "updatedAt">,
+  // createdBy/updatedBy are deliberately not part of the input: they are decided
+  // here from the signed-in actor, never supplied by the caller or the form.
+  input: Omit<ArticleRecord, "updatedAt" | "createdBy" | "updatedBy">,
   actorEmail: string
 ): Promise<ArticleRecord> {
   const supabase = createSupabaseAdminClient();
@@ -653,7 +662,17 @@ export async function upsertArticleRecord(
       ? supabase.from("cms_articles").update(payload).eq("id", id).select(select).single()
       : supabase.from("cms_articles").insert(payload).select(select).single();
 
-  let result = await write({ ...base, ...editorial }, `${baseSelect}, ${ARTICLE_EDITORIAL_COLUMNS}`);
+  // created_by is written once, at insert, and never again: an edit records who
+  // edited, not a new creator. Overwriting it on update would quietly rewrite
+  // history every time somebody else opened the piece.
+  const authorship = id
+    ? { updated_by: actorEmail }
+    : { created_by: actorEmail, updated_by: actorEmail };
+
+  let result = await write(
+    { ...base, ...editorial, ...authorship },
+    `${baseSelect}, ${ARTICLE_EDITORIAL_COLUMNS}`
+  );
   if (result.error && isMissingEditorialColumn(result.error)) {
     // Pre-migration: save what the table can hold rather than failing the edit.
     result = await write(base, baseSelect);
@@ -1242,7 +1261,7 @@ export async function restoreRevision(revisionId: string, actorEmail: string) {
       secondary?: string[];
       tags?: string[];
     };
-    const articleInput: Omit<ArticleRecord, "updatedAt"> = {
+    const articleInput: Omit<ArticleRecord, "updatedAt" | "createdBy" | "updatedBy"> = {
       id: String(record.id ?? ""),
       slug: String(record.slug),
       title: String(record.title),

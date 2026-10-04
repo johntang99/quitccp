@@ -27,7 +27,6 @@ export default async function NewArticlePage({
 
       <ArticleForm
         mode="new"
-        currentUser={user.email.split("@")[0]}
         categories={categories}
         authors={authors}
         initial={{

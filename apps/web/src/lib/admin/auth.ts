@@ -5,6 +5,7 @@ import { isMfaRequired } from "@/lib/security/mfa-policy";
 import { getAdminJwtSecret } from "@/lib/supabase/admin-client";
 import { createSupabaseAuthClient } from "@/lib/supabase/auth-client";
 import { findAdminUserByEmail, findAdminUserById } from "./user-repository";
+import { can } from "./permissions";
 import type { AdminRole, AdminUser } from "./types";
 
 const SESSION_COOKIE = "quitccp_admin_session";
@@ -136,16 +137,24 @@ export function issueAdminSessionToken(user: Pick<AdminUser, "id" | "email" | "r
   );
 }
 
+/**
+ * May this user set content to 已发布 or 已归档?
+ *
+ * Delegates to the capability table rather than testing roles here, so the
+ * permission matrix shown in 用户管理 and this check can never disagree. The name
+ * is historical -- it gates single saves as well as bulk actions.
+ */
 export function canBulkPublish(user: AdminUser): boolean {
-  return user.role === "super_admin" || user.role === "content_admin";
+  return can(user, "content.publish");
 }
 
 export function canReviewArticles(user: AdminUser): boolean {
   return user.role === "super_admin" || user.role === "content_admin" || user.role === "reviewer";
 }
 
+/** Delegates to the capability table so this and the matrix cannot disagree. */
 export function canRestoreRevisions(user: AdminUser): boolean {
-  return user.role === "super_admin" || user.role === "content_admin";
+  return can(user, "revisions.restore");
 }
 
 /**

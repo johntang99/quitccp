@@ -31,6 +31,8 @@ export interface VideoListRow {
   updatedAt: string;
   featured: boolean;
   editorArchive: boolean;
+  createdBy: string;
+  updatedBy: string;
 }
 
 function missing(error: unknown, ...names: string[]): boolean {
@@ -151,8 +153,11 @@ export async function searchVideos(filters: VideoSearchFilters): Promise<{
 
   const base = "id, slug, title, description, status, duration_seconds, updated_at";
   const extra = "source_url, cover_image, published_at";
-  /** The flags 016 adds; dropped along with the filters if it has not run. */
-  const flags = "featured, editor_archive";
+  /**
+   * The flags 016 adds plus the authorship 019 adds. They travel together so a
+   * single retry covers either migration being absent.
+   */
+  const flags = "featured, editor_archive, created_by, updated_by";
 
   const run = async (select: string, withCategory: boolean, withFlags: boolean) => {
     let query = withCategory && filters.category
@@ -219,8 +224,11 @@ export async function searchVideos(filters: VideoSearchFilters): Promise<{
 
   let result = await run(`${base}, ${extra}, ${flags}`, true, true);
   let hasFlags = true;
-  // 016 not applied: drop the two columns and the filters that read them.
-  if (result.error && missing(result.error, "featured", "editor_archive")) {
+  // 016 or 019 not applied: drop those columns and the filters that read them.
+  if (
+    result.error &&
+    missing(result.error, "featured", "editor_archive", "created_by", "updated_by")
+  ) {
     hasFlags = false;
     result = await run(`${base}, ${extra}`, true, false);
   }
@@ -268,7 +276,9 @@ export async function searchVideos(filters: VideoSearchFilters): Promise<{
       publishedAt: row.published_at ? String(row.published_at) : null,
       updatedAt: String(row.updated_at),
       featured: hasFlags && row.featured === true,
-      editorArchive: hasFlags && row.editor_archive === true
+      editorArchive: hasFlags && row.editor_archive === true,
+      createdBy: hasFlags ? String(row.created_by ?? "") : "",
+      updatedBy: hasFlags ? String(row.updated_by ?? "") : ""
     }))
   };
 }
@@ -303,7 +313,7 @@ const EDITABLE = `${EDITABLE_BASE}, featured, editor_archive`;
 
 /** Postgres names only the first missing column, so both go together. */
 function isMissingFlagColumn(error: unknown): boolean {
-  return /featured|editor_archive/.test(JSON.stringify(error ?? ""));
+  return /featured|editor_archive|created_by|updated_by/.test(JSON.stringify(error ?? ""));
 }
 
 export async function getVideo(id: string): Promise<VideoRecord | null> {
@@ -373,7 +383,7 @@ export interface VideoInput {
   editorArchive: boolean;
 }
 
-export async function saveVideo(input: VideoInput): Promise<string> {
+export async function saveVideo(input: VideoInput, actorEmail: string): Promise<string> {
   const supabase = createSupabaseAdminClient();
   const payload = {
     slug: input.slug,
@@ -391,7 +401,18 @@ export async function saveVideo(input: VideoInput): Promise<string> {
     published_at: input.publishedAt,
     updated_at: new Date().toISOString()
   };
-  const withFlags = { ...payload, featured: input.featured, editor_archive: input.editorArchive };
+  // created_by is set once, at insert; an edit records the editor, not a new
+  // creator. Folded into withFlags so the pre-migration fallback below drops it
+  // along with the other columns a stale database does not have yet.
+  const authorship: Record<string, string> = input.id?.trim()
+    ? { updated_by: actorEmail }
+    : { created_by: actorEmail, updated_by: actorEmail };
+  const withFlags = {
+    ...payload,
+    featured: input.featured,
+    editor_archive: input.editorArchive,
+    ...authorship
+  };
 
   let id = input.id?.trim() ?? "";
   if (id) {
