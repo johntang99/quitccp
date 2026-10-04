@@ -1,0 +1,34 @@
+-- Remove the trigram index on article bodies. It made writes fail.
+--
+-- URGENT when applied: while this index exists in its current state, every write
+-- to cms_articles ends in "57014 canceling statement due to statement timeout"
+-- after about 8 seconds -- including an update that touches nothing but
+-- updated_at. Editors cannot save an article at all.
+--
+-- What happened. Migration 020 added GIN trigram indexes to speed up full-text
+-- substring search, and on the small columns they are fine: cms_videos carries
+-- the same kind of index on title and description and writes in 259ms, and
+-- cms_materials, which 020 deliberately skipped, writes in 515ms. The difference
+-- is body_plain -- roughly 120MB of prose across 15,515 rows. A GIN index
+-- accumulates new entries in a pending list and makes some unlucky writer flush
+-- the whole thing; once that list is large, the flush cannot finish inside the
+-- statement timeout, and from then on every writer inherits the same doomed
+-- flush.
+--
+-- What it bought, measured before and after 020: a body search for 活摘器官 went
+-- from 2,374ms to 598ms, and 法轮功 from 2,965ms to 1,009ms. Real, but the body
+-- tier only runs when titles and summaries cannot fill the page, and the owner's
+-- position is explicit -- finding the result matters more than finding it
+-- quickly. Trading a few seconds on rare searches for an archive nobody can edit
+-- is not a trade worth making.
+--
+-- The title and summary indexes stay. They are small, they answer the tiers that
+-- serve almost every search, and the videos table demonstrates they are safe.
+--
+-- Run this on its own. Dropping the index also drops its pending list, so no
+-- VACUUM is needed; an earlier version of this file ended with one and the whole
+-- migration rolled back, because the Supabase SQL editor wraps statements in a
+-- transaction and VACUUM cannot run inside one. If you ever do want to vacuum
+-- this table, run it as the only statement in the editor.
+
+drop index if exists idx_cms_articles_body_trgm;
