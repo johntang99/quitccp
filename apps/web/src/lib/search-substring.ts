@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { SIMPLIFIED_TO_TRADITIONAL, TRADITIONAL_TO_SIMPLIFIED } from "@/lib/zh-variants";
+import { synonymsOf } from "@/lib/search-synonyms";
 
 /**
  * Substring search across articles, videos and materials.
@@ -102,9 +103,14 @@ function mapChars(text: string, table: Readonly<Record<string, string>>): string
  * costs one condition exactly as before.
  */
 export function termVariants(term: string): string[] {
-  const forms = new Set<string>([term]);
-  forms.add(mapChars(term, TRADITIONAL_TO_SIMPLIFIED));
-  forms.add(mapChars(term, SIMPLIFIED_TO_TRADITIONAL));
+  const forms = new Set<string>();
+  // Synonyms first, then every script form of each: a reader typing 三退 in
+  // traditional should still reach an article that says 退黨.
+  for (const synonym of synonymsOf(term)) {
+    forms.add(synonym);
+    forms.add(mapChars(synonym, TRADITIONAL_TO_SIMPLIFIED));
+    forms.add(mapChars(synonym, SIMPLIFIED_TO_TRADITIONAL));
+  }
   return [...forms].filter(Boolean);
 }
 
