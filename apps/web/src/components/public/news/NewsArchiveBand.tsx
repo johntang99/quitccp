@@ -1,5 +1,5 @@
 import type { NewsCard } from "@/lib/public-content";
-import { T, articleHref } from "./newsTokens";
+import { T, articleHref, day } from "./newsTokens";
 
 /**
  * 精彩保留 — six cards on the same blue the masthead uses.
@@ -11,12 +11,11 @@ import { T, articleHref } from "./newsTokens";
  * people at rallies and press conferences, and dimming them to make room for
  * text is the wrong trade.
  *
- * Numbered in gold, which is what gives the band its rhythm; the number is the
- * position in the set, not anything stored. It sits in the body rather than on
- * the photo -- without the scrim there is no telling what it would land on.
- *
- * No category or date. This band is the standing selection rather than the news
- * feed, and its whole argument is that these pieces are still worth reading.
+ * The card body carries the category and date. They were dropped when the
+ * headline still sat over the photograph, where the line competed with the image
+ * for the same few readable pixels; on a white card under it there is room, and
+ * knowing which section a piece belongs to is worth more than the position
+ * number that stood here, which told a reader nothing they needed.
  */
 export function NewsArchiveBand({ items }: { items: NewsCard[] }) {
   if (items.length === 0) return null;
@@ -63,13 +62,29 @@ export function NewsArchiveBand({ items }: { items: NewsCard[] }) {
         </div>
 
         <div className="news-archive-grid">
-          {items.map((card, index) => (
+          {items.map((card) => (
             <a key={card.slug} href={articleHref(card.slug)} className="news-archive-card">
               <span className="news-archive-thumb">
                 {card.image ? <img src={card.image} alt="" /> : null}
               </span>
               <span className="news-archive-body">
-                <span className="news-archive-num">{String(index + 1).padStart(2, "0")}</span>
+                {/* Same shape as NewsHero's Kicker -- category in seal, a hairline
+                    divider, date in mono -- built from the same tokens rather
+                    than imported, because that one also carries the 重要 tag and
+                    these cards do not. */}
+                <span className="news-archive-meta">
+                  {card.category ? (
+                    <span style={{ color: T.seal, fontWeight: 500 }}>{card.category}</span>
+                  ) : null}
+                  {card.category && card.publishedAt ? (
+                    <span className="news-archive-sep" aria-hidden="true" />
+                  ) : null}
+                  {card.publishedAt ? (
+                    <span style={{ fontFamily: T.mono, color: T.muted, whiteSpace: "nowrap" }}>
+                      {day(card.publishedAt)}
+                    </span>
+                  ) : null}
+                </span>
                 <span className="news-archive-title">{card.title}</span>
               </span>
             </a>
