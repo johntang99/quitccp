@@ -27,6 +27,7 @@ git push
 
 admin123
 admin@quitccp.org
+
 This repository contains the full implementation for the QuitCCP dynamic platform:
 
 - `apps/web` - Unified Next.js app:
@@ -46,7 +47,7 @@ anything being duplicated into `apps/web/.env.local`.
 
 There is deliberately **no `apps/web/.env.local`**. One file locally, one set of
 project variables on Vercel — nothing to keep in sync and no second file that
-could be committed by accident.
+
 
 Precedence, highest first:
 
