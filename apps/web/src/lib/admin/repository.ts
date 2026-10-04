@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { routeSeeds } from "@quitccp/content-schema";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { indexContentById, indexContentByIds } from "@/lib/search-index";
 import type {
   ArticleRecord,
   AuditRecord,
@@ -685,6 +686,9 @@ export async function upsertArticleRecord(
     record: data,
     taxonomy: { category: input.category, secondary: input.secondaryCategories, tags: input.tags }
   });
+  // Searchable at once, rather than whenever the next sync happens to run.
+  // Deliberately not awaited: a search service being down must not fail a save.
+  void indexContentById("article", String(data.id));
   await createAudit(actorEmail, "article.upsert", "article", String(data.id), "write", {
     slug: data.slug,
     locale: data.locale
@@ -706,6 +710,9 @@ export async function bulkUpdateArticleStatus(ids: string[], status: PageStatus,
     .update({ status, editorial_status: status })
     .in("id", ids);
   if (error) throw error;
+  // Publishing or archiving in bulk changes what belongs in the index as surely
+  // as a single save does.
+  void indexContentByIds("article", ids);
   await createAudit(actorEmail, "article.bulk_status", "article", "bulk", "write", {
     ids,
     status
@@ -775,6 +782,9 @@ export async function deleteArticleById(id: string, actorEmail: string) {
 
   const { error } = await supabase.from("cms_articles").delete().eq("id", id);
   if (error) throw error;
+  // A deleted article must leave the index: a search result that 404s is worse
+  // than one that is missing.
+  void indexContentById("article", id);
   await createAudit(actorEmail, "article.delete", "article", id, "write", {
     slug: article.slug,
     title: article.title

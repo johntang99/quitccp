@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { indexContentById } from "@/lib/search-index";
 
 /**
  * 真相点资料 — the downloadable materials.
@@ -326,6 +327,9 @@ export async function saveMaterial(input: MaterialInput, actorEmail: string): Pr
     );
     if (error) throw error;
   }
+  // Indexed after the category map is written: a material's public URL is built
+  // from its category, so indexing earlier would store a URL that is not final.
+  void indexContentById("material", id as string);
   return id as string;
 }
 
@@ -333,6 +337,7 @@ export async function deleteMaterial(id: string): Promise<void> {
   const supabase = createSupabaseAdminClient();
   const { error } = await supabase.from("cms_materials").delete().eq("id", id);
   if (error) throw error;
+  void indexContentById("material", id);
 }
 
 export async function upsertMaterialCategory(input: {

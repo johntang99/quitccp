@@ -4,6 +4,14 @@
     {
       "path": "/api/cron/santui",
       "schedule": "17 */6 * * *"
+    },
+    {
+      "path": "/api/cron/search",
+      "schedule": "23 * * * *"
+    },
+    {
+      "path": "/api/cron/search?mode=full",
+      "schedule": "41 4 * * 1"
     }
   ]
 }

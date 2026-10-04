@@ -52,6 +52,7 @@ export async function POST(request: Request) {
     return back({
       searchSync: "ok",
       indexed: String(result.total),
+      removed: String(result.removed),
       articles: String(result.byType.article),
       videos: String(result.byType.video),
       materials: String(result.byType.material),

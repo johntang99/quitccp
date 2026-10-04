@@ -31,11 +31,20 @@ export interface SearchDocument {
   locale: string;
   status: string;
   published_at: string | null;
+  /**
+   * When this document was last written, epoch milliseconds.
+   *
+   * A full sync stamps every document it writes, then deletes anything still
+   * carrying an older stamp -- which is how rows deleted outside the admin (a
+   * direct database delete, an import that drops rows) leave the index. Without
+   * it the index only ever grows, and a search eventually offers pages that 404.
+   */
+  synced_at: number;
 }
 
 export const INDEX_SETTINGS = {
   searchableAttributes: ["title", "summary", "body"],
-  filterableAttributes: ["locale", "status", "type"],
+  filterableAttributes: ["locale", "status", "type", "synced_at"],
   sortableAttributes: ["published_at"],
   rankingRules: ["words", "typo", "proximity", "attribute", "sort", "exactness"]
 } as const;
@@ -125,7 +134,8 @@ function materialHref(row: Record<string, unknown>): string | null {
 /** Null when the row cannot be represented -- no slug, or no public URL. */
 export function toSearchDocument(
   type: SearchDocType,
-  row: Record<string, unknown>
+  row: Record<string, unknown>,
+  syncedAt: number = Date.now()
 ): SearchDocument | null {
   const slug = String(row.slug ?? "");
   const title = String(row.title ?? "");
@@ -149,7 +159,8 @@ export function toSearchDocument(
     // the search filters on locale, so an absent value would hide all of them.
     locale: String(row.locale ?? "zh"),
     status: String(row.status ?? "draft"),
-    published_at: row.published_at ? String(row.published_at) : null
+    published_at: row.published_at ? String(row.published_at) : null,
+    synced_at: syncedAt
   };
 }
 
@@ -196,6 +207,8 @@ export interface SyncOptions {
 export interface SyncResult {
   total: number;
   byType: Record<SearchDocType, number>;
+  /** Documents dropped because their row no longer exists. Full passes only. */
+  removed: number;
   index: string;
 }
 
@@ -225,6 +238,8 @@ export async function syncSearchIndex(options: SyncOptions): Promise<SyncResult>
 
   const byType: Record<SearchDocType, number> = { article: 0, video: 0, material: 0 };
   let lastTaskUid: number | null = null;
+  // Stamped onto every document this run writes; the sweep below uses it.
+  const runStartedAt = Date.now();
 
   for (const source of SOURCES) {
     let cursor: string | null = null;
@@ -244,7 +259,7 @@ export async function syncSearchIndex(options: SyncOptions): Promise<SyncResult>
       if (rows.length === 0) break;
 
       const documents = rows
-        .map((row) => toSearchDocument(source.type, row))
+        .map((row) => toSearchDocument(source.type, row, runStartedAt))
         .filter((doc): doc is SearchDocument => doc !== null);
 
       if (documents.length > 0) {
@@ -264,9 +279,42 @@ export async function syncSearchIndex(options: SyncOptions): Promise<SyncResult>
 
   if (lastTaskUid !== null) await waitForTask(lastTaskUid);
 
+  /*
+   * Sweep away documents this pass did not touch.
+   *
+   * Only on a full pass: an incremental pass visits a few recent rows, so every
+   * other document legitimately carries an older stamp and deleting them would
+   * empty the index.
+   *
+   * This, not the upserts, is what makes a full sync authoritative -- rows
+   * deleted straight from the database never reach the save-time hook, and
+   * without this sweep the index keeps serving them until somebody notices a
+   * search result leading to a 404.
+   */
+  let removed = 0;
+  if (!options.since) {
+    const sweep = await meiliRequest<{ taskUid: number }>(
+      "POST",
+      `/indexes/${encodeURIComponent(index)}/documents/delete`,
+      {
+        // `NOT EXISTS` as well as the age check: a filter on synced_at alone
+        // silently skips documents written before the field existed, which is
+        // how one orphan survived a full sync that reported removing nothing.
+        filter: `synced_at < ${runStartedAt} OR synced_at NOT EXISTS`
+      }
+    );
+    await waitForTask(sweep.taskUid);
+    const task = await meiliRequest<{ details?: { deletedDocuments?: number } }>(
+      "GET",
+      `/tasks/${sweep.taskUid}`
+    );
+    removed = task.details?.deletedDocuments ?? 0;
+  }
+
   return {
     total: byType.article + byType.video + byType.material,
     byType,
+    removed,
     index
   };
 }
@@ -309,4 +357,48 @@ export async function indexOneDocument(
     // eslint-disable-next-line no-console
     console.warn(`[search-index] failed to index ${type} ${id ?? ""}`, error);
   }
+}
+
+/**
+ * Re-reads one row and brings the index in line with it.
+ *
+ * Callers pass an id, not a row: the write paths each hold a differently-shaped
+ * record, and a search document assembled from whichever columns a particular
+ * caller happened to select is how the index quietly ends up with half-filled
+ * documents. One extra read per save is a small price for every document in the
+ * index having come from the same query.
+ *
+ * A row that is gone, or no longer published, is removed from the index.
+ *
+ * Never throws, and never awaited by the save path: if Meilisearch is down, the
+ * editor's save still succeeds and the hourly sync repairs the gap.
+ */
+export async function indexContentById(type: SearchDocType, id: string): Promise<void> {
+  try {
+    if (!process.env.MEILI_HOST || !id) return;
+    const source = SOURCES.find((entry) => entry.type === type);
+    if (!source) return;
+
+    const supabase = createClient(
+      requireEnv("SUPABASE_URL"),
+      requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
+      { auth: { persistSession: false } }
+    );
+    const { data, error } = await supabase
+      .from(source.table)
+      .select(source.select)
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+
+    await indexOneDocument(type, (data as Record<string, unknown> | null) ?? null, id);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.warn(`[search-index] indexContentById failed for ${type} ${id}`, error);
+  }
+}
+
+/** Several ids at once, for the bulk publish/archive actions. */
+export async function indexContentByIds(type: SearchDocType, ids: string[]): Promise<void> {
+  for (const id of ids) await indexContentById(type, id);
 }

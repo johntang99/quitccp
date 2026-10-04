@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { indexContentById, indexContentByIds } from "@/lib/search-index";
 
 /**
  * Videos and their categories.
@@ -452,6 +453,8 @@ export async function saveVideo(input: VideoInput, actorEmail: string): Promise<
     }
   }
 
+  // Searchable at once; not awaited, so a search outage cannot fail a save.
+  void indexContentById("video", id);
   return id;
 }
 
@@ -459,6 +462,7 @@ export async function deleteVideo(id: string): Promise<void> {
   const supabase = createSupabaseAdminClient();
   const { error } = await supabase.from("cms_videos").delete().eq("id", id);
   if (error) throw error;
+  void indexContentById("video", id);
 }
 
 
@@ -505,6 +509,7 @@ export async function bulkSetVideoStatus(ids: string[], status: string): Promise
     .update({ status, updated_at: new Date().toISOString() })
     .in("id", ids);
   if (error) throw error;
+  void indexContentByIds("video", ids);
   return ids.length;
 }
 
