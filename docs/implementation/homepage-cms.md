@@ -46,7 +46,8 @@ need no rules — they are the prototype design already in `site.css`.
 | `photo-split` | copy left, photo right, 1:1 columns | `image`, `imageAlt` |
 | `gallery-split` | copy left, gallery right | `gallery[]` — main image + thumbnail strip |
 | `video-split` | copy left, click-to-play video right | `video.src`, `video.poster`, `video.caption` |
-| `full-bleed` | photo full width at natural brightness, copy in a light card overlaying it | `image`, `imageAlt` |
+| `full-bleed` | 卡片叠加·照片 — photo full width at natural brightness, copy in a light card overlaying it | `image`, `imageAlt` |
+| `full-bleed-video` | 卡片叠加·视频 — the same layout, backdrop is a muted autoplaying video | `video.src`, `video.hasAudio`, `video.poster`, `image` |
 
 The three split variants share a 1:1 grid and collapse to a single column below
 900px.
@@ -81,6 +82,73 @@ live region announces "第 N 张，共 M 张".
 > 2. `site.css` applies `transform: scaleX(-1)` and `brightness(1.24)` to
 >    `.hero-media img`. Fine for an abstract texture, wrong for a photograph —
 >    signage in the image renders backwards. Both are undone for `full-bleed`.
+
+### 卡片叠加·视频 — the hero backdrop as video
+
+Same layout as the photo variant; only the backdrop changes. Written out because
+every part of it has a rule behind it that is not obvious from the form.
+
+**For editors — the four steps**
+
+1. 版式（Layout）→ **卡片叠加·视频 Card overlay video**
+2. 视频地址 → paste a URL, or press **上传视频** and pick a file
+3. 封面图（Poster）→ leave **blank** unless you want a different still; blank
+   means the 图片 above is used, so nothing changes shape while the video loads
+4. Tick **这段视频有声音** only if the file really has a soundtrack
+
+**It is always muted when it starts, and that is not a setting.** Every browser
+blocks a video that makes noise on its own; muted autoplay is the only autoplay
+there is. The speaker button unmutes it because a click is a user gesture. So
+the sequence an editor sees -- silent, then sound after a click -- is the only
+one available, not a choice someone made.
+
+**Only `.mp4` and `.webm` work.** The backdrop is a real `<video>` element,
+which plays files; a YouTube or Vimeo address is a page, not a file, and the
+hero would silently fall back to the poster. The admin refuses such an address
+with a red notice rather than letting it fail quietly, and points at
+`video-split`, which embeds exactly that kind of link. `.mov` is rejected at the
+upload step for the same reason -- it would upload perfectly and then not play.
+
+**Size is the real constraint, and it is about the reader, not the server.**
+The backdrop downloads for every visitor on every first view, so a 10MB file is
+10MB times everyone who opens the homepage. Supabase accepts far more (220MB
+was tested and stored) and our own cap is 200MB, but neither number is the one
+that matters. Aim for 10-15 seconds, and the admin warns above 3MB without
+blocking -- an editor with a reason to exceed it should be told, not stopped.
+
+Measured on the shipped clip: 13s at 1920x1080, CRF 23, `preset veryslow`,
+25fps, AAC 128k = 7.6MB. The same segment at 1280 wide is 5.7MB and, scaled
+into the hero, is hard to tell apart on a laptop.
+
+**Three readers never get the video at all**, and each falls back to the poster
+rather than to an empty box:
+
+- anyone with `prefers-reduced-motion` set -- a backdrop looping forever is
+  precisely what that setting exists to stop;
+- anyone whose browser reports data-saver, because this is the largest thing on
+  the page and they have asked not to spend their data on it;
+- anyone whose download fails, so a blocked or missing file leaves the hero
+  looking finished.
+
+**Preparing a clip from a longer film** -- the source videos are full
+documentaries (156MB-625MB), far past both the cap and any sane backdrop:
+
+```
+ffmpeg -ss 185 -t 13 -i source.mp4 \
+  -vf "scale=1920:-2,fps=25,format=yuv420p" \
+  -c:v libx264 -crf 23 -preset veryslow -profile:v high -tune film \
+  -c:a aac -b:a 128k -movflags +faststart hero.mp4
+```
+
+Drop `-c:a ... -b:a 128k` for `-an` when the clip is ambient and silent; leave
+`这段视频有声音` unticked to match. `+faststart` matters: without it the index
+sits at the end of the file and playback waits for the whole download.
+
+**One trap that is already handled but worth knowing.** `.hero-media` mirrors
+its contents (`scaleX(-1)`), which is fine for an abstract backdrop and wrong
+for footage -- every banner would read backwards. The override that undoes it
+for `full-bleed` names both `img` and `video`; if a third media type is ever
+added here, it needs adding to that rule too.
 
 ### full-bleed is a Card overlay
 
