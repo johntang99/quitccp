@@ -70,18 +70,29 @@ export interface AdminNavLink {
   chrome?: boolean;
 }
 
+/*
+ * 站点设置 is deliberately absent.
+ *
+ * It is a raw JSON key/value editor for `site.nav`, `site.homeHero` and
+ * `seo.default`, plus a Meilisearch sync button. None of those keys has a row:
+ * the site falls back to the navigation written in code, Meilisearch is not
+ * deployed, and the only row the table does hold -- `site.theme` -- is written
+ * by 主题与排版, not here. Using it means hand-writing JSON into a textarea,
+ * where one missing bracket empties the site's navigation.
+ *
+ * The page still exists at /admin/settings for whoever needs it; it is only off
+ * the menu, so an editor cannot wander into it.
+ */
 export const ADMIN_NAV_LINKS: readonly AdminNavLink[] = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/content", label: "页面内容" },
-  { href: "/admin/declarations", label: "三退声明", needs: "declarations.read" },
   // 文章分类 lives in the article tab bar now; the sidebar still lights up for
   // it, so the reader is never on a page no section claims.
   { href: "/admin/articles", label: "文章管理", owns: ["/admin/categories"] },
   { href: "/admin/videos", label: "视频管理", owns: ["/admin/video-categories"] },
   { href: "/admin/materials", label: "资料管理", owns: ["/admin/material-categories"] },
-  { href: "/admin/media", label: "媒体资源" },
+  { href: "/admin/media", label: "图片视频库" },
   { href: "/admin/theme", label: "主题与排版", needs: "theme.write" },
-  { href: "/admin/settings", label: "站点设置", needs: "settings.write" },
   { href: "/admin/users", label: "用户管理", needs: "users.view" },
   { href: "/admin/audit", label: "审计日志", needs: "audit.read" },
   { href: "/admin/revisions", label: "修订历史", needs: "revisions.restore" },

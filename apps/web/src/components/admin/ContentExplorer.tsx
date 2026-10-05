@@ -78,10 +78,13 @@ const SECTION_DISPLAY_NAMES: Record<string, string> = {
 /**
  * Group order in the sidebar. Anything not listed falls to the end,
  * alphabetically.
+ *
+ * The homepage leads rather than sitting under "about": it is the page edited
+ * most often, and alphabetical order was putting the most-used entry second.
  */
 const SECTION_GROUP_ORDER = [
-  "about",
   "root", // shown as "home"
+  "about",
   "involve",
   "news",
   "resources",
@@ -591,12 +594,17 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
     if (!response.ok) throw new Error(payload.error || "加载文件列表失败");
     const rows = payload.rows ?? [];
     setFiles(rows);
+    // Falling through to rows[0] opened whatever the API happened to list first
+    // -- feeds/santui.json -- so the page landed on a file nobody edits. The
+    // homepage is the one opened most, so it is the default.
     const nextPath =
       preferredPath && rows.some((row) => row.path === preferredPath)
         ? preferredPath
         : activePath && rows.some((row) => row.path === activePath)
           ? activePath
-          : rows[0]?.path || "";
+          : rows.some((row) => row.path === HOME_PATH)
+            ? HOME_PATH
+            : rows[0]?.path || "";
     setActivePath(nextPath);
     setStatus("");
   };

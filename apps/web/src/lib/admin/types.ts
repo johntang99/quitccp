@@ -66,10 +66,21 @@ export interface ArticleRecord {
 
 export interface MediaRecord {
   id: string;
-  type: "image" | "document" | "video-cover";
+  /** "file" covers documents and archives; the library shows those nowhere. */
+  type: "image" | "document" | "video-cover" | "video" | "file";
   name: string;
   url: string;
   updatedAt: string;
+  /**
+   * What this picture or clip is of, written by whoever filed it.
+   *
+   * Stored in the row's existing `metadata` JSON rather than a new column: the
+   * table already carries one, and a migration to hold a single optional string
+   * would be a schema change for no gain.
+   */
+  description?: string;
+  mimeType?: string;
+  byteSize?: number;
 }
 
 export interface CategoryRecord {

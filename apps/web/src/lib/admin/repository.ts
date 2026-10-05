@@ -845,21 +845,109 @@ export async function getArticleById(id: string): Promise<ArticleRecord | null> 
   });
 }
 
+/**
+ * One page of the picture and video library, newest first.
+ *
+ * Paged because the library holds roughly 7,600 objects: the old unbounded
+ * select was fine when only admin uploads were registered and twelve pictures
+ * came back, and would now try to hand the page every row in the table.
+ */
+export async function listMediaPage(
+  actorEmail: string,
+  options: { type: "image" | "video"; offset?: number; limit?: number }
+): Promise<{ rows: MediaRecord[]; total: number }> {
+  const supabase = createSupabaseAdminClient();
+  const offset = Math.max(0, options.offset ?? 0);
+  const limit = Math.min(200, Math.max(1, options.limit ?? 60));
+  // Extension rather than asset_type alone: rows written before the uploader
+  // learned about video carry type "file" even though the name says .mp4.
+  const extensions =
+    options.type === "image"
+      ? ["%.jpg", "%.jpeg", "%.png", "%.webp", "%.gif", "%.avif"]
+      : ["%.mp4", "%.webm"];
+  const nameFilter = extensions.map((pattern) => `name.ilike.${pattern}`).join(",");
+
+  const { data, error, count } = await supabase
+    .from("cms_media_assets")
+    .select("id, asset_type, name, storage_path, updated_at, mime_type, byte_size, metadata", {
+      count: "exact"
+    })
+    .or(nameFilter)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (error) throw error;
+  if (offset === 0) await createAudit(actorEmail, "media.list", "media", options.type, "read");
+  return {
+    rows: (data ?? []).map((row) => {
+      const metadata = (row.metadata ?? {}) as Record<string, unknown>;
+      return {
+        id: String(row.id),
+        type: row.asset_type as MediaRecord["type"],
+        name: String(row.name),
+        url: String(row.storage_path),
+        updatedAt: String(row.updated_at),
+        description: typeof metadata.description === "string" ? metadata.description : "",
+        mimeType: row.mime_type ? String(row.mime_type) : "",
+        byteSize: row.byte_size ? Number(row.byte_size) : 0
+      };
+    }),
+    total: count ?? 0
+  };
+}
+
 export async function listMedia(actorEmail: string): Promise<MediaRecord[]> {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("cms_media_assets")
-    .select("id, asset_type, name, storage_path, updated_at")
-    .order("updated_at", { ascending: false });
+    .select("id, asset_type, name, storage_path, updated_at, mime_type, byte_size, metadata")
+    .order("updated_at", { ascending: false })
+    .limit(500);
   if (error) throw error;
   await createAudit(actorEmail, "media.list", "media", "all", "read");
-  return (data ?? []).map((row) => ({
-    id: String(row.id),
-    type: row.asset_type as "image" | "document" | "video-cover",
-    name: String(row.name),
-    url: String(row.storage_path),
-    updatedAt: String(row.updated_at)
-  }));
+  return (data ?? []).map((row) => {
+    const metadata = (row.metadata ?? {}) as Record<string, unknown>;
+    return {
+      id: String(row.id),
+      type: row.asset_type as MediaRecord["type"],
+      name: String(row.name),
+      url: String(row.storage_path),
+      updatedAt: String(row.updated_at),
+      description: typeof metadata.description === "string" ? metadata.description : "",
+      mimeType: row.mime_type ? String(row.mime_type) : "",
+      byteSize: row.byte_size ? Number(row.byte_size) : 0
+    };
+  });
+}
+
+/**
+ * Sets the caption on one asset, leaving the rest of its metadata alone.
+ *
+ * Read-modify-write rather than a blind overwrite: `metadata` also carries
+ * `uploadedBy`, and replacing the object wholesale would erase who filed it.
+ */
+export async function setMediaDescription(
+  id: string,
+  description: string,
+  actorEmail: string
+): Promise<void> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error: readError } = await supabase
+    .from("cms_media_assets")
+    .select("metadata")
+    .eq("id", id)
+    .maybeSingle();
+  if (readError) throw readError;
+  if (!data) throw new Error("找不到这个资源。");
+  const metadata = { ...((data.metadata ?? {}) as Record<string, unknown>) };
+  const trimmed = description.trim();
+  if (trimmed) metadata.description = trimmed;
+  else delete metadata.description;
+  const { error } = await supabase
+    .from("cms_media_assets")
+    .update({ metadata, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+  await createAudit(actorEmail, "media.describe", "media", id, "write");
 }
 
 export async function upsertMediaRecord(
