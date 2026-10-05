@@ -28,11 +28,20 @@ export function AdminNav({ role }: { role: AdminRole }) {
 
   return (
     <nav>
-      {visible.map((link) => (
-        <Link key={link.href} href={link.href} className={isActive(link) ? "on" : undefined}>
-          {link.label}
-        </Link>
-      ))}
+      {visible.map((link) =>
+        link.chrome ? (
+          /* Signing out is a state change, so it posts. As a <Link> it was
+             prefetched by the production build and logged people out without a
+             click -- see the route handler for the full story. */
+          <form key={link.href} method="post" action="/api/admin/auth/logout">
+            <button type="submit">{link.label}</button>
+          </form>
+        ) : (
+          <Link key={link.href} href={link.href} className={isActive(link) ? "on" : undefined}>
+            {link.label}
+          </Link>
+        )
+      )}
     </nav>
   );
 }

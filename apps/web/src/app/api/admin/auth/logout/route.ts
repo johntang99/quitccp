@@ -3,7 +3,21 @@ import { redirect } from "next/navigation";
 import { adminAuthCookieName } from "@/lib/admin/auth";
 import { createSupabaseAuthClient } from "@/lib/supabase/auth-client";
 
-export async function GET() {
+/**
+ * Signing out is a POST, and deliberately not a GET.
+ *
+ * It used to be a GET reached through a `<Link href="/admin/logout">` in the
+ * sidebar. Next.js prefetches links in production builds, so merely rendering
+ * the sidebar fired the prefetch, the prefetch ran this handler, and the
+ * session was destroyed before the reader clicked anything -- the next page
+ * they opened bounced them to the login screen. Development never prefetches,
+ * which is why it only happened in production.
+ *
+ * A GET must be safe to repeat and safe to perform speculatively; destroying a
+ * session is neither. With only POST exported, no prefetch, crawler or preload
+ * can sign anyone out.
+ */
+export async function POST() {
   // Both sessions are cleared, not just the one this account happens to use:
   // during the migration a browser can hold either, and signing out has to mean
   // signed out.

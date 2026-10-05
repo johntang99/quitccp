@@ -1416,12 +1416,30 @@ img.bcover--photo {
   gap: 8px;
 }
 
-.admin-sidebar a {
+/* The sign-out control is a form button rather than a link (it posts), so it
+   has to be told to look like the links it sits among. */
+.admin-sidebar a,
+.admin-sidebar nav button {
   padding: 8px 10px;
   border-radius: 6px;
 }
 
-.admin-sidebar a:hover {
+.admin-sidebar nav form {
+  display: contents;
+}
+
+.admin-sidebar nav button {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.admin-sidebar a:hover,
+.admin-sidebar nav button:hover {
   background: rgba(255, 255, 255, 0.12);
 }
 
