@@ -1797,13 +1797,51 @@ mark {
 /* site.css mirrors and brightens `.hero-media img`. That suits an abstract
    backdrop but breaks a real photograph: signage renders backwards. Undo it,
    and leave the brightness alone -- the card handles legibility now. */
-.hero--full-bleed .hero-media img {
+.hero--full-bleed .hero-media img,
+.hero--full-bleed .hero-media video {
   transform: none;
   filter: none;
 }
 
 /* No scrim: the whole point of the overlay card is that the photo stays clean. */
 .hero--full-bleed .hero-scrim { display: none; }
+
+/* The sound toggle for a video backdrop. It sits over the footage, so it carries
+   its own dark disc rather than relying on whatever frame is behind it -- a
+   control that disappears against a bright frame is not a control. */
+.hero-sound {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  background: rgba(24, 20, 48, 0.55);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+.hero-sound:hover { background: rgba(24, 20, 48, 0.78); border-color: #fff; }
+.hero-sound:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.hero-sound svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* The speaker cone reads as a shape, not an outline. */
+.hero-sound svg path:first-child { fill: #fff; }
+
+@media (max-width: 600px) {
+  .hero-sound { right: 16px; bottom: 16px; width: 40px; height: 40px; }
+}
 
 /* The photo is a band of fixed height; the card starts 60% of the way down it
    (6 parts photo above the card, 4 parts alongside) and carries on past the

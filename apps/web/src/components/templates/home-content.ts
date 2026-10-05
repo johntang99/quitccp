@@ -164,7 +164,10 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
         // CMS genuinely removes the video instead of resurrecting a default.
         src: asString(heroVideo.src),
         poster: asString(heroVideo.poster, d.hero.video.poster),
-        caption: asString(heroVideo.caption, d.hero.video.caption)
+        caption: asString(heroVideo.caption, d.hero.video.caption),
+        // Off unless the file really carries sound: a speaker button that
+        // unmutes silence makes the site look broken.
+        hasAudio: asBool(heroVideo.hasAudio, false)
       }
     },
     registry: {

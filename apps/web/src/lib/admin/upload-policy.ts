@@ -36,6 +36,10 @@ export const ALLOWED_TYPES = new Map<string, string>([
   ["audio/wav", "wav"],
   ["audio/x-wav", "wav"],
   ["audio/ogg", "ogg"],
+  // Video, for the hero backdrop. Only the two formats a browser will actually
+  // play inline: .mov and .avi would upload and then fail silently in the page.
+  ["video/mp4", "mp4"],
+  ["video/webm", "webm"],
   ["application/postscript", "ai"],
   ["image/vnd.adobe.photoshop", "psd"],
   ["application/octet-stream", ""]
@@ -46,7 +50,9 @@ const ALLOWED_EXTENSIONS = new Set([
   "jpg", "jpeg", "png", "webp", "gif", "avif",
   "pdf", "zip", "rar", "doc", "docx", "ai", "psd",
   // Everything the article player can play -- see ArticleAudio.
-  "mp3", "m4a", "wav", "ogg"
+  "mp3", "m4a", "wav", "ogg",
+  // Hero backdrop video -- see HeroBackgroundVideo.
+  "mp4", "webm"
 ]);
 
 export function extensionOf(filename: string): string {

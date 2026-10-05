@@ -1,6 +1,7 @@
 "use client";
 
 import { HOME_SECTION_VARIANTS } from "@quitccp/content-schema";
+import { VideoUploadField } from "@/components/admin/VideoUploadField";
 import {
   asRow,
   asRows,
@@ -95,7 +96,7 @@ const FIELD_LABELS: Record<string, string> = {
 
 /** Render order per section. Anything unlisted follows, alphabetically. */
 const FIELD_ORDER: Record<string, string[]> = {
-  hero: ["eyebrow", "title", "body", "image", "imageAlt", "gallery", "video", "actions"],
+  hero: ["eyebrow", "title", "body", "image", "imageAlt", "video", "gallery", "actions"],
   registry: [
     "eyebrow",
     "count",
@@ -532,35 +533,100 @@ export function HomeSectionsEditor({
     </div>
   );
 
-  const videoEditor = (sectionKey: string, label: string, video: Record<string, unknown>) => (
-    <div style={{ display: "grid", gap: 10 }}>
-      <label>
-        视频地址（Video URL，.mp4/.webm 直链或嵌入地址）
-        <input
-          className="admin-input"
-          style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12 }}
-          value={String(video.src ?? "")}
-          placeholder="留空则只显示封面图，不显示播放按钮"
-          onChange={(event) => updateField([sectionKey, "video", "src"], event.target.value)}
+  const videoEditor = (sectionKey: string, label: string, video: Record<string, unknown>) => {
+    // 卡片叠加 plays the video by itself as the backdrop; every other layout waits
+    // for a click. The two behave so differently -- one spends the reader's data
+    // the moment the page opens -- that the editor has to say which one is in
+    // force rather than describe only the click-to-play case.
+    const backdrop =
+      sectionKey === "hero" && String(asRow(data[sectionKey]).variant ?? "") === "full-bleed-video";
+    const src = String(video.src ?? "").trim();
+    const hasSrc = src.length > 0;
+    // The backdrop is a real <video> element, which can only play a file. A
+    // YouTube or Vimeo page is not a file: it would fail silently and the hero
+    // would quietly show the poster instead, leaving the editor to wonder why
+    // the video they pasted never appears. 左文右视频 embeds such a link fine --
+    // this restriction is the backdrop's alone.
+    const needsFile = backdrop && hasSrc && !/\.(mp4|webm|ogg|ogv|mov)(\?.*)?$/i.test(src);
+    return (
+      <div style={{ display: "grid", gap: 10 }}>
+        <label style={{ display: "block" }}>
+          视频地址（Video URL，.mp4/.webm 直链或嵌入地址）
+          {/* The address is long and the editor has to be able to read it to
+              tell a working link from a broken one, so the box takes the full
+              width of the panel rather than sitting inline after the label. */}
+          <input
+            className="admin-input"
+            style={{
+              fontFamily: "ui-monospace, Menlo, monospace",
+              fontSize: 12,
+              display: "block",
+              width: "100%",
+              marginTop: 4
+            }}
+            value={String(video.src ?? "")}
+            placeholder={backdrop ? "留空则首屏显示图片，不显示视频" : "留空则只显示封面图，不显示播放按钮"}
+            onChange={(event) => updateField([sectionKey, "video", "src"], event.target.value)}
+          />
+        </label>
+        <VideoUploadField
+          folder="home"
+          onUploaded={(url) => updateField([sectionKey, "video", "src"], url)}
         />
-      </label>
-      <div>
-        <span style={fieldCaption}>封面图（Poster）</span>
-        {imageField([sectionKey, "video", "poster"], `${label} · 视频封面`, String(video.poster ?? ""))}
+        <div>
+          <span style={fieldCaption}>封面图（Poster）</span>
+          {imageField([sectionKey, "video", "poster"], `${label} · 视频封面`, String(video.poster ?? ""))}
+        </div>
+        <label>
+          视频说明（Caption）
+          <input
+            className="admin-input"
+            value={String(video.caption ?? "")}
+            onChange={(event) => updateField([sectionKey, "video", "caption"], event.target.value)}
+          />
+        </label>
+        {needsFile ? (
+          <p
+            style={{
+              margin: 0,
+              padding: "9px 11px",
+              borderRadius: 6,
+              background: "#fdf2f2",
+              border: "1px solid #e9b8b8",
+              color: "#8a2b2b",
+              fontSize: 12,
+              lineHeight: 1.7
+            }}
+          >
+            这个地址放不进满幅背景。满幅背景需要 <strong>.mp4 或 .webm 文件的直链</strong>（地址以
+            .mp4 结尾），YouTube、Vimeo 等播放页的链接无法用作背景，首页会退回显示图片。
+            要用 YouTube 链接，请把版式改成「左文右视频 Video split」。
+          </p>
+        ) : null}
+        {backdrop && hasSrc && !needsFile ? (
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 8, lineHeight: 1.7 }}>
+            <input
+              type="checkbox"
+              checked={Boolean(video.hasAudio)}
+              onChange={(event) => updateField([sectionKey, "video", "hasAudio"], event.target.checked)}
+              style={{ marginTop: 4 }}
+            />
+            <span>
+              这段视频有声音，显示喇叭按钮
+              <span style={{ display: "block", color: "#777", fontSize: 12 }}>
+                只在视频真的有声音时勾选。按下去没声音的喇叭，会让访客以为网站坏了。
+              </span>
+            </span>
+          </label>
+        ) : null}
+        <p style={{ margin: 0, color: "#777", fontSize: 12, lineHeight: 1.7 }}>
+          {backdrop
+            ? "自动播放：开页即静音循环播放，访客可点右下角喇叭开声音。每位访客都会下载这个文件，建议 10–15 秒、1280px 宽、3MB 以内。开启「减少动态效果」或流量节省的访客只看到封面图。"
+            : "点击才加载：访客未点击播放前不会向视频地址发出任何请求。"}
+        </p>
       </div>
-      <label>
-        视频说明（Caption）
-        <input
-          className="admin-input"
-          value={String(video.caption ?? "")}
-          onChange={(event) => updateField([sectionKey, "video", "caption"], event.target.value)}
-        />
-      </label>
-      <p style={{ margin: 0, color: "#777", fontSize: 12, lineHeight: 1.7 }}>
-        点击才加载：访客未点击播放前不会向视频地址发出任何请求。
-      </p>
-    </div>
-  );
+    );
+  };
 
   const actionsEditor = (sectionKey: string, items: Record<string, unknown>[]) => (
     <div style={{ display: "grid", gap: 8 }}>
@@ -834,16 +900,20 @@ export function HomeSectionsEditor({
                 <fieldset style={fieldsetStyle}>
                   <legend style={legendStyle}>图片与视频 Media</legend>
                   {mediaText.map(renderText)}
-                  {structuredKeys.includes("gallery") ? (
-                    <div>
-                      <span style={fieldCaption}>图集（Gallery）</span>
-                      {galleryEditor(section.key, section.label, asRows(value.gallery))}
-                    </div>
-                  ) : null}
+                  {/* Video sits above the gallery: card overlay -- photo or
+                      video -- is the hero this site actually runs, and the
+                      gallery is the rare one. The common field should not be
+                      below four rows of thumbnails. */}
                   {structuredKeys.includes("video") ? (
                     <div>
                       <span style={fieldCaption}>视频（Video）</span>
                       {videoEditor(section.key, section.label, asRow(value.video))}
+                    </div>
+                  ) : null}
+                  {structuredKeys.includes("gallery") ? (
+                    <div>
+                      <span style={fieldCaption}>图集（Gallery）</span>
+                      {galleryEditor(section.key, section.label, asRows(value.gallery))}
                     </div>
                   ) : null}
                 </fieldset>

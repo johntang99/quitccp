@@ -45,7 +45,13 @@ export const HOME_SECTION_VARIANTS: Record<HomeSectionKey, { value: string; labe
     { value: "photo-split", label: "左文右图 Photo split（对半）" },
     { value: "gallery-split", label: "左文右图集 Gallery split（对半）" },
     { value: "video-split", label: "左文右视频 Video split（对半）" },
-    { value: "full-bleed", label: "卡片叠加 Card overlay" }
+    // Two variants over one layout. They render identically apart from what
+    // fills the backdrop, but an editor picking "video" and seeing a photo
+    // (because a field further down was blank) has no way to tell what went
+    // wrong -- so the choice is made here, explicitly, rather than inferred from
+    // whether a URL happens to be filled in.
+    { value: "full-bleed", label: "卡片叠加·照片 Card overlay photo" },
+    { value: "full-bleed-video", label: "卡片叠加·视频 Card overlay video" }
   ],
   registry: [
     { value: "split", label: "左数字右滚动 Split（默认）" },
@@ -121,7 +127,7 @@ export interface HomeContent {
      * for readers behind the GFW, where a blocked embed would otherwise stall
      * the homepage.
      */
-    video: { src: string; poster: string; caption: string };
+    video: { src: string; poster: string; caption: string; hasAudio: boolean };
   };
   registry: HomeSectionMeta & {
     eyebrow: string;
@@ -335,7 +341,9 @@ export const homeContentDefaults: HomeContent = {
       // shown until then, and the play control is hidden while src is blank.
       src: "",
       poster: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.23-P.png",
-      caption: ""
+      caption: "",
+      // The speaker button only appears when the file actually has a soundtrack.
+      hasAudio: false
     }
   },
   registry: {

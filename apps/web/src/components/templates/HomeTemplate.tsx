@@ -2,7 +2,7 @@ import { getHomeNews, getHomeVideo, type HomeNewsLive, type HomeVideoLive } from
 import { getHomepageHeroContent } from "@/lib/public-settings";
 import { NoWrapTitles } from "@/components/public/NoWrapTitles";
 import { formatYi, getSantuiSnapshot, toFeedRow } from "@/lib/santui";
-import { HeroGallery, HeroVideo } from "@/components/public/HeroMedia";
+import { HeroBackgroundVideo, HeroGallery, HeroVideo } from "@/components/public/HeroMedia";
 import { DawnBand } from "./DawnBand";
 import { BroadsheetBand } from "./BroadsheetBand";
 import { ScreeningBand } from "./ScreeningBand";
@@ -295,6 +295,13 @@ export async function HomeTemplate({ content }: TemplatePageData) {
         : streamEntries;
 
   const { hero, services, news, channels, video, voices, network, resources, about, involve } = home;
+
+  // 卡片叠加·照片 and 卡片叠加·视频 are the same layout with a different backdrop,
+  // so both wear the `full-bleed` class and the seventeen CSS rules written for
+  // it keep working untouched.
+  const heroUsesVideo = hero.variant === "full-bleed-video";
+  const isCardOverlay = hero.variant === "full-bleed" || heroUsesVideo;
+  const heroLayout = isCardOverlay ? "full-bleed" : hero.variant;
   // The headline figure is santui's, not ours; the CMS value is the fallback
   // for a machine that has never synced.
   const liveCount = santui ? formatYi(santui.total) : "";
@@ -373,15 +380,28 @@ export async function HomeTemplate({ content }: TemplatePageData) {
   return (
     <>
       {hero.enabled ? (
-        <section className={`hero hero--${hero.variant}`}>
+        <section className={`hero hero--${heroLayout}`}>
           {/* site.css already defines `.hero-media` as the full-bleed layer
               behind the scrim -- absolute, object-fit:cover, with the
               prototype's own filter and mirror treatment. full-bleed reuses it
               rather than inventing a second mechanism. The split variants use
               `.hero-aside`, which is an ordinary grid column. */}
-          {hero.variant === "full-bleed" && hero.image ? (
+          {isCardOverlay && (hero.video.src || hero.image) ? (
             <div className="hero-media">
-              <img src={hero.image} alt={hero.imageAlt} />
+              {heroUsesVideo && hero.video.src ? (
+                <HeroBackgroundVideo
+                  src={hero.video.src}
+                  // The admin has its own 封面图 field; the hero photograph is
+                  // the fallback, so leaving that field blank still gives the
+                  // video a first frame and still gives the readers who never
+                  // get the video something to look at.
+                  poster={hero.video.poster || hero.image}
+                  alt={hero.imageAlt}
+                  hasAudio={hero.video.hasAudio}
+                />
+              ) : (
+                <img src={hero.image} alt={hero.imageAlt} />
+              )}
             </div>
           ) : null}
           <div className="hero-scrim" />

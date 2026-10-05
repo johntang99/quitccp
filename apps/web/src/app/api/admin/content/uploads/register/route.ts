@@ -6,7 +6,15 @@ import { downloadUrlFor, extensionOf } from "@/lib/admin/upload-policy";
 
 /** Images stay images; everything else is a download. */
 function assetTypeFor(filename: string): string {
-  return ["jpg", "jpeg", "png", "webp", "gif", "avif"].includes(extensionOf(filename)) ? "image" : "file";
+  const extension = extensionOf(filename);
+  if (["jpg", "jpeg", "png", "webp", "gif", "avif"].includes(extension)) return "image";
+  // Video is played, not saved. Typed as a file it was handed back a
+  // `?download=` URL, which makes Storage answer with
+  // `content-disposition: attachment` -- so the hero backdrop was being served
+  // as a download, and opening the address in a browser saved the file instead
+  // of showing it.
+  if (["mp4", "webm"].includes(extension)) return "video";
+  return "file";
 }
 
 /**
@@ -55,8 +63,9 @@ export async function POST(request: Request) {
   const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(path);
   const name = String(body.name ?? base).slice(0, 180);
   const assetType = assetTypeFor(base);
-  // A download keeps the name the uploader chose; an image must stay inline, or
-  // every <img> on the site would try to save itself instead of rendering.
+  // A download keeps the name the uploader chose; images and video must stay
+  // inline, or every <img> and <video> on the site would try to save itself
+  // instead of rendering.
   const url =
     assetType === "file" ? downloadUrlFor(publicData.publicUrl, name) : publicData.publicUrl;
   const asset = await recordUploadedAsset(

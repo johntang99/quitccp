@@ -154,3 +154,100 @@ export function HeroVideo({
     </div>
   );
 }
+
+/**
+ * The full-bleed hero backdrop as video instead of a photograph.
+ *
+ * Autoplay is only ever allowed muted -- every browser blocks a video that
+ * starts making noise on its own, and none of them make an exception for a
+ * backdrop. So the video starts silent and a speaker button turns sound on,
+ * which works because the click is a user gesture. That is not a compromise
+ * around the rule; it is the only shape autoplay can take.
+ *
+ * Three things make it degrade to the photograph rather than to a black box:
+ * - `prefers-reduced-motion` means no autoplay. A backdrop that loops forever is
+ *   exactly what that setting is about, so those readers get the still poster.
+ * - the browser's data-saver flag does the same, because a hero video is the
+ *   largest thing on the page and the reader has said not to spend their data.
+ * - a failed load falls back to the poster image, so a missing or blocked file
+ *   leaves the hero looking finished instead of empty.
+ */
+export function HeroBackgroundVideo({
+  src,
+  poster,
+  alt,
+  hasAudio
+}: {
+  src: string;
+  poster: string;
+  alt: string;
+  /** Only then is the speaker button worth showing. */
+  hasAudio: boolean;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [muted, setMuted] = useState(true);
+  // Starts false so the server and the first client paint agree on the poster;
+  // the effect decides whether this reader should get motion at all.
+  const [play, setPlay] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const connection = (navigator as { connection?: { saveData?: boolean } }).connection;
+    if (reduce || connection?.saveData) return;
+    setPlay(true);
+  }, []);
+
+  // Driven from state rather than set once on the element: the muted attribute
+  // and the property can disagree after hydration, and the property is the one
+  // the browser actually plays by.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) video.muted = muted;
+  }, [muted, play]);
+
+  if (failed || !play) {
+    return poster ? <img src={poster} alt={alt} /> : null;
+  }
+
+  return (
+    <>
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+      <video
+        ref={videoRef}
+        src={src}
+        poster={poster}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        aria-label={alt}
+        onError={() => setFailed(true)}
+      />
+      {hasAudio ? (
+        <button
+          type="button"
+          className="hero-sound"
+          onClick={() => setMuted((on) => !on)}
+          aria-pressed={!muted}
+          aria-label={muted ? "打开声音" : "关闭声音"}
+          title={muted ? "打开声音" : "关闭声音"}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 9v6h4l5 4V5L8 9H4z" />
+            {muted ? (
+              <path d="m17 9 4 6M21 9l-4 6" />
+            ) : (
+              <>
+                <path d="M16.5 8.5a5 5 0 0 1 0 7" />
+                <path d="M19 6a8.5 8.5 0 0 1 0 12" />
+              </>
+            )}
+          </svg>
+        </button>
+      ) : null}
+    </>
+  );
+}
