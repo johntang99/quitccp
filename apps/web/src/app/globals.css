@@ -70,10 +70,14 @@ p { text-wrap: pretty; }
   padding: 12px 0 4px;
 }
 
-/* Keep interior sub-menu pinned to viewport top without offset gap. */
+/* The interior sub-menu pins below the main menu row, not at the viewport top.
+   It used to say `top: 0`, which was right while the header scrolled away with
+   the page; now that the menu row stays, `top: 0` parks the sub-menu underneath
+   it and hides it. z-index drops below the header's 60 for the same reason --
+   the bar that stays should be the one on top. */
 .tabs {
-  top: 0;
-  z-index: 70;
+  top: var(--menubar-h, 55px);
+  z-index: 50;
 }
 
 /* News submenu page variants */
@@ -1806,16 +1810,98 @@ mark {
 /* No scrim: the whole point of the overlay card is that the photo stays clean. */
 .hero--full-bleed .hero-scrim { display: none; }
 
+/* ---------- full-bleed hero: the header sits on the picture ----------
+
+   The card-overlay hero runs to the very top of the page and the header floats
+   on it, transparent, until the reader scrolls -- at which point it turns solid
+   and stays. Only this hero does that; every other layout keeps an ordinary
+   opaque bar (see `header` in base.css, which is sticky for all of them).
+
+   `:has()` is what makes it layout-driven rather than plumbed: the header is
+   rendered by the root layout and knows nothing about the page beneath it, so
+   the page announces itself by the hero class it already carries. */
+body:has(.hero--full-bleed) .hero--full-bleed {
+  /* Slide under the menu row only -- not the whole header. The language strip
+     and the brand banner keep their own backgrounds and their own space; it is
+     just the navigation that floats on the picture. Growing by the same amount
+     keeps the visible photo at the 780px the design was drawn at. */
+  margin-top: calc(-1 * var(--menubar-h, 55px));
+  --hero-photo-h: calc(var(--hero-photo-base) + var(--menubar-h, 55px));
+}
+
+body:has(.hero--full-bleed) > header:not([data-scrolled]) .menubar {
+  background: transparent;
+  border-bottom-color: transparent;
+  backdrop-filter: none;
+}
+
+/* The menu row is the only one whose text is dark; on a photograph it has to
+   turn light, along with the search pill that sits in it. */
+body:has(.hero--full-bleed) > header:not([data-scrolled]) .nav-links a {
+  color: #fff;
+}
+/* The menu button carries its own white background, so turning only its text
+   white made it a blank white rectangle. It gets the search pill's treatment
+   instead: translucent, light border, light text. */
+body:has(.hero--full-bleed) > header:not([data-scrolled]) .navbtn {
+  color: #fff;
+  background: rgba(255, 255, 255, .16);
+  border-color: rgba(255, 255, 255, .42);
+  backdrop-filter: blur(6px);
+}
+body:has(.hero--full-bleed) > header:not([data-scrolled]) .nav-links a:hover {
+  color: #fff;
+  border-bottom-color: #fff;
+}
+body:has(.hero--full-bleed) > header:not([data-scrolled]) .search {
+  background: rgba(255, 255, 255, .16);
+  border-color: rgba(255, 255, 255, .42);
+  backdrop-filter: blur(6px);
+}
+body:has(.hero--full-bleed) > header:not([data-scrolled]) .search input { color: #fff; }
+body:has(.hero--full-bleed) > header:not([data-scrolled]) .search input::placeholder {
+  color: rgba(255, 255, 255, .72);
+}
+body:has(.hero--full-bleed) > header:not([data-scrolled]) .search svg { stroke: #fff; }
+
+/* A photograph cannot be relied on to be dark where the header lands -- the
+   parade footage is a sunny street. This darkens only the top band, fading out
+   well before the copy card, so the header stays readable without putting a
+   cover over the picture the way the old scrim did. */
+body:has(.hero--full-bleed) .hero-media::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: calc(var(--menubar-h, 55px) + 52px);
+  background: linear-gradient(180deg, rgba(20, 16, 44, .62) 0%, rgba(20, 16, 44, .34) 46%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity .28s ease;
+}
+/* Once the bar is solid it supplies its own background and the gradient would
+   just be a dark smear across the top of the photo. */
+body:has(.hero--full-bleed):has(> header[data-scrolled]) .hero-media::after { opacity: 0; }
+
+body:has(.hero--full-bleed) > header .menubar,
+body:has(.hero--full-bleed) > header .nav-links a,
+body:has(.hero--full-bleed) > header .navbtn,
+body:has(.hero--full-bleed) > header .search {
+  transition: background-color .28s ease, color .28s ease, border-color .28s ease;
+}
+
 /* The sound toggle for a video backdrop. It sits over the footage, so it carries
    its own dark disc rather than relying on whatever frame is behind it -- a
    control that disappears against a bright frame is not a control. */
 .hero-sound {
   position: absolute;
-  right: 24px;
-  bottom: 24px;
+  right: 36px;
+  /* Lifted clear of the bottom edge and of the copy card's band. At 44px in the
+     corner it read as a corner ornament rather than a control -- the one thing
+     on the hero a reader is meant to press was the easiest thing to miss. */
+  bottom: 27%;
   z-index: 2;
-  width: 44px;
-  height: 44px;
+  width: 88px;
+  height: 88px;
   display: grid;
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.45);
@@ -1828,8 +1914,8 @@ mark {
 .hero-sound:hover { background: rgba(24, 20, 48, 0.78); border-color: #fff; }
 .hero-sound:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 .hero-sound svg {
-  width: 21px;
-  height: 21px;
+  width: 40px;
+  height: 40px;
   fill: none;
   stroke: #fff;
   stroke-width: 2;
@@ -1840,7 +1926,11 @@ mark {
 .hero-sound svg path:first-child { fill: #fff; }
 
 @media (max-width: 600px) {
-  .hero-sound { right: 16px; bottom: 16px; width: 40px; height: 40px; }
+  /* The phone hero is 420px rather than 780px, so a percentage would put the
+     button in the middle of the picture. A fixed lift keeps it clear of both
+     the bottom edge and the card. */
+  .hero-sound { right: 18px; bottom: 160px; width: 68px; height: 68px; }
+  .hero-sound svg { width: 31px; height: 31px; }
 }
 
 /* The photo is a band of fixed height; the card starts 60% of the way down it
@@ -1848,7 +1938,11 @@ mark {
    photo's bottom edge onto the page background. So the card straddles that
    edge rather than sitting inside the image. */
 .hero--full-bleed {
-  --hero-photo-h: 780px;
+  /* Split in two so the overlay rule below can add the menu row's height
+     without hardcoding this number -- it did, and the 900px breakpoint's 420px
+     lost to it, leaving phones with an 835px hero. */
+  --hero-photo-base: 780px;
+  --hero-photo-h: var(--hero-photo-base);
   /* Below the photo the page background shows through, not the hero gradient. */
   background: var(--paper);
   /* site.css clips the hero; the card has to be able to hang past the photo. */
@@ -1936,7 +2030,7 @@ mark {
   }
   /* On a phone the photo shrinks and the card sits just below it rather than
      overlapping by much, so the headline is never pushed off the fold. */
-  .hero--full-bleed { --hero-photo-h: 420px; }
+  .hero--full-bleed { --hero-photo-base: 420px; }
   .hero--full-bleed .hero-grid {
     padding: calc(var(--hero-photo-h) * 0.72) 0 40px;
   }

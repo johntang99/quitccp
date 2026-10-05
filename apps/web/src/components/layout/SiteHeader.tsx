@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { HeaderBehaviour } from "@/components/layout/HeaderBehaviour";
 import { getPublicNav } from "@/lib/public-settings";
 import { EXTERNAL_LINK_PROPS, EXTERNAL_SERVICES } from "@/lib/external-services";
 import { SITE_LANGUAGES, SITE_SOCIALS } from "@/lib/site-languages";
@@ -16,6 +17,7 @@ export async function SiteHeader() {
   const navItems = await getPublicNav();
   return (
     <header>
+      <HeaderBehaviour />
       <div className="topbar">
         <div className="wrap topbar-in">
           <div className="langs" aria-label="语言切换">

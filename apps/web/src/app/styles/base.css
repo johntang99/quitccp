@@ -44,6 +44,36 @@ a{color:inherit;text-decoration:none}
 .seal--sm{width:18px;height:18px;font-size:13px}
 
 /* ---------- header: topbar ---------- */
+/* The three header rows, as variables, because the sticky offset has to be the
+   sum of the two that scroll away and that sum changes with the breakpoint. */
+:root{--topbar-h:38px;--brandbar-h:84px;--menubar-h:55px}
+
+/* Only the menu row stays. Pinning all 177px of header would eat a fifth of a
+   laptop viewport, so the language strip and the brand banner scroll off and
+   the compact navigation parks at the top -- which is what a sticky header is
+   for. `top` is negative by exactly their height, so the header slides up until
+   the menu row meets the top edge and then holds.
+
+   This lives on `header`, not on `.menubar`. `.menubar` already said
+   `position:sticky;top:0` and did nothing, because a sticky element cannot
+   outlive its containing block: once `header` had scrolled away, its sticky
+   child went with it. */
+/* An in-page anchor would otherwise land under the pinned menu row, hiding the
+   heading the reader just jumped to. */
+html{scroll-padding-top:calc(var(--menubar-h,55px) + 12px)}
+
+/* `body > header`, not `header`. A bare element selector also matched the
+   mastheads inside the news and video pages -- they are `<header>` elements too
+   -- and handing page content `z-index:60` let it paint straight over the real
+   site header. */
+body > header{
+  position:sticky;z-index:60;
+  /* HeaderBehaviour measures the rows that scroll away and writes the exact
+     offset. The fallback is the desktop sum (38 + 84) so the bar still behaves
+     before hydration and if the script never runs. */
+  top:var(--sticky-offset,-122px);
+}
+
 .topbar{background:var(--pl-deep);font-size:13px}
 .topbar-in{display:flex;align-items:center;gap:18px;height:38px}
 .langs{display:flex;gap:15px;white-space:nowrap}
@@ -86,7 +116,6 @@ a{color:inherit;text-decoration:none}
 
 /* ---------- header: menu row ---------- */
 .menubar{
-  position:sticky;top:0;z-index:60;
   /* Derived from --paper, not a frozen copy of it: this bar used to hardcode
      rgba(244,243,239,.96), so changing the page ground in the theme left a
      cool strip sitting on a warm page. Solid first as the fallback for anything
@@ -415,7 +444,7 @@ a{color:inherit;text-decoration:none}
 .phead--slim{padding:40px 0 44px}
 
 /* --- section tabs --- */
-.tabs{background:var(--card);border-bottom:1px solid var(--rule);position:sticky;top:54px;z-index:50}
+.tabs{background:var(--card);border-bottom:1px solid var(--rule);position:sticky;top:var(--menubar-h,55px);z-index:50}
 .tabs-in{display:flex;gap:28px;overflow-x:auto;scrollbar-width:none;height:52px;align-items:center;white-space:nowrap}
 .tabs-in::-webkit-scrollbar{display:none}
 .tabs a{font-size:14.5px;color:var(--ink-soft);border-bottom:2px solid transparent;padding:15px 0}
@@ -425,7 +454,7 @@ a{color:inherit;text-decoration:none}
 /* --- layout --- */
 .cols{display:grid;grid-template-columns:1fr 300px;gap:64px;align-items:start}
 .cols--narrow{grid-template-columns:minmax(0,72ch) 280px}
-.side{position:sticky;top:124px}
+.side{position:sticky;top:calc(var(--menubar-h,55px) + 24px)}
 .panel{background:var(--card);border:1px solid var(--rule);border-radius:3px;padding:24px;margin-bottom:20px}
 .panel h4{font-family:var(--sans);font-weight:500;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin:0 0 16px;font-weight:400}
 .panel ul{list-style:none;padding:0;margin:0;font-size:14.5px}
@@ -595,7 +624,7 @@ a{color:inherit;text-decoration:none}
   .stat4 div:nth-child(3){border-left:0}
   .stat4 div:nth-child(n+3){border-top:1px solid var(--rule)}
   .vhero{grid-template-columns:1fr}
-  .tabs{top:0}
+  .tabs{top:var(--menubar-h,55px)}
 }
 @media(max-width:600px){
   .arow{grid-template-columns:1fr}
