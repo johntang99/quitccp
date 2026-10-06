@@ -5,10 +5,15 @@ import {
   EXTERNAL_SERVICES,
   externalLinkProps
 } from "@/lib/external-services";
+import { CmsMarkdown, MarkdownBody } from "@/components/public/MarkdownBody";
+import { markdownToBodyRows } from "@/lib/public-content";
 import { InteriorHead, InteriorTabs } from "./InteriorScaffold";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString, asStringArray } from "./content-utils";
 import { resolveNewsArticleHref } from "@/lib/news-linking";
+import { involveDefaults } from "@quitccp/content-schema";
+import { ActCards, CtaPanel, LinkPanel, blockRows } from "./section-panels";
+
 
 export function SectionHomeTemplate({ title, section, slug, content, query }: TemplatePageData) {
   const payload = asRecord(content);
@@ -59,17 +64,10 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
     const serviceLink = (label: string, href: string): string =>
       linkByLabel[label.trim()] ?? linkByHref[href.trim()] ?? href;
 
-    const headingRaw = asString(payload.title);
-    // Accept either the old or the revised stored title as "use the display
-    // heading", so the page reads correctly before and after the CMS is updated.
-    const genericTitles = [
-      "声明、证明、查验，全部免费。",
-      "声明免费，证明需付费办理，查验对所有人开放。"
-    ];
-    const heading =
-      !headingRaw || genericTitles.includes(headingRaw)
-        ? "声明、证明、查验。"
-        : headingRaw;
+    // Stored title, not patched here. This branch used to discard the stored
+    // value whenever it matched one of two older seeds, which meant an editor
+    // could change the title and see no change on the page.
+    const heading = asString(payload.title, "声明、证明、查验。");
     const subtitle = asString(
       payload.subtitle,
       "我们提供三项服务：登记退出声明、办理退党证明、在线查验证明真伪。三退声明登记与查询验证免费；退党证明为实名办理，需缴纳办理／管理费用。"
@@ -710,6 +708,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
           { title: "标准字与标识", body: "机构标识、标准色与使用规范。", badge: "品牌规范", href: "#" },
           { title: "多语种译本", body: "英、德、韩、日、罗马尼亚语素材汇总。", badge: "6 种语言", href: "#" }
         ];
+    const introBody = asString(asRecord(payload.intro).body).trim();
     const proseSections = asObjectArray(payload.proseSections).length
       ? asObjectArray(payload.proseSections).map((row) => ({
           heading: asString(row.heading),
@@ -792,13 +791,21 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
         <section className="sec" style={{ padding: "52px 0 0" }}>
           <div className="wrap cols">
             <div>
+              {/* One markdown body. It was a heading field and a body field
+                  per section, which is three controls to write three
+                  paragraphs. The old fields are still read when `intro.body`
+                  is empty. */}
               <div className="prose" style={{ fontSize: 16 }}>
-                {proseSections.map((entry) => (
-                  <div key={entry.heading}>
-                    <h2>{entry.heading}</h2>
-                    <p>{entry.body}</p>
-                  </div>
-                ))}
+                {introBody ? (
+                  <CmsMarkdown value={introBody} />
+                ) : (
+                  proseSections.map((entry) => (
+                    <div key={entry.heading}>
+                      <h2>{entry.heading}</h2>
+                      <p>{entry.body}</p>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
             <aside className="side">
@@ -945,6 +952,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
             summary: "按年份浏览全部期数与专题。"
           }
         ];
+    const introBody = asString(asRecord(payload.intro).body).trim();
     const proseSections = asObjectArray(payload.proseSections).length
       ? asObjectArray(payload.proseSections).map((row) => ({
           heading: asString(row.heading),
@@ -1061,12 +1069,16 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
         <section className="sec" style={{ padding: "52px 0 88px" }}>
           <div className="wrap cols">
             <div className="prose">
-              {proseSections.map((entry) => (
-                <div key={entry.heading}>
-                  <h2>{entry.heading}</h2>
-                  <p>{entry.body}</p>
-                </div>
-              ))}
+              {introBody ? (
+                <CmsMarkdown value={introBody} />
+              ) : (
+                proseSections.map((entry) => (
+                  <div key={entry.heading}>
+                    <h2>{entry.heading}</h2>
+                    <p>{entry.body}</p>
+                  </div>
+                ))
+              )}
             </div>
             <aside className="side">
               <div className="panel panel--seal">
@@ -1252,6 +1264,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
       "二〇〇四年十一月，《九评共产党》系列社论发表后，陆续有中国民众公开声明退出中共党、团、队组织。为了让这些声明能够被完整登记、保存与查证，全球退党服务中心于二〇〇五年一月在纽约成立。",
       "二十年来，我们登记了四亿六千多万份声明。这些声明由当事人自行提交，可以使用真名、化名或代号；我们不要求提供身份证明，也不核对提交者的真实身份。我们承诺完整保存每一份声明的原文与提交时间，并对外公开可查。"
     ];
+    const introBody = asString(intro.body).trim();
     const introParagraphs = asStringArray(intro.paragraphs, introParagraphDefaults);
     const principlesDefault = [
       {
@@ -1298,166 +1311,6 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
             { label: "历史沿革", href: "/about/history" }
           ];
 
-    const numbersBand = asRecord(payload.numbersBand);
-    const numbersStatsRaw = asObjectArray(numbersBand.stats);
-    const numbersStats =
-      numbersStatsRaw.length > 0
-        ? numbersStatsRaw.map((row) => ({ value: asString(row.value), label: asString(row.label) }))
-        : [
-            { value: "464,375,383", label: "累计声明人数" },
-            { value: "38,403", label: "日均新增" },
-            { value: "每 10 分钟", label: "数字更新频率" },
-            { value: "2005-01", label: "登记起始" }
-          ];
-    const numbersActionsRaw = asObjectArray(numbersBand.actions);
-    const numbersActions =
-      numbersActionsRaw.length > 0
-        ? numbersActionsRaw.map((row) => ({
-            label: asString(row.label),
-            href: asString(row.href, "/about/numbers"),
-            variant: asString(row.variant, "seal")
-          }))
-        : [
-            { label: "统计方法完整说明", href: "/about/numbers", variant: "seal" },
-            { label: "历年数据与区域分布", href: "/about/numbers", variant: "line-light" }
-          ];
-
-    const network = asRecord(payload.network);
-    const networkStatsRaw = asObjectArray(network.stats);
-    const networkStats =
-      networkStatsRaw.length > 0
-        ? networkStatsRaw.map((row) => ({ value: asString(row.value), label: asString(row.label) }))
-        : [
-            { value: "100+", label: "全球服务点" },
-            { value: "20+", label: "覆盖国家与地区" },
-            { value: "2,000+", label: "登记在册志愿者" },
-            { value: "0", label: "声明登记收费" }
-          ];
-
-    const accountability = asRecord(payload.accountability);
-    const accountabilityCellsRaw = asObjectArray(accountability.cells);
-    const accountabilityCells =
-      accountabilityCellsRaw.length > 0
-        ? accountabilityCellsRaw.map((row) => ({
-            title: asString(row.title),
-            value: asString(row.value),
-            body: asString(row.body),
-            bars: asObjectArray(row.bars).map((bar) => ({
-              width: Number(asString(bar.width)) || 0,
-              text: asString(bar.text),
-              tone: asString(bar.tone)
-            }))
-          }))
-        : [
-            /*
-             * The funding split that used to sit here -- 项目支出 84% / 行政 10% /
-             * 筹款 6%, with "经独立会计师事务所审计，报表全文可下载" beneath it -- was
-             * prototype text. Nobody confirmed the ratios, nothing on the site
-             * was downloadable, and an unverified spending breakdown on a
-             * 501(c)(3) page is the one kind of placeholder a reader is most
-             * entitled to trust. Real figures belong in 内容管理, from the filing.
-             */
-            {
-              title: "注册与法律地位",
-              value: "501(c)(3)",
-              body: "在美国注册的非营利组织，捐款可依法抵税。纳税识别号（EIN）03-0581933。",
-              bars: []
-            },
-            {
-              title: "向谁申报",
-              value: "美国国税局",
-              body: "年度 Form 990 依法向 IRS 申报，并依法成为公开记录。查阅不需要经过我们。",
-              bars: []
-            },
-            {
-              title: "安全与威胁记录",
-              value: "公开档案",
-              body: "本机构多次收到炸弹恐吓等威胁信。相关事件、报案与处理经过记录在案。",
-              bars: []
-            }
-          ];
-    const accountabilityLinksRaw = asObjectArray(accountability.links);
-    const accountabilityLinks =
-      accountabilityLinksRaw.length > 0
-        ? accountabilityLinksRaw.map((row) => ({ label: asString(row.label), href: asString(row.href, "#") }))
-        : [
-            // Official registries rather than files we host: the records live
-            // with the IRS, which is both more verifiable and safer for the
-            // people named in them.
-            {
-              label: "IRS 免税组织查询（按 EIN 03-0581933 查）",
-              href: "https://www.irs.gov/charities-non-profits/tax-exempt-organization-search"
-            },
-            {
-              label: "ProPublica Nonprofit Explorer",
-              href: "https://projects.propublica.org/nonprofits/organizations/30581933"
-            },
-            { label: "统计方法说明", href: "/about/numbers" },
-            { label: "隐私与数据保护", href: "/services/privacy" }
-          ];
-
-    const team = asRecord(payload.team);
-    const teamPeopleRaw = asObjectArray(team.people);
-    const teamPeople =
-      teamPeopleRaw.length > 0
-        ? teamPeopleRaw.map((row) => ({
-            name: asString(row.name),
-            roleLine1: asString(row.roleLine1),
-            roleLine2: asString(row.roleLine2),
-            image: asString(row.image)
-          }))
-        : [
-            {
-              name: "姓名占位",
-              roleLine1: "理事长",
-              roleLine2: "2005 年起",
-              image: "https://www.tuidang.org/wp-content/uploads/2020/08/cyl.png"
-            },
-            {
-              name: "姓名占位",
-              roleLine1: "理事",
-              roleLine2: "法律与合规",
-              image: "https://www.tuidang.org/wp-content/uploads/2020/08/hfj.png"
-            },
-            {
-              name: "姓名占位",
-              roleLine1: "理事",
-              roleLine2: "财务",
-              image: "https://www.tuidang.org/wp-content/uploads/2020/08/HGS.png"
-            },
-            {
-              name: "姓名占位",
-              roleLine1: "秘书长",
-              roleLine2: "服务点网络",
-              image: "https://www.tuidang.org/wp-content/uploads/2020/08/cyl.png"
-            }
-          ];
-
-    const history = asRecord(payload.history);
-    const timelineRaw = asObjectArray(history.timeline);
-    const timelineRows =
-      timelineRaw.length > 0
-        ? timelineRaw.map((row) => ({ date: asString(row.date), body: asString(row.body) }))
-        : [
-            { date: "2004.11", body: "《九评共产党》系列社论发表，开始有民众公开声明退出中共组织。" },
-            { date: "2005.01", body: "全球退党服务中心在纽约成立，开始系统登记并保存声明。" },
-            { date: "2007", body: "累计声明突破两千万份；海外服务点开始成规模设立。" },
-            { date: "2013", body: "推出退党证明办理与第三方在线查询验证服务。" },
-            { date: "2020", body: "累计声明突破三亿五千万份；多语种站点上线。" },
-            { date: "2024", body: "《九评共产党》发表二十周年；累计声明突破四亿三千万份。" },
-            { date: "2026.07", body: "美国国会议员联署声明表彰退出中共运动，载入《国会议事录》。" }
-          ];
-    const contactAddressLines = asStringArray(history.contactAddressLines, ["40-46 Main Street", "Flushing, NY 11354"]);
-    const contactLinksRaw = asObjectArray(history.contactLinks);
-    const contactLinks =
-      contactLinksRaw.length > 0
-        ? contactLinksRaw.map((row) => ({ label: asString(row.label), href: asString(row.href, "/services/contact") }))
-        : [
-            { label: "媒体与采访联络", href: "/services/contact" },
-            { label: "服务点与志愿者事务", href: "/services/contact" },
-            { label: "证明办理咨询", href: "/services/contact" }
-          ];
-
     return (
       <>
         <InteriorHead
@@ -1476,23 +1329,37 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
           <div className="wrap cols">
             <div>
               <p className="eyebrow">{asString(intro.eyebrow, "机构简介")}</p>
+              {/*
+                The body is one markdown field, written in the same editor as an
+                article. It replaced a paragraph list plus a row per principle,
+                each principle carrying its own label, text and a three-part
+                link -- nine controls to write four sentences of prose. The old
+                fields are still read when `body` is empty, so nothing that has
+                not been migrated goes blank.
+              */}
               <div className="prose">
-                {introParagraphs.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
-                ))}
-                <h2>{asString(intro.principlesHeading, "我们的原则")}</h2>
-                {principles.map((row) => (
-                  <p key={`${row.label}-${row.text}`}>
-                    <b>{row.label}</b>
-                    {row.text}
-                    {row.linkLabel ? (
-                      <>
-                        <a href={row.linkHref || "#"}>{row.linkLabel}</a>
-                        {row.linkSuffix}
-                      </>
-                    ) : null}
-                  </p>
-                ))}
+                {introBody ? (
+                  <MarkdownBody rows={markdownToBodyRows(introBody, { keepInline: true })} />
+                ) : (
+                  <>
+                    {introParagraphs.map((paragraph) => (
+                      <p key={paragraph}>{paragraph}</p>
+                    ))}
+                    <h2>{asString(intro.principlesHeading, "我们的原则")}</h2>
+                    {principles.map((row) => (
+                      <p key={`${row.label}-${row.text}`}>
+                        <b>{row.label}</b>
+                        {row.text}
+                        {row.linkLabel ? (
+                          <>
+                            <a href={row.linkHref || "#"}>{row.linkLabel}</a>
+                            {row.linkSuffix}
+                          </>
+                        ) : null}
+                      </p>
+                    ))}
+                  </>
+                )}
               </div>
             </div>
             <aside className="side">
@@ -1517,168 +1384,6 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
           </div>
         </section>
 
-        <section className="sec sec--ink" style={{ padding: "56px 0" }}>
-          <div className="wrap">
-            <div className="sec-head">
-              <div>
-                <p className="eyebrow eyebrow--onink">{asString(numbersBand.eyebrow, "数字与统计方法")}</p>
-                <h2 className="h2" style={{ color: "var(--paper)" }}>
-                  {asString(numbersBand.heading, "这个数字是怎么统计的")}
-                </h2>
-                <p className="lede" style={{ color: "var(--lav-lt)" }}>
-                  {asString(
-                    numbersBand.lede,
-                    "我们把统计口径完整公开，包括计入规则、去重方式、更新频率与已知局限。任何人都可以据此判断这个数字的意义与边界。"
-                  )}
-                </p>
-              </div>
-            </div>
-            <div className="substats" style={{ borderTop: 0, paddingTop: 0, marginTop: 0, gap: 56 }}>
-              {numbersStats.map((row) => (
-                <div key={`${row.value}-${row.label}`} className="substat">
-                  <b>{row.value}</b>
-                  <span>{row.label}</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: 44, display: "flex", gap: 12, flexWrap: "wrap" }}>
-              {numbersActions.map((row) => (
-                <a key={`${row.label}-${row.href}`} className={row.variant === "line-light" ? "btn btn--line-light" : "btn btn--seal"} href={row.href}>
-                  {row.label}
-                </a>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="sec" style={{ paddingTop: 52 }}>
-          <div className="wrap">
-            <div className="sec-head">
-              <div>
-                <p className="eyebrow">{asString(network.eyebrow, "全球网络")}</p>
-                <h2 className="h2">{asString(network.heading, "一百多个服务点，由志愿者维持运转")}</h2>
-                <p className="lede">
-                  {asString(network.lede, "服务点设在旅游景点、社区与交通枢纽附近。志愿者协助现场登记、解答证明与移民相关问题，并转交纸本声明。")}
-                </p>
-              </div>
-              <a className="more" href={asString(network.moreHref, "/about/network")}>
-                {asString(network.moreLabel, "查找服务点 →")}
-              </a>
-            </div>
-            <div className="stat4">
-              {networkStats.map((row) => (
-                <div key={`${row.value}-${row.label}`}>
-                  <b>{row.value}</b>
-                  <span>{row.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="sec" style={{ paddingTop: 0 }}>
-          <div className="wrap">
-            <div className="sec-head">
-              <div>
-                <p className="eyebrow">{asString(accountability.eyebrow, "公开与问责")}</p>
-                <h2 className="h2">{asString(accountability.heading, "财务、治理与安全")}</h2>
-                <p className="lede">
-                  {asString(accountability.lede, "财务报表经独立会计师事务所审计，Form 990 依法公开。我们同时公开记录针对本机构的威胁与攻击事件。")}
-                </p>
-              </div>
-              <a className="more" href={asString(accountability.moreHref, "/about/accountability")}>
-                {asString(accountability.moreLabel, "年度报告 →")}
-              </a>
-            </div>
-            <div className="acct">
-              {accountabilityCells.map((cell) => (
-                <div key={`${cell.title}-${cell.value}`} className="acct-cell">
-                  <h4>{cell.title}</h4>
-                  {cell.value ? <p className="val">{cell.value}</p> : null}
-                  {cell.bars.length > 0 ? (
-                    <div className="bars">
-                      {cell.bars.map((bar) => (
-                        <div key={`${bar.text}-${bar.width}`} className="bar">
-                          <i className={bar.tone === "b2" ? "b2" : bar.tone === "b3" ? "b3" : undefined} style={{ width: bar.width }} />
-                          {bar.text}
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                  <p style={cell.bars.length > 0 ? { marginTop: 14 } : undefined}>{cell.body}</p>
-                </div>
-              ))}
-            </div>
-            <div className="acct-links">
-              {accountabilityLinks.map((row) => (
-                <a key={`${row.label}-${row.href}`} className="pill" href={row.href}>
-                  {row.label}
-                </a>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="sec" style={{ paddingTop: 0 }}>
-          <div className="wrap">
-            <div className="sec-head">
-              <div>
-                <p className="eyebrow">{asString(team.eyebrow, "理事会与团队")}</p>
-                <h2 className="h2">{asString(team.heading, "负责的人")}</h2>
-                <p className="lede">{asString(team.lede, "全职人员极少，绝大部分工作由志愿者完成。以下为理事会成员与主要负责人。")}</p>
-              </div>
-            </div>
-            <div className="people">
-              {teamPeople.map((row) => (
-                <div key={`${row.name}-${row.roleLine1}-${row.roleLine2}`} className="person">
-                  <img src={row.image} alt="" />
-                  <b>{row.name}</b>
-                  <span>
-                    {row.roleLine1}
-                    <br />
-                    {row.roleLine2}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="sec" style={{ paddingTop: 0 }}>
-          <div className="wrap cols">
-            <div>
-              <p className="eyebrow">{asString(history.eyebrow, "历史沿革")}</p>
-              <h2 className="h2" style={{ marginBottom: 36 }}>
-                {asString(history.heading, "二〇〇五年至今")}
-              </h2>
-              <div className="tl">
-                {timelineRows.map((row) => (
-                  <div key={`${row.date}-${row.body}`} className="tl-item">
-                    <b>{row.date}</b>
-                    <p>{row.body}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <aside className="side">
-              <div className="panel" id="contact">
-                <h4>{asString(history.contactTitle, "联系我们")}</h4>
-                <ul>
-                  <li>
-                    {contactAddressLines[0]}
-                    <br />
-                    {contactAddressLines[1]}
-                  </li>
-                  {contactLinks.map((row) => (
-                    <li key={`${row.label}-${row.href}`}>
-                      <a href={row.href} {...externalLinkProps(row.href)}>{row.label}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </aside>
-          </div>
-        </section>
       </>
     );
   }
@@ -2047,18 +1752,16 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
           { name: "姓名占位", roleLine1: "理事", roleLine2: "财务", image: "https://www.tuidang.org/wp-content/uploads/2020/08/HGS.png" }
         ];
     const staffPanel = asRecord(payload.staffPanel);
-    const staffPeople = asObjectArray(staffPanel.people).length
-      ? asObjectArray(staffPanel.people).map((row) => ({
-          name: asString(row.name),
-          roleLine1: asString(row.roleLine1),
-          roleLine2: asString(row.roleLine2),
-          image: asString(row.image)
-        }))
-      : [
-          { name: "姓名占位", roleLine1: "秘书长", roleLine2: "服务点网络", image: "https://www.tuidang.org/wp-content/uploads/2020/08/cyl.png" },
-          { name: "姓名占位", roleLine1: "证明签发", roleLine2: "", image: "https://www.tuidang.org/wp-content/uploads/2020/08/hfj.png" },
-          { name: "姓名占位", roleLine1: "编辑部", roleLine2: "", image: "https://www.tuidang.org/wp-content/uploads/2020/08/HGS.png" }
-        ];
+    // No placeholder fallback: the roster is shared with the 团队 block on
+    // /about, which supplies one list. An empty staff panel means "there is no
+    // second group", so the section is dropped rather than filled with invented
+    // people -- see withSharedTeam in public-content.ts.
+    const staffPeople = asObjectArray(staffPanel.people).map((row) => ({
+      name: asString(row.name),
+      roleLine1: asString(row.roleLine1),
+      roleLine2: asString(row.roleLine2),
+      image: asString(row.image)
+    }));
     const notePanel = asRecord(payload.notePanel);
     const relatedPanel = asRecord(payload.relatedPanel);
     const relatedLinks = asObjectArray(relatedPanel.links).length
@@ -2098,6 +1801,8 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
                   </div>
                 ))}
               </div>
+              {staffPeople.length > 0 ? (
+                <>
               <p className="eyebrow" style={{ marginTop: 52 }}>
                 {asString(staffPanel.eyebrow, "执行团队")}
               </p>
@@ -2121,6 +1826,8 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
                   </div>
                 ))}
               </div>
+                </>
+              ) : null}
               <div className="prose" style={{ fontSize: 16, marginTop: 48 }}>
                 <h2>{asString(notePanel.heading, "关于姓名与照片")}</h2>
                 <p>{asString(notePanel.body, "公开领导层姓名是国际 NGO 的通行做法，也是本站问责承诺的一部分。但部分同事及其在中国大陆的家人可能因此承担风险，因此个别人员以职务代替姓名列出，并在此说明原因。")}</p>
@@ -2153,6 +1860,25 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
 
   if (section === "involve" && slug === "index") {
     const involveTitleRaw = asString(payload.title);
+    const fallback = involveDefaults("involve", "index");
+    /** The CMS value, or the shared default if this entry predates the move. */
+    const block = (key: string) => asRecord(payload[key] ?? fallback[key]);
+    const list = (value: unknown, key: string) => blockRows(value, fallback[key]);
+
+    const donate = block("donatePanel");
+    const donateHref = asString(donate.buttonHref, EXTERNAL_SERVICES.donation);
+    const spend = block("donateStats");
+    const spendCells = list(spend.items, "donateStats");
+    const funds = block("useOfFunds");
+    const fundItems = asStringArray(funds.items, []);
+    const otherWays = block("otherDonationWays");
+    const band = block("volunteerBand");
+    const bandLinks = asObjectArray(band.links);
+    const petition = block("endccpBlock");
+    const petitionButtons = asObjectArray(petition.buttons);
+    const storiesHead = block("storiesHeading");
+    const actCards = list(payload.actCards, "actCards");
+
     /**
      * 义工故事 cards, from the CMS.
      *
@@ -2187,81 +1913,65 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
             <div>
               <div className="form">
                 <p className="eyebrow" style={{ marginBottom: 14 }}>
-                  捐助我们
+                  {asString(donate.eyebrow)}
                 </p>
                 <h2 style={{ fontFamily: "var(--serif)", fontSize: 30, margin: "0 0 14px" }}>
-                  到捐助页面完成
+                  {asString(donate.title)}
                 </h2>
-                <p style={{ lineHeight: "var(--lh-body)", color: "var(--muted)", marginBottom: 26 }}>
-                  捐助由本中心的捐助页面受理，支持每月定期捐助与单次捐助。本中心为美国注册的
-                  501(c)(3) 非营利组织，捐款可依法抵税。
-                </p>
-                <a className="btn btn--seal" href={EXTERNAL_SERVICES.donation} {...EXTERNAL_LINK_PROPS}>
-                  <span className="stamp">退</span>前往捐助
-                </a>
-                <p
-                  style={{
-                    fontSize: 13,
-                    color: "var(--muted)",
-                    marginTop: 26,
-                    paddingTop: 16,
-                    borderTop: "1px solid var(--rule)",
-                    lineHeight: "var(--lh-body)"
-                  }}
+                <div
+                  className="prose"
+                  style={{ lineHeight: "var(--lh-body)", color: "var(--muted)", marginBottom: 26 }}
                 >
-                  链接将在新窗口打开 www.tuidang.org 的捐助页面。
-                </p>
+                  <CmsMarkdown value={donate.body} />
+                </div>
+                <a className="btn btn--seal" href={donateHref} {...externalLinkProps(donateHref)}>
+                  <span className="stamp">退</span>
+                  {asString(donate.buttonLabel, "前往捐助")}
+                </a>
+                {asString(donate.footnote) ? (
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: "var(--muted)",
+                      marginTop: 26,
+                      paddingTop: 16,
+                      borderTop: "1px solid var(--rule)",
+                      lineHeight: "var(--lh-body)"
+                    }}
+                  >
+                    {asString(donate.footnote)}
+                  </p>
+                ) : null}
               </div>
-              <div className="stat4" style={{ marginTop: 34 }}>
-                <div>
-                  <b>84%</b>
-                  <span>项目支出</span>
+              {spendCells.length > 0 ? (
+                <div className="stat4" style={{ marginTop: 34 }}>
+                  {spendCells.map((cell, index) => (
+                    <div key={asString(cell.label) || index}>
+                      <b>{asString(cell.value)}</b>
+                      <span>{asString(cell.label)}</span>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <b>10%</b>
-                  <span>行政</span>
-                </div>
-                <div>
-                  <b>6%</b>
-                  <span>筹款</span>
-                </div>
-                <div>
-                  <b>501(c)(3)</b>
-                  <span>可依法抵税</span>
-                </div>
+              ) : null}
+              <div
+                className="prose"
+                style={{ fontSize: 13.5, color: "var(--muted)", marginTop: 16, lineHeight: "var(--lh-body)" }}
+              >
+                <CmsMarkdown value={spend.note} />
               </div>
-              <p style={{ fontSize: 13.5, color: "var(--muted)", marginTop: 16, lineHeight: "var(--lh-body)" }}>
-                财务报表经独立会计师事务所审计，年度 Form 990 公开可查。<a href="/about" style={{ color: "var(--seal)" }}>查看财务与问责</a>
-              </p>
             </div>
             <aside className="side">
-              <div className="panel">
-                <h4>你的捐助用在哪里</h4>
-                <ul>
-                  <li>服务点场地与物料</li>
-                  <li>展板、传单与资料印制</li>
-                  <li>登记系统与证明签发</li>
-                  <li>网站与安全防护</li>
-                  <li>多语种翻译</li>
-                </ul>
-              </div>
-              <div className="panel">
-                <h4>其他捐助方式</h4>
-                <ul>
-                  <li>
-                    <a href="#">支票邮寄</a>
-                  </li>
-                  <li>
-                    <a href="#">银行转账</a>
-                  </li>
-                  <li>
-                    <a href="#">公司配捐</a>
-                  </li>
-                  <li>
-                    <a href="#">遗产捐赠</a>
-                  </li>
-                </ul>
-              </div>
+              {fundItems.length > 0 ? (
+                <div className="panel">
+                  <h4>{asString(funds.title)}</h4>
+                  <ul>
+                    {fundItems.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              <LinkPanel title={asString(otherWays.title)} links={asObjectArray(otherWays.links)} />
             </aside>
           </div>
         </section>
@@ -2270,49 +1980,30 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
           <div className="wrap">
             <div className="sec-head">
               <div>
-                <p className="eyebrow eyebrow--onink">成为义工</p>
+                <p className="eyebrow eyebrow--onink">{asString(band.eyebrow)}</p>
                 <h2 className="h2" style={{ color: "var(--paper)" }}>
-                  绝大部分工作由志愿者完成
+                  {asString(band.title)}
                 </h2>
-                <p className="lede" style={{ color: "var(--lav-lt)" }}>
-                  你可以在所在城市协助服务点，也可以在线参与翻译、整理与技术工作。时间多少不限。
-                </p>
+                {asString(band.lede) ? (
+                  <p className="lede" style={{ color: "var(--lav-lt)" }}>
+                    {asString(band.lede)}
+                  </p>
+                ) : null}
               </div>
-              <a className="more" href="/involve/volunteer" style={{ color: "var(--gold-lt)" }}>
-                报名 →
-              </a>
+              {asString(band.moreLabel) ? (
+                <a className="more" href={asString(band.moreHref, "/involve/volunteer")} style={{ color: "var(--gold-lt)" }}>
+                  {asString(band.moreLabel)}
+                </a>
+              ) : null}
             </div>
             <div className="cities" style={{ gridTemplateColumns: "repeat(3,1fr)", gap: "0 32px" }}>
-              <div>
-                <a href="/involve/volunteer" style={{ color: "var(--lav-lt)" }}>
-                  服务点现场协助 →
-                </a>
-              </div>
-              <div>
-                <a href="/involve/volunteer" style={{ color: "var(--lav-lt)" }}>
-                  翻译（英德韩日罗） →
-                </a>
-              </div>
-              <div>
-                <a href="/involve/volunteer" style={{ color: "var(--lav-lt)" }}>
-                  影音剪辑与字幕 →
-                </a>
-              </div>
-              <div>
-                <a href="/involve/volunteer" style={{ color: "var(--lav-lt)" }}>
-                  资料整理与校对 →
-                </a>
-              </div>
-              <div>
-                <a href="/involve/volunteer" style={{ color: "var(--lav-lt)" }}>
-                  技术与网站维护 →
-                </a>
-              </div>
-              <div>
-                <a href="/involve/volunteer" style={{ color: "var(--lav-lt)" }}>
-                  在你的城市新设服务点 →
-                </a>
-              </div>
+              {bandLinks.map((row, index) => (
+                <div key={asString(row.label) || index}>
+                  <a href={asString(row.href, "/involve/volunteer")} style={{ color: "var(--lav-lt)" }}>
+                    {asString(row.label)} →
+                  </a>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -2320,28 +2011,34 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
         <section className="sec" style={{ paddingTop: 52 }}>
           <div className="wrap cols">
             <div>
-              <p className="eyebrow">ENDCCP 征签行动</p>
-              <h2 className="h2">加入公开联署</h2>
+              <p className="eyebrow">{asString(petition.eyebrow)}</p>
+              <h2 className="h2">{asString(petition.title)}</h2>
               <div className="prose" style={{ fontSize: 16 }}>
-                <p>
-                  ENDCCP 是一项面向各国公众的公开联署，向政府与国际机构表达对中共侵害人权行为的立场。联署内容公开，签署人可选择是否公开姓名。
-                </p>
-                <p>征签自发起以来已在多国举办活动，包括环美车游、街头征签与国际研讨会。历次行动的纪录与报导可在新闻与报告中查阅。</p>
+                <CmsMarkdown value={petition.body} />
               </div>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 28 }}>
-                <a className="btn btn--seal" href="/involve/endccp">
-                  参与联署
-                </a>
-                <a className="btn btn--line" href="/news">
-                  历次行动纪录
-                </a>
-              </div>
+              {petitionButtons.length > 0 ? (
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 28 }}>
+                  {petitionButtons.map((row, index) => (
+                    <a
+                      key={asString(row.label) || index}
+                      className={index === 0 ? "btn btn--seal" : "btn btn--line"}
+                      href={asString(row.href, "/")}
+                    >
+                      {asString(row.label)}
+                    </a>
+                  ))}
+                </div>
+              ) : null}
             </div>
             <aside className="side">
               <div className="panel">
-                <h4>征签进度</h4>
-                <p style={{ fontFamily: "var(--mono)", fontSize: 30, color: "var(--seal)", margin: "0 0 6px", letterSpacing: "-.01em" }}>2,481,036</p>
-                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", margin: 0, lineHeight: "var(--lh-body)" }}>人已签署，覆盖 90 多个国家与地区。</p>
+                <h4>{asString(petition.progressTitle)}</h4>
+                <p style={{ fontFamily: "var(--mono)", fontSize: 30, color: "var(--seal)", margin: "0 0 6px", letterSpacing: "-.01em" }}>
+                  {asString(petition.progressValue)}
+                </p>
+                <p style={{ fontSize: 13.5, color: "var(--ink-soft)", margin: 0, lineHeight: "var(--lh-body)" }}>
+                  {asString(petition.progressNote)}
+                </p>
               </div>
             </aside>
           </div>
@@ -2352,12 +2049,14 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
           <div className="wrap">
             <div className="sec-head">
               <div>
-                <p className="eyebrow">义工故事</p>
-                <h2 className="h2">在服务点的人</h2>
+                <p className="eyebrow">{asString(storiesHead.eyebrow)}</p>
+                <h2 className="h2">{asString(storiesHead.title)}</h2>
               </div>
-              <a className="more" href="/involve/stories">
-                全部义工故事 →
-              </a>
+              {asString(storiesHead.moreLabel) ? (
+                <a className="more" href={asString(storiesHead.moreHref, "/involve/stories")}>
+                  {asString(storiesHead.moreLabel)}
+                </a>
+              ) : null}
             </div>
             {/* Driven by the CMS. These three cards were written into the
                 template -- invented volunteer stories with invented running
@@ -2382,166 +2081,103 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
         </section>
         ) : null}
 
-        <section className="sec" style={{ paddingTop: 52 }}>
-          <div className="wrap">
-            <div className="act">
-              <a href="/services/declare">
-                <h4>声明三退</h4>
-                <p>最直接的支持方式。可匿名，几分钟完成。</p>
-              </a>
-              <a href="/resources/downloads">
-                <h4>下载并散发资料</h4>
-                <p>展板、传单与影音素材，可自由使用。</p>
-              </a>
-              <a href="/news">
-                <h4>转载我们的报导</h4>
-                <p>无需授权，注明来源即可。</p>
-              </a>
-              <a href="/resources/tools">
-                <h4>告诉一个人</h4>
-                <p>把这个网站发给可能需要的人。</p>
-              </a>
-            </div>
-          </div>
-        </section>
+        <ActCards rows={actCards} />
       </>
     );
   }
 
   if (section === "involve" && slug === "endccp") {
+    const fallback = involveDefaults("involve", "endccp");
+    const block = (key: string) => asRecord(payload[key] ?? fallback[key]);
+    const statCells = blockRows(payload.stats, fallback.stats);
+    const intro = block("intro");
+    // `actionsTitle` + `items` were two loose top-level keys; they are one
+    // block now, so the heading and the list it heads are edited together.
+    const actions = asRecord(payload.actions ?? fallback.actions);
+    const actionRows = asObjectArray(actions.items ?? payload.items).map((row) => ({
+      slug: asString(row.slug),
+      href: asString(row.href),
+      image: asString(row.image),
+      title: asString(row.title),
+      summary: asString(row.summary),
+      date: asString(row.date),
+      tag: asString(row.tag)
+    }));
+    const actionPager = asStringArray(payload.pager, []);
+    const sign = block("signPanel");
+    const related = block("relatedPanel");
     return (
       <>
         <InteriorHead section={section} slug={slug} title={asString(payload.title, "打倒中共恶魔（End CCP）征签")} subtitle={asString(payload.subtitle)} />
         <InteriorTabs section={section} slug={slug} />
-        <section className="sec" style={{ paddingTop: 52 }}>
-          <div className="wrap">
-            <div className="stat4">
-              <div>
-                <b>2,481,036</b>
-                <span>累计签署人数</span>
-              </div>
-              <div>
-                <b>90+</b>
-                <span>覆盖国家与地区</span>
-              </div>
-              <div>
-                <b>100 万+</b>
-                <span>年均新增</span>
-              </div>
-              <div>
-                <b>2020.11</b>
-                <span>发起时间</span>
+        {statCells.length > 0 ? (
+          <section className="sec" style={{ paddingTop: 52 }}>
+            <div className="wrap">
+              <div className="stat4">
+                {statCells.map((cell, index) => (
+                  <div key={asString(cell.label) || index}>
+                    <b>{asString(cell.value)}</b>
+                    <span>{asString(cell.label)}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
         <section className="sec" style={{ padding: "52px 0 96px" }}>
           <div className="wrap cols">
             <div>
               <div className="prose" style={{ fontSize: 16, marginTop: 40 }}>
-                <h2>联署内容</h2>
-                <p>联署书要求各国政府正视中共对信仰群体、异议人士与少数族群的侵害，并对参与迫害的责任人采取相应措施。全文公开，签署前请先阅读。</p>
-                <h2>签署方式</h2>
-                <p>可在线签署，也可在各地服务点与活动现场纸本签署。签署人可选择是否公开姓名——选择不公开的，我们只计入总数，不显示任何信息。</p>
+                <CmsMarkdown value={intro.body} />
               </div>
-              {(() => {
-                // 历次行动 was three invented campaign reports -- a fifty-state
-                // car tour, a petition tally, an Auckland panel -- each one
-                // linking to the placeholder article page. Editors supply these
-                // from 内容管理 as `items`; with none, the heading and the list
-                // are both omitted rather than filled with plausible fiction.
-                const actionRows = asObjectArray(payload.items).map((row) => ({
-                  slug: asString(row.slug),
-                  href: asString(row.href),
-                  image: asString(row.image),
-                  title: asString(row.title),
-                  summary: asString(row.summary),
-                  date: asString(row.date),
-                  tag: asString(row.tag)
-                }));
-                if (actionRows.length === 0) return null;
-                const actionPager = asStringArray(payload.pager, []);
-                return (
-                  <>
-                    <div className="prose" style={{ fontSize: 16, marginTop: 40 }}>
-                      <h2>{asString(payload.actionsTitle, "历次行动")}</h2>
-                    </div>
-                    <div className="arch" style={{ marginTop: 24 }}>
-                      {actionRows.map((row, index) => (
-                        <article
-                          className="arow"
-                          key={row.slug || row.title || index}
-                          style={index === 0 ? { paddingTop: 0 } : undefined}
+              {actionRows.length > 0 ? (
+                <>
+                  <div className="prose" style={{ fontSize: 16, marginTop: 40 }}>
+                    <h2>{asString(actions.title, "历次行动")}</h2>
+                  </div>
+                  <div className="arch" style={{ marginTop: 24 }}>
+                    {actionRows.map((row, index) => (
+                      <article
+                        className="arow"
+                        key={row.slug || row.title || index}
+                        style={index === 0 ? { paddingTop: 0 } : undefined}
+                      >
+                        <a
+                          href={resolveNewsArticleHref({
+                            href: row.href,
+                            slug: row.slug,
+                            title: row.title
+                          })}
+                          style={{ display: "contents" }}
                         >
-                          <a
-                            href={resolveNewsArticleHref({
-                              href: row.href,
-                              slug: row.slug,
-                              title: row.title
-                            })}
-                            style={{ display: "contents" }}
-                          >
-                            {row.image ? <img src={row.image} alt="" /> : null}
-                            <div>
-                              {row.tag ? <span className="tag">{row.tag}</span> : null}
-                              <h3>{row.title}</h3>
-                              {row.summary ? <p>{row.summary}</p> : null}
-                              {row.date ? <p className="meta">{row.date}</p> : null}
-                            </div>
-                          </a>
-                        </article>
+                          {row.image ? <img src={row.image} alt="" /> : null}
+                          <div>
+                            {row.tag ? <span className="tag">{row.tag}</span> : null}
+                            <h3>{row.title}</h3>
+                            {row.summary ? <p>{row.summary}</p> : null}
+                            {row.date ? <p className="meta">{row.date}</p> : null}
+                          </div>
+                        </a>
+                      </article>
+                    ))}
+                  </div>
+                  {actionPager.length > 0 ? (
+                    <nav className="pager">
+                      {actionPager.map((item, index) => (
+                        <a key={item} className={index === 0 ? "on" : ""} href="#">
+                          {item}
+                        </a>
                       ))}
-                    </div>
-                    {actionPager.length > 0 ? (
-                      <nav className="pager">
-                        {actionPager.map((item, index) => (
-                          <a key={item} className={index === 0 ? "on" : ""} href="#">
-                            {item}
-                          </a>
-                        ))}
-                      </nav>
-                    ) : null}
-                  </>
-                );
-              })()}
+                    </nav>
+                  ) : null}
+                </>
+              ) : null}
             </div>
             <aside className="side">
               {/* The signing form lives on endccp.com, not here. Editable in
                   the CMS so the address can move without a deploy. */}
-              {(() => {
-                const sign = asRecord(payload.signPanel);
-                const signHref = asString(sign.buttonHref, "https://endccp.com/");
-                return (
-                  <div className="panel panel--seal">
-                    <h4>{asString(sign.title, "参与联署")}</h4>
-                    <p>{asString(sign.body, "签署前请先阅读联署全文。可选择匿名。")}</p>
-                    <a
-                      className="btn btn--seal btn--sm"
-                      href={signHref}
-                      {...externalLinkProps(signHref)}
-                    >
-                      {asString(sign.buttonLabel, "前往签署")}
-                    </a>
-                  </div>
-                );
-              })()}
-              <div className="panel">
-                <h4>相关</h4>
-                <ul>
-                  <li>
-                    <a href="#">联署书全文</a>
-                  </li>
-                  <li>
-                    <a href="/news">机构公告与声明</a>
-                  </li>
-                  <li>
-                    <a href="/involve/volunteer">参与现场征签</a>
-                  </li>
-                  <li>
-                    <a href="/resources/downloads">征签物料下载</a>
-                  </li>
-                </ul>
-              </div>
+              <CtaPanel panel={sign} fallbackHref="https://endccp.com/" />
+              <LinkPanel title={asString(related.title, "相关")} links={asObjectArray(related.links)} />
             </aside>
           </div>
         </section>
@@ -2550,68 +2186,27 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
   }
 
   if (section === "involve" && slug === "other-ways") {
+    const fallback = involveDefaults("involve", "other-ways");
+    const block = (key: string) => asRecord(payload[key] ?? fallback[key]);
+    const actCards = blockRows(payload.actCards, fallback.actCards);
+    const intro = block("intro");
+    const donate = block("donatePanel");
+    const related = block("relatedPanel");
     return (
       <>
         <InteriorHead section={section} slug={slug} title={asString(payload.title, "不捐款也能支持")} subtitle={asString(payload.subtitle)} />
         <InteriorTabs section={section} slug={slug} />
-        <section className="sec" style={{ paddingTop: 52 }}>
-          <div className="wrap">
-            <div className="act">
-              <a href="/services/declare">
-                <h4>声明三退</h4>
-                <p>最直接的方式。可匿名，几分钟完成。</p>
-              </a>
-              <a href="/resources/downloads">
-                <h4>下载并散发资料</h4>
-                <p>展板、传单与影音素材，可自由印制使用。</p>
-              </a>
-              <a href="/news">
-                <h4>转载我们的报导</h4>
-                <p>无需事先授权，注明来源即可。</p>
-              </a>
-              <a href="/resources/tools">
-                <h4>把免翻墙方式转给亲友</h4>
-                <p>身在大陆的人，往往缺的只是一个能打开的地址。</p>
-              </a>
-            </div>
-          </div>
-        </section>
+        <ActCards rows={actCards} />
         <section className="sec" style={{ padding: "52px 0 96px" }}>
           <div className="wrap cols">
             <div>
               <div className="prose" style={{ fontSize: 16, marginTop: 40 }}>
-                <h2>公司配捐</h2>
-                <p>许多雇主提供慈善配捐计划，你的捐助可能被等额甚至双倍匹配。我们是在美国注册的 501(c)(3) 组织，符合绝大多数配捐计划的资格要求。</p>
-                <h2>支票与银行转账</h2>
-                <p>若不便使用线上支付，可邮寄支票至纽约办公室，或通过银行转账。请与我们联系取得账户信息——请勿相信任何其他来源提供的账户。</p>
-                <h2>遗产捐赠</h2>
-                <p>若你考虑将本中心列入遗嘱或信托安排，请与我们联系，我们会提供所需的法律信息。</p>
-                <h2>专业技能</h2>
-                <p>法律、会计、安全、翻译与设计方面的专业协助，对我们的价值往往高于同等金额的捐款。</p>
+                <CmsMarkdown value={intro.body} />
               </div>
             </div>
             <aside className="side">
-              <div className="panel panel--seal">
-                <h4>捐助</h4>
-                <p>每月 20 美元，约可支持一个服务点运转一周。</p>
-                <a className="btn btn--seal btn--sm" href="/involve">
-                  捐助我们
-                </a>
-              </div>
-              <div className="panel">
-                <h4>相关</h4>
-                <ul>
-                  <li>
-                    <a href="/about/accountability">财务与问责</a>
-                  </li>
-                  <li>
-                    <a href="/involve/volunteer">成为义工</a>
-                  </li>
-                  <li>
-                    <a href="/services/contact">联系我们</a>
-                  </li>
-                </ul>
-              </div>
+              <CtaPanel panel={donate} fallbackHref="/involve" />
+              <LinkPanel title={asString(related.title, "相关")} links={asObjectArray(related.links)} />
             </aside>
           </div>
         </section>

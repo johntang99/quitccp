@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { ArticleVideo } from "@/components/public/ArticleVideo";
-import type { ArticleBodyRow } from "@/lib/public-content";
+import { markdownToBodyRows, type ArticleBodyRow } from "@/lib/public-content";
 import { ArticleAudio } from "@/components/public/ArticleAudio";
 
 /**
@@ -112,4 +112,18 @@ export function MarkdownBody({ rows }: { rows: ArticleBodyRow[] }) {
       })}
     </>
   );
+}
+
+/**
+ * A markdown body written in the CMS by hand, rather than imported.
+ *
+ * `keepInline` is on: the converter otherwise flattens `**bold**` and
+ * `[text](url)` for the 15,515 migrated articles, whose markdown is uneven
+ * enough that stray symbols would reach the reader. Prose written in the
+ * admin's editor has no such problem and should keep its links.
+ */
+export function CmsMarkdown({ value }: { value: unknown }) {
+  const text = typeof value === "string" ? value.trim() : "";
+  if (!text) return null;
+  return <MarkdownBody rows={markdownToBodyRows(text, { keepInline: true })} />;
 }

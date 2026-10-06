@@ -4,6 +4,8 @@ import { InteriorHead, InteriorTabs } from "./InteriorScaffold";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString, asStringArray } from "./content-utils";
 import { resolveNewsArticleHref } from "@/lib/news-linking";
+import { involveDefaults } from "@quitccp/content-schema";
+import { CtaPanel, LinkPanel } from "./section-panels";
 
 /**
  * Empty on purpose.
@@ -277,6 +279,11 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
     const storyRows = rows;
     const storyFilters = asStringArray(payload.filters, []);
     const storyPager = asStringArray(payload.pager, []);
+    // Both sidebar panels were written into this branch; they are page content
+    // now, with the shared defaults behind them.
+    const storyFallback = involveDefaults("involve", "stories");
+    const joinPanel = asRecord(payload.joinPanel ?? storyFallback.joinPanel);
+    const storyRelated = asRecord(payload.relatedPanel ?? storyFallback.relatedPanel);
     return (
       <>
         <InteriorHead
@@ -348,27 +355,11 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
               ) : null}
             </article>
             <aside className="side">
-              <div className="panel panel--seal">
-                <h4>你也可以参与</h4>
-                <p>时间多少不限。在你的城市，或者在线上。</p>
-                <a className="btn btn--seal btn--sm" href="/involve/volunteer">
-                  成为义工
-                </a>
-              </div>
-              <div className="panel">
-                <h4>相关</h4>
-                <ul>
-                  <li>
-                    <a href="/about/network">全球服务网络</a>
-                  </li>
-                  <li>
-                    <a href="/videos">义工纪实影片</a>
-                  </li>
-                  <li>
-                    <a href="/news">三退新闻与故事</a>
-                  </li>
-                </ul>
-              </div>
+              <CtaPanel panel={joinPanel} fallbackHref="/involve/volunteer" />
+              <LinkPanel
+                title={asString(storyRelated.title, "相关")}
+                links={asObjectArray(storyRelated.links)}
+              />
             </aside>
           </div>
         </section>

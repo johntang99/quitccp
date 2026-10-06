@@ -1,5 +1,6 @@
 "use client";
 
+import { MarkdownEditor } from "./MarkdownEditor";
 import {
   asRow,
   asRows,
@@ -9,7 +10,8 @@ import {
   legendStyle,
   type ObjectEditorSpec,
   type RowEditorSpec,
-  type RowField
+  type RowField,
+  type SectionBlockDef
 } from "./section-fields";
 
 /**
@@ -24,19 +26,12 @@ import {
  * page shows all of them, in a fixed order.
  */
 
-interface AboutBlockDef {
-  key: string;
-  label: string;
-  note?: string;
-  /** Plain string fields, in render order, with their captions. */
-  text?: { key: string; label: string; area?: boolean }[];
-  /** Fields that are a plain list of strings, one per line. */
-  lists?: { key: string; label: string; hint?: string }[];
-  /** Repeating records. */
-  rows?: Record<string, RowEditorSpec>;
-  /** Single nested records. */
-  objects?: Record<string, ObjectEditorSpec>;
-}
+/**
+ * The block declaration now lives in section-fields, beside the renderers that
+ * read it, because the Involve pages use the same shape. The old name is kept
+ * as an alias so the declarations below need no rewriting.
+ */
+type AboutBlockDef = SectionBlockDef;
 
 const LINK_ROW: RowField[] = [
   { key: "label", label: "文字（Label）" },
@@ -48,153 +43,295 @@ const STAT_ROW: RowField[] = [
   { key: "label", label: "说明（Label）" }
 ];
 
+/**
+ * The /about overview page is the 机构简介 and nothing else.
+ *
+ * It used to carry five more blocks that summarised the sub-pages, each holding
+ * its own copy of that page's list. The copies drifted -- the timeline showed 7
+ * entries here and 11 on /about/history -- and an editor who updated one saw no
+ * change on the other. The summaries are gone: /about is the introduction, and
+ * each topic lives on its own tab, edited in one place.
+ */
 export const ABOUT_BLOCKS: AboutBlockDef[] = [
   {
     key: "intro",
     label: "机构简介 Intro",
+    markdown: [
+      {
+        key: "body",
+        label: "正文（Markdown）",
+        hint: "空行分段。`## 小标题` 是二级标题，`**加粗**`，`[文字](链接)` 是链接。"
+      }
+    ],
     text: [
       { key: "eyebrow", label: "小标题（Eyebrow）" },
-      { key: "principlesHeading", label: "原则区标题（Principles heading）" },
       { key: "sidebarTitle", label: "侧栏标题（Sidebar title）" },
       { key: "downloadPanelTitle", label: "下载区标题（Download title）" },
       { key: "downloadPanelBody", label: "下载区说明（Download body）", area: true },
       { key: "downloadPanelButtonLabel", label: "下载按钮文字（Button label）" },
       { key: "downloadPanelButtonHref", label: "下载按钮链接（Button link）" }
     ],
-    lists: [
-      {
-        key: "paragraphs",
-        label: "正文段落（Paragraphs，每段一行）",
-        hint: "一行是一段。段落之间不要留空行。"
-      }
-    ],
     rows: {
-      principles: {
-        label: "原则（Principles）",
-        blank: { label: "", text: "" },
-        fields: [
-          { key: "label", label: "标签（Label）" },
-          { key: "text", label: "说明（Text）", kind: "area" }
-        ]
-      },
       sidebarLinks: { label: "侧栏链接（Sidebar links）", blank: { label: "", href: "#" }, fields: LINK_ROW }
-    }
-  },
-  {
-    key: "numbersBand",
-    label: "数字带 Numbers",
-    text: [
-      { key: "eyebrow", label: "小标题（Eyebrow）" },
-      { key: "heading", label: "区块标题（Heading）" },
-      { key: "lede", label: "导语（Lede）", area: true }
-    ],
-    rows: {
-      stats: { label: "数字（Stats）", blank: { value: "", label: "" }, fields: STAT_ROW },
-      actions: {
-        label: "按钮（Actions）",
-        blank: { label: "", href: "#", variant: "seal" },
-        fields: [
-          { key: "label", label: "文字（Label）" },
-          { key: "href", label: "链接（Link）" },
-          { key: "variant", label: "样式（Style，seal 为主按钮）" }
-        ]
-      }
-    }
-  },
-  {
-    key: "network",
-    label: "全球网络 Network",
-    text: [
-      { key: "eyebrow", label: "小标题（Eyebrow）" },
-      { key: "heading", label: "区块标题（Heading）" },
-      { key: "lede", label: "导语（Lede）", area: true },
-      { key: "moreLabel", label: "更多链接文字（More label）" },
-      { key: "moreHref", label: "更多链接地址（More link）" }
-    ],
-    rows: {
-      stats: { label: "数字（Stats）", blank: { value: "", label: "" }, fields: STAT_ROW }
-    }
-  },
-  {
-    key: "accountability",
-    label: "问责与公开 Accountability",
-    text: [
-      { key: "eyebrow", label: "小标题（Eyebrow）" },
-      { key: "heading", label: "区块标题（Heading）" },
-      { key: "lede", label: "导语（Lede）", area: true },
-      { key: "moreLabel", label: "更多链接文字（More label）" },
-      { key: "moreHref", label: "更多链接地址（More link）" }
-    ],
-    rows: {
-      cells: {
-        label: "指标（Cells）",
-        blank: { title: "", value: "", body: "" },
-        fields: [
-          { key: "title", label: "小标题（Title）" },
-          { key: "value", label: "主数字／标题（Figure）" },
-          { key: "body", label: "说明（Body）", kind: "area" }
-        ]
-      },
-      links: { label: "链接（Links）", blank: { label: "", href: "#" }, fields: LINK_ROW }
-    }
-  },
-  {
-    key: "team",
-    label: "团队 Team",
-    text: [
-      { key: "eyebrow", label: "小标题（Eyebrow）" },
-      { key: "heading", label: "区块标题（Heading）" },
-      { key: "lede", label: "导语（Lede）", area: true }
-    ],
-    rows: {
-      people: {
-        label: "成员（People）",
-        blank: { name: "", image: "", roleLine1: "", roleLine2: "" },
-        fields: [
-          { key: "image", label: "头像（Portrait）", kind: "image" },
-          { key: "name", label: "姓名（Name）" },
-          { key: "roleLine1", label: "身份第一行（Role, line 1）" },
-          { key: "roleLine2", label: "身份第二行（Role, line 2）" }
-        ]
-      }
-    }
-  },
-  {
-    key: "history",
-    label: "大事记与联系 History",
-    text: [
-      { key: "eyebrow", label: "小标题（Eyebrow）" },
-      { key: "heading", label: "区块标题（Heading）" },
-      { key: "contactTitle", label: "联系区标题（Contact title）" }
-    ],
-    lists: [
-      { key: "contactAddressLines", label: "地址（Address，每行一条）" }
-    ],
-    rows: {
-      timeline: {
-        label: "大事记（Timeline）",
-        blank: { date: "", body: "" },
-        fields: [
-          { key: "date", label: "时间（Date）" },
-          { key: "body", label: "内容（Body）", kind: "area" }
-        ]
-      },
-      contactLinks: { label: "联系链接（Contact links）", blank: { label: "", href: "#" }, fields: LINK_ROW }
     }
   }
 ];
 
-/** Every key a block's declaration covers, so an undeclared one can be spotted. */
+/** Keys the declaration covers, so anything else can be surfaced rather than lost. */
 function declaredKeys(block: AboutBlockDef): Set<string> {
   return new Set([
     ...(block.text ?? []).map((f) => f.key),
     ...(block.lists ?? []).map((f) => f.key),
     ...Object.keys(block.rows ?? {}),
-    ...Object.keys(block.objects ?? {})
+    ...Object.keys(block.objects ?? {}),
+    ...(block.markdown ?? []).map((f) => f.key),
+    // Superseded by the markdown body; still stored, deliberately not shown.
+    ...(block.markdown ? ["paragraphs", "principlesHeading", "principles"] : [])
   ]);
 }
 
+/**
+ * The five About sub-pages, in the same declarative shape as ABOUT_BLOCKS.
+ *
+ * They were edited as raw JSON textareas until now: an editor wanting to change
+ * one board member had to find the right object inside a wall of braces and not
+ * break it. Nothing here is new machinery -- the same renderers that serve the
+ * overview page serve these, so every About screen now reads the same way.
+ *
+ * Keyed by content path because that is what ContentExplorer knows.
+ */
+const PARA_ROW: RowField[] = [
+  { key: "heading", label: "小节标题（Heading）" },
+  { key: "paragraphs", label: "段落（Paragraphs，每段一行）", kind: "list" }
+];
+
+const PERSON_ROW: RowField[] = [
+  { key: "image", label: "头像（Portrait）", kind: "image" },
+  { key: "name", label: "姓名（Name）" },
+  { key: "roleLine1", label: "身份第一行（Role, line 1）" },
+  { key: "roleLine2", label: "身份第二行（Role, line 2）" }
+];
+
+export const ABOUT_SUBPAGE_BLOCKS: Record<string, AboutBlockDef[]> = {
+  "pages/about-accountability.json": [
+    {
+      key: "summaryCells",
+      label: "概览指标 Summary",
+      note: "页面顶部的几格数字。",
+      rows: {
+        __self: {
+          label: "指标（Cells）",
+          blank: { title: "", value: "", body: "", bars: [] },
+          fields: [
+            { key: "title", label: "标题（Title）" },
+            { key: "value", label: "数值（Value）" },
+            { key: "body", label: "说明（Body）", kind: "area" },
+            { key: "bars", label: "比例条（Bars）", kind: "bars" }
+          ]
+        }
+      }
+    },
+    {
+      key: "proseSections",
+      label: "正文章节 Sections",
+      rows: { __self: { label: "章节（Sections）", blank: { heading: "", paragraphs: [] }, fields: PARA_ROW } }
+    },
+    {
+      key: "summaryLinks",
+      label: "概览链接 Summary links",
+      rows: { __self: { label: "链接（Links）", blank: { label: "", href: "#" }, fields: LINK_ROW } }
+    },
+    {
+      key: "downloadsPanel",
+      label: "下载面板 Downloads",
+      text: [{ key: "title", label: "标题（Title）" }],
+      rows: { links: { label: "链接（Links）", blank: { label: "", href: "#" }, fields: LINK_ROW } }
+    },
+    {
+      key: "thirdPartyPanel",
+      label: "第三方认证 Third party",
+      text: [{ key: "title", label: "标题（Title）" }],
+      rows: { links: { label: "链接（Links）", blank: { label: "", href: "#" }, fields: LINK_ROW } }
+    }
+  ],
+
+  "pages/about-history.json": [
+    {
+      key: "timeline",
+      label: "大事记 Timeline",
+      note: "/about 总览页的大事记直接取自这里，不必再维护第二份。",
+      rows: {
+        __self: {
+          label: "条目（Timeline）",
+          blank: { date: "", body: "" },
+          fields: [
+            { key: "date", label: "时间（Date，如 2005.01）" },
+            { key: "body", label: "内容（Body）", kind: "area" }
+          ]
+        }
+      }
+    },
+    {
+      key: "relatedLinks",
+      label: "相关链接 Related",
+      rows: { __self: { label: "链接（Links）", blank: { label: "", href: "#" }, fields: LINK_ROW } }
+    }
+  ],
+
+  "pages/about-network.json": [
+    {
+      key: "stats",
+      label: "统计卡片 Stats",
+      rows: { __self: { label: "数字（Stats）", blank: { value: "", label: "" }, fields: STAT_ROW } }
+    },
+    {
+      key: "locations",
+      label: "服务点 Locations",
+      rows: {
+        __self: {
+          label: "服务点（Locations）",
+          blank: { title: "", meta: "", body: "", tag: "" },
+          fields: [
+            { key: "title", label: "名称（Title）" },
+            { key: "meta", label: "地区／说明（Meta）" },
+            { key: "body", label: "介绍（Body）", kind: "area" },
+            { key: "tag", label: "标签（Tag）" }
+          ]
+        }
+      }
+    },
+    { key: "filters", label: "筛选标签 Filters", lists: [{ key: "__self", label: "标签（每行一个）" }] },
+    { key: "pager", label: "分页 Pager", lists: [{ key: "__self", label: "页码（每行一个）" }] },
+    {
+      key: "mapBlock",
+      label: "地图说明 Map",
+      text: [
+        { key: "label", label: "标签（Label）" },
+        { key: "text", label: "说明（Text）", area: true }
+      ]
+    },
+    {
+      key: "ctaPanel",
+      label: "右侧 CTA",
+      text: [
+        { key: "title", label: "标题（Title）" },
+        { key: "body", label: "说明（Body）", area: true },
+        { key: "buttonLabel", label: "按钮文字（Button label）" },
+        { key: "buttonHref", label: "按钮链接（Button link）" }
+      ]
+    },
+    {
+      key: "setupPanel",
+      label: "设点面板 Setup",
+      text: [{ key: "title", label: "标题（Title）" }],
+      rows: { links: { label: "链接（Links）", blank: { label: "", href: "#" }, fields: LINK_ROW } }
+    },
+    {
+      key: "offeringsPanel",
+      label: "服务内容 Offerings",
+      text: [{ key: "title", label: "标题（Title）" }],
+      lists: [{ key: "items", label: "条目（每行一条）" }]
+    }
+  ],
+
+  "pages/about-numbers.json": [
+    {
+      key: "stats",
+      label: "顶部统计 Stats",
+      note: "/about 总览页的数字带直接取自这里。",
+      rows: { __self: { label: "数字（Stats）", blank: { value: "", label: "" }, fields: STAT_ROW } }
+    },
+    {
+      key: "sections",
+      label: "正文章节 Sections",
+      rows: { __self: { label: "章节（Sections）", blank: { heading: "", paragraphs: [] }, fields: PARA_ROW } }
+    },
+    {
+      key: "actions",
+      label: "按钮 Actions",
+      rows: {
+        __self: {
+          label: "按钮（Actions）",
+          blank: { label: "", href: "#", variant: "seal" },
+          fields: [
+            { key: "label", label: "文字（Label）" },
+            { key: "href", label: "链接（Link）" },
+            { key: "variant", label: "样式（seal 为主按钮）" }
+          ]
+        }
+      }
+    },
+    {
+      key: "relatedLinks",
+      label: "相关链接 Related",
+      rows: { __self: { label: "链接（Links）", blank: { label: "", href: "#" }, fields: LINK_ROW } }
+    },
+    {
+      key: "citationPanel",
+      label: "引用面板 Citation",
+      text: [
+        { key: "title", label: "标题（Title）" },
+        { key: "body", label: "说明（Body）", area: true },
+        { key: "label", label: "链接文字（Label）" },
+        { key: "href", label: "链接（Link）" }
+      ]
+    }
+  ],
+
+  "pages/about-team.json": [
+    {
+      key: "boardPanel",
+      label: "理事会 Board",
+      note: "/about 总览页的团队区块直接取自这里，只需维护这一处。",
+      text: [
+        { key: "eyebrow", label: "小标题（Eyebrow）" },
+        { key: "heading", label: "区块标题（Heading）" }
+      ],
+      rows: { people: { label: "成员（People）", blank: { name: "", roleLine1: "", roleLine2: "", image: "" }, fields: PERSON_ROW } }
+    },
+    {
+      key: "staffPanel",
+      label: "执行团队 Staff",
+      note: "留空则该段在页面上整段隐藏。",
+      text: [
+        { key: "eyebrow", label: "小标题（Eyebrow）" },
+        { key: "heading", label: "区块标题（Heading）" }
+      ],
+      rows: { people: { label: "成员（People）", blank: { name: "", roleLine1: "", roleLine2: "", image: "" }, fields: PERSON_ROW } }
+    },
+    {
+      key: "notePanel",
+      label: "姓名与照片说明 Note",
+      text: [
+        { key: "heading", label: "标题（Heading）" },
+        { key: "body", label: "正文（Body）", area: true }
+      ]
+    },
+    {
+      key: "joinPanel",
+      label: "加入我们 Join",
+      text: [
+        { key: "title", label: "标题（Title）" },
+        { key: "body", label: "说明（Body）", area: true },
+        { key: "buttonLabel", label: "按钮文字（Button label）" },
+        { key: "buttonHref", label: "按钮链接（Button link）" }
+      ]
+    },
+    {
+      key: "relatedPanel",
+      label: "相关链接 Related",
+      text: [{ key: "title", label: "标题（Title）" }],
+      rows: { links: { label: "链接（Links）", blank: { label: "", href: "#" }, fields: LINK_ROW } }
+    }
+  ]
+};
+
 export interface AboutSectionsEditorProps {
+  /**
+   * Which block set to render. Defaults to the overview page's blocks; the five
+   * sub-pages pass their own from ABOUT_SUBPAGE_BLOCKS.
+   */
+  blocks?: AboutBlockDef[];
   data: Record<string, unknown>;
   updateField: (keyPath: string[], value: unknown) => void;
   onPickImage: (keyPath: string[], label: string) => void;
@@ -204,6 +341,7 @@ export interface AboutSectionsEditorProps {
 }
 
 export function AboutSectionsEditor({
+  blocks = ABOUT_BLOCKS,
   data,
   updateField,
   onPickImage,
@@ -241,14 +379,48 @@ export function AboutSectionsEditor({
     );
   };
 
+  /** Same as stringList, but the block's own value is the array. */
+  const stringListSelf = (
+    blockKey: string,
+    spec: { key: string; label: string; hint?: string },
+    entries: unknown[]
+  ) => (
+    <label key={spec.key}>
+      {spec.label}
+      <textarea
+        className="admin-textarea"
+        style={{ minHeight: 120 }}
+        value={entries.map((entry) => String(entry)).join("\n")}
+        onChange={(event) =>
+          updateField(
+            [blockKey],
+            event.target.value
+              .split("\n")
+              .map((entry) => entry.trim())
+              .filter((entry) => entry.length > 0)
+          )
+        }
+      />
+      {spec.hint ? <span style={{ color: "#777", fontSize: 12 }}>{spec.hint}</span> : null}
+    </label>
+  );
+
   return (
     <div className="home-sections" style={{ display: "contents" }}>
       <p style={{ margin: 0, color: "#666" }}>
-        About 页面按区块编辑。文字、列表与图片都可直接编辑；区块的显示顺序固定，与页面一致。
+        按区块编辑。文字、列表与图片都可直接编辑；区块的显示顺序固定，与页面一致。
       </p>
 
-      {ABOUT_BLOCKS.map((block) => {
-        const value = asRow(data[block.key]);
+      {blocks.map((block) => {
+        /*
+         * Some blocks ARE the value -- `timeline`, `stats`, `filters` and the
+         * like are stored as a bare array, not an object with named keys. The
+         * `__self` field name marks that case so one declaration shape can
+         * describe both without a second kind of block.
+         */
+        const raw = data[block.key];
+        const selfArray = Array.isArray(raw) ? (raw as unknown[]) : null;
+        const value = selfArray ? {} : asRow(raw);
         const textFields = block.text ?? [];
         const listFields = block.lists ?? [];
         const rowSpecs = Object.entries(block.rows ?? {});
@@ -271,6 +443,42 @@ export function AboutSectionsEditor({
                 <p style={{ margin: 0, color: "#8a6d1f", fontSize: 13 }}>{block.note}</p>
               ) : null}
 
+              {block.managedElsewhere ? (
+                <p
+                  style={{
+                    margin: 0,
+                    padding: "9px 11px",
+                    borderRadius: 6,
+                    background: "#eef3fb",
+                    border: "1px solid #c7d7ee",
+                    color: "#2a4a77",
+                    fontSize: 13,
+                    lineHeight: 1.7
+                  }}
+                >
+                  本区块的「{block.managedElsewhere.label}」在
+                  <strong>「{block.managedElsewhere.managedOn}」</strong>
+                  页面编辑，改一次这里和那一页同时更新。这里只保留本页自己的标题与导语。
+                </p>
+              ) : null}
+
+              {(block.markdown ?? []).map((spec) => (
+                <fieldset key={spec.key} style={fieldsetStyle}>
+                  <legend style={legendStyle}>正文 Body</legend>
+                  <span style={fieldCaption}>{spec.label}</span>
+                  <MarkdownEditor
+                    value={String(value[spec.key] ?? "")}
+                    onChange={(next) => updateField([block.key, spec.key], next)}
+                    onPickImage={() =>
+                      onPickImage([block.key, spec.key], `${block.label} · ${spec.label}`)
+                    }
+                  />
+                  {spec.hint ? (
+                    <span style={{ color: "#777", fontSize: 12 }}>{spec.hint}</span>
+                  ) : null}
+                </fieldset>
+              ))}
+
               {textFields.length > 0 || listFields.length > 0 ? (
                 <fieldset style={fieldsetStyle}>
                   <legend style={legendStyle}>文字 Text</legend>
@@ -285,7 +493,11 @@ export function AboutSectionsEditor({
                       />
                     </label>
                   ))}
-                  {listFields.map((field) => stringList(block.key, field, value[field.key]))}
+                  {listFields.map((field) =>
+                    field.key === "__self"
+                      ? stringListSelf(block.key, field, selfArray ?? [])
+                      : stringList(block.key, field, value[field.key])
+                  )}
                 </fieldset>
               ) : null}
 
@@ -303,10 +515,14 @@ export function AboutSectionsEditor({
                       )}
                     </div>
                   ))}
-                  {rowSpecs.map(([key, spec]) => (
+                  {rowSpecs
+                    .filter(([key]) => !(block.managedElsewhere?.fields ?? []).includes(key))
+                    .map(([key, spec]) => (
                     <div key={key} style={{ display: "grid", gap: 8 }}>
                       <span style={fieldCaption}>{spec.label}</span>
-                      {rowsEditor(block.key, key, spec, asRows(value[key]))}
+                      {key === "__self"
+                        ? rowsEditor(block.key, null, spec, asRows(selfArray ?? []))
+                        : rowsEditor(block.key, key, spec, asRows(value[key]))}
                     </div>
                   ))}
                 </fieldset>

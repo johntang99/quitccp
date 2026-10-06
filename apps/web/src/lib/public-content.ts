@@ -100,7 +100,19 @@ function isLikelyStandaloneSubheading(lines: string[], index: number): boolean {
 /** The culture library's three categories, which are not news sections. */
 export const CULTURE_CATEGORY_NAMES = new Set(["传统文化文章", "诗词", "歌曲"]);
 
-export function markdownToBodyRows(markdown: string): ArticleBodyRow[] {
+/**
+ * `keepInline` preserves `**bold**` and `[text](href)` inside paragraphs.
+ *
+ * Off by default, and deliberately so: the 15,515 imported articles carry
+ * markdown of wildly varying quality, and flattening it is what keeps stray
+ * asterisks and half-written links from reaching readers. Content written in
+ * this CMS is typed by an editor in the markdown editor, so there it is signal
+ * rather than noise.
+ */
+export function markdownToBodyRows(
+  markdown: string,
+  options: { keepInline?: boolean } = {}
+): ArticleBodyRow[] {
   const lines = markdown.replace(/\r/g, "").split("\n");
   const rows: ArticleBodyRow[] = [];
   let paragraphBuffer: string[] = [];
@@ -210,7 +222,8 @@ export function markdownToBodyRows(markdown: string): ArticleBodyRow[] {
     }
     if (/^#{1,2}\s+/.test(line)) {
       flushParagraph();
-      const text = stripInlineMarkdown(line.replace(/^#{1,2}\s+/, ""));
+      const raw = line.replace(/^#{1,2}\s+/, "");
+      const text = options.keepInline ? raw.trim() : stripInlineMarkdown(raw);
       if (text) rows.push({ type: "h2", text });
       continue;
     }
@@ -248,7 +261,7 @@ export function markdownToBodyRows(markdown: string): ArticleBodyRow[] {
      * "下载链接" with no way to hear or fetch anything.
      */
     const audioLinks = [...line.matchAll(/\[([^\]]*)]\((https?:\/\/[^)\s]+\.(?:mp3|m4a|wav|ogg))\)/gi)];
-    let cleaned = stripInlineMarkdown(line);
+    let cleaned = options.keepInline ? line.trim() : stripInlineMarkdown(line);
     for (const match of audioLinks) {
       const label = match[1].trim();
       if (label) cleaned = cleaned.split(label).join("");

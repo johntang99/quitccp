@@ -12,7 +12,7 @@
 export interface RowField {
   key: string;
   label: string;
-  kind?: "text" | "area" | "image" | "video-flag" | "flag" | "list" | "links" | "bars";
+  kind?: "text" | "area" | "image" | "video-flag" | "flag" | "list" | "links" | "meta-list" | "bars";
 }
 
 /** A repeating list of records: `blank` is the template a new row starts from. */
@@ -26,6 +26,42 @@ export interface RowEditorSpec {
 export interface ObjectEditorSpec {
   label: string;
   fields: RowField[];
+}
+
+/** One markdown body inside a block, edited with the article body editor. */
+export interface MarkdownFieldSpec {
+  key: string;
+  label: string;
+  hint?: string;
+}
+
+/**
+ * One editable block of a page, declared rather than hand-built.
+ *
+ * Originally written for the About page; the Involve pages now use the same
+ * shape, so the declaration and its renderer live here rather than in a file
+ * named after one section.
+ */
+export interface SectionBlockDef {
+  key: string;
+  label: string;
+  note?: string;
+  /**
+   * Lists that are no longer stored here -- the page reads them from the page
+   * named in `managedOn`. Rendering them would be a control that silently does
+   * nothing, which is the exact confusion this consolidation set out to remove.
+   */
+  managedElsewhere?: { fields: string[]; label: string; managedOn: string };
+  /** Plain string fields, in render order, with their captions. */
+  text?: { key: string; label: string; area?: boolean }[];
+  /** Fields that are a plain list of strings, one per line. */
+  lists?: { key: string; label: string; hint?: string }[];
+  /** Markdown bodies. A block may hold more than one (body plus a footnote). */
+  markdown?: MarkdownFieldSpec[];
+  /** Repeating records. */
+  rows?: Record<string, RowEditorSpec>;
+  /** Single nested records. */
+  objects?: Record<string, ObjectEditorSpec>;
 }
 
 export function asRow(value: unknown): Record<string, unknown> {
@@ -218,6 +254,65 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
             </div>
           );
         }
+        /**
+         * A list of label + count pairs, e.g. the download page's
+         * "三退主题展板 / 86 项". Same shape as `links` without an address.
+         */
+        if (field.kind === "meta-list") {
+          const rows = asRows(row[field.key]);
+          const write = (next: Record<string, unknown>[]) => updateField(path, next);
+          return (
+            <div key={field.key} style={{ display: "grid", gap: 8 }}>
+              <span style={fieldCaption}>{field.label}</span>
+              {rows.length === 0 ? (
+                <span style={{ color: "#777", fontSize: 13 }}>还没有条目。</span>
+              ) : (
+                <div style={{ ...columnHead, gridTemplateColumns: "minmax(0, 1.6fr) minmax(0, 1fr) auto" }}>
+                  <span>名称（Label）</span>
+                  <span>数量／说明（Meta）</span>
+                  <span />
+                </div>
+              )}
+              {rows.map((item, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(0, 1.6fr) minmax(0, 1fr) auto",
+                    gap: 8,
+                    alignItems: "center"
+                  }}
+                >
+                  <input
+                    className="admin-input"
+                    placeholder="名称"
+                    value={String(item.label ?? "")}
+                    onChange={(event) =>
+                      write(rows.map((r, i) => (i === index ? { ...r, label: event.target.value } : r)))
+                    }
+                  />
+                  <input
+                    className="admin-input"
+                    placeholder="数量／说明"
+                    value={String(item.meta ?? "")}
+                    onChange={(event) =>
+                      write(rows.map((r, i) => (i === index ? { ...r, meta: event.target.value } : r)))
+                    }
+                  />
+                  <button className="admin-btn" type="button" onClick={() => write(rows.filter((_, i) => i !== index))}>
+                    删除
+                  </button>
+                </div>
+              ))}
+              <div>
+                <button className="admin-btn" type="button" onClick={() => write([...rows, { label: "", meta: "" }])}>
+                  添加条目
+                </button>
+              </div>
+            </div>
+          );
+        }
+
         if (field.kind === "links") {
           const rows = asRows(row[field.key]);
           const write = (next: Record<string, unknown>[]) => updateField(path, next);
@@ -342,11 +437,16 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
 
   const rowsEditor = (
     sectionKey: string,
-    fieldKey: string,
+    /**
+     * null when the section's own value is the array -- `timeline` and friends
+     * are stored bare rather than under a named key.
+     */
+    fieldKey: string | null,
     spec: { label: string; blank: Record<string, unknown>; fields: RowField[] },
     rows: Record<string, unknown>[]
   ) => {
-    const write = (next: Record<string, unknown>[]) => updateField([sectionKey, fieldKey], next);
+    const basePath = fieldKey === null ? [sectionKey] : [sectionKey, fieldKey];
+    const write = (next: Record<string, unknown>[]) => updateField(basePath, next);
     const move = (index: number, delta: number) => {
       const target = index + delta;
       if (target < 0 || target >= rows.length) return;
@@ -394,7 +494,7 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
               </button>
             </div>
             {recordFields(
-              [sectionKey, fieldKey, String(index)],
+              [...basePath, String(index)],
               `${spec.label} ${index + 1}`,
               row,
               spec.fields

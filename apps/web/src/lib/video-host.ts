@@ -51,6 +51,18 @@ export function toEmbedUrl(url: string): string {
     value.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/) ??
     value.match(/youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/);
   if (youtube) return `https://www.youtube.com/embed/${youtube[1]}`;
+
+  // Gan Jing World serves its watch pages with
+  // `content-security-policy: frame-ancestors 'self' *.ganjing.com`, so a
+  // /video/ address put in an iframe renders nothing at all -- the browser
+  // refuses it and says so only in the console. The /embed/ form carries no
+  // such header. Converting here means an editor can paste whichever address
+  // they copied from the site and it still plays.
+  const ganjing = value.match(
+    /ganjingworld\.com\/(?:[a-z]{2}-[A-Z]{2}\/)?(?:video|embed|live)\/([A-Za-z0-9]+)/
+  );
+  if (ganjing) return `https://www.ganjingworld.com/embed/${ganjing[1]}`;
+
   return value;
 }
 

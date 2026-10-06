@@ -62,6 +62,137 @@ https://www.tuidang.org/wp-content/uploads/9ping/jpgcd_1.mp4
 优点：改动小、当天可完成、可回滚。
 缺点：新站仍依赖老站存活。
 
+**方案 A 的两种实现方式**
+
+先说一组实测到的事实，它们决定了哪种方式可行（2026-10-05）：
+
+| 事实 | 实测结果 |
+|---|---|
+| DNS 托管在哪 | **Cloudflare**（`laura.ns.cloudflare.com` / `major.ns.cloudflare.com`） |
+| 现在的解析 | 主域名与所有子域名都指向 Cloudflare 的 anycast IP（`104.26.8.58` 等），即全部**已开启橙云代理** |
+| 视频是否走 Cloudflare 缓存 | 是。`cf-cache-status: HIT`、`age: 2333`——回源压力本来就很小 |
+| 是否支持拖动进度条 | 是。`HTTP 206` + `content-range` 正常 |
+| 跨域头 | 无 `access-control-allow-origin`。**对 `<video>` 播放没有影响**（媒体元素不需要 CORS），只有将来要做截帧或 WebVTT 字幕时才需要补 |
+
+---
+
+#### 方式 A1：Cloudflare 路径分流 —— **地址一个都不用改**（推荐先评估这个）
+
+因为域名的 DNS 和代理都已经在 Cloudflare，可以让 Cloudflare 按路径分流：
+`/wp-content/*` 继续送到老服务器，其余全部送到 Vercel。
+
+**好处：`www.tuidang.org/wp-content/...` 这些地址原封不动继续有效** —— 不用改数据库
+那 292 处，不用担心漏改，老站上任何引用这些文件的地方也一起继续工作。
+
+**步骤**
+
+1. **（老网站管理员）拿到老服务器的真实 IP**，在 Cloudflare DNS 里加一条**灰云**
+   （DNS only，不代理）记录，例如：
+
+   ```
+   类型 A   名称 origin-legacy   内容 <老服务器 IP>   代理状态：DNS only（灰云）
+   ```
+
+   灰云是必须的：这条记录只是给下一步当「指路牌」，不能再绕一次 Cloudflare。
+
+2. **（老网站管理员）确认老服务器接受这个主机名的请求**。它只是同一批静态文件，
+   通常在 Nginx/Apache 里把 `origin-legacy.tuidang.org` 加进 `server_name` /
+   `ServerAlias` 即可，指向同一个 `wp-content` 目录。
+
+3. **（老网站管理员）在 Cloudflare 建 Origin Rule**
+   （控制台 → 选 tuidang.org → **Rules → Origin Rules → Create rule**）：
+
+   - 规则名：`wp-content 继续回老站`
+   - 匹配条件（用 Expression Editor）：
+
+     ```
+     (http.request.uri.path contains "/wp-content/")
+     ```
+
+   - 动作：
+     - **DNS Record / Resolve Override** → `origin-legacy.tuidang.org`
+     - **Host Header** → `www.tuidang.org`（保持原主机名，WordPress 才认得）
+
+   Origin Rules 在免费版也可以用（有条数上限，够用）。
+
+4. **（双方）先验证，再切主域名**。规则建好后，在主域名还指向老站时它不会有可见
+   变化；主域名切到 Vercel 之后，`/wp-content/` 的请求会被 Cloudflare 单独送回老站。
+
+5. **（我）切换后抽查**：随机打开 10 个视频页面，确认能播、能拖动进度条。
+
+**需要注意的两点**
+
+- **Vercel 在 Cloudflare 橙云后面**：主域名要同时满足「Cloudflare 代理」和「回源到
+  Vercel」。做得到，但 Cloudflare 的 SSL 模式必须设成 **Full (strict)**；另外 Vercel
+  首次签发证书时需要把该记录临时切成灰云，签完再切回橙云。这一步建议切换当天两边
+  一起做。
+- **Cloudflare 自助版的服务条款**对「主要用于分发视频/大文件」是有限制的。这批视频
+  47.6 GB，已经在 Cloudflare 上跑了几年没出问题，但如果将来播放量上去，Cloudflare
+  可能会要求改用 Cloudflare Stream / R2。这是继续用老方案的长期风险，**所以 A1 适合
+  当作过渡，而不是永久方案**。
+
+---
+
+#### 方式 A2：新建子域名 + 批量改地址
+
+如果 A1 因为任何原因走不通（比如不想让 Vercel 待在 Cloudflare 代理后面），就用这个。
+
+**步骤**
+
+1. **（双方）定一个主机名**，建议 `media.tuidang.org` 或 `legacy.tuidang.org`。
+   Cloudflare 的通配证书覆盖一级子域名，**HTTPS 自动有，不用单独申请**。
+
+2. **（老网站管理员）在 Cloudflare DNS 加记录**，指向老服务器，**橙云（已代理）**：
+
+   ```
+   类型 A   名称 media   内容 <老服务器 IP>   代理状态：已代理（橙云）
+   ```
+
+   保持橙云，这样现有的缓存与防护行为和今天一致。
+
+3. **（老网站管理员）老服务器接受该主机名**（同 A1 第 2 步），确认
+   `https://media.tuidang.org/wp-content/uploads/9ping/jpgcd_1.mp4` 能直接打开。
+
+4. **（老网站管理员）确认缓存规则覆盖新主机名**。现在 `.mp4` 是命中缓存的
+   （`cf-cache-status: HIT`），新子域名建议同样处理，否则每次播放都回源，老服务器
+   压力会明显变大。
+
+5. **（我）空跑替换脚本**，核对将要改动的 292 处：
+
+   ```bash
+   node scripts/rehost-wp-content.mjs --to https://media.tuidang.org
+   ```
+
+6. **（我）正式执行**（自动写备份，可一键还原）：
+
+   ```bash
+   node scripts/rehost-wp-content.mjs --to https://media.tuidang.org --apply
+   ```
+
+7. **（我）抽查**：随机 10 个视频页 + 10 篇带图文章，确认加载正常。
+
+8. **（老网站管理员）老站的 `/wp-content/` 目录从此不能删、不能关**，这一条要写进
+   双方的备忘，避免日后清理老站时误删。
+
+**与 A1 的区别**：地址变了，所以数据库要改；好处是 Vercel 不必待在 Cloudflare 代理
+后面，两边耦合更少。
+
+---
+
+**两种方式怎么选**
+
+| | A1 路径分流 | A2 新子域名 |
+|---|---|---|
+| 要改数据库 | 否 | 是（292 处，脚本已备好） |
+| 老站上的引用 | 一并继续有效 | 只修了新站这边 |
+| Vercel 与 Cloudflare 的耦合 | 需要 Full (strict) + 首签时临时灰云 | 无耦合 |
+| 出问题时排查 | 多一层规则要看 | 直观 |
+
+**建议**：先让老网站管理员评估 A1 是否愿意做（他对 Cloudflare 配置最熟）；他若觉得
+麻烦，直接走 A2，我这边脚本随时可以跑。
+
+---
+
 **方案 B — 把文件搬到我们自己的存储**
 
 把这些文件搬到 Supabase Storage，彻底切断依赖。
@@ -297,11 +428,30 @@ node scripts/rehost-wp-content.mjs --restore backups/rehost-<时间戳>.json
 
 ### 阶段二：解决 `/wp-content/` 依赖（见第 2 节）
 
-- [ ] （双）确定 `/wp-content/` 继续由哪个主机名提供
-- [ ] （老）该主机名下 `/wp-content/` 可正常访问，**确认不会被删除或关闭**
-- [ ] （我）先空跑 `node scripts/rehost-wp-content.mjs --to <新主机名>`，核对统计与样例
+- [ ] （双）先定走 A1（Cloudflare 路径分流，不改地址）还是 A2（新子域名 + 改地址）
+
+**若走 A1**
+
+- [ ] （老）加灰云 DNS 记录 `origin-legacy` 指向老服务器真实 IP
+- [ ] （老）老服务器 `server_name` / `ServerAlias` 接受该主机名
+- [ ] （老）建 Origin Rule：路径含 `/wp-content/` → Resolve Override 到 `origin-legacy`，
+      Host Header 保持 `www.tuidang.org`
+- [ ] （双）Cloudflare SSL 模式确认为 **Full (strict)**
+- [ ] （双）切换当天 Vercel 首签证书时把主域名记录临时切灰云，签完切回橙云
+
+**若走 A2**
+
+- [ ] （双）定主机名（建议 `media.tuidang.org`）
+- [ ] （老）加橙云 DNS 记录指向老服务器
+- [ ] （老）老服务器接受该主机名，直接打开一个 `.mp4` 地址可播
+- [ ] （老）确认 `.mp4` 在新主机名下仍命中 Cloudflare 缓存
+- [ ] （我）先空跑 `node scripts/rehost-wp-content.mjs --to https://media.tuidang.org`
 - [ ] （我）加 `--apply` 正式执行（备份自动写入 `backups/`）
 - [ ] （我）确认输出里没有 FAILED 行；若有，重跑同一条命令
+
+**两种方式都要**
+
+- [ ] （老）老站 `/wp-content/` 目录**从此不能删、不能关**，写进双方备忘
 - [ ] （我）抽查 20 个视频、10 篇文章，确认媒体正常加载
 
 ### 阶段三：新站完整验证（主域名仍不动）

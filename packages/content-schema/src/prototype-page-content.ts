@@ -1,3 +1,5 @@
+import { involveDefaults } from "./involve-content";
+import { servicesDefaults } from "./services-content";
 import { routeSeeds } from "./seed";
 import type { TemplateKind } from "./types";
 
@@ -3021,7 +3023,13 @@ export const prototypePageContentSeeds: PageContentContractSeed[] = routeSeeds.m
         template: seed.template,
         path
       },
-      ...defaultTemplateData(seed.template, seed.title, seed.section, seed.slug)
+      ...defaultTemplateData(seed.template, seed.title, seed.section, seed.slug),
+      // The 参与支持 pages carry their whole content, not a template default:
+      // everything they show used to be written into the template itself.
+      ...involveDefaults(seed.section, seed.slug),
+      // Handoff panels and authoritative-source lists, likewise lifted out of
+      // the 我们的服务 templates.
+      ...servicesDefaults(seed.section, seed.slug)
     }
   };
 });

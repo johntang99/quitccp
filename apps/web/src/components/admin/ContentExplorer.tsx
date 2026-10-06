@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AboutSectionsEditor } from "./AboutSectionsEditor";
+import { ABOUT_BLOCKS, ABOUT_SUBPAGE_BLOCKS, AboutSectionsEditor } from "./AboutSectionsEditor";
+import { INVOLVE_BLOCKS } from "./involve-blocks";
+import { SERVICES_BLOCKS } from "./services-blocks";
+import { RESOURCES_BLOCKS } from "./resources-blocks";
 import { HomeSectionsEditor } from "@/components/admin/HomeSectionsEditor";
 import { BooksEditor } from "@/components/admin/BooksEditor";
 import { ImagePickerModal } from "@/components/admin/ImagePickerModal";
@@ -905,10 +908,19 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
   const jsonValid = Boolean(parseObject(jsonDraft));
   const previewPath = guessPreviewPath(activePath);
   const isHomeEditor = activePath === HOME_PATH;
-  const isAboutBlockEditor = activePath === ABOUT_INDEX_PATH;
+  // Pages edited block by block rather than as JSON textareas: About, Involve,
+  // Services and Resources. Every set is the same declaration shape and the
+  // same renderer. The books page keeps its own purpose-built editor.
+  const blockEditorBlocks =
+    activePath === ABOUT_INDEX_PATH
+      ? ABOUT_BLOCKS
+      : ABOUT_SUBPAGE_BLOCKS[activePath] ??
+        INVOLVE_BLOCKS[activePath] ??
+        SERVICES_BLOCKS[activePath] ??
+        RESOURCES_BLOCKS[activePath];
   const isBooksEditor = activePath === BOOKS_PATH;
   const isStructuredEditor =
-    !isAboutBlockEditor && !isHomeEditor && !isBooksEditor && structuredFields.length > 0;
+    !blockEditorBlocks && !isHomeEditor && !isBooksEditor && structuredFields.length > 0;
   const hasAboutDefaults = activePath === ABOUT_INDEX_PATH || Boolean(ABOUT_PAGE_DEFAULT_CONTENTS[activePath]);
 
   return (
@@ -1032,7 +1044,7 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
                     setImagePickerLabel(label);
                   }}
                 />
-              ) : isAboutBlockEditor ? (
+              ) : blockEditorBlocks ? (
                 <>
                   <label>
                     页面标题
@@ -1051,6 +1063,7 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
                     />
                   </label>
                   <AboutSectionsEditor
+                    blocks={blockEditorBlocks}
                     data={activeData}
                     updateField={updateField}
                     jsonDrafts={homeJsonDrafts}

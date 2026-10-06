@@ -7,6 +7,9 @@ import {
 import { InteriorHead, InteriorTabs } from "./InteriorScaffold";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString, asStringArray } from "./content-utils";
+import { servicesDefaults } from "@quitccp/content-schema";
+import { CmsMarkdown } from "@/components/public/MarkdownBody";
+import { LinkPanel, ListPanel } from "./section-panels";
 
 export function LongFormTemplate({ title, section, slug, content }: TemplatePageData) {
   const payload = asRecord(content);
@@ -23,7 +26,12 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
     }));
     const readyPanel = asRecord(payload.readyPanel);
     const linksPanel = asRecord(payload.linksPanel);
-    const links = asObjectArray(linksPanel.links).map((row) => ({ label: asString(row.label), href: asString(row.href, "#") }));
+    // The authoritative answers live on tuidang.org. This panel was written
+    // into the branch, so the one list the reader is told to trust was the one
+    // list no editor could correct.
+    const fullFaqPanel = asRecord(
+      payload.fullFaqPanel ?? servicesDefaults("services", "faq").fullFaqPanel
+    );
     return (
       <>
         <InteriorHead section={section} slug={slug} title={heading} subtitle={subtitle} />
@@ -31,13 +39,18 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
         <section className="sec" style={{ paddingTop: 52 }}>
           <div className="wrap cols cols--narrow">
             <div>
-              <div className="filters">
-                {filters.map((label, index) => (
-                  <a key={label} className={index === 0 ? "chip on" : "chip"} href="#">
-                    {label}
-                  </a>
-                ))}
-              </div>
+              {/* Spans, not links: these chips do not filter anything yet,
+                  and a chip that looks clickable and does nothing reads as a
+                  broken page. */}
+              {filters.length > 0 ? (
+                <div className="filters">
+                  {filters.map((label, index) => (
+                    <span key={label} className={index === 0 ? "chip on" : "chip"}>
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
               <div className="faq">
                 {(faqs.length > 0
                   ? faqs
@@ -85,48 +98,12 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
                   {asString(readyPanel.buttonLabel, "我要三退")}
                 </a>
               </div>
-              <div className="panel">
-                <h4>完整问答</h4>
-                <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: "var(--lh-body)", marginTop: 0 }}>
-                  以下解答由 tuidang.org 维护，为准。
-                </p>
-                <ul>
-                  {[
-                    { label: "什么是三退？", href: EXTERNAL_DOCS.whatIsTuidang },
-                    { label: "为什么要三退？", href: EXTERNAL_DOCS.whyTuidang },
-                    { label: "如何三退？", href: EXTERNAL_DOCS.howToTuidang },
-                    { label: "多年不交党费算自动退党吗？", href: EXTERNAL_DOCS.unpaidDuesNotAutoQuit },
-                    { label: "什么是退党证明？", href: EXTERNAL_DOCS.whatIsCert },
-                    { label: "如何办理退党证明？", href: EXTERNAL_DOCS.howToApplyCert },
-                    { label: "如何查验证明真伪？", href: EXTERNAL_DOCS.howToVerifyCert },
-                    { label: "全部常见问题 →", href: EXTERNAL_SERVICES.faqHub }
-                  ].map((row) => (
-                    <li key={row.href}>
-                      <a href={row.href} {...EXTERNAL_LINK_PROPS}>
-                        {row.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="panel">
-                <h4>{asString(linksPanel.title, "还有问题")}</h4>
-                <ul>
-                  {(links.length > 0
-                    ? links
-                    : [
-                        { label: "安全与隐私说明", href: "/services/privacy" },
-                        { label: "移民相关政策", href: "/services" },
-                        { label: "查找服务点", href: "/about/network" },
-                        { label: "联系我们", href: "/services/contact" }
-                      ]
-                  ).map((row) => (
-                    <li key={`${row.label}-${row.href}`}>
-                      <a href={row.href} {...externalLinkProps(row.href)}>{row.label}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <LinkPanel
+                title={asString(fullFaqPanel.title, "完整问答")}
+                note={asString(fullFaqPanel.note)}
+                links={asObjectArray(fullFaqPanel.links)}
+              />
+              <LinkPanel title={asString(linksPanel.title, "还有问题")} links={asObjectArray(linksPanel.links)} />
             </aside>
           </div>
         </section>
@@ -135,14 +112,15 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
   }
 
   if (section === "services" && slug === "privacy") {
-    const headingRaw = asString(payload.title);
-    const heading = !headingRaw || headingRaw === "安全与隐私" ? "安全与隐私说明" : headingRaw;
+    // Stored title, not patched here: the branch used to force
+    // "安全与隐私说明" whenever the stored value looked stale.
+    const heading = asString(payload.title, "安全与隐私说明");
     const subtitle = asString(payload.subtitle, "说明我们收集什么、不收集什么，以及风险主要在哪里。");
     const alertPanel = asRecord(payload.alertPanel);
-    const sections = asObjectArray(payload.sections).map((row) => ({ heading: asString(row.heading), body: asString(row.body) }));
+    // Three heading+body pairs, now one markdown body.
+    const intro = asRecord(payload.intro);
     const highlightsPanel = asRecord(payload.highlightsPanel);
     const linksPanel = asRecord(payload.linksPanel);
-    const links = asObjectArray(linksPanel.links).map((row) => ({ label: asString(row.label), href: asString(row.href, "#") }));
     const toolsPanel = asRecord(payload.toolsPanel);
     return (
       <>
@@ -157,58 +135,25 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
             <div>
               <div className="notice">
                 <b>{asString(alertPanel.title, "先说最重要的一句")}</b>
-                {asString(alertPanel.body, "没有任何网站或工具能保证绝对安全。我们会把做法与边界完整说明，由你自己判断。")}
+                {asString(alertPanel.body)}
               </div>
               <div className="prose" style={{ fontSize: 16 }}>
-                {(sections.length > 0
-                  ? sections
-                  : [
-                      { heading: "我们不收集什么", body: "不需要真实姓名、身份证件、住址或其他可对应个人的敏感信息。" },
-                      { heading: "我们收集什么", body: "仅收集署名、选填地区、声明正文与提交时间。" },
-                      { heading: "真正风险在哪里", body: "风险常在网络连接与本地设备痕迹，而不是声明表单本身。" }
-                    ]
-                ).map((row) => (
-                  <div key={`${row.heading}-${row.body}`}>
-                    <h2>{row.heading}</h2>
-                    <p>{row.body}</p>
-                  </div>
-                ))}
+                <CmsMarkdown value={intro.body} />
               </div>
             </div>
             <aside className="side">
-              <div className="panel">
-                <h4>{asString(highlightsPanel.title, "本页要点")}</h4>
-                <ul>
-                  {asStringArray(highlightsPanel.items, ["不需要身份证件", "可以完全匿名", "数据不出售不转让", "无广告追踪"]).map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
+              <ListPanel
+                title={asString(highlightsPanel.title, "本页要点")}
+                items={asStringArray(highlightsPanel.items, [])}
+              />
               <div className="panel panel--seal">
                 <h4>{asString(toolsPanel.title, "受限网络下访问")}</h4>
-                <p>{asString(toolsPanel.body, "若你身在网络受管控的地区，请先看访问方式说明，再决定如何访问本站。")}</p>
+                <p>{asString(toolsPanel.body)}</p>
                 <a className="btn btn--seal btn--sm" href={asString(toolsPanel.buttonHref, "/resources/tools")}>
                   {asString(toolsPanel.buttonLabel, "免翻墙链接")}
                 </a>
               </div>
-              <div className="panel">
-                <h4>{asString(linksPanel.title, "相关")}</h4>
-                <ul>
-                  {(links.length > 0
-                    ? links
-                    : [
-                        { label: "三退是否安全", href: "/services/faq" },
-                        { label: "在线声明", href: "/services/declare" },
-                        { label: "信息变更", href: "/services/contact" },
-                        { label: "公开与问责", href: "/about/accountability" }
-                      ]
-                  ).map((row) => (
-                    <li key={`${row.label}-${row.href}`}>
-                      <a href={row.href} {...externalLinkProps(row.href)}>{row.label}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <LinkPanel title={asString(linksPanel.title, "相关")} links={asObjectArray(linksPanel.links)} />
             </aside>
           </div>
         </section>
@@ -217,28 +162,18 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
   }
 
   if (section === "services" && slug === "immigration") {
-    const headingRaw = asString(payload.title);
-    const heading = !headingRaw || headingRaw === "移民相关政策" ? "移民相关政策与问题" : headingRaw;
+    // Stored title, not patched here.
+    const heading = asString(payload.title, "移民相关政策与问题");
     const subtitle = asString(payload.subtitle, "公开政策文件梳理与个案报导汇编，仅供了解背景。");
+    const fallback = servicesDefaults("services", "immigration");
     const alertPanel = asRecord(payload.alertPanel);
     const policySection = asRecord(payload.policySection);
-    const policyItems = asObjectArray(policySection.items).map((row) => ({
-      tag: asString(row.tag),
-      title: asString(row.title),
-      body: asString(row.body),
-      // Authoritative copy of the policy summary on tuidang.org.
-      href: asString(row.href)
-    }));
+    const policyItems = asObjectArray(policySection.items);
     const reportSection = asRecord(payload.reportSection);
-    const reportItems = asObjectArray(reportSection.items).map((row) => ({
-      href: asString(row.href),
-      image: asString(row.image),
-      tag: asString(row.tag),
-      title: asString(row.title),
-      summary: asString(row.summary),
-      meta: asString(row.meta)
-    }));
-    const pager = asStringArray(payload.pager, ["1", "2", "3", "下一页 →"]);
+    const reportItems = asObjectArray(reportSection.items);
+    // Was written into the branch, which is why the policy list and the list of
+    // sources it points at could drift apart.
+    const policySourcePanel = asRecord(payload.policySourcePanel ?? fallback.policySourcePanel);
     const proofPanel = asRecord(payload.proofPanel);
     const countriesPanel = asRecord(payload.countriesPanel);
     const reminderPanel = asRecord(payload.reminderPanel);
@@ -256,161 +191,100 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
             <div>
               <div className="notice">
                 <b>{asString(alertPanel.title, "本页不是法律意见")}</b>
-                {asString(alertPanel.body, "各国政策变化快，个案差异大；涉及具体申请请咨询有执照律师。")}
+                {asString(alertPanel.body)}
               </div>
-              <p className="eyebrow" style={{ marginTop: 40 }}>
-                {asString(policySection.eyebrow, "政策文件")}
-              </p>
-              <h2 className="h2" style={{ marginBottom: 26, fontSize: 26 }}>
-                {asString(policySection.title, "美国移民局（USCIS）相关规定")}
-              </h2>
-              <div className="arch">
-                {(policyItems.length > 0
-                  ? policyItems
-                  : [
-                      {
-                        tag: "政策文件",
-                        title: "美国移民局 USCIS 关于共产党员的移民态度",
-                        body: "适用范围与例外情形的公开梳理。",
-                        href: EXTERNAL_DOCS.uscisAttitude
-                      },
-                      {
-                        tag: "政策文件",
-                        title: "USCIS 关于共产党员及其组织成员移民申请的酌情考量",
-                        body: "在什么情况下可以主张豁免，审查官会考量哪些因素。",
-                        href: EXTERNAL_DOCS.uscisDiscretion
-                      },
-                      {
-                        tag: "政策文件",
-                        title: "共产党员移民美国，需主动提供退党证明",
-                        body: "申请时应主动提交的材料说明。",
-                        href: EXTERNAL_DOCS.mustProvideCert
-                      },
-                      {
-                        tag: "政策文件",
-                        title: "美国非移民签证也会被问及是否加入了共产党组织",
-                        body: "非移民签证面谈中的相关问题。",
-                        href: EXTERNAL_DOCS.nonImmigrantVisas
-                      },
-                      {
-                        tag: "政策文件",
-                        title: "已经入籍美国也可能因为是共产党成员被驱逐出境",
-                        body: "入籍后仍存在的风险说明。",
-                        href: EXTERNAL_DOCS.denaturalizationRisk
-                      },
-                      {
-                        tag: "问答",
-                        title: "为什么出国人员应尽早办理退党证明",
-                        body: "时间点的重要性与临时补办常见问题。",
-                        href: EXTERNAL_DOCS.applyEarlyIfEmigrating
-                      }
-                    ]
-                ).map((item, index) => (
-                  <article key={`${item.tag}-${item.title}`} className="arow" style={{ gridTemplateColumns: "1fr", paddingTop: index === 0 ? 0 : undefined }}>
-                    <div>
-                      <span className="tag">{item.tag}</span>
-                      <h3>
-                        {item.href ? (
-                          <a href={item.href} {...EXTERNAL_LINK_PROPS}>
-                            {item.title}
-                          </a>
-                        ) : (
-                          item.title
-                        )}
-                      </h3>
-                      <p>{item.body}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-              {reportItems.length > 0 ? (
+              {policyItems.length > 0 ? (
                 <>
-                <p className="eyebrow" style={{ marginTop: 56 }}>
-                  {asString(reportSection.eyebrow, "相关报导")}
-                </p>
-                <h2 className="h2" style={{ marginBottom: 26, fontSize: 26 }}>
-                  {asString(reportSection.title, "议会行动与个案报导")}
-                </h2>
-                <div className="arch">
-                  {(reportItems.length > 0
-                    ? reportItems
-                    : []
-                  ).map((item, index) => (
-                    <article key={`${item.title}-${item.meta}`} className="arow" style={index === 0 ? { paddingTop: 0 } : undefined}>
-                      <a href={item.href} style={{ display: "contents" }}>
-                        {/* Empty src makes the browser re-request the page; the
-                            placeholder keeps the .arow grid's first column. */}
-                        {item.image ? <img src={item.image} alt="" /> : <span />}
-                        <div>
-                          <span className="tag">{item.tag}</span>
-                          <h3>{item.title}</h3>
-                          <p>{item.summary}</p>
-                          <p className="meta">{item.meta}</p>
-                        </div>
-                      </a>
-                    </article>
-                  ))}
-                </div>
+                  <p className="eyebrow" style={{ marginTop: 40 }}>
+                    {asString(policySection.eyebrow, "政策文件")}
+                  </p>
+                  <h2 className="h2" style={{ marginBottom: 26, fontSize: 26 }}>
+                    {asString(policySection.title, "美国移民局（USCIS）相关规定")}
+                  </h2>
+                  <div className="arch">
+                    {policyItems.map((item, index) => {
+                      const href = asString(item.href).trim();
+                      const title = asString(item.title);
+                      return (
+                        <article
+                          key={title || index}
+                          className="arow"
+                          style={{ gridTemplateColumns: "1fr", paddingTop: index === 0 ? 0 : undefined }}
+                        >
+                          <div>
+                            {asString(item.tag) ? <span className="tag">{asString(item.tag)}</span> : null}
+                            <h3>
+                              {href && href !== "#" ? (
+                                <a href={href} {...externalLinkProps(href)}>
+                                  {title}
+                                </a>
+                              ) : (
+                                title
+                              )}
+                            </h3>
+                            <p>{asString(item.body)}</p>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
                 </>
               ) : null}
-              <nav className="pager">
-                {pager.map((label, index) => (
-                  <a key={`${label}-${index}`} className={index === 0 ? "on" : undefined} href="#">
-                    {label}
-                  </a>
-                ))}
-              </nav>
+              {reportItems.length > 0 ? (
+                <>
+                  <p className="eyebrow" style={{ marginTop: 56 }}>
+                    {asString(reportSection.eyebrow, "相关报导")}
+                  </p>
+                  <h2 className="h2" style={{ marginBottom: 26, fontSize: 26 }}>
+                    {asString(reportSection.title, "议会行动与个案报导")}
+                  </h2>
+                  <div className="arch">
+                    {reportItems.map((item, index) => (
+                      <article
+                        key={asString(item.title) || index}
+                        className="arow"
+                        style={index === 0 ? { paddingTop: 0 } : undefined}
+                      >
+                        <a href={asString(item.href, "/news")} style={{ display: "contents" }}>
+                          {/* Empty src makes the browser re-request the page; the
+                              placeholder keeps the .arow grid's first column. */}
+                          {asString(item.image) ? <img src={asString(item.image)} alt="" /> : <span />}
+                          <div>
+                            {asString(item.tag) ? <span className="tag">{asString(item.tag)}</span> : null}
+                            <h3>{asString(item.title)}</h3>
+                            <p>{asString(item.summary)}</p>
+                            <p className="meta">{asString(item.meta)}</p>
+                          </div>
+                        </a>
+                      </article>
+                    ))}
+                  </div>
+                </>
+              ) : null}
+              {/* The pager is gone. There is no second page of policy
+                  documents to go to -- it rendered four links to "#". */}
             </div>
             <aside className="side">
-              {/* Always rendered, independent of CMS content, so the
-                  authoritative policy sources are reachable even when the
-                  stored items carry no links of their own. */}
-              <div className="panel">
-                <h4>政策原文</h4>
-                <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: "var(--lh-body)", marginTop: 0 }}>
-                  以下说明由 tuidang.org 维护，为准。
-                </p>
-                <ul>
-                  {[
-                    { label: "美国移民局 USCIS 关于共产党员的移民态度", href: EXTERNAL_DOCS.uscisAttitude },
-                    { label: "USCIS 关于移民申请的酌情考量", href: EXTERNAL_DOCS.uscisDiscretion },
-                    { label: "共产党员移民美国，需主动提供退党证明", href: EXTERNAL_DOCS.mustProvideCert },
-                    { label: "非移民签证也会被问及党组织成员身份", href: EXTERNAL_DOCS.nonImmigrantVisas },
-                    { label: "已入籍也可能因党员身份被驱逐出境", href: EXTERNAL_DOCS.denaturalizationRisk },
-                    { label: "为什么应尽早办理退党证明", href: EXTERNAL_DOCS.applyEarlyIfEmigrating }
-                  ].map((row) => (
-                    <li key={row.href}>
-                      <a href={row.href} {...EXTERNAL_LINK_PROPS}>
-                        {row.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <LinkPanel
+                title={asString(policySourcePanel.title, "政策原文")}
+                note={asString(policySourcePanel.note)}
+                links={asObjectArray(policySourcePanel.links)}
+              />
               <div className="panel panel--seal">
                 <h4>{asString(proofPanel.title, "需要一份凭据？")}</h4>
-                <p>{asString(proofPanel.body, "退党证明为实名办理的中英文对照文件，附公开查验入口。")}</p>
+                <p>{asString(proofPanel.body)}</p>
                 <a className="btn btn--seal btn--sm" href={asString(proofPanel.buttonHref, "/services/cert")}>
                   {asString(proofPanel.buttonLabel, "了解证明办理")}
                 </a>
               </div>
-              <div className="panel">
-                <h4>{asString(countriesPanel.title, "其他国家")}</h4>
-                <ul>
-                  {asStringArray(countriesPanel.items, ["加拿大", "澳大利亚与新西兰", "欧洲各国", "日本与韩国"]).map((item) => (
-                    <li key={item}>
-                      <a href="#">{item}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <ListPanel
+                title={asString(countriesPanel.title, "其他国家")}
+                items={asStringArray(countriesPanel.items, [])}
+              />
               <div className="panel">
                 <h4>{asString(reminderPanel.title, "提醒")}</h4>
                 <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: "var(--lh-body)", margin: 0 }}>
-                  {asString(
-                    reminderPanel.body,
-                    "本中心不代办移民手续，也不与任何移民中介合作。退党证明只通过本中心的官方渠道办理，请勿相信任何自称可以代办、加急或包过的机构与个人。"
-                  )}
+                  {asString(reminderPanel.body)}
                 </p>
               </div>
             </aside>
@@ -485,6 +359,7 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
             buttonVariant: "line"
           }
         ];
+    const toolsIntroBody = asString(asRecord(payload.intro).body).trim();
     const guideSections = asObjectArray(payload.guideSections).length
       ? asObjectArray(payload.guideSections).map((row) => ({
           heading: asString(row.heading),
@@ -566,15 +441,22 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
         <section className="sec" style={{ paddingTop: 52 }}>
           <div className="wrap cols">
             <div>
+              {/* One markdown body. It was four records, each a heading and
+                  its own array of paragraphs. The old fields are still read
+                  when `intro.body` is empty. */}
               <div className="prose" style={{ fontSize: 16 }}>
-                {guideSections.map((entry) => (
-                  <div key={entry.heading}>
-                    <h2>{entry.heading}</h2>
-                    {entry.paragraphs.map((paragraph) => (
-                      <p key={`${entry.heading}-${paragraph}`}>{paragraph}</p>
-                    ))}
-                  </div>
-                ))}
+                {toolsIntroBody ? (
+                  <CmsMarkdown value={toolsIntroBody} />
+                ) : (
+                  guideSections.map((entry) => (
+                    <div key={entry.heading}>
+                      <h2>{entry.heading}</h2>
+                      {entry.paragraphs.map((paragraph) => (
+                        <p key={`${entry.heading}-${paragraph}`}>{paragraph}</p>
+                      ))}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
             <aside className="side">
