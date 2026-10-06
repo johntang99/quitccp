@@ -116,7 +116,7 @@ export const involvePageDefaults: Record<string, Record<string, unknown>> = {
       links: [
         // Was href="#". The text of the petition is on endccp.com.
         { label: "联署书全文", href: "https://endccp.com/" },
-        { label: "机构公告与声明", href: "/news/announcements" },
+        { label: "机构公告与声明", href: "/news/announcement-claims" },
         { label: "参与现场征签", href: "/involve/volunteer" },
         { label: "征签物料下载", href: "/resources/downloads" }
       ]

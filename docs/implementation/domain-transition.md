@@ -1,13 +1,12 @@
 # 新旧网站切换方案（tuidang.org）
 
 > 状态：讨论稿，待与老网站管理员确认后执行
-> 最后更新：2026-10-05
+> 最后更新：2026-10-06（第 2 节的工作已完成）
 
 把主域名 `tuidang.org` 从现有 WordPress 站切换到新站（目前在 `quitccp.vercel.app`），
 同时把继续由老站提供的功能拆到各自的子域名。
 
-本文的目的是把**技术约束**写清楚，便于双方对齐，不是最终决定。几处关键数字是从
-数据库里实测得到的，不是估计。
+本文只写**技术约束与执行步骤**，便于技术组对齐。文中数字均为生产数据库实测，不是估计。
 
 ---
 
@@ -16,454 +15,234 @@
 | 域名 | 由谁服务 | 内容 |
 |---|---|---|
 | `tuidang.org` / `www.tuidang.org` | **新站（Vercel）** | 首页、文章、视频、资料、关于我们、后台 |
-| `services.tuidang.org` | 老站 | 退党证明服务：声明退出、办理证明、查询与验证 |
+| `services.tuidang.org` | 老站 | 退党证明：办理、查询与验证 |
 | `donation.tuidang.org` | 老站 | 捐助（或放在 `services.tuidang.org/donation`） |
-| `santui.tuidang.org` | 老站 | 三退统计（已存在，不动） |
+| `santui.tuidang.org` | 老站 | 三退声明与统计（已存在，不动） |
 | `huigui.tuidang.org` | 老站 | 《回归》（已存在，不动） |
 
 拆分的好处是**互不影响**：新站发布不会碰到声明系统，老站升级也不会影响主站。
 
 ---
 
-## 2. ⚠️ 切换前必须先解决：主域名下的媒体文件
+## 2. `/wp-content/` 依赖 —— 已清掉
 
-**这是整个切换里最容易被漏掉、后果最直接的一条。**
+新站原本有一部分内容直接引用老站 `/wp-content/` 下的文件。主域名一旦切到 Vercel，这些
+引用就会全部失效。
 
-新站的内容里，有相当一部分**直接引用 `www.tuidang.org/wp-content/` 下的文件**。
-主域名一旦切到 Vercel，这个路径就不再由 WordPress 提供，这些引用会全部失效。
+**2026-10-06 已处理完毕。现在只剩 19 个视频，它们将上传到干净世界。**
 
-实测统计（2026-10-05）：
+### 2.1 已转存：122 个文件
 
-| 位置 | 受影响行数 | 说明 |
+能下载的全部搬进了我们自己的 Supabase Storage（`media` 桶的 `legacy/` 前缀，保留原来的
+年／月目录），并已登记进后台「图片视频库」。
+
+| | 数量 | 大小 |
 |---|---|---|
-| `cms_videos.source_url` | **212**（全部为已发布） | 视频播放地址，210 个 `.mp4` + 2 个 `.mov` |
-| `cms_articles.body_plain` | 60 | 正文里的图片／链接 |
-| `cms_articles.hero_image` | 18 | 文章封面图 |
-| `cms_videos.cover_image` | 1 | |
-| `cms_videos.body_markdown` | 1 | |
+| 音频 mp3（文章里的广播与访谈） | 41 | 587 MB |
+| PDF、压缩包（传单、特刊、易拉宝） | 30 | ~350 MB |
+| 图片（首页卡片、栏目缩略图、影片封面、理事头像） | 51 | ~20 MB |
+| **合计** | **122** | **~960 MB** |
 
-典型地址：
+Storage 占用 4.17 GB → 5.13 GB。脚本：`scripts/rehost-media-to-storage.mjs`。
 
-```
-https://www.tuidang.org/wp-content/uploads/9ping/jpgcd_1.mp4
-```
+### 2.2 已清理：227 处失效引用
 
-《九评》全套都在其中。**如果不处理，切换当天这 212 个视频会全部播不出来。**
+老站上已经没有的文件（HTTP 404）和被 Cloudflare 拦住、任何客户端都取不到的文件
+（HTTP 403），引用已从数据库里删除 —— **这些在今天的线上站点就是坏的，不是切换才会坏**。
 
-### 两种解决办法
-
-**方案 A — 保留 `/wp-content/`，批量改写地址（建议先用这个）**
-
-1. 老站继续在某个子域名上提供原来的 `/wp-content/`，例如
-   `legacy.tuidang.org/wp-content/...` 或 `services.tuidang.org/wp-content/...`
-2. 我们把数据库里这 292 处地址批量替换到新主机名
-3. **关键前提：老站的 `wp-content` 目录不能删、不能关**，这一点需要和老网站管理员明确
-
-优点：改动小、当天可完成、可回滚。
-缺点：新站仍依赖老站存活。
-
-**方案 A 的两种实现方式**
-
-先说一组实测到的事实，它们决定了哪种方式可行（2026-10-05）：
-
-| 事实 | 实测结果 |
+| 处理 | 数量 |
 |---|---|
-| DNS 托管在哪 | **Cloudflare**（`laura.ns.cloudflare.com` / `major.ns.cloudflare.com`） |
-| 现在的解析 | 主域名与所有子域名都指向 Cloudflare 的 anycast IP（`104.26.8.58` 等），即全部**已开启橙云代理** |
-| 视频是否走 Cloudflare 缓存 | 是。`cf-cache-status: HIT`、`age: 2333`——回源压力本来就很小 |
-| 是否支持拖动进度条 | 是。`HTTP 206` + `content-range` 正常 |
-| 跨域头 | 无 `access-control-allow-origin`。**对 `<video>` 播放没有影响**（媒体元素不需要 CORS），只有将来要做截帧或 WebVTT 字幕时才需要补 |
+| 删除正文里的失效图片 | 239 |
+| 删除失效的下载链接 | 22 |
+| 删除残留的 WordPress 音频短代码 | 4 |
+| 清空失效的封面图 | 25 |
+
+只删标记，不动正文。被删的链接事先逐条看过：全部是「地址当作链接文字」或
+「下载（19MB）」这类按钮，没有一句作者写的话被删掉。
+
+一篇文章（`真相短视频：奥运泳坛明星黄晓敏经历的人生巨变`）整篇正文只有两个指向同一个
+失效视频的链接，清理后无内容，**已转为草稿**，在文章管理里可随时改回发布。
+
+脚本：`scripts/drop-dead-wp-content.mjs`，名单见
+`docs/implementation/wp-content-unreachable.csv`。
+
+### 2.3 剩下的：19 个视频 → 干净世界
+
+名单见 `docs/implementation/videos-nowhere.csv`。上传后把地址改成
+`ganjingworld.com/embed/<id>`，与此前 193 个的做法相同，脚本现成。
+
+**这 19 个传完，新站与老站就再无文件层面的依赖** —— 不需要路径分流，也不需要老站承诺
+保留 `wp-content` 目录。
+
+> 过程中发现老文章还引用过两个已经不存在的子域名（`m.tuidang.org`、
+> `truth.tuidang.org`，DNS 已无记录），以及一个仍在的 `global.tuidang.org`。前两个的
+> 108 处引用已清理，后者的 3 个文件已转存。
 
 ---
 
-#### 方式 A1：Cloudflare 路径分流 —— **地址一个都不用改**（推荐先评估这个）
+## 3. 主域名接入 Vercel
 
-因为域名的 DNS 和代理都已经在 Cloudflare，可以让 Cloudflare 按路径分流：
-`/wp-content/*` 继续送到老服务器，其余全部送到 Vercel。
-
-**好处：`www.tuidang.org/wp-content/...` 这些地址原封不动继续有效** —— 不用改数据库
-那 292 处，不用担心漏改，老站上任何引用这些文件的地方也一起继续工作。
-
-**步骤**
-
-1. **（老网站管理员）拿到老服务器的真实 IP**，在 Cloudflare DNS 里加一条**灰云**
-   （DNS only，不代理）记录，例如：
-
-   ```
-   类型 A   名称 origin-legacy   内容 <老服务器 IP>   代理状态：DNS only（灰云）
-   ```
-
-   灰云是必须的：这条记录只是给下一步当「指路牌」，不能再绕一次 Cloudflare。
-
-2. **（老网站管理员）确认老服务器接受这个主机名的请求**。它只是同一批静态文件，
-   通常在 Nginx/Apache 里把 `origin-legacy.tuidang.org` 加进 `server_name` /
-   `ServerAlias` 即可，指向同一个 `wp-content` 目录。
-
-3. **（老网站管理员）在 Cloudflare 建 Origin Rule**
-   （控制台 → 选 tuidang.org → **Rules → Origin Rules → Create rule**）：
-
-   - 规则名：`wp-content 继续回老站`
-   - 匹配条件（用 Expression Editor）：
-
-     ```
-     (http.request.uri.path contains "/wp-content/")
-     ```
-
-   - 动作：
-     - **DNS Record / Resolve Override** → `origin-legacy.tuidang.org`
-     - **Host Header** → `www.tuidang.org`（保持原主机名，WordPress 才认得）
-
-   Origin Rules 在免费版也可以用（有条数上限，够用）。
-
-4. **（双方）先验证，再切主域名**。规则建好后，在主域名还指向老站时它不会有可见
-   变化；主域名切到 Vercel 之后，`/wp-content/` 的请求会被 Cloudflare 单独送回老站。
-
-5. **（我）切换后抽查**：随机打开 10 个视频页面，确认能播、能拖动进度条。
-
-**需要注意的两点**
-
-- **Vercel 在 Cloudflare 橙云后面**：主域名要同时满足「Cloudflare 代理」和「回源到
-  Vercel」。做得到，但 Cloudflare 的 SSL 模式必须设成 **Full (strict)**；另外 Vercel
-  首次签发证书时需要把该记录临时切成灰云，签完再切回橙云。这一步建议切换当天两边
-  一起做。
-- **Cloudflare 自助版的服务条款**对「主要用于分发视频/大文件」是有限制的。这批视频
-  47.6 GB，已经在 Cloudflare 上跑了几年没出问题，但如果将来播放量上去，Cloudflare
-  可能会要求改用 Cloudflare Stream / R2。这是继续用老方案的长期风险，**所以 A1 适合
-  当作过渡，而不是永久方案**。
-
----
-
-#### 方式 A2：新建子域名 + 批量改地址
-
-如果 A1 因为任何原因走不通（比如不想让 Vercel 待在 Cloudflare 代理后面），就用这个。
-
-**步骤**
-
-1. **（双方）定一个主机名**，建议 `media.tuidang.org` 或 `legacy.tuidang.org`。
-   Cloudflare 的通配证书覆盖一级子域名，**HTTPS 自动有，不用单独申请**。
-
-2. **（老网站管理员）在 Cloudflare DNS 加记录**，指向老服务器，**橙云（已代理）**：
-
-   ```
-   类型 A   名称 media   内容 <老服务器 IP>   代理状态：已代理（橙云）
-   ```
-
-   保持橙云，这样现有的缓存与防护行为和今天一致。
-
-3. **（老网站管理员）老服务器接受该主机名**（同 A1 第 2 步），确认
-   `https://media.tuidang.org/wp-content/uploads/9ping/jpgcd_1.mp4` 能直接打开。
-
-4. **（老网站管理员）确认缓存规则覆盖新主机名**。现在 `.mp4` 是命中缓存的
-   （`cf-cache-status: HIT`），新子域名建议同样处理，否则每次播放都回源，老服务器
-   压力会明显变大。
-
-5. **（我）空跑替换脚本**，核对将要改动的 292 处：
-
-   ```bash
-   node scripts/rehost-wp-content.mjs --to https://media.tuidang.org
-   ```
-
-6. **（我）正式执行**（自动写备份，可一键还原）：
-
-   ```bash
-   node scripts/rehost-wp-content.mjs --to https://media.tuidang.org --apply
-   ```
-
-7. **（我）抽查**：随机 10 个视频页 + 10 篇带图文章，确认加载正常。
-
-8. **（老网站管理员）老站的 `/wp-content/` 目录从此不能删、不能关**，这一条要写进
-   双方的备忘，避免日后清理老站时误删。
-
-**与 A1 的区别**：地址变了，所以数据库要改；好处是 Vercel 不必待在 Cloudflare 代理
-后面，两边耦合更少。
-
----
-
-**两种方式怎么选**
-
-| | A1 路径分流 | A2 新子域名 |
-|---|---|---|
-| 要改数据库 | 否 | 是（292 处，脚本已备好） |
-| 老站上的引用 | 一并继续有效 | 只修了新站这边 |
-| Vercel 与 Cloudflare 的耦合 | 需要 Full (strict) + 首签时临时灰云 | 无耦合 |
-| 出问题时排查 | 多一层规则要看 | 直观 |
-
-**建议**：先让老网站管理员评估 A1 是否愿意做（他对 Cloudflare 配置最熟）；他若觉得
-麻烦，直接走 A2，我这边脚本随时可以跑。
-
----
-
-**方案 B — 把文件搬到我们自己的存储**
-
-把这些文件搬到 Supabase Storage，彻底切断依赖。
-
-优点：真正独立。
-缺点：这些是完整纪录片，单个 100–600MB（实测 `jpgcd_2.mp4` 为 625MB，
-`20240720C0986.mp4` 为 332MB），总量可观，需要先评估存储与流量成本。
-
-**建议：先用 A 保证切换顺利，之后按内容重要性分批执行 B。**
-
----
-
-## 3. 主域名接入 Vercel 的步骤
-
-Vercel 按 HTTP `Host` 头路由请求，域名需要**先在 Vercel 项目中登记**，平台才知道该
-把 `tuidang.org` 交给哪个项目；HTTPS 证书也是在域名登记且 DNS 指向正确之后自动签发的。
-因此操作顺序很重要。
+Vercel 按 HTTP `Host` 头路由请求，域名必须**先在 Vercel 项目中登记**，平台才知道把
+`tuidang.org` 交给哪个项目；HTTPS 证书也是在域名登记且 DNS 指向正确之后自动签发。
+所以顺序不能颠倒。
 
 ### 顺序
 
-1. **我们这边**：在 Vercel 项目中添加 `tuidang.org` 与 `www.tuidang.org`
+1. **（我）** 在 Vercel 项目中添加 `tuidang.org` 与 `www.tuidang.org`
 2. **Vercel 给出具体 DNS 记录**，通常是：
    - apex（`tuidang.org`）→ A 记录 `76.76.21.21`
    - `www` → CNAME 指向 `cname.vercel-dns.com`
-   - 如果 DNS 服务商支持 ALIAS/ANAME，apex 用它比 A 记录更稳
-3. **老网站管理员这边**：按给出的记录修改 DNS
-4. 等待证书自动签发完成后再对外公布
+   - 服务商若支持 ALIAS/ANAME，apex 用它比 A 记录更稳
+3. **（老）** 按给出的记录修改 DNS
+4. 等证书自动签发完成后再对外公布
+
+> DNS 目前托管在 **Cloudflare**（`laura.ns.cloudflare.com` / `major.ns.cloudflare.com`），
+> 主域名与子域名都开着橙云代理。若主域名继续保持橙云，Cloudflare 的 SSL 模式必须是
+> **Full (strict)**，且 Vercel 首次签发证书时需要把该记录临时切成灰云，签完切回。
+> 最省事的做法是**主域名改走灰云（DNS only）**，让 Vercel 自己处理 CDN 与证书。
 
 ### 两个容易出事的点
 
-- **不要动 MX 与 TXT（SPF／DKIM）记录。** 改 A 记录本身不影响邮件，但如果在整理
-  DNS 时一并清掉了 MX/SPF，机构邮箱会立刻收不到信。这是域名迁移最常见的事故。
-- **提前 24–48 小时把相关记录的 TTL 降到 300 秒。** 否则一旦需要回滚，要等旧 TTL
-  自然过期（可能是几小时甚至一天），期间没有办法。切换稳定后再调回去。
+- **不要动 MX 与 TXT（SPF／DKIM）记录。** 改 A 记录本身不影响邮件，但如果顺手整理
+  DNS 时清掉了 MX/SPF，机构邮箱会立刻收不到信。这是域名迁移最常见的事故。
+- **提前 24–48 小时把相关记录 TTL 降到 300 秒。** 否则一旦需要回滚，要等旧 TTL 自然
+  过期（可能几小时到一天），期间毫无办法。切换稳定后再调回去。
 
 ### 老站侧
 
-把 `/donation/` 和退党证明服务迁到子域名时，WordPress 在数据库里存的是**绝对地址**，
+把 `/donation/` 和退党证明服务迁到子域名时，WordPress 数据库里存的是**绝对地址**，
 需要做一次 search-replace，否则页面仍会输出旧的 `www.tuidang.org/...` 链接。
 
 ### `NEXT_PUBLIC_SITE_URL` —— 切换当天必须改
 
-新站用这个环境变量生成 `canonical`、`robots.txt` 的 `Host`／`Sitemap` 行，以及
+新站用这个环境变量生成 `canonical`、`robots.txt` 的 Host／Sitemap 行，以及
 `sitemap.xml` 里的全部地址。
 
 | 时间 | 值 |
 |---|---|
 | 现在（测试期） | `https://quitccp.vercel.app` ✅ 已设置 |
-| **切换当天** | **改成 `https://www.tuidang.org`** |
+| **切换当天** | **改成 `https://www.tuidang.org`**，然后**重新部署** |
 
-改完必须**重新部署一次**才会生效（环境变量在构建时写入）。
-
-> 这项曾经被设成 `http://localhost:4020`，导致线上 `canonical` 指向 localhost、
-> `robots.txt` 里的 Sitemap 也是 localhost 地址。已于 2026-10-05 修正。
-> 代码里的兜底值就是 `https://www.tuidang.org`，所以切换当天直接**删掉这个变量**
-> 也可以，效果相同且不会再忘。
+环境变量在构建时写入，不重新部署不生效。代码里的兜底值就是
+`https://www.tuidang.org`，所以当天**直接删掉这个变量**效果相同，且不会再忘。
 
 ---
 
-## 4. 让子域名与新站外观一致：两种做法
+## 4. 子域名的页头一致性
 
-目标是让 `services.tuidang.org` 的页头、菜单与新站看起来是一个网站。两种路线：
+目标是让 `services.tuidang.org` 的页头、菜单与新站看起来是同一个网站。
 
-### 做法一：把新站的页头样式移植进老站主题
-
-我们把新站 header（含语言切换条、logo 横幅、菜单栏）的 HTML + CSS 整理成一个
-独立片段交给老网站管理员，贴进 WordPress 主题的 header 模板。
+做法：**把新站页头的 HTML + CSS 整理成独立片段，贴进 WordPress 主题的 header 模板。**
 
 - 一次性工作，之后两站完全独立
-- 地址栏、收藏、分享、后退键、SEO 全部正常
-- 不涉及跨域问题
-- 日后新站改版时需要同步更新一次片段
+- 地址栏、收藏、分享、后退键、SEO 全部正常，不涉及跨域
+- 日后新站页头改版时需要重新导出一次片段
 
-### 做法二：去掉老站页头页尾，用 iframe 嵌进新站页面
+片段已经做好，在 `docs/handoff/` 目录，可直接交付：
 
-新站提供外框（header/footer），iframe 里是去掉头尾的老站正文。
-
-需要注意的技术约束：
-
-| 约束 | 说明 |
+| 文件 | 内容 |
 |---|---|
-| **第三方 Cookie** | iframe 内的 `services.tuidang.org` 相对于 `tuidang.org` 属于跨站上下文。Safari 的 ITP 默认拦截此类 Cookie，Chrome 也在收紧。声明表单依赖 session 与 CSRF token，受影响的用户会**在提交时静默失败**——页面不报错，但记录没有写入。 |
-| **框架嵌入策略** | 接受敏感提交的页面通常会发送 `X-Frame-Options: DENY` 或 `frame-ancestors 'none'` 以防点击劫持。要支持 iframe，需要改成 `frame-ancestors 'self' https://tuidang.org`，即放宽一项默认防护，需要谨慎配置。 |
-| **URL 与分享** | 地址栏始终是外层页面地址。退党证明的查询结果无法单独收藏或分享给他人，后退键行为也与预期不同。 |
-| **SEO** | iframe 内的内容不计入父页面，这些栏目在主域名上的搜索权重不会延续。 |
-| **高度自适应** | 需要用 `postMessage` 在父子页面间同步高度，否则会出现内外两条滚动条，移动端尤其明显。 |
-| **样式一致程度** | 老站仍需改动（去掉页头页尾）；改完之后 iframe 内部的字体、配色、按钮、间距仍是老站的，一致性止于外框。 |
+| `header-snippet.html` | 页头 HTML，3.3KB，链接与图片已全部绝对化 |
+| `header-snippet.css` | 样式约 8KB，含设计变量与作用域内重置 |
+| `README.md` | 安装步骤、两个注意事项、已验证项目 |
 
-### 建议
+**不依赖 JavaScript。** 已在模拟 WordPress 主题（自带 Georgia 字体、蓝色下划线链接）
+下验证：页头样式不受主题影响，老站正文链接也不受页头影响；桌面 177px、平板 169px、
+手机 280px，三种宽度均无横向滚动。
 
-**声明、办理证明、查询验证这几个流程建议用做法一。** 它们是全站最敏感、也最不能
-静默失败的环节，Cookie 与防护策略上的不确定性代价较高。
+两个提醒写在 README 里：页头不能被只包着它的容器裹住（否则 sticky 失效，但显示正常），
+以及 CSS 变量重名的处理办法。
 
-iframe 更适合**纯展示、无表单、无登录**的页面；如果将来有这类内容，可以再考虑。
+> 手机上的汉堡按钮目前只有样式、点击不展开——展开需要 JavaScript。老站若需要，我们可
+> 以补一个不依赖框架的版本。
 
 ---
 
 ## 5. 老链接的重定向
 
-### 已经做好的部分
+**已经做好**：新站内置 `cms_redirects` 共 **15,513 条**老 URL → 新 URL 映射，由
+`apps/web/src/middleware.ts` 在请求时查表并发 301。历年文章的老链接（`/2024/...`、
+`/2023/...` 这类）不会断。这部分老网站管理员不需要操心。
 
-新站内置了重定向表：`cms_redirects` 共 **15,513 条**老 URL → 新 URL 的映射，由
-`apps/web/src/middleware.ts` 在请求时查表并发 301。历年文章的老链接（形如
-`/2024/...`、`/2023/...`）不会断。
-
-这部分老网站管理员不需要操心。
-
-### 还需要补的部分
-
-子域名的路径结构确定后，需要补两类 301：
+**还需要补**：子域名路径结构确定后，补两类 301 ——
 
 - `tuidang.org/donation/` → `donation.tuidang.org`
-- 退党证明服务的各个路径 → `services.tuidang.org/...`
+- 退党证明服务的各路径 → `services.tuidang.org/...`
 
-**为什么重要**：这些地址印在传单、海报、名片上，也被大量外部网站引用。301 能让
-旧地址继续可用，而不是让拿着传单的人看到 404。
-
----
-
-## 6. 已经准备好的两样东西
-
-切换当天要用的两项工作已经做完并测试过，不必临时赶。
-
-### 地址批量替换脚本
-
-`scripts/rehost-wp-content.mjs` —— 把数据库里所有 `tuidang.org/wp-content/` 的引用
-改到新主机名。
-
-```bash
-# 先空跑，只打印会改什么，不写任何东西
-node scripts/rehost-wp-content.mjs --to https://legacy.tuidang.org
-
-# 确认无误后真正执行
-node scripts/rehost-wp-content.mjs --to https://legacy.tuidang.org --apply
-
-# 万一要退回
-node scripts/rehost-wp-content.mjs --restore backups/rehost-<时间戳>.json
-```
-
-设计要点：
-
-- **默认不写**。不加 `--apply` 就只是空跑，会打印统计和样例。
-- **先写备份再动手**。备份记录每个字段的原值，写在任何更新之前——中途失败也能全部还原。
-- **只改白名单列**（视频的 `source_url`／封面／正文，文章的封面／正文／摘要，资料同理），
-  不做全表盲替换。
-- **按年分片扫描文章**。`body_plain` 有 ~120MB，整表 `ilike` 会撞上 8 秒语句超时；
-  一年一片约 600ms。
-- **遇到瞬时错误自动重试**（最多 4 次，指数退避）。实测确实遇到过 `57014` 超时并
-  成功重试，不会半途崩溃留下改了一半的数据。
-
-已完整验证：对 `cms_videos` 取校验和 → 执行替换 → 还原 → 校验和**与原值完全一致**
-（`f22df2c0b5b30727`）。影响行数 292（视频 214 + 文章 78）。
-
-备份文件写在 `backups/`，已加入 `.gitignore`（内含完整文章正文，不进版本库）。
-
-### 共用页头片段
-
-`docs/handoff/` 目录，可直接交给老网站管理员：
-
-| 文件 | 内容 |
-|---|---|
-| `header-snippet.html` | 页头 HTML，3.3KB，链接与图片已全部绝对化 |
-| `header-snippet.css` | 样式，约 8KB，含设计变量与作用域内重置 |
-| `README.md` | 安装步骤、两个注意事项、已验证项目 |
-
-不依赖 JavaScript。已在模拟 WordPress 主题（自带蓝色下划线链接、Georgia 字体）下
-验证：页头样式不受主题影响，老站正文链接也不受页头影响；桌面 177px、平板 169px、
-手机 280px，均无横向滚动。
-
-两个要提醒的点写在 README 里：页头不能被只包着它的容器裹住（否则 sticky 失效，但
-显示正常），以及 CSS 变量重名的处理办法。
-
-> 手机上的汉堡按钮目前只有样式、点击不展开——展开需要 JavaScript。如果老站需要，
-> 我们可以补一个不依赖框架的版本。
+这些地址印在传单、海报、名片上，也被大量外部网站引用。301 能让旧地址继续可用，而不是
+让拿着传单的人看到 404。
 
 ---
 
-## 7. 建议的执行顺序
+## 6. 安全
+
+- **Cookie 作用域**：子域名拆分后，Cookie 应限定在各自主机名上，不要设成
+  `.tuidang.org`（父域通配）。否则新站与老站共享会话状态，一边的问题会波及另一边。
+- **声明数据**：声明与证明数据仍在老站，新站不接触。查询入口继续指向
+  `service.tuidang.org` 与 `santui.tuidang.org`，新站站内搜索**不包含**任何声明数据。
+
+---
+
+## 7. 执行顺序
 
 分阶段，每一步都可以单独验证和回滚。
 
 | 阶段 | 内容 | 主域名状态 |
 |---|---|---|
-| **1** | 建立 `services.tuidang.org`、`donation.tuidang.org`，指向老站，独立验证可用 | 不动，仍是老站 |
-| **2** | 解决 `/wp-content/` 依赖（方案 A 或 B） | 不动 |
-| **3** | 新站在临时域名上完整验证：视频能播、文章图片正常、后台可用 | 不动 |
-| **4** | 降 TTL → 在 Vercel 添加域名 → 改 DNS → 等证书 | **切换** |
-| **5** | 观察 48 小时：404 日志、视频播放、搜索收录 | 已切换 |
+| **1** | 建立 `services.tuidang.org`、`donation.tuidang.org`，指向老站并独立验证 | 不动 |
+| **2** | 19 个视频传干净世界（其余 `/wp-content/` 依赖已于 10-06 清掉） | 不动 |
+| **3** | 新站在临时域名上完整验证：视频、图片、后台、搜索、移动端 | 不动 |
+| **4** | 降 TTL → Vercel 添加域名 → 改 DNS → 等证书 | **切换** |
+| **5** | 观察 48 小时：404 日志、媒体加载、搜索收录 | 已切换 |
 
-**回滚准备**：老站继续保持可达（例如 `old.tuidang.org`）至少一到两个月。真要回退时，
-把 DNS 改回去即可，前提是第 4 步之前已经降了 TTL。
-
----
-
-## 8. 安全方面
-
-- **Cookie 作用域**：子域名拆分后，Cookie 应当限定在各自主机名上，不要设成
-  `.tuidang.org`（父域通配）。否则新站与老站会共享会话状态，一边的问题会波及另一边。
-  这也是子域名拆分本身带来的好处之一。
-- **声明数据**：声明与证明的数据仍在老站，新站不接触，查询入口继续指向
-  `service.tuidang.org` 与 `santui.tuidang.org`。新站的站内搜索**不包含**任何声明数据。
-- **后续**：安全是持续工作，会按优先级逐步推进，不在本次切换的范围内一次做完。
+**回滚准备**：老站继续保持可达（例如 `old.tuidang.org`）至少一到两个月。真要回退时把
+DNS 改回去即可——前提是第 4 步之前已经降了 TTL。
 
 ---
 
-## 9. 待与老网站管理员确认的清单
+## 8. 待与老网站管理员确认
 
-1. `/wp-content/` 用哪个主机名继续提供？（决定我们批量替换的目标地址）
-2. 退党证明服务迁到 `services.tuidang.org` 后的**具体路径结构**？（决定 301 怎么配）
-3. 捐助放 `donation.tuidang.org` 还是 `services.tuidang.org/donation`？
-4. 页头一致性采用哪种做法？若用做法一，我们何时把片段交付？
-5. 除已列出的之外，还有哪些需要迁到子域名？已知待确认项：
-   - `/wp-content/`（媒体文件）——见第 2 节
-   - `/wp-admin/`（老站后台入口）
-   - RSS feed 与 `sitemap.xml`
-   - 任何带登录的功能
-6. DNS 由谁操作、在哪家服务商？切换当天双方的时间安排？
+1. 退党证明服务迁到 `services.tuidang.org` 后的**具体路径结构**？（决定 301 怎么配）
+2. 捐助放 `donation.tuidang.org` 还是 `services.tuidang.org/donation`？
+3. 主域名切换时走灰云还是保持橙云？（见第 3 节）
+4. 页头片段何时交付、由谁贴进主题？
+5. 除已列出的，还有哪些需要迁到子域名？已知待确认：`/wp-admin/`、RSS feed、
+   `sitemap.xml`、任何带登录的功能
+6. DNS 由谁操作？切换当天双方的时间安排？
 
 ---
 
-## 10. 执行检查清单
+## 9. 执行检查清单
 
-切换当天照着勾。括号里是负责方：**（我）**= 新站这边，**（老）**= 老网站管理员，
-**（双）**= 需要两边同时在线。
+**（我）**＝新站这边　**（老）**＝老网站管理员　**（双）**＝两边同时在线
 
 ### 阶段一：子域名先立起来（主域名不动）
 
 - [ ] （老）`services.tuidang.org` 解析到老站，HTTPS 证书正常
 - [ ] （老）`donation.tuidang.org` 解析到老站（或确认改用 `services.tuidang.org/donation`）
-- [ ] （老）WordPress 数据库 search-replace 完成，页面输出的是新主机名而非 `www.tuidang.org`
-- [ ] （双）逐项实测：发表三退声明 → 办理退党证明 → 查询验证，**整条流程走通**
+- [ ] （老）WordPress search-replace 完成，页面输出新主机名而非 `www.tuidang.org`
+- [ ] （双）实测整条流程：办理退党证明 → 查询验证，**走通**
 - [ ] （双）确认 `santui.tuidang.org`、`huigui.tuidang.org` 不受影响
 
-### 阶段二：解决 `/wp-content/` 依赖（见第 2 节）
+### 阶段二：清掉 `/wp-content/` 依赖
 
-- [ ] （双）先定走 A1（Cloudflare 路径分流，不改地址）还是 A2（新子域名 + 改地址）
-
-**若走 A1**
-
-- [ ] （老）加灰云 DNS 记录 `origin-legacy` 指向老服务器真实 IP
-- [ ] （老）老服务器 `server_name` / `ServerAlias` 接受该主机名
-- [ ] （老）建 Origin Rule：路径含 `/wp-content/` → Resolve Override 到 `origin-legacy`，
-      Host Header 保持 `www.tuidang.org`
-- [ ] （双）Cloudflare SSL 模式确认为 **Full (strict)**
-- [ ] （双）切换当天 Vercel 首签证书时把主域名记录临时切灰云，签完切回橙云
-
-**若走 A2**
-
-- [ ] （双）定主机名（建议 `media.tuidang.org`）
-- [ ] （老）加橙云 DNS 记录指向老服务器
-- [ ] （老）老服务器接受该主机名，直接打开一个 `.mp4` 地址可播
-- [ ] （老）确认 `.mp4` 在新主机名下仍命中 Cloudflare 缓存
-- [ ] （我）先空跑 `node scripts/rehost-wp-content.mjs --to https://media.tuidang.org`
-- [ ] （我）加 `--apply` 正式执行（备份自动写入 `backups/`）
-- [ ] （我）确认输出里没有 FAILED 行；若有，重跑同一条命令
-
-**两种方式都要**
-
-- [ ] （老）老站 `/wp-content/` 目录**从此不能删、不能关**，写进双方备忘
-- [ ] （我）抽查 20 个视频、10 篇文章，确认媒体正常加载
+- [x] （我）122 个可下载文件已转存 Supabase Storage（2026-10-06）
+- [x] （我）227 处失效引用已清理（2026-10-06）
+- [ ] （我）19 个视频上传干净世界（名单见 `videos-nowhere.csv`）
+- [ ] （我）把这 19 条地址改成 `ganjingworld.com/embed/<id>`
+- [ ] （我）全库复查：`tuidang.org/wp-content/` 引用数**归零**
+- [ ] （我）抽查 20 个视频、10 篇带图文章，媒体正常加载
 
 ### 阶段三：新站完整验证（主域名仍不动）
 
-- [ ] （我）212 个视频全部可播放
+- [ ] （我）视频全部可播放
 - [ ] （我）文章封面与正文图片无失效
 - [ ] （我）后台可登录，文章 / 视频 / 资料 / 图片视频库均可编辑保存
 - [ ] （我）站内搜索正常
 - [ ] （我）移动端实测：首屏、菜单、搜索、文章页
-- [ ] （我）把 `docs/handoff/` 整个目录交给老网站管理员（HTML + CSS + README）
-- [ ] （老）页头片段贴进主题，确认页头未被只包着它的容器裹住
-- [ ] （双）在子域名上实测页头：桌面与手机外观与新站一致，老站正文样式未被影响
+- [ ] （我）把 `docs/handoff/` 整个目录交给老网站管理员
+- [ ] （老）页头片段贴进主题，确认未被只包着它的容器裹住
+- [ ] （双）子域名上实测页头：桌面与手机外观与新站一致，老站正文样式未受影响
 
 ### 阶段四：切换当天（双方在线）
 
@@ -471,33 +250,33 @@ node scripts/rehost-wp-content.mjs --restore backups/rehost-<时间戳>.json
 
 - [ ] （老）相关 DNS 记录 TTL 降到 300 秒，**提前 24–48 小时完成**
 - [ ] （老）**记录现有全部 DNS 记录并截图备份**（尤其 MX、TXT/SPF/DKIM）
-- [ ] （我）在 Vercel 项目中添加 `tuidang.org` 与 `www.tuidang.org`
-- [ ] （我）把 `NEXT_PUBLIC_SITE_URL` 从 `https://quitccp.vercel.app` 改成
-      `https://www.tuidang.org`（或直接删除该变量），**并重新部署**
+- [ ] （我）Vercel 项目中添加 `tuidang.org` 与 `www.tuidang.org`
+- [ ] （我）`NEXT_PUBLIC_SITE_URL` 改成 `https://www.tuidang.org`（或删除该变量），
+      **并重新部署**
 - [ ] （我）把 Vercel 给出的 DNS 记录发给老网站管理员
-- [ ] （老）确认老站仍可通过 `old.tuidang.org` 之类的地址访问（回滚通道）
+- [ ] （老）确认老站仍可通过 `old.tuidang.org` 之类地址访问（回滚通道）
 
 **切换**
 
 - [ ] （老）修改 A / CNAME 记录指向 Vercel
 - [ ] （老）**确认 MX 与 TXT 记录未被改动**
-- [ ] （我）等待 HTTPS 证书自动签发完成
-- [ ] （双）`https://tuidang.org` 与 `https://www.tuidang.org` 都能打开新站，无证书警告
+- [ ] （我）等 HTTPS 证书自动签发完成
+- [ ] （双）`https://tuidang.org` 与 `https://www.tuidang.org` 均能打开新站，无证书警告
 
 **切换后 1 小时内**
 
-- [ ] （双）发一封测试邮件到机构邮箱，确认**邮件未受影响**
-- [ ] （我）随机抽查 10 条老文章链接，确认 301 跳转正确
+- [ ] （双）发测试邮件到机构邮箱，确认**邮件未受影响**
+- [ ] （我）抽查 10 条老文章链接，301 跳转正确
 - [ ] （我）`tuidang.org/donation/` 跳转到捐助页
 - [ ] （我）退党证明服务的老路径跳转到 `services.tuidang.org`
-- [ ] （我）抽查视频播放（重点查 `/wp-content/` 改写后的那 212 个）
-- [ ] （我）确认 `https://www.tuidang.org/robots.txt` 里的 Host 与 Sitemap 已是正式域名
-- [ ] （双）确认未公布前不对外宣传，留出发现问题的时间
+- [ ] （我）抽查视频与文章配图
+- [ ] （我）确认 `robots.txt` 里的 Host 与 Sitemap 已是正式域名
+- [ ] （双）未公布前不对外宣传，留出发现问题的时间
 
 ### 阶段五：观察期（48 小时）
 
-- [ ] （我）每天查看 404 日志，补漏掉的 301
-- [ ] （我）查看零结果搜索记录，判断是否有内容未迁移
+- [ ] （我）每天查 404 日志，补漏掉的 301
+- [ ] （我）查零结果搜索记录，判断是否有内容未迁移
 - [ ] （我）确认 Google Search Console 无大量抓取错误
 - [ ] （老）老站保持可达，**至少一到两个月不要下线**
 - [ ] （老）稳定后把 TTL 调回正常值
@@ -507,21 +286,21 @@ node scripts/rehost-wp-content.mjs --restore backups/rehost-<时间戳>.json
 出现下列任一情况，**先把 DNS 改回老站**，再慢慢查原因：
 
 - [ ] 机构邮箱收不到邮件
-- [ ] 三退声明或证明办理流程中断
-- [ ] 主域名出现证书错误持续超过 30 分钟
+- [ ] 退党证明办理或查询流程中断
+- [ ] 主域名证书错误持续超过 30 分钟
 - [ ] 大面积视频或图片失效
 
 回滚方式：把 A / CNAME 记录改回原值。因为提前降了 TTL，5 分钟内生效。
 
 ---
 
-## 附：实测数据来源
+## 附：数据来源
 
-本文引用的数字均来自对生产数据库与存储的实际查询（2026-10-05）：
+本文数字来自对生产数据库的实际查询（2026-10-06）：
 
-- 引用 `tuidang.org/wp-content/` 的内容行数：按表按列统计，见第 2 节
-- 视频文件大小：对 `www.tuidang.org` 的实际 HTTP Range 请求（该站有 Cloudflare
-  人机验证，需用真实浏览器会话才能读到 `content-range`）
+- `tuidang.org/wp-content/` 引用：已转存 122 个文件、清理 227 处失效引用，
+  现仅剩 19 个待传干净世界的视频，见第 2 节
 - `cms_redirects` 行数：15,513
+- 视频总数 745，其中干净世界 185、YouTube 518、仍自托管 19
 
 这些查询可以随时重跑核对。

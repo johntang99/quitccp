@@ -1064,7 +1064,7 @@ function defaultTemplateData(template: TemplateKind, title: string, section: str
         announcementsSection: {
           title: "机构公告与声明",
           moreLabel: "全部 →",
-          moreHref: "/news/announcements",
+          moreHref: "/news/announcement-claims",
           items: [
             {
               slug: "announce-1",

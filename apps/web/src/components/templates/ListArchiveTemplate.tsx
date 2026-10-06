@@ -764,7 +764,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
               <div>
                 <div className="cat-hd">
                   <h2>{asString(announcements.title, "机构公告与声明")}</h2>
-                  <a href={asString(announcements.moreHref, "/news/announcements")}>{asString(announcements.moreLabel, "全部 →")}</a>
+                  <a href={asString(announcements.moreHref, "/news/announcement-claims")}>{asString(announcements.moreLabel, "全部 →")}</a>
                 </div>
                 <div className="arch">
                   {announcementItems.map((row, index) => (
