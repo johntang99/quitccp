@@ -278,7 +278,15 @@ export function markdownToBodyRows(
       if (text) rows.push({ type: "h2", text });
       continue;
     }
-    if (isLikelyStandaloneSubheading(lines, index)) {
+    /*
+     * Guessing a subheading only makes sense for the imported articles, whose
+     * markdown has no headings of its own. Content written in this CMS says
+     * what it means -- and the guess actively damages it: a FAQ answer ending
+     * in "更多信息请参考：[常见问题解答](/services/faq)" is a short line between
+     * two blank lines, so it became an <h3> and the link inside was flattened
+     * away. 17 of the 45 answers lost their closing link that way.
+     */
+    if (!options.keepInline && isLikelyStandaloneSubheading(lines, index)) {
       flushParagraph();
       const text = stripInlineMarkdown(line);
       if (text) rows.push({ type: "h3", text });
@@ -2111,4 +2119,54 @@ export async function getCultureListing(filterKey = "all", page = 1, pageSize = 
   } catch {
     return empty;
   }
+}
+
+/** One category and its published questions, in the order an editor set. */
+export interface PublicFaqGroup {
+  slug: string;
+  name: string;
+  summary: string;
+  items: { slug: string; question: string; answerMarkdown: string }[];
+}
+
+/**
+ * The FAQ for /services/faq.
+ *
+ * Returns an empty list when migration 023 has not been applied, so the page
+ * falls back to whatever the stored entry holds rather than erroring.
+ */
+export async function getPublicFaq(): Promise<PublicFaqGroup[]> {
+  const supabase = createSupabaseAdminClient();
+  const { data: categories, error } = await supabase
+    .from("cms_faq_categories")
+    .select("id, slug, name, summary, sort_order")
+    .order("sort_order", { ascending: true });
+  if (error || !categories) return [];
+
+  const { data: rows } = await supabase
+    .from("cms_faqs")
+    .select("slug, question, answer_markdown, category_id, position")
+    .eq("status", "published")
+    .order("position", { ascending: true });
+
+  const byCategory = new Map<string, PublicFaqGroup["items"]>();
+  for (const row of rows ?? []) {
+    const key = String(row.category_id ?? "");
+    const bucket = byCategory.get(key) ?? [];
+    bucket.push({
+      slug: String(row.slug),
+      question: String(row.question),
+      answerMarkdown: String(row.answer_markdown ?? "")
+    });
+    byCategory.set(key, bucket);
+  }
+
+  return categories
+    .map((category) => ({
+      slug: String(category.slug),
+      name: String(category.name),
+      summary: String(category.summary ?? ""),
+      items: byCategory.get(String(category.id)) ?? []
+    }))
+    .filter((group) => group.items.length > 0);
 }

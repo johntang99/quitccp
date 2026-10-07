@@ -11,7 +11,7 @@
  * same values when an entry predates the change. One copy, both uses.
  */
 
-export const INVOLVE_DONATION_URL = "https://www.tuidang.org/donation/";
+export const INVOLVE_DONATION_URL = "https://donation.tuidang.org";
 
 export const involvePageDefaults: Record<string, Record<string, unknown>> = {
   index: {

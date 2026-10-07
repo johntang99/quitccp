@@ -39,7 +39,10 @@ export const EXTERNAL_SERVICES = {
   certPublicAwards: "https://www.tuidang.org/category/gkbftdzm/",
 
   contact: "https://www.tuidang.org/contact-us/",
-  donation: "https://www.tuidang.org/donation/",
+  /* Moved to its own subdomain 2026-10-07, ahead of the main-domain cutover:
+     the donation site stays on the old server while tuidang.org moves to the
+     new site. Verified serving the donation page before the switch. */
+  donation: "https://donation.tuidang.org",
   aboutUs: "https://www.tuidang.org/about-us/",
   termsOfService: "https://www.tuidang.org/terms-of-service/",
   privacyPolicy: "https://www.tuidang.org/privacy-policy/",

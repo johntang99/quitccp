@@ -38,7 +38,7 @@ stays local and only its inline links point outward.
 
 | # | Local route | Treatment | Target |
 |---|---|---|---|
-| 10 | `/involve` (捐助我们) | Action | `https://www.tuidang.org/donation/` |
+| 10 | `/involve` (捐助我们) | Action | `https://donation.tuidang.org` |
 | 11 | `/resources/tools` (免翻墙链接) | Action | `https://www.tuidang.org/2022/09/14/686434/` |
 | 12 | `/resources/downloads` | Action | `https://www.tuidang.org/td_promo/` |
 | 13 | header CTA 我要三退 | Action | `https://santui.tuidang.org` |

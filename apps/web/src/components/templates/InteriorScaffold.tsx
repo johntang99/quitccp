@@ -29,7 +29,10 @@ const sectionConfig: Record<string, { label: string; baseHref: string; tabs: Sec
       { slug: "cert", label: "退党证书", externalHref: EXTERNAL_SERVICES.certApply },
       { slug: "verify", label: "查询验证", externalHref: EXTERNAL_SERVICES.certVerify },
       { slug: "immigration", label: "移民相关政策", externalHref: EXTERNAL_DOCS.uscisAttitude },
-      { slug: "faq", label: "三退问答", externalHref: EXTERNAL_SERVICES.faqHub },
+      // No externalHref: the FAQ lives here now. All 45 answers were imported
+      // from tuidang.org/faq/ on 2026-10-07, so sending readers to the old site
+      // would send them to a copy that is about to stop being the master.
+      { slug: "faq", label: "三退问答" },
       { slug: "privacy", label: "安全与隐私", externalHref: EXTERNAL_DOCS.isTuidangSafe },
       { slug: "contact", label: "信息变更", externalHref: EXTERNAL_SERVICES.contact }
     ]

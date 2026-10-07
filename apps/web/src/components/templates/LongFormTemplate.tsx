@@ -11,7 +11,7 @@ import { servicesDefaults } from "@quitccp/content-schema";
 import { CmsMarkdown } from "@/components/public/MarkdownBody";
 import { LinkPanel, ListPanel } from "./section-panels";
 
-export function LongFormTemplate({ title, section, slug, content }: TemplatePageData) {
+export function LongFormTemplate({ title, section, slug, content, faqGroups }: TemplatePageData) {
   const payload = asRecord(content);
 
   if (section === "services" && slug === "faq") {
@@ -51,6 +51,31 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
                   ))}
                 </div>
               ) : null}
+              {/* The question library, from `cms_faqs`. Grouped by category and
+                  ordered by the position an editor set -- the stored `faqs`
+                  below is the fallback for a database without migration 023. */}
+              {faqGroups && faqGroups.length > 0 ? (
+                faqGroups.map((group) => (
+                  <section key={group.slug} style={{ marginBottom: 34 }}>
+                    <h2 className="h2" style={{ fontSize: 24, marginBottom: group.summary ? 6 : 14 }}>
+                      {group.name}
+                    </h2>
+                    {group.summary ? (
+                      <p style={{ color: "var(--muted)", marginTop: 0, marginBottom: 14 }}>{group.summary}</p>
+                    ) : null}
+                    <div className="faq">
+                      {group.items.map((item) => (
+                        <details key={item.slug} id={item.slug}>
+                          <summary>{item.question}</summary>
+                          <div className="ans prose">
+                            <CmsMarkdown value={item.answerMarkdown} />
+                          </div>
+                        </details>
+                      ))}
+                    </div>
+                  </section>
+                ))
+              ) : (
               <div className="faq">
                 {(faqs.length > 0
                   ? faqs
@@ -88,6 +113,7 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
                   </details>
                 ))}
               </div>
+              )}
             </div>
             <aside className="side">
               <div className="panel panel--seal">
@@ -98,11 +124,16 @@ export function LongFormTemplate({ title, section, slug, content }: TemplatePage
                   {asString(readyPanel.buttonLabel, "我要三退")}
                 </a>
               </div>
-              <LinkPanel
-                title={asString(fullFaqPanel.title, "完整问答")}
-                note={asString(fullFaqPanel.note)}
-                links={asObjectArray(fullFaqPanel.links)}
-              />
+              {/* Only while the questions live elsewhere. Once they are stored
+                  here this panel is a list of links to our own page, so it is
+                  dropped rather than rendered as a loop back to the old site. */}
+              {faqGroups && faqGroups.length > 0 ? null : (
+                <LinkPanel
+                  title={asString(fullFaqPanel.title, "完整问答")}
+                  note={asString(fullFaqPanel.note)}
+                  links={asObjectArray(fullFaqPanel.links)}
+                />
+              )}
               <LinkPanel title={asString(linksPanel.title, "还有问题")} links={asObjectArray(linksPanel.links)} />
             </aside>
           </div>

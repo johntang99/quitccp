@@ -47,8 +47,6 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
       "证明样本与防伪说明": EXTERNAL_SERVICES.certHub,
       "给受理机构的说明": EXTERNAL_SERVICES.certVerify,
       "联系我们核实": EXTERNAL_SERVICES.contact,
-      "先看常见问题": EXTERNAL_SERVICES.faqHub,
-      "常见问题": EXTERNAL_SERVICES.faqHub,
       "提交变更申请": EXTERNAL_SERVICES.contact,
       "联系服务点": EXTERNAL_SERVICES.contact
     };
@@ -57,7 +55,6 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
       "/services/cert": EXTERNAL_SERVICES.certApply,
       "/services/verify": EXTERNAL_SERVICES.certVerify,
       "/services/contact": EXTERNAL_SERVICES.contact,
-      "/services/faq": EXTERNAL_SERVICES.faqHub,
       "/services/privacy": EXTERNAL_DOCS.isTuidangSafe,
       "/services/immigration": EXTERNAL_DOCS.mustProvideCert
     };

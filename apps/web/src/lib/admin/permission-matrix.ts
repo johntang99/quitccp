@@ -91,6 +91,9 @@ export const ADMIN_NAV_LINKS: readonly AdminNavLink[] = [
   { href: "/admin/articles", label: "文章管理", owns: ["/admin/categories"] },
   { href: "/admin/videos", label: "视频管理", owns: ["/admin/video-categories"] },
   { href: "/admin/materials", label: "资料管理", owns: ["/admin/material-categories"] },
+  // 常见问答 keeps its categories screen under its own path, so the sidebar
+  // stays lit while an editor is in there.
+  { href: "/admin/faq", label: "常见问答", owns: ["/admin/faq/categories"] },
   { href: "/admin/media", label: "图片视频库" },
   { href: "/admin/theme", label: "主题与排版", needs: "theme.write" },
   { href: "/admin/users", label: "用户管理", needs: "users.view" },

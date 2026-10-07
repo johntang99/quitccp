@@ -185,7 +185,7 @@ function stripHtml(input: string): string {
  * tag, which meant all 15,513 migrated articles arrived with no inline images
  * and no links at all.
  */
-function htmlToMarkdownLite(input: string): string {
+export function htmlToMarkdownLite(input: string): string {
   return (
     input
       // Both CDATA spellings appear in the corpus: the standard one and an
