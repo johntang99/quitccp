@@ -4389,3 +4389,172 @@ body:has(.hero--full-bleed) > header .search {
 .account-form label { display: grid; gap: 4px; font-size: 13px; }
 .admin-auth { max-width: 380px; margin: 60px auto; padding: 0 20px; display: grid; gap: 14px; font-family: var(--sans); }
 .admin-auth h1 { margin: 0; font-size: 22px; }
+
+/* ── 常见问答 ───────────────────────────────────────────────────────────────
+   The card grid the old site uses: one card per category, a folder icon and a
+   count beside the name, a document icon on every question, and 了解更多 when
+   there are more than the card shows. The accordion this replaced put all 45
+   answers on one page, which is an unreadable column of 130,000 characters.
+
+   Surfaces are white, not `--paper`: the page ground is already the warm
+   #F7EFE2, so a card painted in it has no edge of its own and the grid reads as
+   one flat sheet. White plus a layered shadow is what lifts them off it. */
+.faq-surface {
+  background: #fff;
+  border: 1px solid rgba(222, 218, 207, .9);
+  border-radius: 12px;
+  box-shadow:
+    0 1px 2px rgba(31, 26, 58, .04),
+    0 6px 18px rgba(31, 26, 58, .06);
+}
+
+.faq-search {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  max-width: 720px;
+  margin: 0 auto 26px;
+  padding: 7px 7px 7px 18px;
+}
+.faq-search-ico {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.faq-search input {
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  padding: 9px 0;
+}
+.faq-search input:focus { outline: none; }
+.faq-search button {
+  border: 0;
+  border-radius: 8px;
+  background: var(--lav);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  letter-spacing: .08em;
+  padding: 11px 22px;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.faq-search button:hover { background: var(--ink); }
+
+.faq-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  /* No `align-items: start`: the default stretch is what makes both cards in a
+     row share the taller one's height, which is the point of a grid of cards. */
+}
+@media (max-width: 860px) {
+  .faq-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.faq-card {
+  /* Column, so the question list can take the slack and 了解更多 stays pinned
+     to the bottom edge however tall the row's other card makes this one. */
+  display: flex;
+  flex-direction: column;
+  padding: 24px 26px 22px;
+  transition: box-shadow .18s ease, transform .18s ease;
+}
+.faq-card:hover {
+  box-shadow:
+    0 1px 2px rgba(31, 26, 58, .05),
+    0 10px 28px rgba(31, 26, 58, .10);
+  transform: translateY(-1px);
+}
+.faq-card-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--rule);
+}
+.faq-card-head h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 21px;
+  line-height: 1.3;
+}
+.faq-card-head h2 a { color: var(--ink); }
+.faq-card-head h2 a:hover { color: var(--seal); }
+.faq-ico {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: var(--lav);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+.faq-ico--doc { width: 15px; height: 15px; flex: none; }
+.faq-count {
+  min-width: 25px;
+  height: 25px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--lav);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.faq-card-note {
+  margin: 13px 0 0;
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: var(--lh-body);
+}
+/* Takes the slack in the flex column so short cards still reach the row's
+   height and their 了解更多 sits on the bottom edge, not mid-card. */
+.faq-list { list-style: none; margin: 4px 0 0; padding: 0; flex: 1 1 auto; }
+.faq-list li + li { border-top: 1px solid var(--rule); }
+.faq-list a {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 12px 0;
+  color: var(--ink-soft);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+.faq-list a:hover { color: var(--seal); }
+.faq-list a:hover .faq-ico { stroke: var(--seal); }
+.faq-more {
+  align-self: flex-start;
+  margin-top: 16px;
+  padding: 8px 18px;
+  border: 1px solid var(--lav);
+  border-radius: 8px;
+  color: var(--lav);
+  font-size: 13.5px;
+  transition: background .15s ease, color .15s ease;
+}
+.faq-more:hover { background: var(--lav); color: #fff; }
+
+/* One answer, on its own white sheet rather than straight on the page ground. */
+.faq-answer {
+  max-width: 52em;
+  padding: 34px 38px 30px;
+  margin-top: 4px;
+}
+@media (max-width: 700px) {
+  .faq-answer { padding: 24px 22px 20px; }
+  .faq-card { padding: 20px 20px 18px; }
+}
+.faq-crumb { font-size: 13.5px; color: var(--muted); margin: 0 0 14px; }
+.faq-crumb a { color: var(--lav); }
+.faq-crumb a:hover { color: var(--seal); }

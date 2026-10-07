@@ -2122,20 +2122,33 @@ export async function getCultureListing(filterKey = "all", page = 1, pageSize = 
 }
 
 /** One category and its published questions, in the order an editor set. */
+export interface PublicFaqItem {
+  slug: string;
+  question: string;
+  answerMarkdown: string;
+}
+
 export interface PublicFaqGroup {
   slug: string;
   name: string;
   summary: string;
-  items: { slug: string; question: string; answerMarkdown: string }[];
+  /** Every published question in the category. */
+  items: PublicFaqItem[];
+  /** How many there are, which the card shows even when the list is trimmed. */
+  total: number;
 }
 
 /**
- * The FAQ for /services/faq.
+ * The FAQ, grouped by category.
  *
  * Returns an empty list when migration 023 has not been applied, so the page
  * falls back to whatever the stored entry holds rather than erroring.
+ *
+ * `search` filters on the question text, which is what the index's search box
+ * submits. Matching on the answer as well would return cards whose visible
+ * question has nothing to do with the words typed.
  */
-export async function getPublicFaq(): Promise<PublicFaqGroup[]> {
+export async function getPublicFaq(search = ""): Promise<PublicFaqGroup[]> {
   const supabase = createSupabaseAdminClient();
   const { data: categories, error } = await supabase
     .from("cms_faq_categories")
@@ -2143,13 +2156,15 @@ export async function getPublicFaq(): Promise<PublicFaqGroup[]> {
     .order("sort_order", { ascending: true });
   if (error || !categories) return [];
 
-  const { data: rows } = await supabase
+  let query = supabase
     .from("cms_faqs")
     .select("slug, question, answer_markdown, category_id, position")
-    .eq("status", "published")
-    .order("position", { ascending: true });
+    .eq("status", "published");
+  const term = search.trim();
+  if (term) query = query.ilike("question", `%${term}%`);
+  const { data: rows } = await query.order("position", { ascending: true });
 
-  const byCategory = new Map<string, PublicFaqGroup["items"]>();
+  const byCategory = new Map<string, PublicFaqItem[]>();
   for (const row of rows ?? []) {
     const key = String(row.category_id ?? "");
     const bucket = byCategory.get(key) ?? [];
@@ -2162,11 +2177,50 @@ export async function getPublicFaq(): Promise<PublicFaqGroup[]> {
   }
 
   return categories
-    .map((category) => ({
-      slug: String(category.slug),
-      name: String(category.name),
-      summary: String(category.summary ?? ""),
-      items: byCategory.get(String(category.id)) ?? []
-    }))
+    .map((category) => {
+      const items = byCategory.get(String(category.id)) ?? [];
+      return {
+        slug: String(category.slug),
+        name: String(category.name),
+        summary: String(category.summary ?? ""),
+        items,
+        total: items.length
+      };
+    })
     .filter((group) => group.items.length > 0);
+}
+
+/** One question, with the category it sits in, for its own page. */
+export async function getPublicFaqItem(
+  slug: string
+): Promise<{ item: PublicFaqItem; category: { slug: string; name: string } } | null> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("cms_faqs")
+    .select("slug, question, answer_markdown, category_id")
+    .eq("slug", decodeURIComponent(slug))
+    .eq("status", "published")
+    .maybeSingle();
+  if (error || !data) return null;
+
+  const { data: category } = await supabase
+    .from("cms_faq_categories")
+    .select("slug, name")
+    .eq("id", data.category_id)
+    .maybeSingle();
+
+  return {
+    item: {
+      slug: String(data.slug),
+      question: String(data.question),
+      answerMarkdown: String(data.answer_markdown ?? "")
+    },
+    category: { slug: String(category?.slug ?? ""), name: String(category?.name ?? "未分类") }
+  };
+}
+
+/** Every question of one category, for its "了解更多" page. */
+export async function getPublicFaqCategory(slug: string): Promise<PublicFaqGroup | null> {
+  const groups = await getPublicFaq();
+  return groups.find((group) => group.slug === decodeURIComponent(slug)) ?? null;
 }
