@@ -12,7 +12,7 @@
  *   npx tsx scripts/import-videos.ts --apply
  */
 import { createClient } from "@supabase/supabase-js";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 for (const line of readFileSync(".env.local", "utf8").split("\n")) {
   const match = line.match(/^([A-Z_]+)=(.*)$/);
@@ -25,6 +25,38 @@ const supabase = createClient(
 );
 
 const IMPORT_GROUPS = new Set(["series", "tagged", "rescue"]);
+
+/**
+ * `--include-platform` also takes `orphan` entries whose player is on YouTube or
+ * Gan Jing World.
+ *
+ * Orphans are posts the allocator could not place confidently, and the first
+ * import left all 722 of them out. But one group inside them is unambiguous:
+ * if the post embeds a YouTube or 干净世界 player, it IS a video, and listing it
+ * costs nothing -- the file stays on the platform, we only store the address.
+ * Orphans whose only player is a bare .mp4 on someone else's server are still
+ * left out; those are links that rot.
+ */
+const INCLUDE_PLATFORM = process.argv.includes("--include-platform");
+
+/**
+ * Only the ones that still play.
+ *
+ * `scripts/verify-platform-videos.mjs` asks every address first and writes the
+ * allowlist here. Of the 191 platform orphans, 31 had been removed or had
+ * embedding turned off -- importing the list unchecked would have put 31 dead
+ * players into the library.
+ */
+const LIVE_LIST = "artifacts/phase5/platform-orphans-live.json";
+const liveIds = (() => {
+  if (!INCLUDE_PLATFORM) return null;
+  if (!existsSync(LIVE_LIST)) {
+    throw new Error(
+      `--include-platform 需要先跑 node --env-file=.env.local scripts/verify-platform-videos.mjs（缺 ${LIVE_LIST}）`
+    );
+  }
+  return new Set(JSON.parse(readFileSync(LIVE_LIST, "utf8")).live.map((row: { legacyId: number }) => row.legacyId));
+})();
 
 interface Allocation { group: string; category: string; slug: string; legacyId: number }
 interface Post {
@@ -91,7 +123,16 @@ async function main() {
   if (categoryError) throw categoryError;
   const categoryId = new Map((categories ?? []).map((row) => [row.name as string, row.id as string]));
 
-  const wanted = allocations.filter((entry) => IMPORT_GROUPS.has(entry.group));
+  const wanted = allocations.filter((entry) => {
+    if (IMPORT_GROUPS.has(entry.group)) return true;
+    if (!INCLUDE_PLATFORM || entry.group !== "orphan") return false;
+    return liveIds!.has(entry.legacyId);
+  });
+  if (INCLUDE_PLATFORM) {
+    const extra = wanted.filter((entry) => entry.group === "orphan").length;
+    console.log(`[videos] --include-platform：额外纳入 ${extra} 条 YouTube／干净世界 的 orphan`);
+  }
+
   const rows = wanted.flatMap((entry) => {
     const post = postBySlug.get(entry.slug);
     if (!post) return [];
@@ -149,10 +190,25 @@ async function main() {
   // ON CONFLICT clause -- so the lookup happens here instead.
   const { data: existingRows, error: existingError } = await supabase
     .from("cms_videos")
-    .select("id, legacy_id")
+    .select("id, legacy_id, source_url, backup_url")
     .not("legacy_id", "is", null);
   if (existingError) throw existingError;
   const existing = new Map((existingRows ?? []).map((row) => [Number(row.legacy_id), row.id as string]));
+  /**
+   * Addresses already stored win over anything recomputed here.
+   *
+   * `source_url` is derived from the old article body, which is a snapshot. The
+   * stored value is not: 185 videos were repointed at Gan Jing World, 18 at
+   * YouTube, and 19 are waiting to be uploaded. Re-running this import used to
+   * recompute all of them from the snapshot and wipe that work -- it blanked
+   * every one of those 222 addresses once. A row that already has an address
+   * keeps it; only an empty one gets filled.
+   */
+  const keptSource = new Map(
+    (existingRows ?? [])
+      .filter((row) => String(row.source_url ?? "").trim() !== "")
+      .map((row) => [Number(row.legacy_id), { source_url: row.source_url, backup_url: row.backup_url }])
+  );
 
   const toInsert = rows.filter((row) => !existing.has(row.record.legacy_id));
   const toUpdate = rows.filter((row) => existing.has(row.record.legacy_id));
@@ -163,13 +219,22 @@ async function main() {
     if (error) throw error;
     process.stderr.write(`[videos insert] ${Math.min(index + BATCH, toInsert.length)}/${toInsert.length}\n`);
   }
+  let keptCount = 0;
   for (const row of toUpdate) {
+    const kept = keptSource.get(row.record.legacy_id);
+    const payload = { ...row.record };
+    if (kept) {
+      payload.source_url = kept.source_url;
+      payload.backup_url = kept.backup_url;
+      if (kept.source_url !== row.record.source_url) keptCount += 1;
+    }
     const { error } = await supabase
       .from("cms_videos")
-      .update(row.record)
+      .update(payload)
       .eq("id", existing.get(row.record.legacy_id)!);
     if (error) throw error;
   }
+  if (keptCount > 0) process.stderr.write(`[videos] 保留了 ${keptCount} 条已存在的播放地址，未被重算覆盖\n`);
   if (toUpdate.length > 0) process.stderr.write(`[videos update] ${toUpdate.length}\n`);
 
   // Map the categories in a second pass: the ids only exist once the rows do.

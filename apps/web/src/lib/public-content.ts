@@ -79,6 +79,59 @@ function stripInlineMarkdown(value: string): string {
     .trim();
 }
 
+/**
+ * Keeps the inline markup the reader's renderer understands, and removes the
+ * rest.
+ *
+ * `MarkdownBody.renderInline` handles exactly three things: `[text](href)`,
+ * `**bold**` and `*em*`. Everything else that survives into a paragraph shows
+ * up as literal punctuation -- and the imported articles are full of it:
+ * backticks, underscores, stray HTML, and single asterisks used as a bullet
+ * (`*双面间谍，两面通吃` opens a section in 483 of them).
+ *
+ * So this is not "strip" versus "don't strip". The three supported spans are
+ * lifted out, the leftovers are cleaned exactly as before, and the spans go
+ * back in. Readers get working links and bold without a single stray symbol.
+ */
+function preserveSupportedInlineMarkdown(value: string): string {
+  const kept: string[] = [];
+  const stash = (match: string) => {
+    kept.push(match);
+    // \u0000 cannot appear in the source text, so the placeholder is safe.
+    return `\u0000${kept.length - 1}\u0000`;
+  };
+
+  const protectedText = value
+    // An inline image is not a span the paragraph renderer can draw; image
+    // lines are turned into `figure` rows earlier, so anything left here is
+    // mid-sentence and was dropped before this change too.
+    .replace(/!\[[^\]]*]\(([^)]+)\)/g, "")
+    .replace(/\[[^\]\n]+\]\([^)\s]+\)/g, stash)
+    .replace(/\*\*[^*\n]+\*\*/g, stash)
+    .replace(/\*[^*\n]+\*/g, stash);
+
+  const cleaned = protectedText
+    .replace(/[`*_~]/g, "")
+    .replace(/<[^>]+>/g, "")
+    .trim();
+
+  /*
+   * Unwrap repeatedly: a stashed span can contain another placeholder.
+   * `***[下载链接](…mp3)***` stashes the link, then the bold pattern matches the
+   * `**…**` around that placeholder and stashes it again. One pass restored the
+   * outer span and left the inner marker in the text, where it reached the
+   * reader as a NUL character.
+   */
+  let restored = cleaned;
+  for (let pass = 0; pass < kept.length + 1; pass += 1) {
+    const next = restored.replace(/\u0000(\d+)\u0000/g, (_, index) => kept[Number(index)] ?? "");
+    if (next === restored) break;
+    restored = next;
+  }
+  // Belt and braces: never let a marker reach the page, whatever the input.
+  return restored.replace(/\u0000/g, "");
+}
+
 function isLikelyStandaloneSubheading(lines: string[], index: number): boolean {
   const current = lines[index]?.trim() ?? "";
   if (!current) return false;
@@ -101,13 +154,9 @@ function isLikelyStandaloneSubheading(lines: string[], index: number): boolean {
 export const CULTURE_CATEGORY_NAMES = new Set(["传统文化文章", "诗词", "歌曲"]);
 
 /**
- * `keepInline` preserves `**bold**` and `[text](href)` inside paragraphs.
- *
- * Off by default, and deliberately so: the 15,515 imported articles carry
- * markdown of wildly varying quality, and flattening it is what keeps stray
- * asterisks and half-written links from reaching readers. Content written in
- * this CMS is typed by an editor in the markdown editor, so there it is signal
- * rather than noise.
+ * `keepInline` keeps `[text](href)`, `**bold**` and `*em*` inside paragraphs --
+ * the three spans the reader's renderer can draw -- and strips everything else,
+ * so uneven imported markdown still cannot leak stray punctuation.
  */
 export function markdownToBodyRows(
   markdown: string,
@@ -223,7 +272,9 @@ export function markdownToBodyRows(
     if (/^#{1,2}\s+/.test(line)) {
       flushParagraph();
       const raw = line.replace(/^#{1,2}\s+/, "");
-      const text = options.keepInline ? raw.trim() : stripInlineMarkdown(raw);
+      const text = options.keepInline
+        ? preserveSupportedInlineMarkdown(raw)
+        : stripInlineMarkdown(raw);
       if (text) rows.push({ type: "h2", text });
       continue;
     }
@@ -261,7 +312,9 @@ export function markdownToBodyRows(
      * "下载链接" with no way to hear or fetch anything.
      */
     const audioLinks = [...line.matchAll(/\[([^\]]*)]\((https?:\/\/[^)\s]+\.(?:mp3|m4a|wav|ogg))\)/gi)];
-    let cleaned = options.keepInline ? line.trim() : stripInlineMarkdown(line);
+    let cleaned = options.keepInline
+      ? preserveSupportedInlineMarkdown(line)
+      : stripInlineMarkdown(line);
     for (const match of audioLinks) {
       const label = match[1].trim();
       if (label) cleaned = cleaned.split(label).join("");
@@ -600,7 +653,11 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
 
     const markdownBody = asString(row.body_markdown);
     const plainBody = asString(row.body_plain);
-    const markdownRows = markdownToBodyRows(markdownBody);
+    // Links and bold now reach the reader. Until 2026-10-06 every paragraph was
+    // flattened, so the 1,382 articles that carry a link showed its label as
+    // dead words and the 5,185 that carry bold showed none -- and anything an
+    // editor wrote in the admin's markdown editor behaved the same way.
+    const markdownRows = markdownToBodyRows(markdownBody, { keepInline: true });
     const bodyRows =
       markdownRows.length > 0
         ? markdownRows

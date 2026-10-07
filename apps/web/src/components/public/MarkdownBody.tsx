@@ -10,7 +10,9 @@ import { ArticleAudio } from "@/components/public/ArticleAudio";
  * losing every one of the 2,456 links the migration had carefully preserved in
  * the body text.
  */
-export function renderInline(text: string): ReactNode[] {
+export function renderInline(text: string, depth = 0): ReactNode[] {
+  // Guard against a pathological nest; three levels is more than any real body.
+  if (depth > 3) return [text];
   const pattern = /\[([^\]]+)]\(([^)\s]+)[^)]*\)|\*\*([^*]+)\*\*|\*([^*]+)\*/g;
   const nodes: ReactNode[] = [];
   let last = 0;
@@ -30,9 +32,11 @@ export function renderInline(text: string): ReactNode[] {
         </a>
       );
     } else if (match[3]) {
-      nodes.push(<strong key={`${at}-b`}>{match[3]}</strong>);
+      // Recurse: emphasis often wraps a link rather than plain words, and
+      // without this the link inside printed as literal `[text](url)`.
+      nodes.push(<strong key={`${at}-b`}>{renderInline(match[3], depth + 1)}</strong>);
     } else if (match[4]) {
-      nodes.push(<em key={`${at}-i`}>{match[4]}</em>);
+      nodes.push(<em key={`${at}-i`}>{renderInline(match[4], depth + 1)}</em>);
     }
     last = at + match[0].length;
   }
