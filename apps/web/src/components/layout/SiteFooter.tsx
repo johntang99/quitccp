@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { EXTERNAL_LINK_PROPS, EXTERNAL_SERVICES } from "@/lib/external-services";
 import { SITE_LANGUAGES } from "@/lib/site-languages";
 
 export function SiteFooter() {
@@ -99,13 +98,10 @@ export function SiteFooter() {
         <div className="foot-bottom">
           <span>© 2005-2026 全球退党服务中心 · 501(c)(3) 非营利组织</span>
           <span>
-            <a href={EXTERNAL_SERVICES.termsOfService} {...EXTERNAL_LINK_PROPS}>
-              服务条款
-            </a>{" "}
-            ·{" "}
-            <a href={EXTERNAL_SERVICES.privacyPolicy} {...EXTERNAL_LINK_PROPS}>
-              隐私政策（官方）
-            </a>
+            {/* Both documents were imported from www.tuidang.org on 2026-10-07
+                and live in the CMS now; the old copies stop resolving when that
+                domain becomes this site. */}
+            <Link href="/legal/terms">服务条款</Link> · <Link href="/legal/privacy">隐私政策</Link>
           </span>
         </div>
       </div>

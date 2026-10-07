@@ -1,5 +1,5 @@
 import {
-  EXTERNAL_DOCS,
+  faqLink,
   EXTERNAL_LINK_PROPS,
   EXTERNAL_SERVICES,
   externalLinkProps
@@ -83,18 +83,18 @@ export function LongFormTemplate({ title, section, slug, content, faqGroups }: T
                       {
                         question: "什么是三退？",
                         answer: "三退指公开声明退出中共的党、团、队三个组织。",
-                        sourceHref: EXTERNAL_DOCS.whatIsTuidang
+                        sourceHref: faqLink("whatIsTuidang")
                       },
                       {
                         question: "三退声明要收费吗？",
                         answer: "三退声明完全免费，可以使用化名，无需注册。",
-                        sourceHref: EXTERNAL_DOCS.howToTuidang
+                        sourceHref: faqLink("howToTuidang")
                       },
                       {
                         question: "退党证明要收费吗？",
                         answer:
                           "退党证明与三退声明不同，办理需缴纳办理／管理费用，且为实名办理，需本人申请。具体收费标准与流程以办理页面说明为准。",
-                        sourceHref: EXTERNAL_DOCS.howToApplyCert
+                        sourceHref: faqLink("howToApplyCert")
                       }
                     ]
                 ).map((item) => (

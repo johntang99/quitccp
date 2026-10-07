@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Route } from "next";
 import {
-  EXTERNAL_DOCS,
   EXTERNAL_LINK_PROPS,
   EXTERNAL_SERVICES
 } from "@/lib/external-services";
@@ -28,13 +27,18 @@ const sectionConfig: Record<string, { label: string; baseHref: string; tabs: Sec
       { slug: "declare", label: "声明三退", externalHref: EXTERNAL_SERVICES.declare },
       { slug: "cert", label: "退党证书", externalHref: EXTERNAL_SERVICES.certApply },
       { slug: "verify", label: "查询验证", externalHref: EXTERNAL_SERVICES.certVerify },
-      { slug: "immigration", label: "移民相关政策", externalHref: EXTERNAL_DOCS.uscisAttitude },
+      // Our own page lists the policy documents; the tab used to jump straight
+      // to one of them on the old site, skipping the page entirely.
+      { slug: "immigration", label: "移民相关政策" },
       // No externalHref: the FAQ lives here now. All 45 answers were imported
       // from tuidang.org/faq/ on 2026-10-07, so sending readers to the old site
       // would send them to a copy that is about to stop being the master.
       { slug: "faq", label: "三退问答" },
-      { slug: "privacy", label: "安全与隐私", externalHref: EXTERNAL_DOCS.isTuidangSafe },
-      { slug: "contact", label: "信息变更", externalHref: EXTERNAL_SERVICES.contact }
+      { slug: "privacy", label: "安全与隐私" },
+      // Our own 信息变更与联系我们 page, which hands off to the subdomain's
+      // cert-modify form. The tab used to jump straight to the old site's
+      // contact form, skipping the page.
+      { slug: "contact", label: "信息变更" }
     ]
   },
   resources: {

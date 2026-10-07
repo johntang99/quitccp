@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  EXTERNAL_DOCS,
+  faqLink,
   EXTERNAL_LINK_PROPS,
   EXTERNAL_SERVICES,
   externalLinkProps
@@ -32,31 +32,28 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
     const linkByLabel: Record<string, string> = {
       "立即声明三退": EXTERNAL_SERVICES.declare,
       "立即声明": EXTERNAL_SERVICES.declare,
-      "什么是三退": EXTERNAL_DOCS.whatIsTuidang,
-      "为什么要三退": EXTERNAL_DOCS.whyTuidang,
-      "安全与隐私说明": EXTERNAL_DOCS.isTuidangSafe,
+      "什么是三退": faqLink("whatIsTuidang"),
+      "为什么要三退": faqLink("whyTuidang"),
+      "安全与隐私说明": "/services/privacy",
       "办理退党证明": EXTERNAL_SERVICES.certApply,
       "申请证明": EXTERNAL_SERVICES.certApply,
-      "与移民申请的关系": EXTERNAL_DOCS.mustProvideCert,
-      "证明与移民申请": EXTERNAL_DOCS.mustProvideCert,
-      "证明常见问题": EXTERNAL_DOCS.whatIsCert,
-      "信息变更与补办": EXTERNAL_SERVICES.contact,
+      "与移民申请的关系": faqLink("mustProvideCert"),
+      "证明与移民申请": faqLink("mustProvideCert"),
+      "证明常见问题": "/services/faq/c/tdzs",
+      "信息变更与补办": EXTERNAL_SERVICES.certModify,
       "输入编号查验": EXTERNAL_SERVICES.certVerify,
       "第三方查验入口": EXTERNAL_SERVICES.certVerify,
       "查验": EXTERNAL_SERVICES.certVerify,
       "证明样本与防伪说明": EXTERNAL_SERVICES.certHub,
       "给受理机构的说明": EXTERNAL_SERVICES.certVerify,
-      "联系我们核实": EXTERNAL_SERVICES.contact,
-      "提交变更申请": EXTERNAL_SERVICES.contact,
-      "联系服务点": EXTERNAL_SERVICES.contact
+      "联系我们核实": "/services/contact",
+      "提交变更申请": EXTERNAL_SERVICES.certModify,
+      "联系服务点": "/services/contact"
     };
     const linkByHref: Record<string, string> = {
       "/services/declare": EXTERNAL_SERVICES.declare,
       "/services/cert": EXTERNAL_SERVICES.certApply,
       "/services/verify": EXTERNAL_SERVICES.certVerify,
-      "/services/contact": EXTERNAL_SERVICES.contact,
-      "/services/privacy": EXTERNAL_DOCS.isTuidangSafe,
-      "/services/immigration": EXTERNAL_DOCS.mustProvideCert
     };
     const serviceLink = (label: string, href: string): string =>
       linkByLabel[label.trim()] ?? linkByHref[href.trim()] ?? href;

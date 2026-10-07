@@ -6,6 +6,15 @@ export type SiteSection =
   | "videos"
   | "resources";
 
+/**
+ * Every section a page can live in.
+ *
+ * Wider than `SiteSection`: "root" is the homepage, which has no section of its
+ * own, and "legal" holds the privacy policy and terms of service -- real pages
+ * with no slot in the site navigation.
+ */
+export type PageSection = SiteSection | "root" | "legal";
+
 export type TemplateKind =
   | "home"
   | "section-home"
@@ -13,7 +22,9 @@ export type TemplateKind =
   | "article"
   | "form"
   | "video-library"
-  | "long-form";
+  | "long-form"
+  /** A single Markdown document: the privacy policy and the terms of service. */
+  | "legal";
 
 export type ContentStatus = "draft" | "review" | "published" | "archived";
 

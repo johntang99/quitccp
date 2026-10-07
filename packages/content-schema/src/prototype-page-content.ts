@@ -1,10 +1,10 @@
 import { involveDefaults } from "./involve-content";
 import { servicesDefaults } from "./services-content";
 import { routeSeeds } from "./seed";
-import type { TemplateKind } from "./types";
+import type { PageSection, TemplateKind } from "./types";
 
 export interface PageContentContractSeed {
-  section: "root" | "about" | "services" | "involve" | "news" | "videos" | "resources";
+  section: PageSection;
   slug: string;
   title: string;
   template: TemplateKind;

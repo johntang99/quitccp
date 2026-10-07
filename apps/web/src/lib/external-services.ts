@@ -33,19 +33,32 @@ export const EXTERNAL_SERVICES = {
   /** 退党证明 verification, for the holder or a receiving institution. */
   certVerify: "https://service.tuidang.org/cert-verify/",
   certVerifyEn: "https://service.tuidang.org/cert-verify-en/",
-  /** Hub page describing the whole certificate service. */
-  certHub: "https://www.tuidang.org/cert/",
+  /** Correcting the details on an already-issued 退党证明. */
+  certModify: "https://service.tuidang.org/cert-modify/",
+  /** Certificates issued per month. */
+  certStats: "https://service.tuidang.org/certificate-monthly-stastics/",
+  /* Hub page describing the whole certificate service. Moved off
+     www.tuidang.org/cert/ on 2026-10-07: the service subdomain's own front page
+     is now that hub, and the www copy stops resolving at the cutover. Do not
+     link to service.tuidang.org/services/ -- it is titled 退党服务（old）. */
+  certHub: "https://service.tuidang.org/",
   /** Reports on certificates presented publicly at rallies. */
   certPublicAwards: "https://www.tuidang.org/category/gkbftdzm/",
 
+  /* The contact form still lives on the main domain, which becomes this site at
+     the cutover. Nothing on service.tuidang.org replaces it, so this is one of
+     the addresses 老网站管理员 still has to move. Prefer our own
+     /services/contact wherever a reader just needs to reach us. */
   contact: "https://www.tuidang.org/contact-us/",
   /* Moved to its own subdomain 2026-10-07, ahead of the main-domain cutover:
      the donation site stays on the old server while tuidang.org moves to the
      new site. Verified serving the donation page before the switch. */
   donation: "https://donation.tuidang.org",
   aboutUs: "https://www.tuidang.org/about-us/",
-  termsOfService: "https://www.tuidang.org/terms-of-service/",
-  privacyPolicy: "https://www.tuidang.org/privacy-policy/",
+  /* 服务条款 and 隐私政策 used to be listed here. Both were imported into the
+     CMS on 2026-10-07 and are served from /legal/terms and /legal/privacy --
+     they are our own pages now, not an outside service. The source addresses
+     are recorded in each page's `legacyUrl`. */
   faqHub: "https://www.tuidang.org/faq/",
   downloads: "https://www.tuidang.org/td_promo/",
   circumventionTools: "https://www.tuidang.org/2022/09/14/686434/",
@@ -116,4 +129,20 @@ export const EXTERNAL_LINK_PROPS = {
  */
 export function externalLinkProps(href: string) {
   return /^https?:\/\//i.test(href.trim()) ? EXTERNAL_LINK_PROPS : {};
+}
+
+/**
+ * The FAQ answers this site now holds, by the doc id the old site gave them.
+ *
+ * All 17 of the `EXTERNAL_DOCS` entries above were imported into `cms_faqs` on
+ * 2026-10-07, so a reader no longer has to leave for them. Links are written
+ * against the id rather than the question text: the slug IS the question, and
+ * an editor rewording one would otherwise break every link to it.
+ *
+ * `EXTERNAL_DOCS` itself is kept -- it is still the record of where each answer
+ * came from, and the import matches on these ids.
+ */
+export function faqLink(doc: keyof typeof EXTERNAL_DOCS): string {
+  const id = EXTERNAL_DOCS[doc].match(/\/docs\/(\d+)\//)?.[1];
+  return id ? `/services/faq/d/${id}` : "/services/faq";
 }

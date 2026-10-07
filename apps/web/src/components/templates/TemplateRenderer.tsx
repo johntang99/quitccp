@@ -6,6 +6,7 @@ import { ArticleTemplate } from "./ArticleTemplate";
 import { FormTemplate } from "./FormTemplate";
 import { VideoLibraryTemplate } from "./VideoLibraryTemplate";
 import { LongFormTemplate } from "./LongFormTemplate";
+import { LegalTemplate } from "./LegalTemplate";
 import { asRecord, asString } from "./content-utils";
 
 export function TemplateRenderer(page: TemplatePageData) {
@@ -27,6 +28,8 @@ export function TemplateRenderer(page: TemplatePageData) {
       return <VideoLibraryTemplate {...resolvedPage} />;
     case "long-form":
       return <LongFormTemplate {...resolvedPage} />;
+    case "legal":
+      return <LegalTemplate {...resolvedPage} />;
     default:
       return <LongFormTemplate {...resolvedPage} />;
   }

@@ -171,6 +171,12 @@ export function HeroVideo({
  *   largest thing on the page and the reader has said not to spend their data.
  * - a failed load falls back to the poster image, so a missing or blocked file
  *   leaves the hero looking finished instead of empty.
+ *
+ * It renders the `.hero-media` backdrop layer itself rather than being dropped
+ * into one, so that the speaker button can sit *outside* that layer. `.hero-media`
+ * is absolutely positioned with a z-index, which makes it a stacking context:
+ * a button inside it can never rise above `.hero-grid`, and the grid covers the
+ * whole hero, so every click on the button landed on the grid instead.
  */
 export function HeroBackgroundVideo({
   src,
@@ -208,24 +214,30 @@ export function HeroBackgroundVideo({
   }, [muted, play]);
 
   if (failed || !play) {
-    return poster ? <img src={poster} alt={alt} /> : null;
+    return poster ? (
+      <div className="hero-media">
+        <img src={poster} alt={alt} />
+      </div>
+    ) : null;
   }
 
   return (
     <>
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-      <video
-        ref={videoRef}
-        src={src}
-        poster={poster}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="metadata"
-        aria-label={alt}
-        onError={() => setFailed(true)}
-      />
+      <div className="hero-media">
+        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+        <video
+          ref={videoRef}
+          src={src}
+          poster={poster}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-label={alt}
+          onError={() => setFailed(true)}
+        />
+      </div>
       {hasAudio ? (
         <button
           type="button"

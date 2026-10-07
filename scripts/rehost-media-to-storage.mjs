@@ -59,7 +59,10 @@ const TARGETS = [
     chunkBy: "published_at"
   },
   { table: "cms_videos", columns: ["source_url", "cover_image", "body_markdown", "description"] },
-  { table: "cms_materials", columns: ["cover_image", "body_markdown", "summary"] }
+  { table: "cms_materials", columns: ["cover_image", "body_markdown", "summary"] },
+  // The FAQ was imported from the old site after this script first ran, so its
+  // answers still embed images from /wp-content/. Those die with the domain.
+  { table: "cms_faqs", columns: ["answer_markdown"] }
 ];
 
 /**

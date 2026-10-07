@@ -1917,7 +1917,10 @@ body:has(.hero--full-bleed) > header .search {
      corner it read as a corner ornament rather than a control -- the one thing
      on the hero a reader is meant to press was the easiest thing to miss. */
   bottom: 27%;
-  z-index: 2;
+  /* Above `.hero-grid`, which is also 2 and comes later in the DOM. The button
+     is now a sibling of the grid rather than buried in the backdrop layer, so
+     this is what decides whether a click reaches it. */
+  z-index: 3;
   width: 88px;
   height: 88px;
   display: grid;

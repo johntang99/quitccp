@@ -1,7 +1,12 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { PageFromRoute } from "@/components/PageFromRoute";
 import { FaqCategoryPage, FaqIndexPage, FaqItemPage } from "@/components/public/FaqPages";
-import { getPublicFaq, getPublicFaqCategory, getPublicFaqItem } from "@/lib/public-content";
+import {
+  getPublicFaq,
+  getPublicFaqCategory,
+  getPublicFaqItem,
+  getPublicFaqSlugByLegacyId
+} from "@/lib/public-content";
 
 export default async function ServicesPage({
   params,
@@ -29,6 +34,18 @@ export default async function ServicesPage({
       // stored page so the tab is never a dead end.
       if (groups.length > 0 || q) return <FaqIndexPage groups={groups} q={q} />;
       return <PageFromRoute section="services" slug="faq" />;
+    }
+
+    /*
+     * `/services/faq/d/<id>` -- a stable address keyed on the old doc id.
+     * Every FAQ link elsewhere on the site uses this form, so rewording a
+     * question (which rewrites its slug) cannot break them. It also gives the
+     * cutover a target for inbound /docs/<id>/ links from the old domain.
+     */
+    if (segments[1] === "d" && segments[2]) {
+      const slug = await getPublicFaqSlugByLegacyId(Number(segments[2]));
+      if (!slug) notFound();
+      redirect(`/services/faq/${encodeURIComponent(slug)}`);
     }
 
     if (segments[1] === "c" && segments[2]) {

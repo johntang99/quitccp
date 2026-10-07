@@ -126,7 +126,10 @@ const TARGETS = [
   // `source_url` is absent on purpose: those videos are moving to Gan Jing
   // World, so their address will be replaced rather than deleted.
   { table: "cms_videos", columns: ["body_markdown", "description"], clears: ["cover_image"] },
-  { table: "cms_materials", columns: ["body_markdown", "summary"], clears: ["cover_image"] }
+  { table: "cms_materials", columns: ["body_markdown", "summary"], clears: ["cover_image"] },
+  // The FAQ landed after this script first ran; a handful of its answers embed
+  // images the old server no longer serves.
+  { table: "cms_faqs", columns: ["answer_markdown"], clears: [] }
 ];
 
 async function readSlice(table, select, filter, narrow) {

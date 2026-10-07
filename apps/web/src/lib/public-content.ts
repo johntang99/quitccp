@@ -31,7 +31,8 @@ const templateKinds = new Set<TemplateKind>([
   "article",
   "form",
   "video-library",
-  "long-form"
+  "long-form",
+  "legal"
 ]);
 
 function asTemplateKind(value: unknown): TemplateKind {
@@ -2223,4 +2224,42 @@ export async function getPublicFaqItem(
 export async function getPublicFaqCategory(slug: string): Promise<PublicFaqGroup | null> {
   const groups = await getPublicFaq();
   return groups.find((group) => group.slug === decodeURIComponent(slug)) ?? null;
+}
+
+/**
+ * The current address of an imported answer, by the doc id its old URL used.
+ *
+ * Links across the site are written as `/services/faq/d/<id>` rather than as
+ * the question text, because the slug IS the question and an editor rewording
+ * it would break every link pointing at it. The id never changes.
+ */
+export async function getPublicFaqSlugByLegacyId(legacyId: number): Promise<string | null> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("cms_faqs")
+    .select("slug")
+    .eq("legacy_id", legacyId)
+    .eq("status", "published")
+    .maybeSingle();
+  if (error || !data) return null;
+  return String(data.slug);
+}
+
+/**
+ * The current address of an article, found by the post id the old site used.
+ *
+ * Page content links to articles as `/news/a/<id>` for the same reason the FAQ
+ * uses `/services/faq/d/<id>`: an article's slug is its Chinese title, so
+ * retitling one in the new admin would otherwise break every card and episode
+ * row pointing at it. See [[getPublicFaqSlugByLegacyId]].
+ */
+export async function getArticleSlugByLegacyId(legacyId: number): Promise<string | null> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("cms_articles")
+    .select("slug")
+    .eq("legacy_id", legacyId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return String(data.slug);
 }

@@ -1,7 +1,7 @@
-import type { PageDocument, TemplateKind } from "./types";
+import type { PageDocument, PageSection, TemplateKind } from "./types";
 
 interface RouteSeed {
-  section: "root" | "about" | "services" | "involve" | "news" | "videos" | "resources";
+  section: PageSection;
   slug: string;
   title: string;
   template: TemplateKind;
@@ -60,7 +60,11 @@ export const routeSeeds: RouteSeed[] = [
   { section: "resources", slug: "magazine-2025-spring", title: "《回归》2025 春季号", template: "long-form" },
   { section: "resources", slug: "magazine-2024-winter", title: "《回归》2024 冬季号", template: "long-form" },
   { section: "resources", slug: "magazine-2024-autumn", title: "《回归》2024 秋季号", template: "long-form" },
-  { section: "resources", slug: "magazine-archive", title: "《回归》历期归档", template: "long-form" }
+  { section: "resources", slug: "magazine-archive", title: "《回归》历期归档", template: "long-form" },
+  // The privacy policy and the terms of service, imported from the old site on
+  // 2026-10-07. Listed last: edited rarely, and only with approval.
+  { section: "legal", slug: "privacy", title: "隐私政策", template: "legal" },
+  { section: "legal", slug: "terms", title: "服务条款", template: "legal" }
 ];
 
 export const samplePage: PageDocument = {

@@ -387,22 +387,24 @@ export async function HomeTemplate({ content }: TemplatePageData) {
               rather than inventing a second mechanism. The split variants use
               `.hero-aside`, which is an ordinary grid column. */}
           {isCardOverlay && (hero.video.src || hero.image) ? (
-            <div className="hero-media">
-              {heroUsesVideo && hero.video.src ? (
-                <HeroBackgroundVideo
-                  src={hero.video.src}
-                  // The admin has its own 封面图 field; the hero photograph is
-                  // the fallback, so leaving that field blank still gives the
-                  // video a first frame and still gives the readers who never
-                  // get the video something to look at.
-                  poster={hero.video.poster || hero.image}
-                  alt={hero.imageAlt}
-                  hasAudio={hero.video.hasAudio}
-                />
-              ) : (
+            heroUsesVideo && hero.video.src ? (
+              // Renders its own `.hero-media` layer, because its speaker button
+              // has to sit outside that layer to be clickable at all.
+              <HeroBackgroundVideo
+                src={hero.video.src}
+                // The admin has its own 封面图 field; the hero photograph is
+                // the fallback, so leaving that field blank still gives the
+                // video a first frame and still gives the readers who never
+                // get the video something to look at.
+                poster={hero.video.poster || hero.image}
+                alt={hero.imageAlt}
+                hasAudio={hero.video.hasAudio}
+              />
+            ) : (
+              <div className="hero-media">
                 <img src={hero.image} alt={hero.imageAlt} />
-              )}
-            </div>
+              </div>
+            )
           ) : null}
           <div className="hero-scrim" />
           <div className="wrap hero-grid">

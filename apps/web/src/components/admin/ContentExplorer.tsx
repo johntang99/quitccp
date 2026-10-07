@@ -5,6 +5,7 @@ import { ABOUT_BLOCKS, ABOUT_SUBPAGE_BLOCKS, AboutSectionsEditor } from "./About
 import { INVOLVE_BLOCKS } from "./involve-blocks";
 import { SERVICES_BLOCKS } from "./services-blocks";
 import { RESOURCES_BLOCKS } from "./resources-blocks";
+import { LEGAL_BLOCKS } from "./legal-blocks";
 import { HomeSectionsEditor } from "@/components/admin/HomeSectionsEditor";
 import { BooksEditor } from "@/components/admin/BooksEditor";
 import { ImagePickerModal } from "@/components/admin/ImagePickerModal";
@@ -75,7 +76,8 @@ const BOOKS_PATH = "pages/resources-index.json";
  * it there would move the page off "/".
  */
 const SECTION_DISPLAY_NAMES: Record<string, string> = {
-  root: "home"
+  root: "home",
+  legal: "法律文件"
 };
 
 /**
@@ -92,7 +94,9 @@ const SECTION_GROUP_ORDER = [
   "news",
   "resources",
   "services",
-  "videos"
+  "videos",
+  // Last: the two legal documents are edited rarely and only with approval.
+  "legal"
 ];
 
 function sectionDisplayName(section: string): string {
@@ -970,7 +974,8 @@ const UNEDITABLE_PATHS = new Set([
       : ABOUT_SUBPAGE_BLOCKS[activePath] ??
         INVOLVE_BLOCKS[activePath] ??
         SERVICES_BLOCKS[activePath] ??
-        RESOURCES_BLOCKS[activePath];
+        RESOURCES_BLOCKS[activePath] ??
+        LEGAL_BLOCKS[activePath];
   const isBooksEditor = activePath === BOOKS_PATH;
   const isStructuredEditor =
     !blockEditorBlocks && !isHomeEditor && !isBooksEditor && structuredFields.length > 0;
@@ -979,7 +984,7 @@ const UNEDITABLE_PATHS = new Set([
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <section className="admin-card">
-        <h2 style={{ marginTop: 0 }}>页面内容管理（DrHuang 风格）</h2>
+        <h2 style={{ marginTop: 0 }}>页面内容管理</h2>
         <p>按文件管理原型页面内容，支持结构化字段编辑 + JSON 回退 + 修订回滚。</p>
         <div className="admin-toolbar">
           <label>
