@@ -544,9 +544,62 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
   const [aboutFormDrafts, setAboutFormDrafts] = useState<Record<string, string>>({});
   const [aboutFormErrors, setAboutFormErrors] = useState<Record<string, string>>({});
 
+/**
+ * Entries an editor must not be shown, because editing them changes nothing.
+ *
+ * Two separate reasons, both verified against the running site on 2026-10-07:
+ *
+ * 1. The page 404s. The seven old news menu slugs were replaced by the real
+ *    categories (`/news/announcements` -> `/news/announcement-claims`), and the
+ *    eleven book and magazine detail pages have a seed but no route.
+ *
+ * 2. The page renders, but never reads this entry. `/news` is built entirely by
+ *    `getNewsHome()` from the database, and `/videos` plus every video category
+ *    by `getVideoHome()` / `getVideoCategory()`. The article and film lists are
+ *    supposed to come from the database -- that is the design -- so the stored
+ *    `items`, `frontLead`, `briefItems` and the rest are leftovers that no
+ *    template reads.
+ *
+ * Hiding them is not a loss of capability: none of these controls has ever had
+ * an effect. The data stays in the table, so nothing is destroyed, and anything
+ * removed from this list reappears immediately.
+ */
+const UNEDITABLE_PATHS = new Set([
+  // 1. route 404s
+  "pages/news-announcements.json",
+  "pages/news-investigations.json",
+  "pages/news-commentary.json",
+  "pages/news-stories.json",
+  "pages/news-solidarity.json",
+  "pages/news-notable.json",
+  "pages/news-article.json",
+  "pages/resources-book-gongchanzhuyi-zhongji.json",
+  "pages/resources-book-jieti-dangwenhua.json",
+  "pages/resources-book-mogui-shijie.json",
+  "pages/resources-magazine-archive.json",
+  "pages/resources-magazine-2024-autumn.json",
+  "pages/resources-magazine-2024-winter.json",
+  "pages/resources-magazine-2025-spring.json",
+  "pages/resources-magazine-2025-summer.json",
+  "pages/resources-magazine-2025-autumn.json",
+  "pages/resources-magazine-2025-winter.json",
+  "pages/resources-magazine-2026-spring.json",
+  // 2. page renders, but is driven by the database instead of this entry
+  "pages/news-index.json",
+  "pages/videos-index.json",
+  "pages/videos-jiuping.json",
+  "pages/videos-frontline.json",
+  "pages/videos-ironclad.json",
+  "pages/videos-awakening.json",
+  "pages/videos-others.json",
+  "pages/videos-party-culture.json",
+  "pages/videos-step-back.json"
+]);
+
   const groupedFiles = useMemo(() => {
     const groups = new Map<string, ContentFileItem[]>();
     for (const file of files) {
+      if (UNEDITABLE_PATHS.has(file.path)) continue;
       const key = file.section || "shared";
       const bucket = groups.get(key) ?? [];
       bucket.push(file);

@@ -1977,15 +1977,26 @@ body:has(.hero--full-bleed) > header .search {
   align-items: start;
   min-height: 0;
   padding: calc(var(--hero-photo-h) * 0.6) 0 64px;
+  /* The card is anchored near the screen's left edge, not the site column's.
+     `.wrap` normally centres this row inside the 1200px column, which pushed
+     the card 120px inwards on a 1440px screen and put it over the middle of the
+     photograph. Releasing the max-width lets `justify-items: start` place it at
+     the left, and the padding below keeps a margin so it does not sit flush
+     against the glass. Phones keep the centred column -- see the 900px block. */
+  max-width: none;
+  /* Scales with the screen: the site gutter on a laptop, a little more room on
+     a wide monitor, so the card never looks stuck to the edge. */
+  padding-left: clamp(var(--gutter), 3.5vw, 64px);
 }
 
 .hero--full-bleed .hero-copy {
-  /* Wide enough that the Chinese headline breaks on a phrase rather than
-     mid-compound; narrow enough that the photograph still reads.
-     42em, not 38: a 书名号 title is held together by NoWrapTitles, and at 38em
-     an unbreakable 7-glyph term could not share a line with anything else, so
-     the headline fell into three ragged 7-glyph lines using half the card. */
-  max-width:42em;
+  /* 40% of the site column. Expressed against `--wrap` rather than as a fixed
+     em measure so it tracks the theme's own width: the card was 42em (672px),
+     56% of the 1200px column, and covered more of the photograph than the
+     photograph had left over. */
+  width: calc(var(--wrap) * 0.4);
+  /* Never wider than the screen; the phone rules below restore the gutters. */
+  max-width: 100%;
   /* Genuinely see-through: the photograph should still be legible behind the
      card, not merely tint it.
      A heavy blur was the real culprit before -- at 16px the photo dissolved
@@ -1993,7 +2004,7 @@ body:has(.hero--full-bleed) > header .search {
      8px keeps recognisable shapes. The opacity then drops to 0.74, which the
      text can afford only because it is darkened to --ink below: measured over a
      near-black photo that is ~8.5:1, well clear of WCAG AA. */
-  background: rgba(255, 255, 255, .74);
+  background: rgba(255, 255, 255, .55);
   -webkit-backdrop-filter: blur(8px) saturate(1.1);
   backdrop-filter: blur(8px) saturate(1.1);
   border: 1px solid rgba(255, 255, 255, .55);
@@ -2015,16 +2026,28 @@ body:has(.hero--full-bleed) > header .search {
    by size, weight and letter-spacing instead of by colour. */
 .hero--full-bleed .hero-copy .eyebrow,
 .hero--full-bleed .hero-copy .eyebrow--onink {
-  /* The secondary (gold) role, in its dark variant. The brand gold #D6AC4E
-     measures 1.95:1 against this card and would be close to unreadable; the
-     dark gold is the same role at 4.6:1, just clear of AA for 13px text.
+  /* The secondary (gold) role, darkened for this surface only.
+     Measured off the rendered card, not calculated: sampling the background
+     pixels behind this line gives rgb(184,219,205) at its darkest. The brand
+     gold #D6AC4E sits at 1.3:1 there and `--gold-ink` at 2.4:1 -- both far under
+     the 4.5:1 that 13px text needs, and `--gold-ink` was already under before
+     the card was made more transparent. At the card's 0.55 opacity the darkest
+     background measures rgb(173,172,173); #533D0F is the lightest tone of this
+     hue that clears 4.5:1 against it (4.54:1). It reads as dark bronze rather
+     than gold -- the cost of a card this see-through.
      No opacity here on purpose -- fading it would put the contrast back under. */
-  color: var(--gold-ink);
+  color: #533D0F;
 }
 .hero--full-bleed .hero-copy h1 {
   color: var(--ink);
   text-shadow: none;
-  font-size: clamp(28px, 3.2vw, 40px);
+  /* Sized against the card, which is now 40% of the column rather than 56%.
+     At the old 40px a ten-glyph Chinese headline measured 404px against 402px
+     of usable width, so it broke after five characters and each line filled
+     half the card -- the headline looked half-width. At 36px the same headline
+     measures 364px and runs as one line across ~90% of the card. A longer one
+     still wraps, which is fine: it wraps at full width rather than at half. */
+  font-size: clamp(28px, 2.6vw, 36px);
 }
 .hero--full-bleed .hero-copy p { color: var(--ink); }
 
@@ -2052,7 +2075,24 @@ body:has(.hero--full-bleed) > header .search {
   .hero--full-bleed .hero-grid {
     padding: calc(var(--hero-photo-h) * 0.72) 0 40px;
   }
-  .hero--full-bleed .hero-copy { padding: 26px 24px 24px; }
+  /* On a phone the card is the page -- pinning it to the screen edge at full
+     width would leave text against the glass. It keeps the site gutters and the
+     centred column it had before. */
+  .hero--full-bleed .hero-grid {
+    max-width: var(--wrap);
+    /* The phone card spans the column; the desktop inset would only narrow it. */
+    padding-left: 0;
+  }
+  /* The phone card is full width, so the headline keeps its original size. */
+  .hero--full-bleed .hero-copy h1 { font-size: clamp(28px, 3.2vw, 40px); }
+  .hero--full-bleed .hero-copy {
+    /* Exactly what it was before the desktop card was narrowed: the item fills
+       its track up to 42em, so a phone is unchanged and a tablet still gets the
+       wider card it had. */
+    width: auto;
+    max-width: 42em;
+    padding: 26px 24px 24px;
+  }
 }
 
 /* 实时登记册 */
