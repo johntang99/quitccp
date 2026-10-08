@@ -53,7 +53,18 @@ export function renderInline(text: string, depth = 0): ReactNode[] {
  * Body photographs, links and bold runs printed as literal markdown source --
  * `![caption](https://…jpg)` as a line of text where the photograph should be.
  */
-export function MarkdownBody({ rows }: { rows: ArticleBodyRow[] }) {
+export function MarkdownBody({
+  rows,
+  headingIds = false
+}: {
+  rows: ArticleBodyRow[];
+  /**
+   * Give each heading an `id` so a contents list can link to it. Off by
+   * default: ids on every article heading would be dead weight, and the video
+   * page is the only place that builds a list from them.
+   */
+  headingIds?: boolean;
+}) {
   return (
     <>
       {rows.map((row, index) => {
@@ -109,8 +120,19 @@ export function MarkdownBody({ rows }: { rows: ArticleBodyRow[] }) {
 
         if (!row.text) return null;
         const inline = renderInline(row.text);
-        if (row.type === "h2") return <h2 key={`h2-${index}`}>{inline}</h2>;
-        if (row.type === "h3") return <h3 key={`h3-${index}`}>{inline}</h3>;
+        const id = headingIds ? `sec-${index}` : undefined;
+        if (row.type === "h2")
+          return (
+            <h2 key={`h2-${index}`} id={id}>
+              {inline}
+            </h2>
+          );
+        if (row.type === "h3")
+          return (
+            <h3 key={`h3-${index}`} id={id}>
+              {inline}
+            </h3>
+          );
         if (row.type === "blockquote") return <blockquote key={`q-${index}`}>{inline}</blockquote>;
         return <p key={`p-${index}`}>{inline}</p>;
       })}

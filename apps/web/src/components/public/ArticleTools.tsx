@@ -2,20 +2,16 @@
 
 import { useState } from "react";
 
-interface ArticleToolsProps {
-  /** Anchor id of the reuse-terms panel, so 转载说明 has somewhere to go. */
-  reuseAnchor: string;
-}
-
 /**
  * The row of actions under an article.
  *
  * These were four `href="#"` links: clicking any of them jumped to the top of
  * the page and did nothing else. Each one now does what its label says, and the
- * one we cannot honour -- 下载 PDF, for which nothing in the codebase generates
- * a PDF -- is not shown rather than shown broken.
+ * ones we cannot honour are not shown rather than shown broken -- 下载 PDF,
+ * for which nothing in the codebase generates a PDF, and 转载说明, which only
+ * scrolled to the 转载条款 panel already visible in the sidebar beside it.
  */
-export function ArticleTools({ reuseAnchor }: ArticleToolsProps) {
+export function ArticleTools() {
   const [copied, setCopied] = useState(false);
 
   const copyLink = async () => {
@@ -48,9 +44,6 @@ export function ArticleTools({ reuseAnchor }: ArticleToolsProps) {
       <button type="button" className="pill" onClick={copyLink}>
         {copied ? "已复制 ✓" : "复制链接"}
       </button>
-      <a className="pill" href={`#${reuseAnchor}`}>
-        转载说明
-      </a>
       <button type="button" className="pill" onClick={() => window.print()}>
         打印
       </button>

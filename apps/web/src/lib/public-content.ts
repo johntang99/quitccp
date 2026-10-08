@@ -699,9 +699,9 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
     // The article's own primary category, which nothing here used to consult.
     // Without it every article fell through to the template's default and the
     // whole site claimed to be 国际声援行动.
-    const primaryCategory = await primaryCategoryName(String(row.id));
+    const category = await primaryCategory(String(row.id));
     const articleTag =
-      primaryCategory || asString(listMapped?.tag, asString(fallbackContent.tag, "新闻与报告"));
+      category.name || asString(listMapped?.tag, asString(fallbackContent.tag, "新闻与报告"));
     // Date the article by when it was published, not when we last wrote the row.
     // The import touched all 15,514 rows at once, so updated_at would have put
     // today's date on a piece from 2011.
@@ -713,7 +713,6 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
       : bodyRows;
     const resolvedByline = [
       toDateLabel(articleDate),
-      articleTag || "新闻与报告",
       asString(row.author) || "本站资料库",
       `约 ${plainBody.length.toLocaleString("zh-CN")} 字`
     ];
@@ -761,7 +760,19 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
           ...(CULTURE_CATEGORY_NAMES.has(articleTag)
             ? { sectionLabel: "中华传统文化", sectionHref: "/resources/culture" }
             : { sectionLabel: "新闻与报告", sectionHref: "/news" }),
-          current: articleTag
+          current: articleTag,
+          /*
+           * The last crumb was dead text. It names the one listing a reader is
+           * most likely to want next -- everything else in this category.
+           *
+           * Only the eight categories in NEWS_CATEGORIES have a listing page;
+           * 资料下载, 待归类 and the culture categories exist in the database but
+           * `/news/<slug>` 404s for them, so those stay plain text rather than
+           * becoming a link to nothing.
+           */
+          currentHref: NEWS_CATEGORIES.some((row) => row.slug === category.slug)
+            ? `/news/${category.slug}`
+            : ""
         },
         heroFigure: heroImage
           ? {
@@ -804,6 +815,10 @@ export interface PublicVideoRecord {
   publishedAt: string | null;
   durationSeconds: number | null;
   category: string;
+  /** Slug of the same category, for the breadcrumb and the 继续观看 band. */
+  categorySlug: string;
+  /** Other films in the same category, newest first, this one excluded. */
+  siblings: PublicVideoCard[];
 }
 
 /**
@@ -840,13 +855,19 @@ export async function getRenderableVideo(slug: string): Promise<PublicVideoRecor
 
     const { data: mapRows } = await supabase
       .from("cms_video_category_map")
-      .select("position, cms_video_categories(name)")
+      .select("position, cms_video_categories(name, slug)")
       .eq("video_id", row.id as string)
       .order("position", { ascending: true });
-    const category =
+    const categoryRow =
       (mapRows ?? [])
-        .map((row) => (row as { cms_video_categories?: { name?: string } }).cms_video_categories?.name)
-        .find(Boolean) ?? "";
+        .map((entry) => (entry as { cms_video_categories?: { name?: string; slug?: string } }).cms_video_categories)
+        .find((entry) => entry?.name) ?? null;
+    const category = categoryRow?.name ? String(categoryRow.name) : "";
+    const categorySlug = categoryRow?.slug ? String(categoryRow.slug) : "";
+
+    // What to watch next. A video whose text runs to 73 characters needs this
+    // more than one that runs to 20,000, and it is the same query either way.
+    const siblings = categorySlug ? await videoSiblings(categorySlug, String(row.slug)) : [];
 
     return {
       slug: String(row.slug),
@@ -862,10 +883,60 @@ export async function getRenderableVideo(slug: string): Promise<PublicVideoRecor
       sourceCredit: String(row.source_credit ?? ""),
       publishedAt: row.published_at ? String(row.published_at) : null,
       durationSeconds: row.duration_seconds ? Number(row.duration_seconds) : null,
-      category: String(category)
+      category,
+      categorySlug,
+      siblings
     };
   } catch {
     return null;
+  }
+}
+
+/**
+ * Up to seven other films in a category, newest first.
+ *
+ * Seven is what the page spends them on: three in the rail beside the text and
+ * four in the band that closes the page.
+ */
+async function videoSiblings(categorySlug: string, excludeSlug: string): Promise<PublicVideoCard[]> {
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data: cat } = await supabase
+      .from("cms_video_categories")
+      .select("id")
+      .eq("slug", categorySlug)
+      .maybeSingle();
+    if (!cat) return [];
+    const { data: ids } = await supabase
+      .from("cms_video_category_map")
+      .select("video_id")
+      .eq("category_id", String(cat.id))
+      .limit(60);
+    const videoIds = (ids ?? []).map((row) => String((row as { video_id: unknown }).video_id));
+    if (videoIds.length === 0) return [];
+    const { data: rows } = await supabase
+      .from("cms_videos")
+      .select("slug, title, episode, description, cover_image, duration_seconds, published_at, source_url")
+      .in("id", videoIds)
+      .eq("status", "published")
+      .neq("slug", excludeSlug)
+      .order("published_at", { ascending: false })
+      .limit(7);
+    return (rows ?? []).map((row) => {
+      const r = row as Record<string, unknown>;
+      return {
+        slug: String(r.slug),
+        title: String(r.title),
+        episode: String(r.episode ?? ""),
+        description: String(r.description ?? ""),
+        coverImage: String(r.cover_image ?? ""),
+        durationSeconds: r.duration_seconds ? Number(r.duration_seconds) : null,
+        publishedAt: r.published_at ? String(r.published_at) : null,
+        sourceUrl: String(r.source_url ?? "")
+      };
+    });
+  } catch {
+    return [];
   }
 }
 
@@ -875,21 +946,21 @@ export async function getRenderableVideo(slug: string): Promise<PublicVideoRecor
  * category map, which is what the admin shows and what migration 011 exists to
  * make deterministic.
  */
-async function primaryCategoryName(articleId: string): Promise<string> {
+async function primaryCategory(articleId: string): Promise<{ name: string; slug: string }> {
   try {
     const supabase = createSupabaseAdminClient();
     const { data } = await supabase
       .from("cms_article_category_map")
-      .select("position, cms_article_categories(name)")
+      .select("position, cms_article_categories(name, slug)")
       .eq("article_id", articleId)
       .order("position", { ascending: true })
       .limit(1);
-    const name = (data ?? [])
-      .map((row) => (row as { cms_article_categories?: { name?: string } }).cms_article_categories?.name)
-      .find(Boolean);
-    return name ? String(name) : "";
+    const row = (data ?? [])
+      .map((entry) => (entry as { cms_article_categories?: { name?: string; slug?: string } }).cms_article_categories)
+      .find((entry) => entry?.name);
+    return { name: row?.name ? String(row.name) : "", slug: row?.slug ? String(row.slug) : "" };
   } catch {
-    return "";
+    return { name: "", slug: "" };
   }
 }
 

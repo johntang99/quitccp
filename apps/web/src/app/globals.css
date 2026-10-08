@@ -1664,6 +1664,22 @@ mark {
   border-color: var(--seal);
 }
 
+/* Destructive actions. The class was already in use by the video list's delete
+   button but had never been defined, so the one control that needed to look
+   different looked like every other button. */
+.admin-btn-danger {
+  color: #b42318;
+  border-color: #e4b6b1;
+}
+.admin-btn-danger:hover { background: #fdf3f2; border-color: #b42318; }
+.admin-btn-danger[type="submit"]:not(.admin-btn-sm) {
+  background: #b42318;
+  color: #fff;
+  border-color: #b42318;
+}
+.admin-btn-danger[type="submit"]:not(.admin-btn-sm):hover { background: #8f1c13; border-color: #8f1c13; }
+.admin-btn-danger:disabled { opacity: .6; cursor: default; }
+
 .admin-login-wrap {
   max-width: 380px;
   margin: 80px auto;
@@ -4561,3 +4577,322 @@ body:has(.hero--full-bleed) > header .search {
 .faq-crumb { font-size: 13.5px; color: var(--muted); margin: 0 0 14px; }
 .faq-crumb a { color: var(--lav); }
 .faq-crumb a:hover { color: var(--seal); }
+
+/* ---------- article page ---------- */
+/*
+ * One white sheet, from directly under the menu bar to the end of the piece.
+ *
+ * The reading column used to be capped at 72ch by `.cols--narrow`, which is a
+ * sensible measure for paragraphs but applied to the headline as well -- a
+ * 23-character Chinese title broke mid-phrase at 40px with half the row empty
+ * beside it. The column is wide here and the measure is put back on the
+ * paragraphs themselves, where it belongs, so the headline, the standfirst and
+ * the lead image each use the full width of the sheet.
+ */
+.article-page { padding: 0 0 88px; }
+
+.article-cols { grid-template-columns: minmax(0, 1fr) 280px; align-items: start; }
+
+.article-surface {
+  background: #fff;
+  padding: 44px 52px 56px;
+  border-radius: 0 0 4px 4px;
+  /* Two layers: a hairline that holds the edge against the page colour, and a
+     soft drop that lifts the sheet without looking like a UI card. */
+  box-shadow: 0 0 0 1px rgba(32, 24, 66, 0.05), 0 18px 44px -28px rgba(32, 24, 66, 0.3);
+}
+
+.article-title {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: clamp(30px, 3.6vw, 44px);
+  line-height: 1.32;
+  letter-spacing: .01em;
+  margin: 14px 0 22px;
+  /*
+   * These headlines are several phrases separated by spaces -- 「伸冤无门 访民自
+   * 绝非解决之道 勇士吁：举杯欢庆三退」. Chinese permits a line break between any
+   * two Han characters, so the browser was splitting 「解决／之道」 mid-word.
+   * `keep-all` holds each run of Han together and breaks at the spaces the
+   * editor already put in, which are the real phrase boundaries; `break-word`
+   * is the escape hatch for a single phrase longer than the line.
+   */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-wrap: balance;
+}
+
+/*
+ * The body keeps a reading measure; everything above it does not.
+ *
+ * The measure is centred rather than anchored left. Capping the paragraphs
+ * inside a wider sheet left all the slack on one side, so the text read as
+ * though it had slipped off-centre; the whole column is narrower than the
+ * headline and the lead image by design, and it should sit under the middle
+ * of them. Set on the column, not on each paragraph, so headings, quotes,
+ * figures and tables keep the same left edge as the text.
+ */
+.article-surface .prose {
+  max-width: var(--measure-body);
+  margin-inline: auto;
+}
+.article-surface .prose p { max-width: none; }
+.article-surface .article-tools { max-width: var(--measure-body); margin-inline: auto; }
+
+.article-page .side { top: calc(var(--menubar-h, 55px) + 44px); }
+
+@media (max-width: 900px) {
+  .article-surface { padding: 32px 24px 40px; border-radius: 0; }
+  .article-title { max-width: none; }
+}
+@media (max-width: 600px) {
+  .article-surface { padding: 26px 18px 34px; }
+}
+
+/* ---------- video page ---------- */
+/*
+ * One film: a dark screening band, then the text on the page's own ground.
+ *
+ * `--vstage` is the measure the band is built on. The player used to fill the
+ * whole 1200px wrap, which on a wide screen is larger than YouTube ever shows a
+ * 16:9 film; 90% brings it back to a size that fits a laptop screen without
+ * scrolling. The headline shares the same width, so the two line up.
+ */
+.vstage {
+  --vstage: 90%;
+  background: var(--grad-band);
+  color: var(--paper);
+  padding: 24px 0 0;
+}
+
+.vcrumb {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--lav);
+  margin: 0 0 22px;
+}
+.vcrumb a:hover { color: var(--paper); }
+.vcrumb span { opacity: .5; }
+
+/* Everything in the band shares the player's width. */
+.vstage-in { width: var(--vstage); margin-inline: auto; }
+
+.vseries {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: .12em;
+  color: var(--gold-lt);
+  margin: 0;
+}
+.vep {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  border: 1px solid rgba(240, 212, 140, .45);
+  border-radius: 2px;
+  padding: 2px 7px;
+}
+
+.vtitle {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: clamp(25px, 2.9vw, 38px);
+  line-height: 1.34;
+  letter-spacing: .01em;
+  margin: 13px 0 0;
+  /* These titles are space-separated phrases; hold each phrase together rather
+     than letting the break land inside a word. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-wrap: balance;
+}
+
+.vplayer {
+  margin: 22px 0 0;
+  aspect-ratio: 16 / 9;
+  background: #0d0a1e;
+  border-radius: 3px 3px 0 0;
+  overflow: hidden;
+  box-shadow: 0 -1px 0 rgba(240, 212, 140, .3), 0 26px 60px -34px rgba(0, 0, 0, .9);
+}
+.vplayer iframe,
+.vplayer video,
+.vplayer img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+  object-fit: cover;
+}
+
+.vmeta {
+  display: flex;
+  align-items: center;
+  gap: 10px 20px;
+  flex-wrap: wrap;
+  padding: 13px 0 24px;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--lav);
+}
+.vmeta b { color: var(--paper); font-weight: 500; }
+.vnum { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.vhost {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 2px;
+  padding: 3px 9px;
+}
+.vhost i { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+.vghost {
+  margin-left: auto;
+  border: 1px solid rgba(255, 255, 255, .28);
+  border-radius: 2px;
+  padding: 6px 13px;
+  color: var(--paper);
+}
+.vghost:hover { border-color: var(--gold); color: var(--gold-lt); }
+
+/*
+ * Same arrangement as an article: the text sits on a white sheet, the page's
+ * own ground (--paper, 杏色, from the theme) shows around it, and the rail
+ * stays outside the sheet on that ground.
+ */
+.vgrid {
+  width: var(--vstage, 90%);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 266px;
+  gap: 48px;
+  align-items: start;
+  padding: 0 0 72px;
+}
+.vgrid--solo { grid-template-columns: minmax(0, 1fr); }
+
+.vsheet {
+  min-width: 0;
+  background: var(--card);
+  padding: 40px 48px 48px;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 0 0 1px rgba(32, 24, 66, .05), 0 18px 44px -30px rgba(32, 24, 66, .32);
+}
+.vlede {
+  font-size: 17.5px;
+  line-height: var(--lh-body);
+  color: var(--ink-soft);
+  margin: 0 auto 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--rule);
+  max-width: var(--measure-body);
+}
+.vprose { max-width: var(--measure-body); margin-inline: auto; }
+.vprose p { max-width: none; }
+.vprose h2, .vprose h3 { scroll-margin-top: calc(var(--menubar-h, 55px) + 24px); }
+.vcredit {
+  max-width: var(--measure-body);
+  margin: 34px auto 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.vrail { position: sticky; top: calc(var(--menubar-h, 55px) + 24px); display: grid; gap: 22px; padding-top: 40px; }
+.vbox {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 17px 19px;
+}
+.vbox h2 {
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: .1em;
+  color: var(--muted);
+  margin: 0 0 13px;
+}
+.vtoc { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.vtoc a {
+  display: block;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  padding: 6px 0 6px 12px;
+  border-left: 2px solid var(--rule);
+}
+.vtoc a:hover { color: var(--seal); border-left-color: var(--seal); }
+.vtoc-rest { font-family: var(--sans); font-size: 12px; color: var(--muted); margin: 10px 0 0; padding-left: 12px; }
+
+.vmini { display: grid; gap: 3px; }
+.vmini a { display: grid; grid-template-columns: 74px 1fr; gap: 11px; align-items: start; padding: 7px; border-radius: 2px; }
+.vmini a:hover { background: var(--paper); }
+.vmini img, .vmini-gap { width: 74px; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 2px; background: var(--rule); display: block; }
+.vmini b { display: block; font-weight: 400; font-size: 13.5px; line-height: 1.5; }
+.vmini a:hover b { color: var(--seal); }
+.vmini em { display: block; font-style: normal; font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+
+.vmore { border-top: 1px solid var(--rule); padding: 52px 0 80px; }
+.vmore .wrap > * { width: var(--vstage, 90%); margin-inline: auto; }
+.vmore-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 22px; margin-bottom: 26px; }
+.vmore-head h2 { font-family: var(--serif); font-weight: 700; font-size: clamp(21px, 2.2vw, 27px); margin: 5px 0 0; }
+.vmore-link { font-family: var(--sans); font-size: 13px; letter-spacing: .06em; color: var(--seal); white-space: nowrap; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+.vmore-link:hover { border-bottom-color: var(--seal); }
+
+.vcards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.vcard { display: flex; flex-direction: column; min-width: 0; }
+.vthumb { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 3px; background: var(--pl-deep); }
+.vthumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
+.vcard:hover .vthumb img { transform: scale(1.04); }
+.vmark {
+  position: absolute;
+  left: 9px;
+  bottom: 9px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(26, 22, 56, .72);
+  border: 1px solid rgba(255, 255, 255, .4);
+}
+.vmark svg { width: 10px; height: 10px; fill: #fff; margin-left: 2px; }
+.vtag { font-family: var(--sans); font-size: 11.5px; letter-spacing: .08em; color: var(--gold-ink); margin-top: 12px; }
+.vcard h3 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 15.5px;
+  line-height: 1.55;
+  margin: 5px 0 0;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+.vcard:hover h3 { color: var(--seal); }
+.vfoot { font-size: 12px; color: var(--muted); margin-top: 7px; }
+
+@media (max-width: 1040px) {
+  .vstage { --vstage: 100%; }
+  .vgrid { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .vrail { position: static; padding-top: 0; }
+  .vsheet { padding: 30px 22px 36px; border-radius: 0; }
+  .vcards { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .vcards { grid-template-columns: 1fr; }
+  .vghost { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vthumb img { transition: none; }
+}

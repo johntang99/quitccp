@@ -15,11 +15,15 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
   // own title was shorter than six characters -- 「历史的丰碑」 and 「愿人人安度」
   // were among them. An article shows its own title, or nothing.
   const dek = asString(payload.dek);
-  const rawByline = asStringArray(payload.byline, []);
-  const bylineRows =
-    rawByline.length === 4 && !rawByline.some((row) => row.includes("阅读约"))
-      ? rawByline
-      : ["2026-07-22", "华盛顿", "本站报导", "约 1,400 字"];
+  /*
+   * Whatever the page supplies, with nothing invented to fill it out. This used
+   * to fall back to a fixed four-part line -- a date, 华盛顿, 本站报导 and a word
+   * count -- whenever the shape did not match, which printed a dateline the
+   * article never had. An article states what is known about it, or nothing.
+   */
+  const bylineRows = asStringArray(payload.byline, []).filter(
+    (row) => row.trim() && !row.includes("阅读约")
+  );
   const bodyRows = asObjectArray(payload.body);
   const isVerse = payload.verse === true;
   const shouldUseFallbackBody = bodyRows.length === 0;
@@ -81,6 +85,8 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
       }));
   const displayTitle = title;
   const breadcrumb = asRecord(payload.breadcrumb);
+  const currentLabel = asString(breadcrumb.current, asString(payload.tag, "新闻与报告"));
+  const currentHref = asString(breadcrumb.currentHref);
   // Not a real category name. This default shows whenever the payload carries
   // no tag, so naming an actual section here mislabels every such article --
   // which is exactly what happened.
@@ -95,7 +101,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
   // Only pills a page actually supplies with a destination. The default four
   // were all href="#" -- 复制链接, 下载 PDF, 转载说明 and 打印 each jumped to the
   // top of the page and did nothing. The working three are rendered by
-  // <ArticleTools>; 下载 PDF is gone because nothing here makes a PDF.
+  // <ArticleTools>; 下载 PDF and 转载说明 are gone -- see that component.
   const actionPills = asObjectArray(payload.actionPills)
     .map((row) => ({ label: asString(row.label), href: asString(row.href) }))
     .filter((row) => row.label && row.href && row.href !== "#");
@@ -130,9 +136,11 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
 
   return (
     <>
-      <section className="sec" style={{ padding: "44px 0 88px" }}>
-        <div className="wrap cols cols--narrow">
-          <article>
+      {/* No top padding: the white reading surface begins directly under the
+          menu bar rather than after a band of page colour. */}
+      <section className="sec article-page">
+        <div className="wrap cols article-cols">
+          <article className="article-surface">
             <p className="crumb" style={{ color: "var(--muted)" }}>
               <a href={asString(breadcrumb.homeHref, "/")} style={{ color: "var(--muted)" }}>
                 {asString(breadcrumb.homeLabel, "首页")}
@@ -142,18 +150,25 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
                 {asString(breadcrumb.sectionLabel, "新闻与报告")}
               </a>
               <span>/</span>
-              {asString(breadcrumb.current, articleTag)}
+              {currentHref ? (
+                <a href={currentHref} style={{ color: "var(--muted)" }}>
+                  {currentLabel}
+                </a>
+              ) : (
+                currentLabel
+              )}
             </p>
-            <span className="tag">{articleTag}</span>
-            <h1 style={{ fontFamily: "var(--serif)", fontWeight: 700, fontSize: "clamp(28px,3.4vw,40px)", lineHeight: 1.45, margin: "12px 0 20px", letterSpacing: ".01em" }}>
-              {displayTitle}
-            </h1>
+            {/* No eyebrow tag here. It printed the category a second time,
+                one line under the breadcrumb that now links to it. */}
+            <h1 className="article-title">{displayTitle}</h1>
             {dek ? <p className="dek">{dek}</p> : null}
-            <div className="byline">
-              {bylineRows.map((row) => (
-                <span key={row}>{row}</span>
-              ))}
-            </div>
+            {bylineRows.length > 0 ? (
+              <div className="byline">
+                {bylineRows.map((row) => (
+                  <span key={row}>{row}</span>
+                ))}
+              </div>
+            ) : null}
             {heroFigureImage ? (
               <figure style={{ margin: "0 0 34px" }}>
                 <img
@@ -283,8 +298,12 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
                 </figure>
               ) : null}
             </div>
-            <div style={{ marginTop: 44, paddingTop: 26, borderTop: "1px solid var(--rule)", display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <ArticleTools reuseAnchor="article-reuse" />
+            {/* Aligned with the text column, not the sheet: this row closes the
+                article, so it belongs to the body rather than to the page. The
+                related-report grid below is a separate block and keeps the
+                sheet's full width. */}
+            <div className="article-tools" style={{ marginTop: 44, paddingTop: 26, borderTop: "1px solid var(--rule)", display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <ArticleTools />
               {actionPills.map((action) => (
                 <a key={action.label} className="pill" href={action.href}>
                   {action.label}

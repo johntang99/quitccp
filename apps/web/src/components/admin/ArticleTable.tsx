@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { actorLabel, listAdminDisplayNames } from "@/lib/admin/user-admin-repository";
 import type { ArticleRecord } from "@/lib/admin/types";
+import { ArticleDeleteButton } from "./ArticleDeleteButton";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   published: { label: "已发布", cls: "b-pub" },
@@ -144,6 +145,7 @@ export async function ArticleTable({
                   >
                     预览
                   </a>
+                  <ArticleDeleteButton id={row.id} title={row.title} />
                 </td>
               </tr>
             );
