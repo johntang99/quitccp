@@ -127,7 +127,7 @@ export interface HomeContent {
      * for readers behind the GFW, where a blocked embed would otherwise stall
      * the homepage.
      */
-    video: { src: string; poster: string; caption: string; hasAudio: boolean };
+    video: { src: string; poster: string; caption: string; hasAudio: boolean; soundOn: boolean };
   };
   registry: HomeSectionMeta & {
     eyebrow: string;
@@ -343,7 +343,10 @@ export const homeContentDefaults: HomeContent = {
       poster: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.23-P.png",
       caption: "",
       // The speaker button only appears when the file actually has a soundtrack.
-      hasAudio: false
+      hasAudio: false,
+      // Whether to reach for sound on arrival. Off: the backdrop stays silent
+      // until a visitor asks for it.
+      soundOn: false
     }
   },
   registry: {

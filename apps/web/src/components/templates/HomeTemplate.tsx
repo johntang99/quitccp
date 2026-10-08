@@ -399,6 +399,7 @@ export async function HomeTemplate({ content }: TemplatePageData) {
                 poster={hero.video.poster || hero.image}
                 alt={hero.imageAlt}
                 hasAudio={hero.video.hasAudio}
+                soundOn={hero.video.soundOn}
               />
             ) : (
               <div className="hero-media">

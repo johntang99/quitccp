@@ -167,7 +167,8 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
         caption: asString(heroVideo.caption, d.hero.video.caption),
         // Off unless the file really carries sound: a speaker button that
         // unmutes silence makes the site look broken.
-        hasAudio: asBool(heroVideo.hasAudio, false)
+        hasAudio: asBool(heroVideo.hasAudio, false),
+        soundOn: asBool(heroVideo.soundOn, false)
       }
     },
     registry: {

@@ -224,12 +224,31 @@ console.log("\n=== 上传 ===");
 const urls = {};
 for (const [label, file] of [["1920", final], ["1280", small]]) {
   const key = `home/${stamp}-hero-${tag}-${label}.mp4`;
+  const bytes = fs.readFileSync(file);
   const { error: upErr } = await supabase.storage
     .from(BUCKET)
-    .upload(key, fs.readFileSync(file), { contentType: "video/mp4", upsert: true });
+    .upload(key, bytes, { contentType: "video/mp4", upsert: true });
   if (upErr) throw upErr;
-  urls[label] = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${key}`;
-  console.log(`  ${label}: ${urls[label]}`);
+  const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${key}`;
+  urls[label] = url;
+
+  /*
+   * Storage holds the bytes; `cms_media_assets` is the index 图片视频库 reads.
+   * An earlier run wrote only the file, so four uploads sat in the bucket and
+   * the library showed none of them -- a file the editors cannot see is a file
+   * they cannot use.
+   */
+  const { error: rowErr } = await supabase.from("cms_media_assets").insert({
+    asset_type: "video",
+    name: `hero-${tag}-${label}.mp4`,
+    storage_path: url,
+    mime_type: "video/mp4",
+    byte_size: bytes.length,
+    metadata: { uploadedBy: "scripts/build-hero-video.mjs", builtAt: new Date().toISOString() }
+  });
+  if (rowErr) throw rowErr;
+  console.log(`  ${label}: ${url}`);
 }
+console.log("  已登记到图片视频库");
 fs.writeFileSync(path.join(OUT_DIR, `uploaded-${tag}.json`), JSON.stringify(urls, null, 2));
 console.log("\n  首页还在放原来那条 13 秒的，没有动。");

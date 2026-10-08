@@ -178,17 +178,28 @@ export function HeroVideo({
  * a button inside it can never rise above `.hero-grid`, and the grid covers the
  * whole hero, so every click on the button landed on the grid instead.
  */
+/** Where a visitor's own choice is remembered, so it outlives the visit. */
+const SOUND_CHOICE_KEY = "quitccp.heroSound";
+
 export function HeroBackgroundVideo({
   src,
   poster,
   alt,
-  hasAudio
+  hasAudio,
+  soundOn
 }: {
   src: string;
   poster: string;
   alt: string;
   /** Only then is the speaker button worth showing. */
   hasAudio: boolean;
+  /**
+   * The centre's preference for how the backdrop should arrive.
+   *
+   * It is a preference and not an instruction, because no site can decide this
+   * on its own -- see the unmuting effect below.
+   */
+  soundOn: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
@@ -196,6 +207,8 @@ export function HeroBackgroundVideo({
   // the effect decides whether this reader should get motion at all.
   const [play, setPlay] = useState(false);
   const [failed, setFailed] = useState(false);
+  /** True once a visitor has worked the button; their choice then outranks the setting. */
+  const chosen = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -205,6 +218,72 @@ export function HeroBackgroundVideo({
     setPlay(true);
   }, []);
 
+  /*
+   * Reaching for sound on arrival.
+   *
+   * No browser lets a page start making noise by itself, and none of them make
+   * an exception for a backdrop: `play()` on an unmuted video is simply
+   * rejected. So 「打开首页时就出声」 cannot be obeyed literally, and this does
+   * the two things that are actually possible.
+   *
+   * First it tries, because the rule is not absolute: a browser does allow it
+   * once the visitor has built up enough history with the site (Chrome's media
+   * engagement index), and on a return visit that often succeeds. If the
+   * attempt is rejected the video goes straight back to muted and keeps
+   * playing -- a silent backdrop, never a stalled one.
+   *
+   * When it is refused, the first real click or key anywhere on the page is a
+   * gesture the browser accepts, so sound is switched on then. That listener is
+   * dropped the moment it fires, or if the visitor touches the speaker button
+   * first: a setting must never overrule a person who has just said no.
+   */
+  useEffect(() => {
+    if (!play || !hasAudio) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    let remembered: string | null = null;
+    try {
+      remembered = window.localStorage.getItem(SOUND_CHOICE_KEY);
+    } catch {
+      /* private window, or site data blocked -- fall through to the setting */
+    }
+    // A visitor who has chosen before gets what they chose, either way.
+    if (remembered === "off") return;
+    if (remembered !== "on" && !soundOn) return;
+
+    let cancelled = false;
+    const unmute = () => {
+      if (cancelled || chosen.current) return;
+      video.muted = false;
+      void video.play().then(
+        () => {
+          if (!cancelled && !chosen.current) setMuted(false);
+        },
+        () => {
+          // Refused. Silent and running beats correct and frozen.
+          video.muted = true;
+          void video.play().catch(() => {});
+        }
+      );
+    };
+
+    unmute();
+
+    const onGesture = () => {
+      window.removeEventListener("pointerdown", onGesture);
+      window.removeEventListener("keydown", onGesture);
+      unmute();
+    };
+    window.addEventListener("pointerdown", onGesture);
+    window.addEventListener("keydown", onGesture);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("pointerdown", onGesture);
+      window.removeEventListener("keydown", onGesture);
+    };
+  }, [play, hasAudio, soundOn]);
+
   // Driven from state rather than set once on the element: the muted attribute
   // and the property can disagree after hydration, and the property is the one
   // the browser actually plays by.
@@ -212,6 +291,18 @@ export function HeroBackgroundVideo({
     const video = videoRef.current;
     if (video) video.muted = muted;
   }, [muted, play]);
+
+  /** The visitor's own call: applied, remembered, and final. */
+  const toggleSound = () => {
+    chosen.current = true;
+    const next = !muted;
+    setMuted(next);
+    try {
+      window.localStorage.setItem(SOUND_CHOICE_KEY, next ? "off" : "on");
+    } catch {
+      /* not being able to remember it is no reason not to honour it now */
+    }
+  };
 
   if (failed || !play) {
     return poster ? (
@@ -242,7 +333,7 @@ export function HeroBackgroundVideo({
         <button
           type="button"
           className="hero-sound"
-          onClick={() => setMuted((on) => !on)}
+          onClick={toggleSound}
           aria-pressed={!muted}
           aria-label={muted ? "打开声音" : "关闭声音"}
           title={muted ? "打开声音" : "关闭声音"}

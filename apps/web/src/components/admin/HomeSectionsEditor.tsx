@@ -619,6 +619,26 @@ export function HomeSectionsEditor({
             </span>
           </label>
         ) : null}
+        {/* Only meaningful once the file is known to have sound. */}
+        {backdrop && hasSrc && !needsFile && video.hasAudio ? (
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 8, lineHeight: 1.7 }}>
+            <input
+              type="checkbox"
+              checked={Boolean(video.soundOn)}
+              onChange={(event) => updateField([sectionKey, "video", "soundOn"], event.target.checked)}
+              style={{ marginTop: 4 }}
+            />
+            <span>
+              打开首页时就出声
+              <span style={{ display: "block", color: "#777", fontSize: 12, marginTop: 2 }}>
+                浏览器一律禁止网页自己发出声音，所以这是「尽量」而不是「一定」：
+                常来的访客，浏览器会放行，一进来就有声；第一次来的，通常会被拦下，
+                这时首页保持静音照常播放，等访客在页面上点一下或按一下键，声音才接上。
+                访客自己按喇叭关掉或打开，<strong>以访客为准</strong>，并且会被记住，下次再来还是他选的那样。
+              </span>
+            </span>
+          </label>
+        ) : null}
         <p style={{ margin: 0, color: "#777", fontSize: 12, lineHeight: 1.7 }}>
           {backdrop
             ? "自动播放：开页即静音循环播放，访客可点右下角喇叭开声音。每位访客都会下载这个文件，建议 10–15 秒、1280px 宽、3MB 以内。开启「减少动态效果」或流量节省的访客只看到封面图。"
