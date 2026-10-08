@@ -169,17 +169,25 @@ function imagesIn(html: string): string[] {
 }
 
 /**
- * Site furniture, found by frequency rather than by a hardcoded list: an image
- * on nearly every post is the sidebar's, not this board's. That keeps working
- * when the sidebar changes.
+ * Site furniture, found by frequency rather than by a hardcoded list, so it
+ * keeps working when the sidebar changes.
+ *
+ * Any image on more than one post. The threshold used to be `posts - 1` -- on
+ * nearly every post -- which let the related-posts widget's thumbnail through:
+ * it appeared on 13 of the 16 cached posts, under a threshold of 15, and was
+ * imported into 13 materials as their last 高清图片.
+ *
+ * Two is right because the counts across the cache are cleanly split with
+ * nothing in between: the sidebar images sit on all 16 posts, that widget's
+ * thumbnail on 13, and every one of the 46 genuine board images on exactly one.
+ * A board belongs to its own post; an image on two posts is page decoration.
  */
 function chromeImages(all: Map<string, string[]>): Set<string> {
   const seen = new Map<string, number>();
   for (const images of all.values()) {
     for (const url of new Set(images)) seen.set(url, (seen.get(url) ?? 0) + 1);
   }
-  const threshold = Math.max(2, all.size - 1);
-  return new Set(Array.from(seen.entries()).filter(([, n]) => n >= threshold).map(([url]) => url));
+  return new Set(Array.from(seen.entries()).filter(([, n]) => n >= 2).map(([url]) => url));
 }
 
 function extensionOf(url: string, contentType: string): string {
