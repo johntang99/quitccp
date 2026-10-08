@@ -2652,6 +2652,9 @@ body:has(.hero--full-bleed) > header .search {
   --bs-ink: var(--ink-band);
   --bs-muted: var(--ink-dim);
   --bs-body: var(--ink-mid);
+  /* The lead's dek, darkened from --bs-body to carry 16px sans on the cream
+     at the same contrast the video section's dek has on plum. */
+  --bs-dek: #39353f;
   --bs-gold: #B8913A;
   --bs-rule: var(--cream-rule);
   --bs-rule-soft: var(--rule);
@@ -2743,14 +2746,26 @@ body:has(.hero--full-bleed) > header .search {
 }
 .bsheet-lead p {
   margin: 0;
-  font-family: var(--serif);
-  font-size: 18px;
-  /* A dek runs three or four lines, so newspaper columns split it into two
-     stubs that the eye has to jump between for no gain in density. One column,
-     set tighter than the 1.9 body rhythm, reads as a single block under the
-     headline. */
+  /*
+   * Set to match the dek in the video section below: same sans face, same
+   * 16px, same rhythm. The two leads sit one above the other down the page, and
+   * reading as one voice is worth more here than the serif's print flavour --
+   * which at 18px was also the heavier of the two for no reason.
+   *
+   * The colour cannot be shared -- that one is pale lavender on deep plum -- so
+   * it is matched on contrast instead: #D6D0F2 on #231A52 is 10.6:1, and this
+   * is 10.5:1 on the cream. Same legibility, opposite ground.
+   */
+  font-size: 16px;
   line-height:var(--lh-body);
-  color: var(--bs-body);
+  color: var(--bs-dek);
+  /* Four lines, then an ellipsis: a lead summary that runs seven pushes the
+     最新发布 column out of alignment with it. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
 }
 .bsheet-lead:hover h3 { color: var(--seal); }
 
@@ -3100,7 +3115,20 @@ body:has(.hero--full-bleed) > header .search {
   line-height:var(--lh-h3);
   color: var(--sc-text);
 }
-.screening-copy p { margin: 0; font-size: 16px; line-height:var(--lh-body); color: var(--sc-soft); }
+.screening-copy p {
+  margin: 0;
+  font-size: 16px;
+  line-height:var(--lh-body);
+  color: var(--sc-soft);
+  /* Six lines. These summaries are the opening of the film's transcript and
+     run to 300 characters -- twelve lines, which pushed the pills and both
+     buttons below the player beside them. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  line-clamp: 6;
+  overflow: hidden;
+}
 .screening-pills { display: flex; gap: 8px; flex-wrap: wrap; }
 .screening-pills span {
   font-size: 13px;

@@ -1548,14 +1548,14 @@ export async function getHomeNews(channelNames: string[]): Promise<HomeNewsLive>
     const flaggedRows = (flagged ?? []) as unknown as Record<string, unknown>[];
     const leadIsFlagged = flaggedRows.length > 0;
 
-    // One row more than needed, so dropping the lead still leaves three.
-    const { data: recent } = await baseQuery().limit(5);
+    // One row more than needed, so dropping the lead still leaves four.
+    const { data: recent } = await baseQuery().limit(6);
     const recentRows = (recent ?? []) as unknown as Record<string, unknown>[];
 
     const leadRow = leadIsFlagged ? flaggedRows[0] : recentRows[0];
     if (!leadRow) return empty;
     const leadSlug = String(leadRow.slug);
-    const itemRows = recentRows.filter((row) => String(row.slug) !== leadSlug).slice(0, 3);
+    const itemRows = recentRows.filter((row) => String(row.slug) !== leadSlug).slice(0, 4);
 
     const names = await primaryCategoryNames(
       [leadRow, ...itemRows].map((row) => String(row.slug))
