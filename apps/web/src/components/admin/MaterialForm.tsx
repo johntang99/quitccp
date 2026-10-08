@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { MarkdownEditor, type MarkdownEditorHandle } from "./MarkdownEditor";
 import { formatBytes, uploadFile } from "@/lib/admin/upload-client";
@@ -70,6 +70,57 @@ export function MaterialForm({ initial, categories, mode }: MaterialFormProps) {
   const [body, setBody] = useState(initial.bodyMarkdown);
   const editor = useRef<MarkdownEditorHandle>(null);
 
+  /*
+   * The slug follows the title, the same way the article editor does it.
+   *
+   * It stops following the moment the editor types in the slug box, and never
+   * follows at all when editing an existing material: a slug is the public URL,
+   * and fixing a typo in a title must not silently break every link to it.
+   */
+  const [title, setTitle] = useState(initial.title);
+  const [slug, setSlug] = useState(initial.slug);
+  const [slugTouched, setSlugTouched] = useState(mode === "edit");
+  const [datePrefix, setDatePrefix] = useState(true);
+
+  useEffect(() => {
+    try {
+      // Shares the article editor's setting -- one preference, not two.
+      setDatePrefix(window.localStorage.getItem("quitccp.slugDatePrefix") !== "0");
+    } catch {
+      // Private browsing refuses storage; the default stands.
+    }
+  }, []);
+
+  /*
+   * The slug is the download page's URL, so it drops the characters that do not
+   * belong in one -- quotes, brackets, 、？！ and the full-width punctuation the
+   * titles are full of -- and lowercases the rest. Nothing is invented: not one
+   * of the site's existing slugs contains a capital letter.
+   *
+   * Chinese is left as it is. Romanising it would need a pinyin dictionary
+   * shipped to the browser, and the slug stays editable for anyone who wants
+   * the pinyin form the older material slugs use.
+   */
+  const buildSlug = (value: string) => {
+    const base = value
+      .trim()
+      .toLowerCase()
+      .replace(/[\s\u3000]+/g, "-")
+      .replace(/[^0-9a-z\u3400-\u4dbf\u4e00-\u9fff-]+/g, "")
+      .replace(/-{2,}/g, "-")
+      .replace(/^-+|-+$/g, "");
+    if (!base || !datePrefix) return base;
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${base}`;
+  };
+
+  useEffect(() => {
+    if (slugTouched) return;
+    setSlug(buildSlug(title));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, datePrefix, slugTouched]);
+
   const updateFile = (index: number, patch: Partial<MaterialFileValue>) =>
     setFiles((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
 
@@ -84,7 +135,8 @@ export function MaterialForm({ initial, categories, mode }: MaterialFormProps) {
     try {
       const result = await uploadFile(file, {
         // Grouped by material, so a slug's files stay together in the bucket.
-        folder: `materials/${initial.slug || "unfiled"}`,
+        // The slug as it stands now, not as it was when the form opened.
+        folder: `materials/${slug || "unfiled"}`,
         onProgress: (percent) => setProgress((rows) => ({ ...rows, [index]: percent }))
       });
       updateFile(index, {
@@ -117,11 +169,33 @@ export function MaterialForm({ initial, categories, mode }: MaterialFormProps) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         <label style={{ display: "grid", gap: 4 }}>
           标题（Title）
-          <input className="admin-input" name="title" defaultValue={initial.title} required />
+          <input
+            className="admin-input"
+            name="title"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            required
+          />
         </label>
         <label style={{ display: "grid", gap: 4 }}>
           网址代号（Slug）
-          <input className="admin-input" name="slug" defaultValue={initial.slug} required />
+          <input
+            className="admin-input"
+            name="slug"
+            value={slug}
+            onChange={(event) => {
+              setSlugTouched(true);
+              setSlug(event.target.value);
+            }}
+            required
+          />
+          <span style={{ fontSize: 12, color: "#888" }}>
+            {mode === "edit"
+              ? "改它会改变公开网址，原链接会失效。"
+              : slugTouched
+                ? "已手动修改，不再跟随标题。"
+                : "跟随标题自动生成，你也可以自己改。"}
+          </span>
         </label>
       </div>
 
