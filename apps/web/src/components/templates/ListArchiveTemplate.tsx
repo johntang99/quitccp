@@ -147,7 +147,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
             : resolveResourceHref(
                 asString(row.href, "#"),
                 asString(row.label).includes("影片")
-                  ? "/videos/others"
+                  ? "/videos/party-culture"
                   : asString(row.label).includes("杂志")
                     ? "/resources/magazine"
                     : "/resources"
@@ -155,7 +155,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
         }))
       : [
           { label: "《解体党文化》", href: "/resources/book-jieti-dangwenhua" },
-          { label: "文化专题影片", href: "/videos/others" },
+          { label: "文化专题影片", href: "/videos/party-culture" },
           { label: "杂志《回归》", href: "/resources/magazine" }
         ];
     return (

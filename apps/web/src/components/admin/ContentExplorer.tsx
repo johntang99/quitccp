@@ -595,7 +595,6 @@ const UNEDITABLE_PATHS = new Set([
   "pages/videos-frontline.json",
   "pages/videos-ironclad.json",
   "pages/videos-awakening.json",
-  "pages/videos-others.json",
   "pages/videos-party-culture.json",
   "pages/videos-step-back.json"
 ]);

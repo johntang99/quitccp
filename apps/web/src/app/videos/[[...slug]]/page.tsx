@@ -23,7 +23,6 @@ const VIDEO_PAGES = new Set(["index"]);
 const FRONTLINE = "frontline";
 const JIUPING = "jiuping";
 const PARTY_CULTURE = "party-culture";
-const OTHERS = "others";
 /** The design's two-panel rows, in order. */
 const DUO = ["ironclad", "awakening"];
 const PAIRS = ["hope-road", "step-back"];
@@ -88,7 +87,6 @@ export default async function VideosPage({
       <PanelDuo shelves={pick(DUO)} />
       {find(PARTY_CULTURE) ? <EpisodeRow shelf={find(PARTY_CULTURE)!} note="解析党文化如何进入语言、教育与日常生活" /> : null}
       <PanelPairs shelves={pick(PAIRS)} />
-      {find(OTHERS) ? <CardRow shelf={find(OTHERS)!} note="专题访谈、现场纪录与更多节目" /> : null}
 
       <div className="vp-shell" style={{ paddingTop: 72, paddingBottom: 96 }}>
         <div

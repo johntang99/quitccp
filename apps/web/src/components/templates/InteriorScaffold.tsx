@@ -46,6 +46,7 @@ const sectionConfig: Record<string, { label: string; baseHref: string; tabs: Sec
     baseHref: "/resources",
     tabs: [
       { slug: "index", label: "书籍与文集" },
+      /* 资源馆's own page, unrelated to the video category of the same slug. */
       { slug: "culture", label: "中华传统文化" },
       { slug: "downloads", label: "资料下载" },
       { slug: "tools", label: "免翻墙链接" },
@@ -101,7 +102,12 @@ const sectionConfig: Record<string, { label: string; baseHref: string; tabs: Sec
       { slug: "jiuping", label: "九评系列" },
       { slug: "ironclad", label: "铁证如山" },
       { slug: "awakening", label: "觉醒之旅" },
-      { slug: "others", label: "其它系列" }
+      // 希望的路 was missing here even though it has 101 films and its own page.
+      { slug: "hope-road", label: "希望的路" },
+      /* Hardcoded labels: renaming a category in the admin does not reach them.
+         文化艺术 was renamed from 中华传统文化 there and this had to follow. The
+         video homepage reads the names from the database and needed no change. */
+      { slug: "culture", label: "文化艺术" }
     ]
   }
 };

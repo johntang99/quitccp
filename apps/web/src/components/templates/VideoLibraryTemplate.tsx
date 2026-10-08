@@ -120,10 +120,10 @@ export function VideoLibraryTemplate({ title, section, slug, content }: Template
     filtersRaw.length > 0
       ? filtersRaw.map((row, index) => ({
           label: asString(row.label, asString(row.title, `筛选 ${index + 1}`)),
-          href: asString(row.href, "/videos/others"),
+          href: asString(row.href, "/videos"),
           active: asString(row.active) === "true" || (!("active" in row) && index === 0)
         }))
-      : asStringArray(payload.filters, []).map((label, index) => ({ label, href: "/videos/others", active: index === 0 }));
+      : asStringArray(payload.filters, []).map((label, index) => ({ label, href: "/videos", active: index === 0 }));
 
   const moreButtonLabel = asString(payload.moreButtonLabel);
   const moreButtonHref = asString(payload.moreButtonHref, "#");
