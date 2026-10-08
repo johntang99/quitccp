@@ -65,3 +65,15 @@ Put it here, in this folder, and add a row above. Two conventions worth keeping:
 
 Other documentation lives in [`docs/prototypes/`](../prototypes/) — the HTML
 mockups the templates were built from, plus 设计说明书 and 文件清单.
+
+## 本地 431（请求头过大）
+
+`localhost` 的 cookie 不区分端口 —— 这台机器上每一个跑在 localhost 的项目，
+它的 cookie 都会跟着发到 :4020。Supabase 的登录 token 一个就 2.7KB，几个项目
+叠起来就超过 Node 默认的 16KB 请求头上限，dev server 直接回 431，看起来像
+服务器挂了，其实请求根本没进到页面代码。
+
+`apps/web` 的 `dev` 脚本因此带上 `--max-http-header-size=65536`。只影响本地：
+线上 cookie 绑在真实域名上，不会互相叠加。
+
+临时解法：在浏览器里清掉 localhost 的 cookie。
