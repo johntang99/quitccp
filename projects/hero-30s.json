@@ -1,0 +1,74 @@
+{
+  "_": [
+    "首页片头，30 秒。改这个文件就是剪片——不用动代码。",
+    "fps 写 \"source\" 就跟着素材走，不重采样——这几条素材都是 29.97，",
+    "强行按 25 出片等于每秒丢掉五帧，游行一摇镜就抖。",
+    "source 可以写：本地路径、.mp4 直链、.m3u8，或者干净世界的嵌入地址（会自动解析）。",
+    "from/to 是在那条来源里的秒数。note 只是写给人看的，不影响出片。",
+    "怎么找秒数：",
+    "  node scripts/video-studio.mjs --scan <来源>        先看总览图，挑个大概",
+    "  node scripts/video-studio.mjs --cuts <来源>        看它自己的镜头切点",
+    "  node scripts/video-studio.mjs --look <来源> 28 30  把那几秒看清楚",
+    "剪完先出小样：node scripts/video-studio.mjs projects/hero-30s.json --preview"
+  ],
+  "output": {
+    "name": "hero-30s",
+    "width": 1920,
+    "height": 1080,
+    "fps": "source",
+    "crf": 18,
+    "alsoWidth": 1280,
+    "dir": "artifacts/hero",
+    "fade": false
+  },
+  "music": {
+    "from": "artifacts/hero/hero-music-source.mp4",
+    "loop": true,
+    "bpm": 115.4,
+    "lufs": -16
+  },
+  "clips": [
+    {
+      "source": "https://www.ganjingworld.com/embed/1fscbtl3roe3eLrXL7AbWJmku1o71c",
+      "from": 28,
+      "to": 31,
+      "note": "汪志远 — 追查迫害法轮功国际组织主席（这 3 秒字幕条全程在）"
+    },
+    {
+      "source": "https://www.ganjingworld.com/embed/1it9ff19n2d6t1aGMeGqwwDn01ti1c",
+      "from": 9,
+      "to": 12,
+      "note": "周锋锁 — 人道中国主席"
+    },
+    {
+      "source": "https://www.ganjingworld.com/embed/1it9d6h66tq1EdPgfPxLwWEr213a1c",
+      "from": 19,
+      "to": 22,
+      "note": "赵慧子 — 天津法轮功学员"
+    },
+    {
+      "source": "artifacts/footage/parade-4yi-1080.mp4",
+      "from": 147.81,
+      "to": 150.42,
+      "note": "全球退黨服務中心 横幅 — 先亮明是谁"
+    },
+    {
+      "source": "artifacts/footage/parade-4yi-1080.mp4",
+      "from": 99.8,
+      "to": 107.0,
+      "note": "法輪大法 横幅与蓝黄旗阵 — 最有气势的一段"
+    },
+    {
+      "source": "artifacts/footage/parade-4yi-1080.mp4",
+      "from": 210.71,
+      "to": 216.38,
+      "note": "聲援 4.3 億勇士退出中共黨團隊"
+    },
+    {
+      "source": "artifacts/footage/parade-4yi-1080.mp4",
+      "from": 237.0,
+      "to": 242.3,
+      "note": "腰鼓队与横幅 — 停在动势上。242.4 之后是原片的片尾卡，循环播放时不要"
+    }
+  ]
+}

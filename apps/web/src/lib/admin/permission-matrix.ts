@@ -95,6 +95,8 @@ export const ADMIN_NAV_LINKS: readonly AdminNavLink[] = [
   // stays lit while an editor is in there.
   { href: "/admin/faq", label: "常见问答", owns: ["/admin/faq/categories"] },
   { href: "/admin/media", label: "图片视频库" },
+  // Next to the media library, because that is where its output lands.
+  { href: "/admin/video-studio", label: "影片拼接台" },
   { href: "/admin/theme", label: "主题与排版", needs: "theme.write" },
   { href: "/admin/users", label: "用户管理", needs: "users.view" },
   { href: "/admin/audit", label: "审计日志", needs: "audit.read" },
