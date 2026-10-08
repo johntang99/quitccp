@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { isGanjingWatchUrl, toEmbedUrl } from "@/lib/video-host";
+import { GanjingEmbedNotice } from "./GanjingEmbedNotice";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { MarkdownEditor, type MarkdownEditorHandle } from "./MarkdownEditor";
 
@@ -50,17 +52,15 @@ function toLocalInput(iso: string | null): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-/** Turns a watch/share address into something that can sit in an iframe. */
-export function toEmbed(url: string): string {
-  const value = url.trim();
-  if (!value) return "";
-  const youtube =
-    value.match(/youtube\.com\/watch\?v=([A-Za-z0-9_-]{6,})/) ??
-    value.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/) ??
-    value.match(/youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/);
-  if (youtube) return `https://www.youtube.com/embed/${youtube[1]}`;
-  return value;
-}
+/*
+ * The preview uses the same converter as the public page.
+ *
+ * It used to have its own copy that handled YouTube only, so a 干净世界 /video/
+ * address -- the one you get by copying the browser bar -- previewed as a blank
+ * black box here while playing correctly on the site. A preview that disagrees
+ * with the page is worse than no preview.
+ */
+export { toEmbedUrl as toEmbed };
 
 const STATUS_LABEL: Record<string, string> = {
   published: "已发布",
@@ -203,8 +203,11 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
   const set = <K extends keyof VideoFormValues>(key: K, next: VideoFormValues[K]) =>
     setValue((current) => ({ ...current, [key]: next }));
 
-  const embed = toEmbed(value.sourceUrl);
+  const embed = toEmbedUrl(value.sourceUrl);
   const isFile = /\.mp4(\?|$)/i.test(value.sourceUrl);
+  /* Flagged rather than rewritten under the editor's hands; 改成 /embed/ does it. */
+  const ganjingWatch = isGanjingWatchUrl(value.sourceUrl);
+  const backupGanjingWatch = isGanjingWatchUrl(value.backupUrl);
 
   /**
    * Same order as the article form: stop at the first thing that is missing
@@ -268,8 +271,15 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
               />
               <span className="hint">
                 支持 YouTube、干净世界、Vimeo，以及 .mp4 文件地址。
+                干净世界请用 <code>/embed/</code> 地址，不要用浏览器地址栏里的 <code>/video/</code>。
                 {value.sourceUrl ? ` 识别为：${platformOf(value.sourceUrl)}` : ""}
               </span>
+              {ganjingWatch ? (
+                <GanjingEmbedNotice
+                  url={value.sourceUrl}
+                  onFix={() => set("sourceUrl", toEmbedUrl(value.sourceUrl))}
+                />
+              ) : null}
             </div>
 
             {embed ? (
@@ -303,7 +313,15 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                 placeholder="可留空"
                 style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
               />
-              <span className="hint">YouTube 在大陆打不开，填了这里大陆读者才看得到。</span>
+              <span className="hint">
+                YouTube 在大陆打不开，填了这里大陆读者才看得到。同样要用 <code>/embed/</code> 地址。
+              </span>
+              {backupGanjingWatch ? (
+                <GanjingEmbedNotice
+                  url={value.backupUrl}
+                  onFix={() => set("backupUrl", toEmbedUrl(value.backupUrl))}
+                />
+              ) : null}
             </div>
           </section>
 

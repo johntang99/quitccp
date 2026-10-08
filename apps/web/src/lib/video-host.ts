@@ -69,3 +69,15 @@ export function toEmbedUrl(url: string): string {
 export function isFileUrl(url: string): boolean {
   return /\.(mp4|webm|ogg|ogv|mov)(\?|$)/i.test((url ?? "").trim());
 }
+
+/**
+ * True for the Gan Jing World address an editor gets by copying the browser bar
+ * -- the /video/ form, which cannot be embedded.
+ *
+ * `toEmbedUrl` already repairs it on the way to the page, so this exists only so
+ * the admin can say what it is doing instead of silently rewriting what the
+ * editor pasted.
+ */
+export function isGanjingWatchUrl(url: string): boolean {
+  return /ganjingworld\.com\/(?:[a-z]{2}-[A-Z]{2}\/)?(?:video|live)\/[A-Za-z0-9]+/i.test((url ?? "").trim());
+}

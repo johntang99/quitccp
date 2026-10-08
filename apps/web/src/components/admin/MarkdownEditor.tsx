@@ -2,6 +2,8 @@
 
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { formatBytes, uploadFile } from "@/lib/admin/upload-client";
+import { toEmbedUrl } from "@/lib/video-host";
+import { VideoEmbedModal } from "./VideoEmbedModal";
 
 /**
  * Markdown editor for article bodies.
@@ -75,20 +77,19 @@ function apply(
 /**
  * An embeddable address, or "" when the host is not one we play.
  *
- * Keeps javascript: and data: out of the preview's iframe, and turns a YouTube
- * watch link into its embed form so the player actually loads.
+ * The https:// test keeps javascript: and data: out of the preview's iframe.
+ * Past that it defers to the same converter the published page uses, so what an
+ * editor sees here is what readers get -- in particular a 干净世界 /video/
+ * address, which this used to pass through unchanged and preview as a black box
+ * even though the page itself played it.
  */
 function previewEmbed(url: string): string {
   const value = url.trim();
   if (!/^https?:\/\//i.test(value)) return "";
-  const youtube =
-    value.match(/youtube\.com\/watch\?v=([A-Za-z0-9_-]{6,})/) ??
-    value.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/) ??
-    value.match(/youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/);
-  if (youtube) return `https://www.youtube.com/embed/${youtube[1]}`;
-  if (/^https?:\/\/[^/]*(ganjing(world)?\.com|vimeo\.com)\//i.test(value)) return value;
-  if (/\.(mp4|webm|ogg|mov)(\?|$)/i.test(value)) return value;
-  return "";
+  if (!/^https?:\/\/[^/]*(youtube\.com|youtu\.be|ganjing(world)?\.com|vimeo\.com)\//i.test(value)) {
+    return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(value) ? value : "";
+  }
+  return toEmbedUrl(value);
 }
 
 function renderPreview(md: string): string {
@@ -201,6 +202,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
   /** Percent while an audio file is uploading, null when idle. */
   const [audioBusy, setAudioBusy] = useState<number | null>(null);
   const [audioError, setAudioError] = useState("");
+  const [videoModal, setVideoModal] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
   /**
    * Where the caret was the last time the editor touched the textarea.
@@ -299,13 +301,10 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
           🔗 链接
         </Btn>
         <Btn title="从媒体库插入图片" onClick={onPickImage}>🖼 图片</Btn>
-        <Btn
-          title="粘贴 YouTube / 干净世界 链接"
-          onClick={() => {
-            const src = window.prompt("视频地址（YouTube / 干净世界 / mp4）", "https://");
-            if (src) run("insert", `\n::: video ${src}\n说明文字\n:::\n`);
-          }}
-        >
+        {/* A dialog rather than window.prompt: the 干净世界 /embed/ rule needs
+            more room than a prompt's single label, and the address has to be
+            echoed back for the editor to see it was understood. */}
+        <Btn title="插入 YouTube / 干净世界 / mp4 视频" onClick={() => setVideoModal(true)}>
           ▶ 视频
         </Btn>
         {/* Music arrives as a file, not a URL: 151 of the 160 歌曲 articles are
@@ -402,6 +401,13 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
             way, which on its own is indistinguishable from success. */}
         {audioError ? <span style={{ color: "#b42318" }}>音频上传失败：{audioError}</span> : null}
       </div>
+
+      {videoModal ? (
+        <VideoEmbedModal
+          onInsert={(markdown) => run("insert", markdown)}
+          onClose={() => setVideoModal(false)}
+        />
+      ) : null}
     </div>
   );
 });
