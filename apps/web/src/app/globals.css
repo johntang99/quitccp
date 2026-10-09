@@ -1456,6 +1456,20 @@ img.bcover--photo {
   padding: 24px;
 }
 
+/*
+ * Inputs inside a grid or flex track must be allowed to shrink.
+ *
+ * An <input> carries an intrinsic width from its `size` attribute -- about
+ * twenty characters -- and a `1fr` track will not go below it. A row holding a
+ * long URL therefore grew wider than the window and pushed its own buttons off
+ * the right edge, which is what makes a page feel like it will not scroll:
+ * the wheel moves it sideways instead.
+ */
+.admin-input {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .admin-card {
   background: #fff;
   border: 1px solid #e2e2e2;

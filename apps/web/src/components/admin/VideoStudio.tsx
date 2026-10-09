@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ClipPlayer } from "./ClipPlayer";
 
 /**
  * 影片拼接台 — the editing bench, as a page.
@@ -27,7 +28,7 @@ interface Clip {
 }
 
 interface Project {
-  output: { name: string; width: number; height: number; fps: number; crf: number; alsoWidth?: number; dir?: string; fade?: boolean };
+  output: { name: string; width: number; height: number; fps: number | string; crf: number; alsoWidth?: number; dir?: string; fade?: boolean };
   music?: { from: string; loop?: boolean; bpm?: number; lufs?: number; start?: number } | null;
   clips: Clip[];
   _?: unknown;
@@ -39,8 +40,16 @@ interface Shot {
   len: number;
 }
 
+/*
+ * What a blank project starts as.
+ *
+ * `fps: "source"` keeps whatever the footage runs at. Forcing 25 on 29.97
+ * sources drops five frames a second, which on a panning shot is the most
+ * visible flaw a cut can have -- and it is free to avoid. crf 18 matches what
+ * the clips are encoded at, so the join does not re-compress them.
+ */
 const EMPTY: Project = {
-  output: { name: "new-video", width: 1920, height: 1080, fps: 25, crf: 21, alsoWidth: 1280, dir: "artifacts/hero", fade: false },
+  output: { name: "new-video", width: 1920, height: 1080, fps: "source", crf: 18, alsoWidth: 1280, dir: "artifacts/hero", fade: false },
   music: null,
   clips: []
 };
@@ -60,6 +69,8 @@ export function VideoStudio({
 }) {
   const [projectList, setProjectList] = useState(projects);
   const [name, setName] = useState(projects[0] ?? "new-video.json");
+  /** What this project is called on disk right now -- 改名 needs the old name. */
+  const [savedName, setSavedName] = useState(projects[0] ?? "");
   const [project, setProject] = useState<Project>(EMPTY);
   const [busy, setBusy] = useState("");
   const [problem, setProblem] = useState("");
@@ -74,6 +85,9 @@ export function VideoStudio({
 
   /** Per-row end-frames, so a clip can be checked where it sits. */
   const [rowFrames, setRowFrames] = useState<Record<number, string>>({});
+  /** Which row has its player open. One at a time: a page of autoplaying
+      videos is noise, and only one clip is ever being judged. */
+  const [openRow, setOpenRow] = useState<number | null>(null);
   const [result, setResult] = useState<{ files: string[]; duration: number; uploaded: Record<string, string> | null } | null>(null);
   const logRef = useRef<HTMLPreElement>(null);
   const [log, setLog] = useState("");
@@ -117,6 +131,7 @@ export function VideoStudio({
     if (!res.ok) return;
     const data = await res.json();
     setName(which);
+    setSavedName(which);
     setProject({ ...EMPTY, ...data.project, output: { ...EMPTY.output, ...(data.project?.output ?? {}) } });
     setResult(null);
     setRowFrames({});
@@ -124,7 +139,10 @@ export function VideoStudio({
 
   async function save() {
     const data = await call("/api/admin/studio/project", { name, project }, "存盘");
-    if (data?.projects) setProjectList(data.projects);
+    if (data?.projects) {
+      setProjectList(data.projects);
+      setSavedName(name);
+    }
   }
 
   const patchOutput = (patch: Partial<Project["output"]>) =>
@@ -169,35 +187,42 @@ export function VideoStudio({
     );
     if (data) {
       setResult({ files: data.files ?? [], duration: data.duration ?? 0, uploaded: data.uploaded ?? null });
+      // Rendering writes the project first, so it exists on disk now.
       setProjectList((list) => (list.includes(name) ? list : [...list, name].sort()));
+      setSavedName(name);
     }
   }
 
-  if (!available) {
-    return (
-      <section className="admin-card">
-        <h2 style={{ marginTop: 0 }}>影片拼接台</h2>
-        <p style={{ margin: "8px 0 0", color: "#b42318", background: "#fef3f2", padding: "10px 12px", borderRadius: 4, lineHeight: 1.7 }}>
-          {unavailableReason}
-        </p>
-        <p style={{ margin: "10px 0 0", color: "#555", lineHeight: 1.8 }}>
-          剪片靠的是 ffmpeg，它在本机上，不在 Vercel 上。要用这一页，在装了 ffmpeg 的电脑上跑
-          <code style={{ margin: "0 4px" }}>npm run dev</code>，然后打开
-          <code style={{ margin: "0 4px" }}>localhost:4020/admin/video-studio</code>。
-        </p>
-      </section>
-    );
-  }
-
+  /*
+   * ffmpeg decides what can be *rendered*, not what can be *edited*.
+   *
+   * Earlier this whole page refused when ffmpeg was missing, which meant the
+   * live site could do nothing at all. But picking the moments -- the half of
+   * the job that takes the time and the judgement -- is a video element and a
+   * list of numbers. That works anywhere, so only the render controls are
+   * gated now.
+   */
   return (
     <>
+      {!available ? (
+        <section className="admin-card" style={{ marginBottom: 14, borderColor: "#f0dca0", background: "#fffbe9" }}>
+          <strong style={{ color: "#6b5312" }}>这里可以排片子，但出不了片</strong>
+          <p style={{ margin: "6px 0 0", color: "#6b5312", lineHeight: 1.8 }}>
+            {unavailableReason}
+            挑镜头、定秒数、排顺序、存项目，在这一页上都能做，存好之后
+            在装了 ffmpeg 的电脑上打开同一页，选中这个项目按「出片并上传」就行。
+          </p>
+        </section>
+      ) : null}
       {problem ? (
         <section className="admin-card" style={{ marginBottom: 14, borderColor: "#f0b4ac" }}>
           <strong style={{ color: "#b42318" }}>{problem}</strong>
         </section>
       ) : null}
 
-      {/* ---- 1. 翻片子（可选） ---- */}
+      {/* ---- 翻片子（可选，要 ffmpeg） ---- */}
+      {available ? (
+        <>
       <section className="admin-card" style={{ marginBottom: 14 }} id="studio-browse">
         <h3 style={{ marginTop: 0 }}>
           翻片子
@@ -336,6 +361,8 @@ export function VideoStudio({
 
         </section>
       ) : null}
+        </>
+      ) : null}
 
       {/* ---- 3. 顺序 ---- */}
       <section className="admin-card" style={{ marginBottom: 14 }}>
@@ -347,7 +374,8 @@ export function VideoStudio({
         </h3>
         <p className="muted" style={{ margin: "0 0 12px", lineHeight: 1.75 }}>
           每一段就是「某条片子的第几秒到第几秒」。地址直接粘在这一行里——
-          干净世界的网址、.mp4 直链、本机路径都行，<strong>不用先上传，也不用先在上面认过</strong>。
+          干净世界的网址、.mp4 直链都行，<strong>不用上传</strong>。
+          粘好之后点「看片定点」，片子就在这一行里放起来：拖到想要的那一帧，按「设为起点」「设为终点」。
           出片时只会去取用到的那几秒。
         </p>
         {project.clips.length === 0 ? (
@@ -371,7 +399,14 @@ export function VideoStudio({
                   }}
                 >
                   {/* 第一行：这一段来自哪条片子 */}
-                  <div style={{ display: "grid", gridTemplateColumns: "28px 1fr auto", gap: 8, alignItems: "center" }}>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "28px minmax(0, 1fr) auto",
+                      gap: 8,
+                      alignItems: "center"
+                    }}
+                  >
                     <span style={{ color: "#888", fontVariantNumeric: "tabular-nums", fontSize: 15 }}>{i + 1}</span>
                     <input
                       className="admin-input"
@@ -380,32 +415,45 @@ export function VideoStudio({
                       onChange={(e) => patchClip(i, { source: e.target.value })}
                       placeholder="https://www.ganjingworld.com/embed/…  或  artifacts/footage/xxx.mp4"
                     />
-                    <button
-                      className="admin-btn admin-btn-sm"
-                      type="button"
-                      title="把这条片子拿到上面，翻总览图、找切点"
-                      disabled={!c.source.trim() || Boolean(busy)}
-                      onClick={async () => {
-                        setSource(c.source);
-                        const d = await call("/api/admin/studio/inspect", { action: "resolve", source: c.source }, "解析中…");
-                        if (d) {
-                          setInfo(d);
-                          setSheet(null);
-                          setShots(null);
-                          setFrames(null);
-                          document.getElementById("studio-browse")?.scrollIntoView({ behavior: "smooth" });
-                        }
-                      }}
-                    >
-                      拿到上面翻
-                    </button>
+                    <span style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                      <button
+                        className={openRow === i ? "admin-btn admin-btn-sm admin-btn-primary" : "admin-btn admin-btn-sm"}
+                        type="button"
+                        title="打开播放器，看着画面定起点和终点"
+                        disabled={!c.source.trim()}
+                        onClick={() => setOpenRow(openRow === i ? null : i)}
+                      >
+                        {openRow === i ? "收起播放器" : "看片定点"}
+                      </button>
+                      {available ? (
+                        <button
+                          className="admin-btn admin-btn-sm"
+                          type="button"
+                          title="把这条片子拿到上面，翻总览图、找切点"
+                          disabled={!c.source.trim() || Boolean(busy)}
+                          onClick={async () => {
+                            setSource(c.source);
+                            const d = await call("/api/admin/studio/inspect", { action: "resolve", source: c.source }, "解析中…");
+                            if (d) {
+                              setInfo(d);
+                              setSheet(null);
+                              setShots(null);
+                              setFrames(null);
+                              document.getElementById("studio-browse")?.scrollIntoView({ behavior: "smooth" });
+                            }
+                          }}
+                        >
+                          拿到上面翻
+                        </button>
+                      ) : null}
+                    </span>
                   </div>
 
                   {/* 第二行：取哪一段，叫什么 */}
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "28px 92px 92px 60px 1fr auto",
+                      gridTemplateColumns: "28px 84px 84px 56px minmax(0, 1fr) auto",
                       gap: 8,
                       alignItems: "center"
                     }}
@@ -441,13 +489,14 @@ export function VideoStudio({
                       onChange={(e) => patchClip(i, { note: e.target.value })}
                       placeholder="这段是什么（只给人看，不影响出片）"
                     />
-                    <span style={{ display: "flex", gap: 4 }}>
+                    <span style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                       {/* Checking the two ends is how you tell a clip is the shot you
                           meant without rendering the whole film. */}
                       <button
                         className="admin-btn admin-btn-sm"
                         type="button"
                         title="看这一段的头尾两帧"
+                        style={{ display: available ? undefined : "none" }}
                         disabled={!c.source.trim() || len <= 0 || Boolean(busy)}
                         onClick={async () => {
                           const d = await call(
@@ -477,8 +526,21 @@ export function VideoStudio({
                     </span>
                   </div>
 
+                  {openRow === i && c.source.trim() ? (
+                    <div style={{ display: "grid", gridTemplateColumns: "28px minmax(0, 1fr)", gap: 8 }}>
+                      <span />
+                      <ClipPlayer
+                        source={c.source}
+                        from={Number(c.from) || 0}
+                        to={Number(c.to) || 0}
+                        onSetFrom={(t) => patchClip(i, { from: t })}
+                        onSetTo={(t) => patchClip(i, { to: t })}
+                      />
+                    </div>
+                  ) : null}
+
                   {shown ? (
-                    <div style={{ display: "grid", gridTemplateColumns: "28px 1fr", gap: 8 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "28px minmax(0, 1fr)", gap: 8 }}>
                       <span />
                       <figure style={{ margin: 0 }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -512,7 +574,7 @@ export function VideoStudio({
       {/* ---- 4. 音乐与出片设置 ---- */}
       <section className="admin-card" style={{ marginBottom: 14 }}>
         <h3 style={{ marginTop: 0 }}>2 · 音乐与出片设置</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
           <div>
             <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>音乐文件（本机路径，留空就没有声音）</label>
             <input
@@ -586,34 +648,76 @@ export function VideoStudio({
         </div>
       </section>
 
-      {/* ---- 5. 出片 ---- */}
+      {/*
+        ---- 3. 存 / 出片 ----
+
+        存项目 used to sit beside the render buttons as though it were a peer,
+        which made it look like a step you had to do first. It is not: every
+        render writes the project before it starts. The two are separated now,
+        because they belong to two different people -- an editor on the live
+        site saves and stops there, and whoever has ffmpeg renders.
+      */}
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>3 · 出片</h3>
+        <h3 style={{ marginTop: 0 }}>3 · 存起来，出片</h3>
+
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <button className="admin-btn" type="button" disabled={Boolean(busy) || project.clips.length === 0} onClick={() => render("preview")}>
-            出小样（快，360p）
-          </button>
-          <button className="admin-btn" type="button" disabled={Boolean(busy) || project.clips.length === 0} onClick={() => render("full")}>
-            出正式版
-          </button>
           <button
-            className="admin-btn admin-btn-primary"
+            className={available ? "admin-btn" : "admin-btn admin-btn-primary"}
             type="button"
-            disabled={Boolean(busy) || project.clips.length === 0}
-            onClick={() => render("upload")}
+            disabled={Boolean(busy)}
+            onClick={save}
           >
-            出片并上传
-          </button>
-          <span style={{ flex: 1 }} />
-          <button className="admin-btn" type="button" disabled={Boolean(busy)} onClick={save}>
             存项目
           </button>
-          {busy ? <strong style={{ color: "#4a3c96" }}>{busy}</strong> : null}
+          <span className="muted" style={{ fontSize: 12.5 }}>
+            {available
+              ? "想先收工、回头再出片时按它。按下面三个出片按钮会自动存一次，不用先按这个。"
+              : "排好了就按它存下。出片要在装了 ffmpeg 的电脑上做。"}
+          </span>
         </div>
-        <p className="muted" style={{ fontSize: 12.5, margin: "10px 0 0", lineHeight: 1.75 }}>
-          小样几秒钟就好，只看剪得对不对。正式版 1080p 大约半分钟。
-          「出片并上传」会传到 Storage 并登记进图片视频库——首页要换片，再去「页面内容 → 首屏 Hero」把地址粘上。
-        </p>
+
+        {available ? (
+          <>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                alignItems: "center",
+                marginTop: 14,
+                paddingTop: 14,
+                borderTop: "1px solid var(--rule, #e3e3e3)"
+              }}
+            >
+              <button className="admin-btn" type="button" disabled={Boolean(busy) || project.clips.length === 0} onClick={() => render("preview")}>
+                出小样（快，360p）
+              </button>
+              <button className="admin-btn" type="button" disabled={Boolean(busy) || project.clips.length === 0} onClick={() => render("full")}>
+                出正式版
+              </button>
+              <button
+                className="admin-btn admin-btn-primary"
+                type="button"
+                disabled={Boolean(busy) || project.clips.length === 0}
+                onClick={() => render("upload")}
+              >
+                出片并上传
+              </button>
+              {busy ? <strong style={{ color: "#4a3c96" }}>{busy}</strong> : null}
+            </div>
+            <p className="muted" style={{ fontSize: 12.5, margin: "10px 0 0", lineHeight: 1.8 }}>
+              <strong>出小样</strong>：几秒钟，360p，只看剪得对不对——顺序、长短、音乐接得顺不顺。确认了再出正式版。<br />
+              <strong>出正式版</strong>：1080p，约半分钟。只存在这台电脑上，网站还看不到。<br />
+              <strong>出片并上传</strong>：出正式版，<strong>并且</strong>传到 Storage、登记进图片视频库。
+              片子还不会自己上首页——要换，去「页面内容 → 首屏 Hero → 视频地址」把新地址粘上。
+            </p>
+          </>
+        ) : (
+          <p className="muted" style={{ fontSize: 12.5, margin: "12px 0 0", lineHeight: 1.8 }}>
+            出片的三个按钮在这台机器上用不了，所以没有显示。存好项目后，
+            在装了 ffmpeg 的电脑上打开这一页、在最下面选中这个项目，按钮就在了。
+          </p>
+        )}
 
         {result ? (
           <div style={{ marginTop: 14 }}>
@@ -651,19 +755,83 @@ export function VideoStudio({
         ) : null}
       </section>
 
-      {/* ---- 项目切换，放最后：开工时用得少 ---- */}
+      {/*
+        ---- 项目 ----
+
+        A project is one film: its clips, its music, its output settings. The
+        select switches between them; the three actions beside it are the ones
+        that were missing and had to be done in a terminal.
+
+        `另存一份` also rewrites `output.name`. Without that, duplicating a
+        project kept the original's output filename and rendering the copy
+        quietly overwrote the first film's files -- a bug only noticed once the
+        wrong video is already on the homepage.
+      */}
       <section className="admin-card" style={{ marginTop: 14 }}>
         <h3 style={{ marginTop: 0, fontSize: 15 }}>项目</h3>
+
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <select className="admin-input" style={{ width: 240 }} value={name} onChange={(e) => void load(e.target.value)}>
+          <label style={{ fontSize: 13, color: "#555" }}>当前</label>
+          <select
+            className="admin-input"
+            style={{ width: 230 }}
+            value={projectList.includes(name) ? name : "__unsaved__"}
+            onChange={(e) => {
+              if (e.target.value !== "__unsaved__") void load(e.target.value);
+            }}
+          >
             {projectList.map((p) => (
               <option key={p} value={p}>{p}</option>
             ))}
-            {projectList.includes(name) ? null : <option value={name}>{name}（未保存）</option>}
+            {projectList.includes(name) ? null : <option value="__unsaved__">{name}（还没存过）</option>}
           </select>
+          <button
+            className="admin-btn"
+            type="button"
+            title="清空，从头做一条新片子"
+            onClick={() => {
+              setProject(EMPTY);
+              setResult(null);
+              setRowFrames({});
+              setOpenRow(null);
+              setName("new-video.json");
+            }}
+          >
+            新建空白
+          </button>
+          <button
+            className="admin-btn admin-btn-danger"
+            type="button"
+            disabled={!projectList.includes(name) || Boolean(busy)}
+            title="删掉这个项目文件。已经出过、上传过的片子不受影响"
+            onClick={async () => {
+              if (!window.confirm(`删掉项目「${name}」？\n已经出过、上传过的片子不受影响。`)) return;
+              setBusy("删除中…");
+              setProblem("");
+              const res = await fetch(`/api/admin/studio/project?name=${encodeURIComponent(name)}`, { method: "DELETE" });
+              const data = await res.json();
+              setBusy("");
+              if (!res.ok) {
+                setProblem(String(data.error ?? "删不掉"));
+                return;
+              }
+              setProjectList(data.projects);
+              if (data.projects[0]) void load(data.projects[0]);
+              else {
+                setProject(EMPTY);
+                setName("new-video.json");
+              }
+            }}
+          >
+            删除
+          </button>
+        </div>
+
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}>
+          <label style={{ fontSize: 13, color: "#555" }}>名字</label>
           <input
             className="admin-input"
-            style={{ width: 220 }}
+            style={{ width: 210 }}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="hero-30s.json"
@@ -671,18 +839,58 @@ export function VideoStudio({
           <button
             className="admin-btn"
             type="button"
-            onClick={() => {
-              setProject(EMPTY);
-              setResult(null);
-              setName("new-video.json");
+            disabled={Boolean(busy) || !name.trim()}
+            title="用这个名字另存一份，原来那个留着不动——想在旧片子基础上做新的就按它"
+            onClick={async () => {
+              const base = name.replace(/\.json$/, "");
+              const copy = { ...project, output: { ...project.output, name: base } };
+              setProject(copy);
+              const data = await call("/api/admin/studio/project", { name, project: copy }, "另存一份…");
+              if (data?.projects) {
+                setProjectList(data.projects);
+                /* The copy is now what is open. Without this, 改名 still
+                   pointed at the project copied *from* and would rename the
+                   original out from under it. */
+                setSavedName(name);
+              }
             }}
           >
-            新建空白
+            另存一份
+          </button>
+          <button
+            className="admin-btn"
+            type="button"
+            disabled={Boolean(busy) || !projectList.includes(savedName) || name === savedName}
+            title="把当前项目改成这个名字，不留旧的那份"
+            onClick={async () => {
+              setBusy("改名…");
+              setProblem("");
+              const res = await fetch("/api/admin/studio/project", {
+                method: "PATCH",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ from: savedName, to: name })
+              });
+              const data = await res.json();
+              setBusy("");
+              if (!res.ok) {
+                setProblem(String(data.error ?? "改名失败"));
+                return;
+              }
+              setProjectList(data.projects);
+              setSavedName(name);
+            }}
+          >
+            改名
           </button>
         </div>
-        <p className="muted" style={{ fontSize: 12, margin: "8px 0 0", lineHeight: 1.7 }}>
-          项目存在仓库的 <code>projects/</code> 里，就是命令行读的那个文件——
-          这一页和 <code>node scripts/video-studio.mjs projects/xxx.json</code> 出来的片子一模一样。
+
+        <p className="muted" style={{ fontSize: 12, margin: "10px 0 0", lineHeight: 1.85 }}>
+          一个项目就是一条片子：用哪些片段、配什么音乐、出多大。文件存在仓库的
+          <code> projects/ </code>里，就是命令行读的那个——这一页和
+          <code> node scripts/video-studio.mjs projects/xxx.json </code>出来的片子一模一样。
+          <br />
+          成片的文件名在上面「音乐与出片设置」里另设。<strong>另存一份</strong>会把它一起改成新名字，
+          免得两个项目出的片子互相覆盖。
         </p>
       </section>
     </>

@@ -271,8 +271,24 @@ async function render(projectPath) {
     if (!(len > 0)) throw new Error(`第 ${i + 1} 个片段的 from/to 不对：${from} → ${to}`);
     const src = await openFor(clip.source);
     const file = path.join(work, `${String(i).padStart(3, "0")}.mp4`);
+    /*
+     * Seeking in two stages: a coarse jump before `-i`, then a fine one after.
+     *
+     * `-ss` before `-i` alone is fast but lands on a keyframe, and on an HLS
+     * stream that means a segment boundary -- after which `-t` counts from the
+     * time that was asked for rather than the time that was reached, so the
+     * clip comes out short. Asking for 7.2 seconds of the parade returned 5.0.
+     * Putting `-ss` only after `-i` is exact but decodes the whole file up to
+     * that point, which on a 24-minute source is a long wait per clip.
+     *
+     * The coarse seek gets within PAD seconds cheaply; the fine seek walks the
+     * rest exactly. Same frames as a local file, without the wait.
+     */
+    const PAD = 6;
+    const coarse = Math.max(0, from - PAD);
+    const fine = +(from - coarse).toFixed(3);
     ff(
-      ["-ss", String(from), "-i", src, "-t", String(len), "-an",
+      ["-ss", String(coarse), "-i", src, "-ss", String(fine), "-t", String(len), "-an",
        "-vf", conform(width, height, fps),
        "-c:v", "libx264", "-preset", preview ? "veryfast" : "veryslow",
        "-crf", String(preview ? 30 : crf), "-pix_fmt", "yuv420p",

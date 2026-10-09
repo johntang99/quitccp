@@ -132,6 +132,21 @@ export function writeProject(name: string, data: unknown): void {
   fs.writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`);
 }
 
+export function deleteProject(name: string): void {
+  const file = projectPath(name);
+  if (!file) throw new Error("项目名不合法");
+  if (fs.existsSync(file)) fs.unlinkSync(file);
+}
+
+export function renameProject(from: string, to: string): void {
+  const a = projectPath(from);
+  const b = projectPath(to);
+  if (!a || !b) throw new Error("项目名不合法");
+  if (!fs.existsSync(a)) throw new Error("原项目不存在");
+  if (fs.existsSync(b)) throw new Error(`已经有一个叫「${to}」的项目了`);
+  fs.renameSync(a, b);
+}
+
 /** Names stay a single plain filename: no slashes, no walking out of projects/. */
 function projectPath(name: string): string | null {
   const clean = String(name ?? "").trim();

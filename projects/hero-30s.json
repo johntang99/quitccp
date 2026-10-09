@@ -1,16 +1,4 @@
 {
-  "_": [
-    "首页片头，30 秒。改这个文件就是剪片——不用动代码。",
-    "fps 写 \"source\" 就跟着素材走，不重采样——这几条素材都是 29.97，",
-    "强行按 25 出片等于每秒丢掉五帧，游行一摇镜就抖。",
-    "source 可以写：本地路径、.mp4 直链、.m3u8，或者干净世界的嵌入地址（会自动解析）。",
-    "from/to 是在那条来源里的秒数。note 只是写给人看的，不影响出片。",
-    "怎么找秒数：",
-    "  node scripts/video-studio.mjs --scan <来源>        先看总览图，挑个大概",
-    "  node scripts/video-studio.mjs --cuts <来源>        看它自己的镜头切点",
-    "  node scripts/video-studio.mjs --look <来源> 28 30  把那几秒看清楚",
-    "剪完先出小样：node scripts/video-studio.mjs projects/hero-30s.json --preview"
-  ],
   "output": {
     "name": "hero-30s",
     "width": 1920,
@@ -22,7 +10,7 @@
     "fade": false
   },
   "music": {
-    "from": "artifacts/hero/hero-music-source.mp4",
+    "from": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/home/1791174246616-hero-hd-1920.mp4",
     "loop": true,
     "bpm": 115.4,
     "lufs": -16
@@ -47,28 +35,44 @@
       "note": "赵慧子 — 天津法轮功学员"
     },
     {
-      "source": "artifacts/footage/parade-4yi-1080.mp4",
+      "source": "https://www.ganjingworld.com/embed/1gofsm5cv08mKOBRXtw88UREa12j1c",
       "from": 147.81,
       "to": 150.42,
       "note": "全球退黨服務中心 横幅 — 先亮明是谁"
     },
     {
-      "source": "artifacts/footage/parade-4yi-1080.mp4",
+      "source": "https://www.ganjingworld.com/embed/1gofsm5cv08mKOBRXtw88UREa12j1c",
       "from": 99.8,
-      "to": 107.0,
+      "to": 107,
       "note": "法輪大法 横幅与蓝黄旗阵 — 最有气势的一段"
     },
     {
-      "source": "artifacts/footage/parade-4yi-1080.mp4",
+      "source": "https://www.ganjingworld.com/embed/1gofsm5cv08mKOBRXtw88UREa12j1c",
       "from": 210.71,
       "to": 216.38,
       "note": "聲援 4.3 億勇士退出中共黨團隊"
     },
     {
-      "source": "artifacts/footage/parade-4yi-1080.mp4",
-      "from": 237.0,
+      "source": "https://www.ganjingworld.com/embed/1gofsm5cv08mKOBRXtw88UREa12j1c",
+      "from": 237,
       "to": 242.3,
       "note": "腰鼓队与横幅 — 停在动势上。242.4 之后是原片的片尾卡，循环播放时不要"
     }
+  ],
+  "_": [
+    "首页片头，30 秒。改这个文件就是剪片——不用动代码。",
+    "",
+    "所有来源都是网址，没有一个依赖本机文件——因为这样它在任何机器上都能出片，",
+    "包括 GitHub Actions 的机器。已验证：走网址出的片和用本机文件出的逐位相同。",
+    "",
+    "fps 写 \"source\" 就跟着素材走，不重采样——这几条素材都是 29.97，",
+    "强行按 25 出片等于每秒丢掉五帧，游行一摇镜就抖。",
+    "",
+    "from/to 是在那条来源里的秒数。note 只是写给人看的，不影响出片。",
+    "怎么找秒数：",
+    "  node scripts/video-studio.mjs --scan <来源>        先看总览图，挑个大概",
+    "  node scripts/video-studio.mjs --cuts <来源>        看它自己的镜头切点",
+    "  node scripts/video-studio.mjs --look <来源> 28 30  把那几秒看清楚",
+    "剪完先出小样：node scripts/video-studio.mjs projects/hero-30s.json --preview"
   ]
 }
