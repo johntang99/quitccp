@@ -49,7 +49,7 @@ interface Shot {
  * the clips are encoded at, so the join does not re-compress them.
  */
 const EMPTY: Project = {
-  output: { name: "new-video", width: 1920, height: 1080, fps: "source", crf: 18, alsoWidth: 1280, dir: "artifacts/hero", fade: false },
+  output: { name: "new-video", width: 1280, height: 720, fps: "source", crf: 23, dir: "artifacts/hero", fade: false },
   music: null,
   clips: []
 };
@@ -1034,6 +1034,20 @@ export function VideoStudio({
             ) : null}
             <p className="muted" style={{ fontSize: 12, margin: "6px 0 0", lineHeight: 1.7 }}>
               音量会自动归一到 −16 LUFS，跟网站上其它视频一条线，不会忽大忽小。
+            </p>
+            {/*
+              Saying what the numbers cost.
+
+              These defaults used to be 1920 at CRF 18, which produced a 19.3MB
+              film for a thirty-second muted loop -- six times what the 首屏
+              Hero editor itself advises, and every visitor downloads it. The
+              quality was being bought with somebody else's bandwidth, and
+              nothing on this page said so.
+            */}
+            <p className="muted" style={{ fontSize: 12, margin: "6px 0 0", lineHeight: 1.7 }}>
+              <strong>尺寸和画质直接决定访客要下多少。</strong>首屏片头是每个人一进站就下载的，
+              30 秒的片子：1280 宽 + 画质 23 约 10MB，1920 宽 + 画质 18 约 19MB。
+              片头是静音循环的背景、文字压在上面，1280 在大屏上也看不出来。数字越小画质越好、文件越大。
             </p>
           </div>
           <div>
