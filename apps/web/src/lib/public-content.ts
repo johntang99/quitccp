@@ -1407,6 +1407,7 @@ export async function getNewsHome(): Promise<NewsHome> {
         .from("cms_articles")
         .select(NEWS_CARD_COLUMNS)
         .eq("status", "published")
+        .eq("section", "news")
         .eq("featured", true)
         .order("published_at", { ascending: false, nullsFirst: false })
         .order("id", { ascending: true })
@@ -1415,6 +1416,7 @@ export async function getNewsHome(): Promise<NewsHome> {
         .from("cms_articles")
         .select(NEWS_CARD_COLUMNS)
         .eq("status", "published")
+        .eq("section", "news")
         .order("published_at", { ascending: false, nullsFirst: false })
         .order("id", { ascending: true })
         .limit(10),
@@ -1422,6 +1424,7 @@ export async function getNewsHome(): Promise<NewsHome> {
         .from("cms_articles")
         .select(NEWS_CARD_COLUMNS)
         .eq("status", "published")
+        .eq("section", "news")
         .eq("editor_archive", true)
         .order("published_at", { ascending: false, nullsFirst: false })
         .order("id", { ascending: true })
@@ -1769,7 +1772,15 @@ export async function getNewsListing(
               withCount ? { count: "exact" } : undefined
             )
             .eq("cms_article_category_map.category_id", categoryId);
-      const filtered = base.eq("status", "published");
+      /*
+       * News only, same reason as the homepage band.
+       *
+       * A category page is already confined by its category, and 资料下载 is
+       * not one of NEWS_CATEGORIES. But the virtual listings -- 全部文章,
+       * 最新发布, 重要报导, 精彩保留 -- select across the whole table, so the
+       * 381 articles belonging to 资源馆 showed up in them on date alone.
+       */
+      const filtered = base.eq("status", "published").eq("section", "news");
       return virtual?.filter ? filtered.eq(virtual.filter, true) : filtered;
     };
 
