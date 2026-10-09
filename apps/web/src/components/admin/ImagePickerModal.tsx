@@ -58,6 +58,23 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
   const [pastedUrl, setPastedUrl] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
 
+  /*
+   * Saying what a failed load means.
+   *
+   * Opening this costs two database round trips -- 500 rows plus an audit
+   * entry -- so when the database is briefly busy it answers "Too many
+   * connections issued to the database", in English, straight from Supabase.
+   * An editor reading that cannot tell it is a passing hiccup, nor that
+   * 刷新 will very likely clear it, nor that uploading still works.
+   */
+  const explainLoadFailure = (error: unknown) => {
+    const raw = error instanceof Error ? error.message : "";
+    if (/too many connections/i.test(raw)) {
+      return "数据库这会儿忙不过来，媒体库没读出来。等几秒按「刷新」一般就好。上传不受影响，可以直接传。";
+    }
+    return raw || "读取媒体库失败。按「刷新」再试一次。";
+  };
+
   const loadLibrary = async () => {
     setLoading(true);
     setStatus("");
@@ -68,7 +85,7 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
       setItems((payload.items as MediaItem[]) ?? []);
       setUploadEnabled(payload.uploadEnabled !== false);
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "读取媒体库失败");
+        setStatus(explainLoadFailure(error));
     } finally {
       setLoading(false);
     }
