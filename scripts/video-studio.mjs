@@ -666,7 +666,17 @@ async function render(projectPath) {
     const base = path.basename(file);
     const key = `home/${stamp}-${base}`;
     const bytes = fs.readFileSync(file);
-    const { error } = await supabase.storage.from(bucket).upload(key, bytes, { contentType: "video/mp4", upsert: true });
+    /*
+     * A year of caching, because the key already carries a timestamp.
+     *
+     * Storage's default is one hour, and Cloudflare does cache it, so this
+     * is a tune-up rather than a repair: it saves the revalidation round trip
+     * a returning visitor makes after that hour. Nothing here is ever edited
+     * in place -- a new render gets a new key -- so a year cannot go stale.
+     */
+    const { error } = await supabase.storage
+      .from(bucket)
+      .upload(key, bytes, { contentType: "video/mp4", upsert: true, cacheControl: "31536000" });
     if (error) throw error;
     const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${key}`;
     const { error: rowErr } = await supabase.from("cms_media_assets").insert({

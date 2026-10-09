@@ -54,6 +54,10 @@ export async function uploadFile(
     const request = new XMLHttpRequest();
     request.open("PUT", signedUrl, true);
     if (file.type) request.setRequestHeader("content-type", file.type);
+    /* Storage's own default is one hour. Keys carry a timestamp and are
+       never rewritten, so a year is safe and saves returning visitors a
+       revalidation round trip on every image. */
+    request.setRequestHeader("cache-control", "max-age=31536000");
     request.upload.onprogress = (event) => {
       if (event.lengthComputable) options.onProgress?.(Math.round((event.loaded / event.total) * 100));
     };
