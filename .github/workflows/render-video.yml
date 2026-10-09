@@ -56,6 +56,15 @@ jobs:
       # Installed explicitly rather than trusted to the runner image, so a
       # change to that image shows up as a failed step here and not as a
       # mysteriously missing binary halfway through a render.
+      # Encoding is the whole cost of a render and it scales with cores, so
+      # what this machine has is the first thing worth knowing when a render
+      # takes longer than expected. A public repository gets 4 of them; a
+      # private one, 2.
+      - name: 这台机器什么配置
+        run: |
+          echo "核数 $(nproc)   内存 $(free -g | awk '/Mem:/{print $2}')GB"
+          echo "CPU  $(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)"
+
       - name: 装 ffmpeg
         run: |
           sudo apt-get update -qq
