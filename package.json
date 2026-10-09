@@ -36,7 +36,8 @@
     "materials:migrate:storage": "tsx scripts/migrate-material-storage.ts",
     "press:profile:pdf": "tsx scripts/build-org-profile-pdf.ts",
     "culture:subcategories": "tsx scripts/seed-culture-subcategories.ts",
-    "audio:rehost": "tsx scripts/rehost-article-audio.ts"
+    "audio:rehost": "tsx scripts/rehost-article-audio.ts",
+    "test:studio": "node scripts/test-video-studio.mjs"
   },
   "devDependencies": {
     "opencc-js": "^1.4.2",

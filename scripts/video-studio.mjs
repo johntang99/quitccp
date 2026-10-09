@@ -280,7 +280,14 @@ async function render(projectPath) {
     } catch (err) {
       throw new Error(`打不开这条素材：${src}\n  ${String(err.message).slice(0, 200)}`);
     }
-    const dur = Number(probe(opened, "format=duration")) || 0;
+    let dur = 0;
+    let dims = [0, 0];
+    try {
+      dur = Number(probe(opened, "format=duration")) || 0;
+      dims = probe(opened, "stream=width,height").split("\n").map(Number);
+    } catch {
+      throw new Error(`打不开这条素材：${src}\n  文件不在，或者这不是一个能读的视频。`);
+    }
     srcDurations.set(src, dur);
 
     /*
@@ -296,7 +303,6 @@ async function render(projectPath) {
      * The four names are guesses about someone else's CDN. They will stop
      * being right one day, and this is what will notice.
      */
-    const dims = probe(opened, "stream=width,height").split("\n").map(Number);
     const srcH = dims[1] || 0;
     const finalH = out.height ?? 1080;
     if (srcH > 0 && srcH < finalH * 0.6) {
@@ -317,6 +323,17 @@ async function render(projectPath) {
     }
     if (!JSONOUT) {
       console.log(`  素材 ${dur ? `${dur.toFixed(1)}s` : "时长未知"}  ${dims[0] || "?"}×${srcH || "?"}  ${src.slice(0, 56)}`);
+    }
+  }
+
+  /* The music, checked in the same breath. It was previously only discovered
+     to be missing after every clip had been cut -- minutes of work thrown
+     away over an address that could have been tried first. */
+  if (project.music?.from) {
+    try {
+      probe(project.music.from, "format=duration");
+    } catch {
+      throw new Error(`打不开这段配乐：${project.music.from}\n  地址不对，或者这不是一个能读的音频。`);
     }
   }
 

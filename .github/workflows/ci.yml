@@ -18,3 +18,9 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test
+      # 拼接台自检。It needs ffmpeg, which costs about a minute to install --
+      # worth it: this is the code that once published a film with two thirds
+      # of it missing, and every case here is a way that happened or could.
+      - name: 装 ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - run: npm run test:studio
