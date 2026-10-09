@@ -252,9 +252,16 @@ async function cmdLook(src, times) {
     files.push(f);
   }
   const out = path.join(WORK, `look-${stamp}.jpg`);
-  const inputs = files.flatMap((f) => ["-i", f]);
-  const refs = files.map((_, i) => `[${i}:v]`).join("");
-  ff([...inputs, "-filter_complex", `${refs}hstack=inputs=${files.length}`, out, "-y"], "拼帧");
+  /* hstack needs two or more; asking to see a single moment is an ordinary
+     thing to want, and used to fail with "Result too large" from deep inside
+     a filter graph. One frame needs no stacking. */
+  if (files.length === 1) {
+    fs.copyFileSync(files[0], out);
+  } else {
+    const inputs = files.flatMap((f) => ["-i", f]);
+    const refs = files.map((_, i) => `[${i}:v]`).join("");
+    ff([...inputs, "-filter_complex", `${refs}hstack=inputs=${files.length}`, out, "-y"], "拼帧");
+  }
   say(`\n  ${out}\n  从左到右：${times.join("s  ")}s\n`, { image: out, frames: files, times });
 }
 
