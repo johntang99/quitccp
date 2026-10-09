@@ -107,16 +107,78 @@ async function bestRendition(streamUrl) {
   for (const candidate of ["playlist_1080p.m3u8", "v1080p/index.m3u8", "playlist_720p.m3u8", "v720p/index.m3u8"]) {
     try {
       const res = await fetch(`${base}/${candidate}`, {
-        method: "HEAD",
         headers: { "user-agent": UA },
         signal: AbortSignal.timeout(30000)
       });
-      if (res.ok) return `${base}/${candidate}`;
+      if (!res.ok) continue;
+      const plain = await plainFileBehind(base, await res.text());
+      return plain ?? `${base}/${candidate}`;
     } catch {
       /* try the next shape */
     }
   }
   return streamUrl;
+}
+
+/**
+ * The ordinary mp4 hiding behind the playlist.
+ *
+ * 干净世界's HLS is not a folder of segments. Every "segment" is a byte range
+ * into one file:
+ *
+ *     #EXT-X-MAP:URI="h264_1080p.mp4",BYTERANGE="752@0"
+ *     #EXT-X-BYTERANGE:971215@1780
+ *     h264_1080p.mp4
+ *
+ * which means the whole film is already sitting there as a plain mp4, served
+ * with `accept-ranges: bytes`. Handing ffmpeg that address instead of the
+ * playlist is what fixes deep seeking: an mp4 is seekable by arithmetic --
+ * read the index, jump to the byte -- while the same jump through the HLS
+ * demuxer walks the segment list, which is where old ffmpeg on a slow
+ * connection gave up and wrote an empty clip.
+ *
+ * Measured against this same film at second 231, the point that failed on
+ * GitHub: 0.98s through the mp4. And nothing has to be downloaded whole.
+ *
+ * Only taken when the playlist really is one file in byte ranges, and only
+ * when that file answers a range request -- otherwise the playlist stands.
+ */
+async function plainFileBehind(base, playlist) {
+  const names = new Set(
+    playlist
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith("#"))
+  );
+  if (names.size !== 1) return null;
+  const [name] = [...names];
+  /*
+   * mp4 only, deliberately.
+   *
+   * The older films here are byte ranges into a single `segment.ts` instead,
+   * and that also answers range requests -- but MPEG-TS carries no index, so
+   * ffmpeg entering it at an arbitrary byte starts mid-GOP and warns
+   * "Missing reference picture". It produced the right frames in testing, yet
+   * it is guesswork where the mp4 is arithmetic. Those sources keep the
+   * playlist, and the whole-file fallback still covers them if a deep seek
+   * fails.
+   */
+  if (!/\.(mp4|m4s)$/i.test(name)) return null;
+  if (!playlist.includes("#EXT-X-BYTERANGE")) return null;
+
+  const url = /^https?:/i.test(name) ? name : `${base}/${name}`;
+  try {
+    const res = await fetch(url, {
+      method: "HEAD",
+      headers: { "user-agent": UA },
+      signal: AbortSignal.timeout(30000)
+    });
+    if (!res.ok) return null;
+    if ((res.headers.get("accept-ranges") ?? "").toLowerCase() !== "bytes") return null;
+    return url;
+  } catch {
+    return null;
+  }
 }
 
 /* ---------- the three helpers for finding moments ---------- */
