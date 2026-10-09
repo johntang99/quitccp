@@ -65,13 +65,33 @@ loadRepoRootEnv();
  * decisions about where a section went, not migration data.
  */
 const LEGACY_PAGES = [
-  // Certificate lookup was never rebuilt here; it lives on the service site.
   // The slashed spellings (/cert/ etc.) are what the old site used and what
   // our article bodies contain; Next normalises the slash away before these
   // rules run, so matching the bare form covers both.
+
+  // Not rebuilt here -- these live on their own sites.
   { source: "/cert", destination: "https://service.tuidang.org/cert-verify/" },
+  { source: "/cert-verify", destination: "https://service.tuidang.org/cert-verify/" },
+  { source: "/donation", destination: "https://donation.tuidang.org" },
+
+  // Sections that moved.
   { source: "/documentary", destination: "/videos" },
-  { source: "/9ping", destination: "/resources" }
+  { source: "/9ping", destination: "/resources" },
+  { source: "/td_promo", destination: "/resources/downloads" },
+  { source: "/about-us", destination: "/about" },
+  { source: "/contact-us", destination: "/services/contact" },
+  { source: "/faq", destination: "/services/faq" },
+  { source: "/privacy-policy", destination: "/legal/privacy" },
+  { source: "/terms-of-service", destination: "/legal/terms" },
+
+  // The FAQ kept the old numeric ids, so each question lands on itself
+  // rather than on the index: /docs/694368/什么是三退/ -> /services/faq/d/694368
+  { source: "/docs/:id(\\d+)/:rest*", destination: "/services/faq/d/:id" },
+
+  // WordPress category archives -- 35 of them on the old homepage alone, and
+  // the new site has no per-category page. The news index with its search box
+  // beats a 404.
+  { source: "/category/:rest*", destination: "/news" }
 ];
 
 const nextConfig: NextConfig = {

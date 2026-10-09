@@ -49,11 +49,28 @@ async function lookup(path: string): Promise<string | null> {
   }
 }
 
+/** `/2023/01/25/690040/` -> `/news/a/690040`, the id route for old articles. */
+function legacyIdPath(pathname: string): string | null {
+  const id = pathname.match(/\/(\d+)\/?$/)?.[1];
+  return id ? `/news/a/${id}` : null;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (!LEGACY_PATH.test(pathname)) return NextResponse.next();
 
-  const destination = await lookup(pathname);
+  /*
+   * The table first, then the id.
+   *
+   * `cms_redirects` gives the readable slug, which is the better destination
+   * when it has a row. But it does not have one for every old article -- the
+   * 2023/01/25/690040 form appears six times in our own article bodies and
+   * 404s today -- and `/news/a/<id>` resolves exactly the same article by the
+   * id already sitting in the path. Falling through to it turns those into
+   * working links, and where the article genuinely was not migrated it 404s
+   * there instead of here, which is no worse.
+   */
+  const destination = (await lookup(pathname)) ?? legacyIdPath(pathname);
   if (!destination) return NextResponse.next();
 
   const target = request.nextUrl.clone();
