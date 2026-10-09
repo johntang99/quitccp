@@ -282,6 +282,31 @@ async function render(projectPath) {
     }
     const dur = Number(probe(opened, "format=duration")) || 0;
     srcDurations.set(src, dur);
+
+    /*
+     * Which rendition did we actually get?
+     *
+     * bestRendition asks for 1080p by four different names and, when none of
+     * them answer, quietly hands back the master playlist -- at which point
+     * ffmpeg chooses for itself and has been seen taking a 360p one. Every
+     * check downstream would pass: right length, right frame count, right
+     * output size. The film would simply be blurry, upscaled from 360p, and
+     * nothing would say so.
+     *
+     * The four names are guesses about someone else's CDN. They will stop
+     * being right one day, and this is what will notice.
+     */
+    const dims = probe(opened, "stream=width,height").split("\n").map(Number);
+    const srcH = dims[1] || 0;
+    const finalH = out.height ?? 1080;
+    if (srcH > 0 && srcH < finalH * 0.6) {
+      throw new Error(
+        `这条素材只有 ${dims[0]}×${srcH}，正式版要出 ${out.width ?? 1920}×${finalH}——放大上去会糊。\n` +
+        `  源：${src}\n` +
+        `  多半是没找到高清那一路（干净世界改了命名），也可能这条片子本来就只有这个清晰度。\n` +
+        `  确实想用的话，把「出片设置」里的高改成 ${srcH} 或更低。`
+      );
+    }
     const deepest = Math.max(...clips.filter((c) => c.source === src).map((c) => Number(c.to) || 0));
     if (dur > 0 && deepest > dur + 0.5) {
       throw new Error(
@@ -290,7 +315,9 @@ async function render(projectPath) {
         `  注意：这种情况不会报错，只会给你素材最后那几秒（通常是片尾卡），所以必须先拦下来。`
       );
     }
-    if (!JSONOUT) console.log(`  素材 ${dur ? `${dur.toFixed(1)}s` : "时长未知"}  ${src.slice(0, 64)}`);
+    if (!JSONOUT) {
+      console.log(`  素材 ${dur ? `${dur.toFixed(1)}s` : "时长未知"}  ${dims[0] || "?"}×${srcH || "?"}  ${src.slice(0, 56)}`);
+    }
   }
 
   const parts = [];
@@ -459,6 +486,25 @@ async function render(projectPath) {
         "音乐"
       );
       if (!JSONOUT) console.log(`  音乐：从 ${start}s 起，截 ${total.toFixed(2)}s`);
+    }
+
+    /*
+     * And it has to reach the end.
+     *
+     * When the track's duration cannot be read -- an address that answers but
+     * is not quite a media file, say -- srcLen is 0, looping is skipped, and
+     * atrim simply yields however much there was. The film then plays with the
+     * music stopping partway through and nothing said so. Measure the bed.
+     */
+    const bedLen = Number(probe(bed, "format=duration")) || 0;
+    if (bedLen < total - 0.25) {
+      throw new Error(
+        `配乐只铺了 ${bedLen.toFixed(2)} 秒，片子有 ${total.toFixed(2)} 秒，后面会没声音。\n` +
+        `  配乐：${music.from}\n` +
+        (music.loop
+          ? `  已经开了循环，但读不出这首曲子多长，所以没能接。换一个地址或上传一个文件试试。`
+          : `  勾上「music 比片子短时循环」就会自动接满。`)
+      );
     }
   }
 

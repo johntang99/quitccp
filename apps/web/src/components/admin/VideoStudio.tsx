@@ -198,11 +198,29 @@ export function VideoStudio({
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "起不来");
-      setRun(data.run ?? null);
       setRunPreview(preview);
       setRunFiles([]);
       setRunStartedAt(Date.now());
       setElapsed(0);
+      /*
+       * A dispatch that started nothing we can see.
+       *
+       * The server looks for the run by time and usually finds it within a few
+       * seconds, but not always -- GitHub can be slow, or the month's Actions
+       * minutes can be used up, in which case nothing ever starts. Leaving the
+       * button spinning forever is the one answer that tells an editor
+       * nothing, so say what happened and where to look.
+       */
+      if (!data.run) {
+        setRun(null);
+        setBusy("");
+        setProblem(
+          "已经让 GitHub 出片了，但一时没查到这次运行。多半是 GitHub 慢了一拍，" +
+          "也可能是这个月的 Actions 分钟数用完了。去仓库的 Actions 页面看一眼「出片」。"
+        );
+        return;
+      }
+      setRun(data.run);
     } catch (err) {
       setProblem(err instanceof Error ? err.message : "起不来");
       setBusy("");
