@@ -1540,7 +1540,17 @@ export async function getHomeNews(channelNames: string[]): Promise<HomeNewsLive>
       supabase
         .from("cms_articles")
         .select(NEWS_CARD_COLUMNS)
+      /*
+       * News only.
+       *
+       * The band is headed 新闻与报告 and its 更多 goes to /news, but the
+       * query had no section filter -- so the 381 articles that belong to
+       * 资源馆 (flyers, booklets, 展板) competed for the same five slots
+       * purely on date, and two took the 最新发布 column the day they were
+       * imported.
+       */
         .eq("status", "published")
+        .eq("section", "news")
         .order("published_at", { ascending: false, nullsFirst: false })
         .order("id", { ascending: true });
 
