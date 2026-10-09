@@ -1,6 +1,13 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import {
+  deleteProjectOnGithub,
+  githubSetup,
+  listProjectsOnGithub,
+  readProjectFromGithub,
+  writeProjectToGithub
+} from "./github";
 
 /**
  * Runs the 拼接台 CLI on behalf of the admin UI.
@@ -152,4 +159,81 @@ function projectPath(name: string): string | null {
   const clean = String(name ?? "").trim();
   if (!clean || !/^[A-Za-z0-9_-]+\.json$/.test(clean)) return null;
   return path.join(repoRoot(), PROJECTS, clean);
+}
+
+/* ---------------------------------------------------------------------------
+ * Projects, from wherever this deployment can reach them
+ *
+ * Two stores, one list. On a laptop the repository is on disk and `projects/`
+ * is a folder; on Vercel it is not deployed at all, and the same files are
+ * reached over the GitHub API. Both are the same files in the same repository,
+ * so a film saved on the live site is the film the command line renders.
+ *
+ * Callers should use these and not the `fs` pair above, which stay exported
+ * because the local path is also what `runStudio` hands to ffmpeg.
+ * ------------------------------------------------------------------------- */
+
+/** Where this deployment keeps projects, if anywhere. */
+export function projectStore(): "local" | "github" | "none" {
+  if (studioAvailable().ok) return "local";
+  return githubSetup() ? "github" : "none";
+}
+
+export async function listProjectsAnywhere(): Promise<string[]> {
+  const where = projectStore();
+  if (where === "local") return listProjects();
+  const setup = githubSetup();
+  if (!setup) return [];
+  return listProjectsOnGithub(setup);
+}
+
+export async function readProjectAnywhere(name: string): Promise<unknown> {
+  const where = projectStore();
+  if (where === "local") return readProject(name);
+  const setup = githubSetup();
+  if (!setup) return null;
+  return (await readProjectFromGithub(setup, name))?.data ?? null;
+}
+
+export async function writeProjectAnywhere(name: string, data: unknown, who: string): Promise<void> {
+  const where = projectStore();
+  if (where === "local") {
+    writeProject(name, data);
+    return;
+  }
+  const setup = githubSetup();
+  if (!setup) throw new Error("这个站点没有配置 GitHub，存不了项目。");
+  await writeProjectToGithub(setup, name, data, `影片拼接台：存 ${name}（${who}）`);
+}
+
+export async function deleteProjectAnywhere(name: string, who: string): Promise<void> {
+  const where = projectStore();
+  if (where === "local") {
+    deleteProject(name);
+    return;
+  }
+  const setup = githubSetup();
+  if (!setup) throw new Error("这个站点没有配置 GitHub，删不了项目。");
+  await deleteProjectOnGithub(setup, name, `影片拼接台：删 ${name}（${who}）`);
+}
+
+/**
+ * Renaming, which GitHub's contents API has no single call for.
+ *
+ * Write the new name, then remove the old one -- in that order, so a failure
+ * in between leaves two copies rather than none.
+ */
+export async function renameProjectAnywhere(from: string, to: string, who: string): Promise<void> {
+  const where = projectStore();
+  if (where === "local") {
+    renameProject(from, to);
+    return;
+  }
+  const setup = githubSetup();
+  if (!setup) throw new Error("这个站点没有配置 GitHub，改不了名。");
+  if (await readProjectFromGithub(setup, to)) throw new Error(`已经有一个叫「${to}」的项目了`);
+  const source = await readProjectFromGithub(setup, from);
+  if (!source) throw new Error("原项目不存在");
+  await writeProjectToGithub(setup, to, source.data, `影片拼接台：${from} 改名为 ${to}（${who}）`);
+  await deleteProjectOnGithub(setup, from, `影片拼接台：${from} 已改名为 ${to}（${who}）`);
 }

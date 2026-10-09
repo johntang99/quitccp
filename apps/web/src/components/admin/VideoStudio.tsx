@@ -61,11 +61,14 @@ const clock = (n: number) => `${Math.floor(n / 60)}:${String(Math.floor(n % 60))
 export function VideoStudio({
   projects,
   available,
-  unavailableReason
+  unavailableReason,
+  canRenderOnGithub
 }: {
   projects: string[];
   available: boolean;
   unavailableReason: string;
+  /** No ffmpeg here, but a workflow can do the render for us. */
+  canRenderOnGithub: boolean;
 }) {
   const [projectList, setProjectList] = useState(projects);
   const [name, setName] = useState(projects[0] ?? "new-video.json");
@@ -90,15 +93,148 @@ export function VideoStudio({
   const [openRow, setOpenRow] = useState<number | null>(null);
   /** Percent while a music file uploads, 0 when idle. */
   const [musicBusy, setMusicBusy] = useState(0);
+  /** What we measured about the chosen track: how long, and how fast. */
+  const [musicInfo, setMusicInfo] = useState<import("@/lib/admin/bpm").MusicInfo | null>(null);
+  const [musicCheck, setMusicCheck] = useState<"idle" | "busy" | "failed">("idle");
+  /** The workflow run doing the rendering, while there is one. */
+  const [run, setRun] = useState<{ id: number; status: string; conclusion: string | null; url: string } | null>(null);
+  const [runStartedAt, setRunStartedAt] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
   const [result, setResult] = useState<{ files: string[]; duration: number; uploaded: Record<string, string> | null } | null>(null);
   const logRef = useRef<HTMLPreElement>(null);
-  const musicFileRef = useRef<HTMLInputElement>(null);
   const [log, setLog] = useState("");
 
   const total = useMemo(
     () => project.clips.reduce((n, c) => n + Math.max(0, (Number(c.to) || 0) - (Number(c.from) || 0)), 0),
     [project.clips]
   );
+
+  /*
+   * Measuring the track as soon as there is one.
+   *
+   * BPM was a bare box asking for a number that an editor has no way to know
+   * and no reason to have heard of. It is only ever needed when the music is
+   * shorter than the film -- that is the only case where anything gets looped
+   * -- so the page now works out both facts itself and fills the number in.
+   *
+   * Nothing here blocks: a failed measurement leaves the box typeable, which
+   * is exactly where it started.
+   */
+  const musicFrom = project.music?.from ?? "";
+  useEffect(() => {
+    if (!musicFrom || !/^https?:\/\//i.test(musicFrom)) {
+      setMusicInfo(null);
+      setMusicCheck("idle");
+      return;
+    }
+    const abort = new AbortController();
+    let live = true;
+    setMusicCheck("busy");
+    setMusicInfo(null);
+    const timer = setTimeout(() => {
+      void (async () => {
+        try {
+          const { measureMusic } = await import("@/lib/admin/bpm");
+          const info = await measureMusic(musicFrom, abort.signal);
+          if (!live) return;
+          setMusicInfo(info);
+          setMusicCheck("idle");
+          /* Only a tempo the track actually has gets written in. A vague
+             answer from a piece with no steady pulse would be worse than the
+             half-second fade the renderer falls back to. */
+          if (info.confident) {
+            setProject((p) => (p.music ? { ...p, music: { ...p.music, bpm: info.bpm } } : p));
+          }
+        } catch {
+          if (live) setMusicCheck("failed");
+        }
+      })();
+    }, 400);
+    return () => {
+      live = false;
+      abort.abort();
+      clearTimeout(timer);
+    };
+  }, [musicFrom]);
+
+  /** Looping -- and therefore the tempo -- only matters when music runs out. */
+  const musicLoops = musicInfo ? musicInfo.duration < total - 0.05 : true;
+
+  /*
+   * Rendering somewhere else.
+   *
+   * Where ffmpeg is missing the work goes to a GitHub workflow, which checks
+   * out the repository -- the project was saved there a moment ago -- renders,
+   * and uploads. Nothing about the film travels in the request; only its name.
+   *
+   * A dispatch cannot say which run it started, so the server finds it by
+   * time and hands it back. From then on this polls.
+   */
+  const renderOnGithub = async (preview: boolean) => {
+    setProblem("");
+    setResult(null);
+    setBusy(preview ? "正在叫 GitHub 出小样…" : "正在叫 GitHub 出片…");
+    try {
+      /* Save first, every time. The workflow renders what is in the
+         repository, so an unsaved change would silently not be in the film. */
+      const saved = await fetch("/api/admin/studio/project", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name, project })
+      });
+      const savedData = await saved.json();
+      if (!saved.ok) throw new Error(savedData.error ?? "存不下来");
+      if (savedData.projects) setProjectList(savedData.projects);
+      setSavedName(name);
+
+      const response = await fetch("/api/admin/studio/dispatch", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name, preview })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "起不来");
+      setRun(data.run ?? null);
+      setRunStartedAt(Date.now());
+      setElapsed(0);
+    } catch (err) {
+      setProblem(err instanceof Error ? err.message : "起不来");
+      setBusy("");
+    }
+  };
+
+  /* Asking how it is going, every five seconds, until it stops. */
+  useEffect(() => {
+    if (!run || run.status === "completed") return;
+    const tick = setInterval(() => {
+      void (async () => {
+        try {
+          const response = await fetch(`/api/admin/studio/dispatch?run=${run.id}`);
+          const data = await response.json();
+          if (data.run) setRun(data.run);
+        } catch {
+          /* a dropped poll is not a failed render; the next one will tell us */
+        }
+      })();
+    }, 5000);
+    return () => clearInterval(tick);
+  }, [run]);
+
+  /* A clock, so a four-minute wait looks like progress and not a hang. */
+  useEffect(() => {
+    if (!runStartedAt || (run && run.status === "completed")) return;
+    const tick = setInterval(() => setElapsed(Math.floor((Date.now() - runStartedAt) / 1000)), 1000);
+    return () => clearInterval(tick);
+  }, [runStartedAt, run]);
+
+  /* When it finishes, stop saying "busy" and say what happened. */
+  useEffect(() => {
+    if (!run || run.status !== "completed") return;
+    setBusy("");
+    if (run.conclusion !== "success") {
+      setProblem(`出片没成（${run.conclusion ?? "失败"}）。点下面的链接看 GitHub 上的日志。`);
+    }
+  }, [run]);
 
   useEffect(() => {
     if (projects[0]) void load(projects[0]);
@@ -746,36 +882,26 @@ export function VideoStudio({
             {/*
               Uploading is the answer to "where does music come from".
 
-              The field only ever held a URL that someone had already put
-              somewhere, and the label called it a 本机路径, so there was no way
-              in at all.
+              The control is the file input itself, shown, not a styled button
+              that forwards a click into a hidden one. Two versions of that
+              trick failed here. The <label> wrapper fired the dialog several
+              times per press -- the label activates the input, the input's
+              click bubbles back to the label, round it goes -- and the
+              button-plus-ref version could not be confirmed working at all,
+              because the step that breaks is the operating system's dialog,
+              which is the one step a browser automation tool never opens.
 
-              A real <button> that calls .click() on a hidden input, not a
-              <label> wrapped round one. The label version opened the file
-              dialog several times from a single press -- the label activates
-              the input, the input's own click bubbles back up to the label,
-              and round it goes -- so a picked file could be replaced by the
-              next dialog before the upload started, and the button looked
-              dead. This is the same shape as VideoUploadField, which works.
-
-              Video is accepted on purpose: ffmpeg takes the audio and throws
-              the picture away, so "I found a film with good music" is a
-              legitimate way to get a track. The one in use is exactly that.
+              A visible input has no forwarding step to break: the press lands
+              on the control that opens the dialog. It is plainer than the
+              buttons beside it, and that is the trade -- plain and working
+              beats matching and unverifiable.
             */}
             <div style={{ display: "flex", gap: 8, marginTop: 6, alignItems: "center", flexWrap: "wrap" }}>
-              <button
-                type="button"
-                className="admin-btn admin-btn-sm"
-                disabled={Boolean(musicBusy)}
-                onClick={() => musicFileRef.current?.click()}
-              >
-                {musicBusy ? `上传中 ${musicBusy}%` : "上传音乐…"}
-              </button>
               <input
-                ref={musicFileRef}
                 type="file"
                 accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/ogg,video/mp4,video/webm,.mp3,.m4a,.wav,.ogg,.mp4,.webm"
-                style={{ display: "none" }}
+                disabled={Boolean(musicBusy)}
+                style={{ fontSize: 13, maxWidth: "100%" }}
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   e.target.value = "";
@@ -799,10 +925,14 @@ export function VideoStudio({
                   }
                 }}
               />
-              <span className="muted" style={{ fontSize: 12 }}>
-                mp3 / m4a / wav / ogg，或一个 mp4 / webm —— 只取声音，最大 200MB
-              </span>
+              {musicBusy ? (
+                <strong style={{ fontSize: 13 }}>上传中 {musicBusy}%</strong>
+              ) : null}
             </div>
+            <p className="muted" style={{ margin: "4px 0 0", fontSize: 12, lineHeight: 1.7 }}>
+              选一个 mp3 / m4a / wav / ogg，或者一个 mp4 / webm（只取声音，画面不要），最大 200MB。
+              选完自动上传，上面地址栏会跟着变。也可以不上传，直接把现成的地址粘进上面那一栏。
+            </p>
             {project.music?.from && /\.(mp4|webm|mov)(\?|$)/i.test(project.music.from) ? (
               <p style={{ margin: "6px 0 0", fontSize: 12, lineHeight: 1.7, color: "#6b5312", background: "#fffbe9", padding: "7px 9px", borderRadius: 4 }}>
                 配乐来自一个<strong>视频</strong>文件——出片时只取它的声音，画面不要。
@@ -821,19 +951,64 @@ export function VideoStudio({
                 music 比片子短时循环
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-                BPM
+                <span title="每分钟多少拍。只在曲子比片子短、需要循环时才用得上。">每分钟拍数</span>
                 <input
                   className="admin-input"
                   style={{ width: 82 }}
                   value={project.music?.bpm ?? ""}
                   disabled={!project.music}
+                  placeholder="自动"
                   onChange={(e) => setProject((p) => (p.music ? { ...p, music: { ...p.music, bpm: Number(e.target.value) } } : p))}
                 />
               </label>
             </div>
+            {/*
+              Saying what was measured, and what it is for.
+
+              The old copy explained BPM to someone who already knew what BPM
+              was. These lines instead report what the page found out -- how
+              long the track is, whether that means looping, and what tempo it
+              is running at -- and only mention the number when it is going to
+              be used for something.
+            */}
+            {project.music ? (
+              <p style={{ margin: "6px 0 0", fontSize: 12.5, lineHeight: 1.75 }}>
+                {musicCheck === "busy" ? <span className="muted">正在听这首曲子，量它多长、多快…</span> : null}
+                {musicCheck === "failed" ? (
+                  <span className="muted">
+                    这首曲子没量成（地址打不开，或者文件太大）。不影响出片，循环接缝会用半秒淡接。
+                  </span>
+                ) : null}
+                {musicInfo ? (
+                  <>
+                    曲子 <strong>{musicInfo.duration.toFixed(1)} 秒</strong>，片子 {total.toFixed(1)} 秒。
+                    {musicLoops ? (
+                      <>
+                        {" "}曲子短，<strong>要循环接上</strong>——
+                        {musicInfo.confident ? (
+                          <>
+                            量出来是每分钟 <strong>{musicInfo.bpm}</strong> 拍，已经替你填好了，
+                            循环会按整拍剪、按一拍交叉淡接，接缝听不出来。
+                          </>
+                        ) : (
+                          <>
+                            这首曲子<strong>节拍不明显</strong>，没量准，所以
+                            {project.music?.bpm
+                              ? `没动你原来填的 ${project.music.bpm}。`
+                              : "没替你填。"}
+                            不填也能出片，接缝会用半秒淡接；听着别扭的话，自己填个数再试。
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <> 曲子够长，<strong>不用循环</strong>，拍数填不填都一样。</>
+                    )}
+                  </>
+                ) : null}
+              </p>
+            ) : null}
             <p className="muted" style={{ fontSize: 12, margin: "6px 0 0", lineHeight: 1.7 }}>
-              曲子比片子短就循环接上。填了 BPM，循环会按整拍剪、按一拍交叉淡接，接缝听不出来；
-              不填就用半秒淡接，有节奏的曲子会露馅。音量会自动归一到 −16 LUFS。
+              音量会自动归一到 −16 LUFS，跟网站上其它视频一条线，不会忽大忽小。
             </p>
           </div>
           <div>
@@ -962,6 +1137,92 @@ export function VideoStudio({
               <strong>出正式版</strong>：1080p，约半分钟。只存在这台电脑上，网站还看不到。<br />
               <strong>出片并上传</strong>：出正式版，<strong>并且</strong>传到 Storage、登记进图片视频库。
               片子还不会自己上首页——要换，去「页面内容 → 首屏 Hero → 视频地址」把新地址粘上。
+            </p>
+          </>
+        ) : canRenderOnGithub ? (
+          /*
+            No ffmpeg here, but a workflow has it.
+
+            The same two choices as the local buttons -- a quick look, or the
+            real thing -- except the machine is GitHub's and the wait is
+            minutes rather than seconds, so the elapsed time is on screen and
+            the run is linked for anyone who wants the log.
+          */
+          <>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                alignItems: "center",
+                marginTop: 14,
+                paddingTop: 14,
+                borderTop: "1px solid var(--rule, #e3e3e3)"
+              }}
+            >
+              <button
+                className="admin-btn"
+                type="button"
+                disabled={Boolean(busy) || project.clips.length === 0}
+                onClick={() => void renderOnGithub(true)}
+              >
+                出小样（360p）
+              </button>
+              <button
+                className="admin-btn admin-btn-primary"
+                type="button"
+                disabled={Boolean(busy) || project.clips.length === 0}
+                onClick={() => void renderOnGithub(false)}
+              >
+                出片并上传
+              </button>
+              {busy ? <strong style={{ color: "#4a3c96" }}>{busy}</strong> : null}
+            </div>
+
+            {run ? (
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: "10px 12px",
+                  borderRadius: 4,
+                  background: run.status === "completed" && run.conclusion === "success" ? "#f0fbf4" : "#f6f5fb",
+                  border: `1px solid ${run.status === "completed" && run.conclusion === "success" ? "#bfe6cf" : "#d8d4ec"}`
+                }}
+              >
+                {run.status === "completed" ? (
+                  run.conclusion === "success" ? (
+                    <>
+                      <strong style={{ color: "#1f7a4d" }}>出好了，已经传上去并登记进图片视频库。</strong>
+                      <p className="muted" style={{ margin: "6px 0 0", fontSize: 12.5, lineHeight: 1.8 }}>
+                        用了 {Math.floor(elapsed / 60)} 分 {elapsed % 60} 秒。地址在
+                        「图片视频库」里，或者点下面的 GitHub 链接看。
+                        片子不会自己上首页——要换，去「页面内容 → 首屏 Hero → 视频地址」把新地址粘上。
+                      </p>
+                    </>
+                  ) : (
+                    <strong style={{ color: "#b42318" }}>没出成（{run.conclusion ?? "失败"}）。</strong>
+                  )
+                ) : (
+                  <>
+                    <strong style={{ color: "#4a3c96" }}>
+                      GitHub 正在出片…… {Math.floor(elapsed / 60)} 分 {elapsed % 60} 秒
+                    </strong>
+                    <p className="muted" style={{ margin: "6px 0 0", fontSize: 12.5, lineHeight: 1.8 }}>
+                      一般三到四分钟。这一页可以关掉，出好了会在「图片视频库」里。
+                    </p>
+                  </>
+                )}
+                {run.url ? (
+                  <p style={{ margin: "6px 0 0", fontSize: 12 }}>
+                    <a href={run.url} target="_blank" rel="noreferrer">在 GitHub 上看这一次出片</a>
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            <p className="muted" style={{ fontSize: 12.5, margin: "10px 0 0", lineHeight: 1.8 }}>
+              这台机器没有 ffmpeg，所以出片交给 GitHub 跑——按下去会先存项目，再让它出片、上传。
+              一次三到四分钟，比在装了 ffmpeg 的电脑上慢（那边约一分钟），但不用你装任何东西。
             </p>
           </>
         ) : (

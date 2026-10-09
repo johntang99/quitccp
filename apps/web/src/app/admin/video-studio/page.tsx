@@ -1,7 +1,8 @@
 import { AdminShell } from "@/components/admin/AdminShell";
 import { VideoStudio } from "@/components/admin/VideoStudio";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
-import { listProjects, studioAvailable } from "@/lib/admin/studio";
+import { githubSetup } from "@/lib/admin/github";
+import { listProjectsAnywhere, studioAvailable } from "@/lib/admin/studio";
 
 /**
  * 影片拼接台.
@@ -16,7 +17,12 @@ export const dynamic = "force-dynamic";
 export default async function VideoStudioPage() {
   const user = await requireAdminSessionUser();
   const ready = studioAvailable();
-  const projects = ready.ok ? listProjects() : [];
+  /* Projects come from the repository either way -- as files here, over the
+     API on Vercel -- so the list is never empty just because ffmpeg is not. */
+  const projects = await listProjectsAnywhere();
+  /* Rendering has somewhere to happen if ffmpeg is here, or if GitHub is
+     configured to do it for us. */
+  const canRenderOnGithub = !ready.ok && Boolean(githubSetup());
 
   return (
     <AdminShell user={user}>
@@ -27,7 +33,12 @@ export default async function VideoStudioPage() {
           只取要用的那几秒，不用先下整片。
         </p>
       </section>
-      <VideoStudio projects={projects} available={ready.ok} unavailableReason={ready.reason} />
+      <VideoStudio
+        projects={projects}
+        available={ready.ok}
+        unavailableReason={ready.reason}
+        canRenderOnGithub={canRenderOnGithub}
+      />
     </AdminShell>
   );
 }

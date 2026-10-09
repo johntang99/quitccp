@@ -1,0 +1,149 @@
+# Renders a film from projects/ and uploads it, on a machine that has ffmpeg.
+#
+# 出片 is the one part of 影片拼接台 that cannot run where the site runs: Vercel
+# has no ffmpeg, and a 1080p cut is half a minute of several cores, which is not
+# what a serverless function is for. Until now that meant renders happened on one
+# person's Mac. This workflow is the second machine -- the admin page calls it
+# through the GitHub API, so an editor presses 出片 in the browser and never sees
+# GitHub at all.
+#
+# The project file is not passed in. It is read from the repository, which is
+# where 影片拼接台 saves it from either side -- locally as a file, from the live
+# site as a commit through the contents API. One source of truth means the film
+# this produces is the film the editor was looking at.
+#
+# Measured on the 30-second hero: 59s wall and 304s of CPU on a 5-core Mac, so
+# expect roughly 3-4 minutes here once checkout, npm install, apt and pulling the
+# source footage over the network are counted.
+name: 出片
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: "项目文件名（projects/ 里的，例如 hero-30s-10-09.json）"
+        required: true
+        type: string
+      preview:
+        description: "只出小样（360p，快）"
+        required: false
+        default: false
+        type: boolean
+
+# One render per project at a time. Two runs of the same film would race to
+# upload the same object key; different films are free to render at once.
+concurrency:
+  group: render-${{ inputs.project }}
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    # A full render is minutes. This ceiling exists so a wedged ffmpeg or an
+    # unreachable source does not sit on the concurrency group for six hours.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # 22, not 20: @supabase/supabase-js builds a realtime client on
+          # createClient() and that needs a global WebSocket, which Node 20
+          # does not have. Same reason as sync-santui.
+          node-version: 22
+          cache: npm
+
+      # Installed explicitly rather than trusted to the runner image, so a
+      # change to that image shows up as a failed step here and not as a
+      # mysteriously missing binary halfway through a render.
+      - name: 装 ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          ffmpeg -version | head -1
+
+      - run: npm install
+
+      # Fail here, with a readable message, rather than inside ffmpeg.
+      # Inputs reach the shell through the environment, never by being pasted
+      # into the script text: a project name is attacker-controlled as far as
+      # this runner is concerned, and `${{ }}` inside `run:` would execute it.
+      - name: 查项目文件在不在
+        env:
+          PROJECT: ${{ inputs.project }}
+        run: |
+          case "$PROJECT" in
+            *[!A-Za-z0-9._-]* | *..* | "")
+              echo "::error::项目名不合法：$PROJECT"; exit 1 ;;
+          esac
+          file="projects/$PROJECT"
+          if [ ! -f "$file" ]; then
+            echo "::error::找不到 $file。影片拼接台里存过项目了吗？"
+            echo "projects/ 里现在有："
+            ls -1 projects/ || echo "（空的）"
+            exit 1
+          fi
+          echo "要出的项目："
+          cat "$file"
+
+      - name: 出片并上传
+        id: render
+        env:
+          PROJECT: ${{ inputs.project }}
+          # Compared as a string on purpose. The REST API sends every
+          # workflow_dispatch input as text, and the string "false" is truthy
+          # in a GitHub expression -- so deciding this in an expression would
+          # quietly render a 360p preview every time the button asked for the
+          # full version.
+          PREVIEW: ${{ inputs.preview }}
+          # The script reads the public-prefixed name; the repository secret
+          # keeps the name the other workflows already use.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_STORAGE_BUCKET: ${{ secrets.SUPABASE_STORAGE_BUCKET }}
+        run: |
+          args=("projects/$PROJECT" --upload --json)
+          if [ "$PREVIEW" = "true" ]; then
+            args+=(--preview)
+            echo "出小样（360p）"
+          else
+            echo "出正式版（1080p）"
+          fi
+          node scripts/video-studio.mjs "${args[@]}" | tee result.json
+
+      # The run page is where whoever pressed the button comes to look, so the
+      # addresses go there rather than only into the log.
+      - name: 写上成片地址
+        if: always()
+        run: |
+          {
+            echo "## 出片结果"
+            echo
+            if [ -s result.json ]; then
+              node -e '
+                // --json puts the result on the last line; anything the
+                // script wrote before it is not JSON and must not be parsed.
+                const lines = require("fs").readFileSync("result.json", "utf8").trim().split("\n");
+                const r = JSON.parse(lines[lines.length - 1]);
+                console.log(`片长 ${r.duration ?? "?"} 秒\n`);
+                for (const [name, url] of Object.entries(r.uploaded ?? {})) {
+                  console.log(`- [${name}](${url})`);
+                }
+                if (!r.uploaded) console.log("（没有上传）");
+              '
+              echo
+              echo "片子还不会自己上首页——要换，去「页面内容 → 首屏 Hero → 视频地址」把地址粘上。"
+            else
+              echo "没出成，看上面的日志。"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Kept for 30 days so a render can be checked or downloaded even if the
+      # upload step is what failed.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: 成片-${{ inputs.project }}
+          path: artifacts/**/*.mp4
+          retention-days: 30
+          if-no-files-found: warn
