@@ -99,6 +99,8 @@ export function VideoStudio({
   /** The workflow run doing the rendering, while there is one. */
   const [run, setRun] = useState<{ id: number; status: string; conclusion: string | null; url: string } | null>(null);
   const [runStartedAt, setRunStartedAt] = useState(0);
+  /** Whether the run in flight is a 360p sample, which never uploads. */
+  const [runPreview, setRunPreview] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [result, setResult] = useState<{ files: string[]; duration: number; uploaded: Record<string, string> | null } | null>(null);
   const logRef = useRef<HTMLPreElement>(null);
@@ -195,6 +197,7 @@ export function VideoStudio({
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "起不来");
       setRun(data.run ?? null);
+      setRunPreview(preview);
       setRunStartedAt(Date.now());
       setElapsed(0);
     } catch (err) {
@@ -1099,7 +1102,9 @@ export function VideoStudio({
           <span className="muted" style={{ fontSize: 12.5 }}>
             {available
               ? "想先收工、回头再出片时按它。按下面三个出片按钮会自动存一次，不用先按这个。"
-              : "排好了就按它存下。出片要在装了 ffmpeg 的电脑上做。"}
+              : canRenderOnGithub
+                ? "想先收工、回头再出片时按它。按下面的出片按钮会自动存一次，不用先按这个。"
+                : "排好了就按它存下。出片要在装了 ffmpeg 的电脑上做。"}
           </span>
         </div>
 
@@ -1191,14 +1196,30 @@ export function VideoStudio({
               >
                 {run.status === "completed" ? (
                   run.conclusion === "success" ? (
-                    <>
-                      <strong style={{ color: "#1f7a4d" }}>出好了，已经传上去并登记进图片视频库。</strong>
-                      <p className="muted" style={{ margin: "6px 0 0", fontSize: 12.5, lineHeight: 1.8 }}>
-                        用了 {Math.floor(elapsed / 60)} 分 {elapsed % 60} 秒。地址在
-                        「图片视频库」里，或者点下面的 GitHub 链接看。
-                        片子不会自己上首页——要换，去「页面内容 → 首屏 Hero → 视频地址」把新地址粘上。
-                      </p>
-                    </>
+                    /* A sample and a real render end very differently: the
+                       sample stops at 360p and is never uploaded, by design.
+                       Saying otherwise sent someone to 图片视频库 to look for
+                       a file that was never going to be there. */
+                    runPreview ? (
+                      <>
+                        <strong style={{ color: "#1f7a4d" }}>小样出好了。</strong>
+                        <p className="muted" style={{ margin: "6px 0 0", fontSize: 12.5, lineHeight: 1.8 }}>
+                          用了 {Math.floor(elapsed / 60)} 分 {elapsed % 60} 秒。
+                          <strong>小样没有上传</strong>——它只是 360p，用来看剪得对不对。
+                          点下面的链接进 GitHub，在页面最下面的 Artifacts 里下载来看。
+                          剪对了就按「出片并上传」出 1080p 正式版。
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <strong style={{ color: "#1f7a4d" }}>出好了，已经传上去并登记进图片视频库。</strong>
+                        <p className="muted" style={{ margin: "6px 0 0", fontSize: 12.5, lineHeight: 1.8 }}>
+                          用了 {Math.floor(elapsed / 60)} 分 {elapsed % 60} 秒。地址在
+                          「图片视频库」里，或者点下面的 GitHub 链接看。
+                          片子不会自己上首页——要换，去「页面内容 → 首屏 Hero → 视频地址」把新地址粘上。
+                        </p>
+                      </>
+                    )
                   ) : (
                     <strong style={{ color: "#b42318" }}>没出成（{run.conclusion ?? "失败"}）。</strong>
                   )
@@ -1214,7 +1235,14 @@ export function VideoStudio({
                 )}
                 {run.url ? (
                   <p style={{ margin: "6px 0 0", fontSize: 12 }}>
-                    <a href={run.url} target="_blank" rel="noreferrer">在 GitHub 上看这一次出片</a>
+                    <a
+                      href={run.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: "#4a3c96", textDecoration: "underline" }}
+                    >
+                      在 GitHub 上看这一次出片 ↗
+                    </a>
                   </p>
                 ) : null}
               </div>
