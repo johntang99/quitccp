@@ -259,6 +259,40 @@ async function render(projectPath) {
     return resolved.get(src);
   };
 
+  /*
+   * Check every source before cutting anything.
+   *
+   * A render is minutes of work, and the two ways a project is wrong are both
+   * knowable in seconds: a source that cannot be opened at all, and a clip
+   * that asks for a moment past the end of its source.
+   *
+   * The second one is not hypothetical and not harmless. 干净世界's stream
+   * clamps an out-of-range seek to the tail rather than failing, so asking for
+   * three seconds from a point past the end returns three perfectly valid
+   * seconds of the wrong thing -- the end card. Length-checking a clip cannot
+   * catch that; only knowing how long the source is can.
+   */
+  const srcDurations = new Map();
+  for (const src of new Set(clips.map((c) => c.source))) {
+    let opened;
+    try {
+      opened = await openFor(src);
+    } catch (err) {
+      throw new Error(`打不开这条素材：${src}\n  ${String(err.message).slice(0, 200)}`);
+    }
+    const dur = Number(probe(opened, "format=duration")) || 0;
+    srcDurations.set(src, dur);
+    const deepest = Math.max(...clips.filter((c) => c.source === src).map((c) => Number(c.to) || 0));
+    if (dur > 0 && deepest > dur + 0.5) {
+      throw new Error(
+        `有片段取到了素材结尾之后：这条素材只有 ${dur.toFixed(1)} 秒，却要取到第 ${deepest} 秒。\n` +
+        `  源：${src}\n` +
+        `  注意：这种情况不会报错，只会给你素材最后那几秒（通常是片尾卡），所以必须先拦下来。`
+      );
+    }
+    if (!JSONOUT) console.log(`  素材 ${dur ? `${dur.toFixed(1)}s` : "时长未知"}  ${src.slice(0, 64)}`);
+  }
+
   const parts = [];
   let total = 0;
   fps = await frameRateFor(project, await openFor(clips[0].source));
@@ -337,9 +371,14 @@ async function render(projectPath) {
          *
          * It costs one download of the whole source, so it is the fallback
          * rather than the default, and it is cached like any other opened
-         * source -- the other clips from the same film reuse it.
+         * source -- the other clips from the same film reuse it, which is why
+         * only the first deep clip ever pays for it.
+         *
+         * Taken on the first failure rather than the second: streaming has
+         * already been shown not to work on this machine for this source, and
+         * trying the same thing again mostly spends another minute proving it.
          */
-        if (attempt === 2 && /^https?:/i.test(src)) {
+        if (/^https?:/i.test(src)) {
           const local = path.join(work, `src-${resolved.size}-${i}.mp4`);
           if (!JSONOUT) console.log(`  改成先把整条源下下来再剪…`);
           try {

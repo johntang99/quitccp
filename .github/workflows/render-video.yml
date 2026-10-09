@@ -109,7 +109,15 @@ jobs:
           else
             echo "出正式版（1080p）"
           fi
-          node scripts/video-studio.mjs "${args[@]}" | tee result.json
+          # stderr is where the script explains a refusal -- which clip, which
+          # source, how short it came out. Kept so the summary can show it
+          # instead of sending someone to read a log.
+          node scripts/video-studio.mjs "${args[@]}" > result.json 2> error.txt || {
+            echo "出片失败："
+            cat error.txt
+            exit 1
+          }
+          cat result.json
 
       # The run page is where whoever pressed the button comes to look, so the
       # addresses go there rather than only into the log.
@@ -134,7 +142,11 @@ jobs:
               echo
               echo "片子还不会自己上首页——要换，去「页面内容 → 首屏 Hero → 视频地址」把地址粘上。"
             else
-              echo "没出成，看上面的日志。"
+              echo "**没出成。** 原因："
+              echo
+              echo '```'
+              tail -c 2000 error.txt 2>/dev/null || echo "（没留下错误信息，看上面的日志）"
+              echo '```'
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
