@@ -92,6 +92,7 @@ export function VideoStudio({
   const [musicBusy, setMusicBusy] = useState(0);
   const [result, setResult] = useState<{ files: string[]; duration: number; uploaded: Record<string, string> | null } | null>(null);
   const logRef = useRef<HTMLPreElement>(null);
+  const musicFileRef = useRef<HTMLInputElement>(null);
   const [log, setLog] = useState("");
 
   const total = useMemo(
@@ -747,49 +748,66 @@ export function VideoStudio({
 
               The field only ever held a URL that someone had already put
               somewhere, and the label called it a 本机路径, so there was no way
-              in at all -- the one track in use is the old hero *video*, with
-              ffmpeg taking its sound. That works, and is worth saying plainly
-              rather than hiding behind a label that says 音乐文件.
+              in at all.
+
+              A real <button> that calls .click() on a hidden input, not a
+              <label> wrapped round one. The label version opened the file
+              dialog several times from a single press -- the label activates
+              the input, the input's own click bubbles back up to the label,
+              and round it goes -- so a picked file could be replaced by the
+              next dialog before the upload started, and the button looked
+              dead. This is the same shape as VideoUploadField, which works.
+
+              Video is accepted on purpose: ffmpeg takes the audio and throws
+              the picture away, so "I found a film with good music" is a
+              legitimate way to get a track. The one in use is exactly that.
             */}
             <div style={{ display: "flex", gap: 8, marginTop: 6, alignItems: "center", flexWrap: "wrap" }}>
-              <label className="admin-btn admin-btn-sm" style={{ cursor: musicBusy ? "wait" : "pointer", margin: 0 }}>
+              <button
+                type="button"
+                className="admin-btn admin-btn-sm"
+                disabled={Boolean(musicBusy)}
+                onClick={() => musicFileRef.current?.click()}
+              >
                 {musicBusy ? `上传中 ${musicBusy}%` : "上传音乐…"}
-                <input
-                  type="file"
-                  accept="audio/*,.mp3,.m4a,.wav,.ogg"
-                  style={{ display: "none" }}
-                  disabled={Boolean(musicBusy)}
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    e.target.value = "";
-                    if (!file) return;
-                    setProblem("");
-                    setMusicBusy(1);
-                    try {
-                      const { uploadFile } = await import("@/lib/admin/upload-client");
-                      const result = await uploadFile(file, {
-                        folder: "home/music",
-                        onProgress: (percent) => setMusicBusy(Math.max(1, percent))
-                      });
-                      setProject((p) => ({
-                        ...p,
-                        music: { loop: true, lufs: -16, ...(p.music ?? {}), from: result.url }
-                      }));
-                    } catch (err) {
-                      setProblem(err instanceof Error ? err.message : "音乐上传失败");
-                    } finally {
-                      setMusicBusy(0);
-                    }
-                  }}
-                />
-              </label>
-              <span className="muted" style={{ fontSize: 12 }}>mp3 / m4a / wav / ogg</span>
+              </button>
+              <input
+                ref={musicFileRef}
+                type="file"
+                accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/ogg,video/mp4,video/webm,.mp3,.m4a,.wav,.ogg,.mp4,.webm"
+                style={{ display: "none" }}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!file) return;
+                  setProblem("");
+                  setMusicBusy(1);
+                  try {
+                    const { uploadFile } = await import("@/lib/admin/upload-client");
+                    const result = await uploadFile(file, {
+                      folder: "home/music",
+                      onProgress: (percent) => setMusicBusy(Math.max(1, percent))
+                    });
+                    setProject((p) => ({
+                      ...p,
+                      music: { loop: true, lufs: -16, ...(p.music ?? {}), from: result.url }
+                    }));
+                  } catch (err) {
+                    setProblem(err instanceof Error ? err.message : "音乐上传失败");
+                  } finally {
+                    setMusicBusy(0);
+                  }
+                }}
+              />
+              <span className="muted" style={{ fontSize: 12 }}>
+                mp3 / m4a / wav / ogg，或一个 mp4 / webm —— 只取声音，最大 200MB
+              </span>
             </div>
             {project.music?.from && /\.(mp4|webm|mov)(\?|$)/i.test(project.music.from) ? (
               <p style={{ margin: "6px 0 0", fontSize: 12, lineHeight: 1.7, color: "#6b5312", background: "#fffbe9", padding: "7px 9px", borderRadius: 4 }}>
-                这里放的是一个<strong>视频</strong>文件——只会取它的声音，画面不要。
-                现在用的就是旧版 13 秒片头，因为手上只有这一条音乐。
-                有真正的曲子就上传一个，声音会更好。
+                配乐来自一个<strong>视频</strong>文件——出片时只取它的声音，画面不要。
+                这是正常用法：看到哪条片子音乐好听，直接传上来就行。
+                现在用的是旧版 13 秒片头的声轨。
               </p>
             ) : null}
             <div style={{ display: "flex", gap: 10, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
