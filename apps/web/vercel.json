@@ -13,5 +13,6 @@
       "path": "/api/cron/search?mode=full",
       "schedule": "41 4 * * 1"
     }
-  ]
+  ],
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ':/' ':(exclude,top)projects'"
 }
