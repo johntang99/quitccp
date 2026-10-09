@@ -88,6 +88,8 @@ export function VideoStudio({
   /** Which row has its player open. One at a time: a page of autoplaying
       videos is noise, and only one clip is ever being judged. */
   const [openRow, setOpenRow] = useState<number | null>(null);
+  /** Percent while a music file uploads, 0 when idle. */
+  const [musicBusy, setMusicBusy] = useState(0);
   const [result, setResult] = useState<{ files: string[]; duration: number; uploaded: Record<string, string> | null } | null>(null);
   const logRef = useRef<HTMLPreElement>(null);
   const [log, setLog] = useState("");
@@ -219,6 +221,155 @@ export function VideoStudio({
           <strong style={{ color: "#b42318" }}>{problem}</strong>
         </section>
       ) : null}
+
+      {/*
+        ---- 项目 ----
+
+        A project is one film: its clips, its music, its output settings.
+        First on the page because it is first in the work -- every session
+        starts by choosing which film is being cut, or starting a new one.
+        It used to sit at the bottom, which read as an afterthought.
+
+        `另存一份` also rewrites `output.name`. Without that, duplicating a
+        project kept the original's output filename and rendering the copy
+        quietly overwrote the first film's files -- a bug only noticed once the
+        wrong video is already on the homepage.
+      */}
+      <section className="admin-card" style={{ marginTop: 14 }}>
+        <h3 style={{ marginTop: 0 }}>1 · 选一个项目，或新建一个</h3>
+
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <label style={{ fontSize: 13, color: "#555" }}>当前</label>
+          <select
+            className="admin-input"
+            style={{ width: 230 }}
+            value={projectList.includes(name) ? name : "__unsaved__"}
+            onChange={(e) => {
+              if (e.target.value !== "__unsaved__") void load(e.target.value);
+            }}
+          >
+            {projectList.map((p) => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+            {projectList.includes(name) ? null : <option value="__unsaved__">{name}（还没存过）</option>}
+          </select>
+          <button
+            className="admin-btn"
+            type="button"
+            title="清空，从头做一条新片子"
+            onClick={() => {
+              setProject(EMPTY);
+              setResult(null);
+              setRowFrames({});
+              setOpenRow(null);
+              setName("new-video.json");
+            }}
+          >
+            新建空白
+          </button>
+          <button
+            className="admin-btn admin-btn-danger"
+            type="button"
+            disabled={!projectList.includes(name) || Boolean(busy)}
+            title="删掉这个项目文件。已经出过、上传过的片子不受影响"
+            onClick={async () => {
+              if (!window.confirm(`删掉项目「${name}」？\n已经出过、上传过的片子不受影响。`)) return;
+              setBusy("删除中…");
+              setProblem("");
+              const res = await fetch(`/api/admin/studio/project?name=${encodeURIComponent(name)}`, { method: "DELETE" });
+              const data = await res.json();
+              setBusy("");
+              if (!res.ok) {
+                setProblem(String(data.error ?? "删不掉"));
+                return;
+              }
+              setProjectList(data.projects);
+              if (data.projects[0]) void load(data.projects[0]);
+              else {
+                setProject(EMPTY);
+                setName("new-video.json");
+              }
+            }}
+          >
+            删除
+          </button>
+        </div>
+
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}>
+          <label style={{ fontSize: 13, color: "#555" }}>名字</label>
+          <input
+            className="admin-input"
+            style={{ width: 210 }}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="hero-30s.json"
+          />
+          <button
+            className="admin-btn"
+            type="button"
+            disabled={Boolean(busy) || !name.trim()}
+            title="用这个名字另存一份，原来那个留着不动——想在旧片子基础上做新的就按它"
+            onClick={async () => {
+              const base = name.replace(/\.json$/, "");
+              const copy = { ...project, output: { ...project.output, name: base } };
+              setProject(copy);
+              const data = await call("/api/admin/studio/project", { name, project: copy }, "另存一份…");
+              if (data?.projects) {
+                setProjectList(data.projects);
+                /* The copy is now what is open. Without this, 改名 still
+                   pointed at the project copied *from* and would rename the
+                   original out from under it. */
+                setSavedName(name);
+              }
+            }}
+          >
+            另存一份
+          </button>
+          <button
+            className="admin-btn"
+            type="button"
+            disabled={Boolean(busy) || !projectList.includes(savedName) || name === savedName}
+            title="把当前项目改成这个名字，不留旧的那份"
+            onClick={async () => {
+              setBusy("改名…");
+              setProblem("");
+              const res = await fetch("/api/admin/studio/project", {
+                method: "PATCH",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ from: savedName, to: name })
+              });
+              const data = await res.json();
+              setBusy("");
+              if (!res.ok) {
+                setProblem(String(data.error ?? "改名失败"));
+                return;
+              }
+              setProjectList(data.projects);
+              setSavedName(name);
+              /* Keep the films named after the project. 另存一份 already does
+                 this; renaming leaving them behind was the inconsistency that
+                 made the two names look unrelated. */
+              setProject((p) => ({ ...p, output: { ...p.output, name: name.replace(/\.json$/, "") } }));
+              void call(
+                "/api/admin/studio/project",
+                { name, project: { ...project, output: { ...project.output, name: name.replace(/\.json$/, "") } } },
+                "存盘"
+              );
+            }}
+          >
+            改名
+          </button>
+        </div>
+
+        <p className="muted" style={{ fontSize: 12, margin: "10px 0 0", lineHeight: 1.85 }}>
+          一个项目就是一条片子：用哪些片段、配什么音乐、出多大。文件存在仓库的
+          <code> projects/ </code>里，就是命令行读的那个——这一页和
+          <code> node scripts/video-studio.mjs projects/xxx.json </code>出来的片子一模一样。
+          <br />
+          成片的文件名在上面「音乐与出片设置」里另设。<strong>另存一份</strong>会把它一起改成新名字，
+          免得两个项目出的片子互相覆盖。
+        </p>
+      </section>
 
       {/* ---- 翻片子（可选，要 ffmpeg） ---- */}
       {available ? (
@@ -367,7 +518,7 @@ export function VideoStudio({
       {/* ---- 3. 顺序 ---- */}
       <section className="admin-card" style={{ marginBottom: 14 }}>
         <h3 style={{ marginTop: 0 }}>
-          1 · 播放顺序
+          2 · 播放顺序
           <span style={{ fontWeight: 400, fontSize: 14, color: "#777", marginLeft: 10 }}>
             {project.clips.length} 段，共 {total.toFixed(2)} 秒
           </span>
@@ -573,10 +724,12 @@ export function VideoStudio({
 
       {/* ---- 4. 音乐与出片设置 ---- */}
       <section className="admin-card" style={{ marginBottom: 14 }}>
-        <h3 style={{ marginTop: 0 }}>2 · 音乐与出片设置</h3>
+        <h3 style={{ marginTop: 0 }}>3 · 音乐与出片设置</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
           <div>
-            <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>音乐文件（本机路径，留空就没有声音）</label>
+            <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>
+              配乐（留空就没有声音）
+            </label>
             <input
               className="admin-input"
               style={{ fontFamily: "ui-monospace, Menlo, monospace", width: "100%" }}
@@ -587,8 +740,58 @@ export function VideoStudio({
                   music: e.target.value.trim() ? { loop: true, bpm: 115.4, lufs: -16, ...(p.music ?? {}), from: e.target.value } : null
                 }))
               }
-              placeholder="artifacts/hero/hero-music-source.mp4"
+              placeholder="上传一个 mp3，或粘一个地址"
             />
+            {/*
+              Uploading is the answer to "where does music come from".
+
+              The field only ever held a URL that someone had already put
+              somewhere, and the label called it a 本机路径, so there was no way
+              in at all -- the one track in use is the old hero *video*, with
+              ffmpeg taking its sound. That works, and is worth saying plainly
+              rather than hiding behind a label that says 音乐文件.
+            */}
+            <div style={{ display: "flex", gap: 8, marginTop: 6, alignItems: "center", flexWrap: "wrap" }}>
+              <label className="admin-btn admin-btn-sm" style={{ cursor: musicBusy ? "wait" : "pointer", margin: 0 }}>
+                {musicBusy ? `上传中 ${musicBusy}%` : "上传音乐…"}
+                <input
+                  type="file"
+                  accept="audio/*,.mp3,.m4a,.wav,.ogg"
+                  style={{ display: "none" }}
+                  disabled={Boolean(musicBusy)}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (!file) return;
+                    setProblem("");
+                    setMusicBusy(1);
+                    try {
+                      const { uploadFile } = await import("@/lib/admin/upload-client");
+                      const result = await uploadFile(file, {
+                        folder: "home/music",
+                        onProgress: (percent) => setMusicBusy(Math.max(1, percent))
+                      });
+                      setProject((p) => ({
+                        ...p,
+                        music: { loop: true, lufs: -16, ...(p.music ?? {}), from: result.url }
+                      }));
+                    } catch (err) {
+                      setProblem(err instanceof Error ? err.message : "音乐上传失败");
+                    } finally {
+                      setMusicBusy(0);
+                    }
+                  }}
+                />
+              </label>
+              <span className="muted" style={{ fontSize: 12 }}>mp3 / m4a / wav / ogg</span>
+            </div>
+            {project.music?.from && /\.(mp4|webm|mov)(\?|$)/i.test(project.music.from) ? (
+              <p style={{ margin: "6px 0 0", fontSize: 12, lineHeight: 1.7, color: "#6b5312", background: "#fffbe9", padding: "7px 9px", borderRadius: 4 }}>
+                这里放的是一个<strong>视频</strong>文件——只会取它的声音，画面不要。
+                现在用的就是旧版 13 秒片头，因为手上只有这一条音乐。
+                有真正的曲子就上传一个，声音会更好。
+              </p>
+            ) : null}
             <div style={{ display: "flex", gap: 10, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
               <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
                 <input
@@ -611,12 +814,43 @@ export function VideoStudio({
               </label>
             </div>
             <p className="muted" style={{ fontSize: 12, margin: "6px 0 0", lineHeight: 1.7 }}>
-              填了 BPM，循环会按整拍剪、按一拍交叉淡接，接缝听不出来；不填就用半秒淡接，有节奏的曲子会露馅。
+              曲子比片子短就循环接上。填了 BPM，循环会按整拍剪、按一拍交叉淡接，接缝听不出来；
+              不填就用半秒淡接，有节奏的曲子会露馅。音量会自动归一到 −16 LUFS。
             </p>
           </div>
           <div>
             <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>成片文件名</label>
             <input className="admin-input" style={{ width: "100%" }} value={project.output.name} onChange={(e) => patchOutput({ name: e.target.value })} />
+            {/*
+              Spelling out the files this produces.
+
+              The project file and the output name are two different names, and
+              nothing on the page used to say so -- rename the project and the
+              films keep the old name, silently. Showing the actual filenames
+              makes the difference visible, and the nudge appears only when the
+              two have drifted apart, because they are allowed to differ.
+            */}
+            <p
+              className="muted"
+              style={{ margin: "5px 0 0", fontSize: 11.5, lineHeight: 1.7, fontFamily: "ui-monospace, Menlo, monospace" }}
+            >
+              → {project.output.name || "（没填）"}-{project.output.width}.mp4
+              {project.output.alsoWidth ? `　${project.output.name}-${project.output.alsoWidth}.mp4` : ""}
+            </p>
+            {project.output.name && project.output.name !== name.replace(/\.json$/, "") ? (
+              <p style={{ margin: "6px 0 0", fontSize: 12, lineHeight: 1.7, color: "#6b5312", background: "#fffbe9", padding: "7px 9px", borderRadius: 4 }}>
+                成片名和项目名不一样（项目叫 <strong>{name.replace(/\.json$/, "")}</strong>）。
+                只有一个项目时没关系；<strong>但两个项目用同一个成片名，后出的会把先出的覆盖掉。</strong>
+                <button
+                  className="admin-btn admin-btn-sm"
+                  type="button"
+                  style={{ marginLeft: 8 }}
+                  onClick={() => patchOutput({ name: name.replace(/\.json$/, "") })}
+                >
+                  改成和项目名一致
+                </button>
+              </p>
+            ) : null}
             <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
               {([["宽", "width"], ["高", "height"], ["帧率", "fps"]] as const).map(([label, key]) => (
                 <label key={key} style={{ fontSize: 13 }}>
@@ -658,7 +892,7 @@ export function VideoStudio({
         site saves and stops there, and whoever has ffmpeg renders.
       */}
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>3 · 存起来，出片</h3>
+        <h3 style={{ marginTop: 0 }}>4 · 存起来，出片</h3>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <button
@@ -755,144 +989,6 @@ export function VideoStudio({
         ) : null}
       </section>
 
-      {/*
-        ---- 项目 ----
-
-        A project is one film: its clips, its music, its output settings. The
-        select switches between them; the three actions beside it are the ones
-        that were missing and had to be done in a terminal.
-
-        `另存一份` also rewrites `output.name`. Without that, duplicating a
-        project kept the original's output filename and rendering the copy
-        quietly overwrote the first film's files -- a bug only noticed once the
-        wrong video is already on the homepage.
-      */}
-      <section className="admin-card" style={{ marginTop: 14 }}>
-        <h3 style={{ marginTop: 0, fontSize: 15 }}>项目</h3>
-
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <label style={{ fontSize: 13, color: "#555" }}>当前</label>
-          <select
-            className="admin-input"
-            style={{ width: 230 }}
-            value={projectList.includes(name) ? name : "__unsaved__"}
-            onChange={(e) => {
-              if (e.target.value !== "__unsaved__") void load(e.target.value);
-            }}
-          >
-            {projectList.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-            {projectList.includes(name) ? null : <option value="__unsaved__">{name}（还没存过）</option>}
-          </select>
-          <button
-            className="admin-btn"
-            type="button"
-            title="清空，从头做一条新片子"
-            onClick={() => {
-              setProject(EMPTY);
-              setResult(null);
-              setRowFrames({});
-              setOpenRow(null);
-              setName("new-video.json");
-            }}
-          >
-            新建空白
-          </button>
-          <button
-            className="admin-btn admin-btn-danger"
-            type="button"
-            disabled={!projectList.includes(name) || Boolean(busy)}
-            title="删掉这个项目文件。已经出过、上传过的片子不受影响"
-            onClick={async () => {
-              if (!window.confirm(`删掉项目「${name}」？\n已经出过、上传过的片子不受影响。`)) return;
-              setBusy("删除中…");
-              setProblem("");
-              const res = await fetch(`/api/admin/studio/project?name=${encodeURIComponent(name)}`, { method: "DELETE" });
-              const data = await res.json();
-              setBusy("");
-              if (!res.ok) {
-                setProblem(String(data.error ?? "删不掉"));
-                return;
-              }
-              setProjectList(data.projects);
-              if (data.projects[0]) void load(data.projects[0]);
-              else {
-                setProject(EMPTY);
-                setName("new-video.json");
-              }
-            }}
-          >
-            删除
-          </button>
-        </div>
-
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}>
-          <label style={{ fontSize: 13, color: "#555" }}>名字</label>
-          <input
-            className="admin-input"
-            style={{ width: 210 }}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="hero-30s.json"
-          />
-          <button
-            className="admin-btn"
-            type="button"
-            disabled={Boolean(busy) || !name.trim()}
-            title="用这个名字另存一份，原来那个留着不动——想在旧片子基础上做新的就按它"
-            onClick={async () => {
-              const base = name.replace(/\.json$/, "");
-              const copy = { ...project, output: { ...project.output, name: base } };
-              setProject(copy);
-              const data = await call("/api/admin/studio/project", { name, project: copy }, "另存一份…");
-              if (data?.projects) {
-                setProjectList(data.projects);
-                /* The copy is now what is open. Without this, 改名 still
-                   pointed at the project copied *from* and would rename the
-                   original out from under it. */
-                setSavedName(name);
-              }
-            }}
-          >
-            另存一份
-          </button>
-          <button
-            className="admin-btn"
-            type="button"
-            disabled={Boolean(busy) || !projectList.includes(savedName) || name === savedName}
-            title="把当前项目改成这个名字，不留旧的那份"
-            onClick={async () => {
-              setBusy("改名…");
-              setProblem("");
-              const res = await fetch("/api/admin/studio/project", {
-                method: "PATCH",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({ from: savedName, to: name })
-              });
-              const data = await res.json();
-              setBusy("");
-              if (!res.ok) {
-                setProblem(String(data.error ?? "改名失败"));
-                return;
-              }
-              setProjectList(data.projects);
-              setSavedName(name);
-            }}
-          >
-            改名
-          </button>
-        </div>
-
-        <p className="muted" style={{ fontSize: 12, margin: "10px 0 0", lineHeight: 1.85 }}>
-          一个项目就是一条片子：用哪些片段、配什么音乐、出多大。文件存在仓库的
-          <code> projects/ </code>里，就是命令行读的那个——这一页和
-          <code> node scripts/video-studio.mjs projects/xxx.json </code>出来的片子一模一样。
-          <br />
-          成片的文件名在上面「音乐与出片设置」里另设。<strong>另存一份</strong>会把它一起改成新名字，
-          免得两个项目出的片子互相覆盖。
-        </p>
-      </section>
     </>
   );
 }
