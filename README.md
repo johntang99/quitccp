@@ -114,14 +114,3 @@ Notes:
   - `npm run benchmark:search -- artifacts/phase5/query-results-pg.json`
   - `npm run benchmark:search -- artifacts/phase5/query-results-meili.json`
 
-## Runtime Health
-
-- Readiness endpoint:
-  - `GET /api/health`
-- Reports:
-  - Supabase connectivity
-  - Primary search backend readiness (`pg_trgm` or `meilisearch`)
-
-## Design Inputs
-
-The canonical UI/IA design source is under `docs/prototypes`.
