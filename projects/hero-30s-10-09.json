@@ -1,10 +1,10 @@
 {
   "output": {
     "name": "hero-30s-10-09",
-    "width": 1280,
-    "height": 720,
+    "width": 1920,
+    "height": 1080,
     "fps": "source",
-    "crf": 23,
+    "crf": 18,
     "dir": "artifacts/hero",
     "fade": false
   },

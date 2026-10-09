@@ -49,7 +49,7 @@ interface Shot {
  * the clips are encoded at, so the join does not re-compress them.
  */
 const EMPTY: Project = {
-  output: { name: "new-video", width: 1280, height: 720, fps: "source", crf: 23, dir: "artifacts/hero", fade: false },
+  output: { name: "new-video", width: 1920, height: 1080, fps: "source", crf: 18, dir: "artifacts/hero", fade: false },
   music: null,
   clips: []
 };
@@ -1045,9 +1045,10 @@ export function VideoStudio({
               nothing on this page said so.
             */}
             <p className="muted" style={{ fontSize: 12, margin: "6px 0 0", lineHeight: 1.7 }}>
-              <strong>尺寸和画质直接决定访客要下多少。</strong>首屏片头是每个人一进站就下载的，
-              30 秒的片子：1280 宽 + 画质 23 约 10MB，1920 宽 + 画质 18 约 19MB。
-              片头是静音循环的背景、文字压在上面，1280 在大屏上也看不出来。数字越小画质越好、文件越大。
+              <strong>1920 就是上限</strong>——干净世界的素材本身就是 1920×1080，再往上渲是凭空造像素。
+              首屏是满幅的，在 1920 的屏幕上实际显示到 2400px 宽，所以 1280 的片子会被放大近两倍，
+              横幅上的字会糊。30 秒的片子：1920 + 画质 18 约 19MB，1280 + 画质 23 约 10MB。
+              每个访客一进站都要下载它——画质和流量之间自己权衡，画质数字越小越好、文件越大。
             </p>
           </div>
           <div>
