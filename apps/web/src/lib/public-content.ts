@@ -155,6 +155,16 @@ function isLikelyStandaloneSubheading(lines: string[], index: number): boolean {
 export const CULTURE_CATEGORY_NAMES = new Set(["传统文化文章", "诗词", "歌曲"]);
 
 /**
+ * Categories that sit under 资源馆, not 新闻与报告.
+ *
+ * The same problem the culture set was written for. 69 articles tagged
+ * 资料下载 are flyers and booklets, and their trail read
+ * 首页 / 新闻与报告 / 资料下载 -- naming a section they are not in, and
+ * linking to a listing that does not carry them.
+ */
+export const RESOURCE_CATEGORY_NAMES = new Set(["资料下载"]);
+
+/**
  * `keepInline` keeps `[text](href)`, `**bold**` and `*em*` inside paragraphs --
  * the three spans the reader's renderer can draw -- and strips everything else,
  * so uneven imported markdown still cannot leak stray punctuation.
@@ -759,7 +769,9 @@ export async function getRenderableArticle(slug: string): Promise<RenderablePage
           ...asObject(fallbackContent.breadcrumb),
           ...(CULTURE_CATEGORY_NAMES.has(articleTag)
             ? { sectionLabel: "中华传统文化", sectionHref: "/resources/culture" }
-            : { sectionLabel: "新闻与报告", sectionHref: "/news" }),
+            : RESOURCE_CATEGORY_NAMES.has(articleTag)
+              ? { sectionLabel: "资源馆", sectionHref: "/resources" }
+              : { sectionLabel: "新闻与报告", sectionHref: "/news" }),
           current: articleTag,
           /*
            * The last crumb was dead text. It names the one listing a reader is
