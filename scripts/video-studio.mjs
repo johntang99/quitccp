@@ -269,7 +269,7 @@ async function render(projectPath) {
     const to = Number(clip.to ?? from + 3);
     const len = +(to - from).toFixed(3);
     if (!(len > 0)) throw new Error(`第 ${i + 1} 个片段的 from/to 不对：${from} → ${to}`);
-    const src = await openFor(clip.source);
+    let src = await openFor(clip.source);
     const file = path.join(work, `${String(i).padStart(3, "0")}.mp4`);
     /*
      * Seeking in two stages: a coarse jump before `-i`, then a fine one after.
@@ -287,15 +287,83 @@ async function render(projectPath) {
     const PAD = 6;
     const coarse = Math.max(0, from - PAD);
     const fine = +(from - coarse).toFixed(3);
-    ff(
-      ["-ss", String(coarse), "-i", src, "-ss", String(fine), "-t", String(len), "-an",
-       "-vf", conform(width, height, fps),
-       "-c:v", "libx264", "-preset", preview ? "veryfast" : "veryslow",
-       "-crf", String(preview ? 30 : crf), "-pix_fmt", "yuv420p",
-       "-profile:v", "high", "-level", "4.0",
-       file, "-y"],
-      `片段 ${i + 1}`
-    );
+
+    /*
+     * Cut it, then check it actually got cut.
+     *
+     * ffmpeg exiting 0 is not proof that anything came out. Pulling segments
+     * from a remote HLS stream can fail in a way that writes a valid but
+     * empty file and still reports success -- an older ffmpeg seeking deep
+     * into 干净世界's stream does exactly this, and did: four parade clips at
+     * 99s, 147s, 210s and 237s all came back empty while the three clips near
+     * the head of their sources were fine. The film was assembled from them,
+     * uploaded, and announced as finished, two thirds of it missing.
+     *
+     * So every clip is measured against what was asked for, and a short one
+     * is retried before it is allowed to fail the whole render. Better to
+     * stop with a clear reason than to publish a film with holes in it.
+     */
+    const want = len;
+    let got = 0;
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      ff(
+        ["-ss", String(coarse), "-i", src, "-ss", String(fine), "-t", String(len), "-an",
+         "-vf", conform(width, height, fps),
+         "-c:v", "libx264", "-preset", preview ? "veryfast" : "veryslow",
+         "-crf", String(preview ? 30 : crf), "-pix_fmt", "yuv420p",
+         "-profile:v", "high", "-level", "4.0",
+         file, "-y"],
+        `片段 ${i + 1}`
+      );
+      got = Number(probe(file, "format=duration")) || 0;
+      if (got >= want * 0.9) break;
+      if (attempt < 3) {
+        if (!JSONOUT) {
+          console.log(`  片段 ${i + 1} 只取到 ${got.toFixed(2)}s（要 ${want.toFixed(2)}s），再试一次…`);
+        }
+        /* A failed pull is often a stale stream address rather than a bad
+           file, so drop the cached one and resolve it again. */
+        resolved.delete(clip.source);
+        src = await openFor(clip.source);
+
+        /*
+         * Last attempt: stop streaming and fetch the source outright.
+         *
+         * Seeking deep into a remote HLS stream is where this breaks -- on
+         * GitHub's runners the three clips near the head of their sources came
+         * back fine while every clip past 99 seconds came back empty. Whatever
+         * the cause (an older ffmpeg, a slow pull, the CDN), a local file does
+         * not have the problem: seeking in one is just arithmetic.
+         *
+         * It costs one download of the whole source, so it is the fallback
+         * rather than the default, and it is cached like any other opened
+         * source -- the other clips from the same film reuse it.
+         */
+        if (attempt === 2 && /^https?:/i.test(src)) {
+          const local = path.join(work, `src-${resolved.size}-${i}.mp4`);
+          if (!JSONOUT) console.log(`  改成先把整条源下下来再剪…`);
+          try {
+            ff(["-i", src, "-c", "copy", "-bsf:a", "aac_adtstoasc", local, "-y"], `下载源 ${i + 1}`);
+            if ((Number(probe(local, "format=duration")) || 0) > 0) {
+              resolved.set(clip.source, local);
+              src = local;
+            }
+          } catch (err) {
+            if (!JSONOUT) console.log(`  整条下载也没成：${String(err.message).slice(0, 160)}`);
+          }
+        }
+      }
+    }
+    if (got < want * 0.9) {
+      throw new Error(
+        `片段 ${i + 1} 没取到画面：要 ${want.toFixed(2)} 秒，只拿到 ${got.toFixed(2)} 秒。\n` +
+        `  源：${clip.source}\n` +
+        `  从第 ${from} 秒起。已经重试并改用整条下载，都没取到。\n` +
+        (from > 60
+          ? `  这一段在源片较深的位置，这台机器上取不到那么深——多半是拉不到这条流。`
+          : `  确认一下这条源还在、而且真有这么长。`)
+      );
+    }
     parts.push(file);
     total += len;
     if (!JSONOUT) console.log(`  ${String(i + 1).padStart(2)}. ${from.toFixed(1)}–${to.toFixed(1)}  ${len.toFixed(2)}s  ${clip.note ?? ""}`);

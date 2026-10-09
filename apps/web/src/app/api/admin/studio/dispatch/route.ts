@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { dispatchRender, findRenderRun, githubSetup, renderRunStatus } from "@/lib/admin/github";
 import { guardMaterialWrite } from "@/lib/admin/material-guard";
 import { listProjectsAnywhere } from "@/lib/admin/studio";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 
 /**
  * 出片, on GitHub's machines rather than this one.
@@ -71,11 +72,43 @@ export async function GET(request: Request) {
   const id = Number(params.get("run") ?? 0);
 
   try {
-    if (id > 0) return NextResponse.json({ run: await renderRunStatus(setup, id) });
+    if (id > 0) {
+      const run = await renderRunStatus(setup, id);
+      /* Once it is done, say *where* the film is. Sending someone off to
+         图片视频库 to find it themselves is a worse answer than the address. */
+      const files = run.conclusion === "success" ? await uploadedSince(run.startedAt) : [];
+      return NextResponse.json({ run, files });
+    }
     const since = params.get("since");
     const run = await findRenderRun(setup, since ? new Date(since) : new Date(Date.now() - 600_000));
     return NextResponse.json({ run });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "问不到" }, { status: 502 });
+  }
+}
+
+/**
+ * What the run uploaded, read back from the media library.
+ *
+ * The workflow writes the addresses into its own run summary, which the page
+ * cannot read. The registry it writes to, it can -- so the films are found by
+ * when they were registered rather than by parsing someone else's log.
+ */
+async function uploadedSince(startedAt: string): Promise<Array<{ name: string; url: string }>> {
+  if (!startedAt) return [];
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data } = await supabase
+      .from("cms_media_assets")
+      .select("name, storage_path, created_at")
+      .eq("asset_type", "video")
+      .gte("created_at", startedAt)
+      .order("created_at", { ascending: false })
+      .limit(6);
+    return (data ?? []).map((row) => ({ name: String(row.name), url: String(row.storage_path) }));
+  } catch {
+    /* The render is what matters; not finding the rows must not look like a
+       failed render. */
+    return [];
   }
 }
