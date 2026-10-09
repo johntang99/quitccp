@@ -277,7 +277,17 @@ export async function HomeTemplate({ content }: TemplatePageData) {
       ? "让每一个想离开的人， 都能留下记录。"
       : heroTitleRaw;
   const heroBody = asString(legacyHero.body, home.hero.body || heroFallback.body);
-  const heroEyebrow = asString(payload.subtitle, home.hero.eyebrow);
+  /*
+   * The eyebrow, from the same place as the title beside it.
+   *
+   * Title and body read `payload.hero.*` -- what 首屏 Hero writes -- but this
+   * one read the top-level `payload.subtitle`, a key from the older shape that
+   * nothing edits any more. That key still exists in pages/home.json, so it won
+   * every time: an editor changed 小标题, saved, and the page went on printing
+   * 成立于 2005 · 总部纽约 · 全球 100+ 服务点. Legacy stays as the fallback, for
+   * entries that only carry the old key.
+   */
+  const heroEyebrow = asString(legacyHero.eyebrow, asString(payload.subtitle, home.hero.eyebrow));
 
   const legacyStream = asObjectArray(payload.streamEntries).map((row) => ({
     region: asString(row.region),
