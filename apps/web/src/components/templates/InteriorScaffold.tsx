@@ -5,19 +5,14 @@ import {
   EXTERNAL_LINK_PROPS,
   EXTERNAL_SERVICES
 } from "@/lib/external-services";
+import { loadSectionNavOverrides, mergeSectionNav, type SectionNav, type SectionTab } from "@/lib/section-nav";
 
-interface SectionTab {
-  slug: string;
-  label: string;
-  href?: string;
-  /**
-   * When set, the tab leaves this site for the production service on
-   * tuidang.org instead of routing to the local page.
-   */
-  externalHref?: string;
-}
-
-const sectionConfig: Record<string, { label: string; baseHref: string; tabs: SectionTab[] }> = {
+/*
+ * The labels shipped with the code, and the fallback when the editable entry
+ * is missing. Editors change these in 页面内容 -> nav/section-tabs.json; see
+ * lib/section-nav.ts for how the two are merged and why.
+ */
+const sectionConfig: Record<string, SectionNav> = {
   services: {
     label: "我们的服务",
     baseHref: "/services",
@@ -116,8 +111,8 @@ function getHref(section: string, slug: string): Route {
   return (slug === "index" ? `/${section}` : `/${section}/${slug}`) as Route;
 }
 
-export function InteriorTabs({ section, slug }: { section: string; slug: string }) {
-  const config = sectionConfig[section];
+export async function InteriorTabs({ section, slug }: { section: string; slug: string }) {
+  const config = mergeSectionNav(sectionConfig, await loadSectionNavOverrides())[section];
   if (!config) return null;
 
   return (
@@ -148,7 +143,7 @@ export function InteriorTabs({ section, slug }: { section: string; slug: string 
   );
 }
 
-export function InteriorHead({
+export async function InteriorHead({
   section,
   slug,
   title,
@@ -163,7 +158,7 @@ export function InteriorHead({
   slim?: boolean;
   actions?: ReactNode;
 }) {
-  const config = sectionConfig[section];
+  const config = mergeSectionNav(sectionConfig, await loadSectionNavOverrides())[section];
   const sectionLabel = config?.label ?? title;
 
   return (
