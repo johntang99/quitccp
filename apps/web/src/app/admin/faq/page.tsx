@@ -91,7 +91,7 @@ export default async function AdminFaqPage({ searchParams }: PageProps) {
               <table className="admin-table" style={{ width: "100%" }}>
                 <thead>
                   <tr>
-                    <th style={{ width: 70 }}>顺序</th>
+                    <th style={{ width: 92 }}>顺序 · 排序值</th>
                     <th>问题</th>
                     <th style={{ width: 90 }}>答案</th>
                     <th style={{ width: 90 }}>状态</th>
@@ -101,7 +101,19 @@ export default async function AdminFaqPage({ searchParams }: PageProps) {
                 <tbody>
                   {rows.map((row, index) => (
                     <tr key={row.id}>
-                      <td>{index + 1}</td>
+                      {/*
+                        Both numbers, because they are not the same number.
+
+                        The left one is where the row sits; the right one is what
+                        the edit form's 排序 box holds. They drift apart as soon as
+                        two questions share a value or an editor leaves gaps -- and
+                        an editor who types the number they read on the left would
+                        move the row somewhere they did not intend.
+                      */}
+                      <td style={{ whiteSpace: "nowrap" }}>
+                        {index + 1}
+                        <span style={{ color: "#999", fontSize: 12 }}> · {row.position}</span>
+                      </td>
                       <td>
                         <Link href={`/admin/faq/${row.id}`}>{row.question}</Link>
                       </td>

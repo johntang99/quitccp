@@ -139,7 +139,10 @@ export async function searchFaqs(
   // reads -- a flat newest-first list would hide the ordering being edited.
   const { data, error, count } = await query
     .order("category_id", { ascending: true })
-    .order("position", { ascending: true });
+    .order("position", { ascending: true })
+    /* Same tiebreak as the public page, so the list an editor orders by is
+       the list a reader sees. */
+    .order("created_at", { ascending: true });
   if (error) {
     if (missingTable(error)) return { ready: false, rows: [], total: 0 };
     throw error;

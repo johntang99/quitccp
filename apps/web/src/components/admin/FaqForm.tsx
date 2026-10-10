@@ -25,6 +25,9 @@ export function FaqForm({ faq, categories, canPublish }: FaqFormProps) {
   const [answer, setAnswer] = useState(faq?.answerMarkdown ?? "");
   const [categoryId, setCategoryId] = useState(faq?.categoryId ?? categories[0]?.id ?? "");
   const [status, setStatus] = useState(faq?.status ?? "draft");
+  /* Empty on a new question: blank means "put it at the end", which is what
+     saveFaq already does when no position arrives. */
+  const [position, setPosition] = useState(faq ? String(faq.position) : "");
   const [picking, setPicking] = useState(false);
 
   /** Mirrors the article editor: the slug follows the question until touched. */
@@ -52,7 +55,7 @@ export function FaqForm({ faq, categories, canPublish }: FaqFormProps) {
           />
         </label>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 220px 160px", gap: 12, alignItems: "end" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 200px 150px 120px", gap: 12, alignItems: "end" }}>
           <label>
             网址标识（Slug）
             <input
@@ -95,7 +98,32 @@ export function FaqForm({ faq, categories, canPublish }: FaqFormProps) {
               {canPublish ? <option value="archived">已归档</option> : null}
             </select>
           </label>
+          {/*
+            Ordering by number, not only by the list's ↑↓ buttons.
+
+            Those move one step per click, so putting the last of 相关报道's 24
+            questions at the top took twenty-three clicks. Typing the number
+            does it once.
+          */}
+          <label>
+            排序（Order）
+            <input
+              className="admin-input"
+              name="position"
+              type="number"
+              inputMode="numeric"
+              step={1}
+              value={position}
+              placeholder={faq ? "" : "留空＝最后"}
+              onChange={(event) => setPosition(event.target.value)}
+            />
+          </label>
         </div>
+        <p className="muted" style={{ margin: 0, fontSize: 12.5, lineHeight: 1.7 }}>
+          <strong>排序</strong>：同一分类里数字小的排前面，从 0 开始；留空就排到这个分类的最后。
+          数字不必连续——用 10、20、30 留出空档，以后往中间插一条就不用把后面的全改一遍。
+          两条填了同一个数字时，先建立的排前面。
+        </p>
         {!canPublish ? (
           <p style={{ margin: 0, color: "#8a6d1f", fontSize: 13 }}>
             你的权限可以保存草稿；发布请由管理员操作。

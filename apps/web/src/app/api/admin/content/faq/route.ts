@@ -30,6 +30,20 @@ export async function POST(request: Request) {
       question,
       answerMarkdown: String(form.get("answerMarkdown") ?? ""),
       categoryId: String(form.get("categoryId") ?? "").trim(),
+      /*
+       * Blank means "decide for me".
+       *
+       * saveFaq already falls back to the end of the category when no position
+       * arrives -- it just never arrived, because nothing sent one. An empty
+       * box must stay empty rather than becoming 0, which would silently move
+       * a new question to the top of its category.
+       */
+      position: (() => {
+        const raw = String(form.get("position") ?? "").trim();
+        if (!raw) return undefined;
+        const n = Number(raw);
+        return Number.isFinite(n) ? Math.trunc(n) : undefined;
+      })(),
       status
     },
     user!.email

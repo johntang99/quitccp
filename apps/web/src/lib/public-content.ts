@@ -2267,7 +2267,13 @@ export async function getPublicFaq(search = ""): Promise<PublicFaqGroup[]> {
     .eq("status", "published");
   const term = search.trim();
   if (term) query = query.ilike("question", `%${term}%`);
-  const { data: rows } = await query.order("position", { ascending: true });
+  /* created_at breaks the tie, so two questions sharing a position keep a
+     stable order instead of swapping places between requests. The admin's
+     ordering box lets an editor type any number, which makes ties ordinary
+     rather than exceptional. */
+  const { data: rows } = await query
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: true });
 
   const byCategory = new Map<string, PublicFaqItem[]>();
   for (const row of rows ?? []) {
