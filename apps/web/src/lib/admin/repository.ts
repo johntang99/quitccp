@@ -586,6 +586,30 @@ async function setArticleTaxonomy(
   }
 }
 
+/**
+ * Codes that mean "ask again", not "this cannot work".
+ *
+ * 57014 is Postgres cancelling a statement at the 8s timeout. The migration
+ * scripts have retried these since the 19-video restore; the admin never did,
+ * so one busy moment showed 保存失败 to an editor who had just spent an hour
+ * on the article. The write is a single UPDATE by id -- repeating it sets the
+ * same columns to the same values, so a retry cannot double anything up.
+ */
+const TRANSIENT_DB_CODES = new Set(["57014", "40001", "08006", "08003"]);
+
+async function retryTransient<T extends { error: { code?: string } | null }>(
+  run: () => Promise<T>
+): Promise<T> {
+  let delay = 400;
+  for (let attempt = 1; ; attempt += 1) {
+    const result = await run();
+    const code = result.error?.code ?? "";
+    if (!result.error || !TRANSIENT_DB_CODES.has(code) || attempt >= 3) return result;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    delay *= 2;
+  }
+}
+
 export async function upsertArticleRecord(
   // createdBy/updatedBy are deliberately not part of the input: they are decided
   // here from the signed-in actor, never supplied by the caller or the form.
@@ -670,13 +694,12 @@ export async function upsertArticleRecord(
     ? { updated_by: actorEmail }
     : { created_by: actorEmail, updated_by: actorEmail };
 
-  let result = await write(
-    { ...base, ...editorial, ...authorship },
-    `${baseSelect}, ${ARTICLE_EDITORIAL_COLUMNS}`
+  let result = await retryTransient(() =>
+    write({ ...base, ...editorial, ...authorship }, `${baseSelect}, ${ARTICLE_EDITORIAL_COLUMNS}`)
   );
   if (result.error && isMissingEditorialColumn(result.error)) {
     // Pre-migration: save what the table can hold rather than failing the edit.
-    result = await write(base, baseSelect);
+    result = await retryTransient(() => write(base, baseSelect));
   }
   if (result.error) throw result.error;
   const data = result.data as unknown as ArticleRow;
