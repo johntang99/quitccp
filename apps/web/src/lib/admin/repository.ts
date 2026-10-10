@@ -59,6 +59,21 @@ export async function recordAdminAudit(
   return createAudit(actorEmail, action, targetType, targetId, accessMode, detail);
 }
 
+const TRANSIENT_DB_CODES = new Set(["57014", "40001", "08006", "08003"]);
+
+async function retryTransient<T extends { error: { code?: string } | null }>(
+  run: () => Promise<T>
+): Promise<T> {
+  let delay = 400;
+  for (let attempt = 1; ; attempt += 1) {
+    const result = await run();
+    const code = result.error?.code ?? "";
+    if (!result.error || !TRANSIENT_DB_CODES.has(code) || attempt >= 3) return result;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    delay *= 2;
+  }
+}
+
 async function createAudit(
   actorEmail: string,
   action: string,
@@ -68,14 +83,22 @@ async function createAudit(
   detail: Record<string, unknown> = {}
 ) {
   const supabase = createSupabaseAdminClient();
-  await supabase.from("cms_audit_logs").insert({
-    actor_email: actorEmail,
-    action,
-    target_type: targetType,
-    target_id: targetId,
-    access_mode: accessMode,
-    detail
-  });
+  /* Same as the revision writer: the error was never read, so entries went
+     missing quietly. For a site whose admin keeps an audit trail on purpose,
+     a gap nobody is told about is the worst of the three outcomes. */
+  const { error } = await retryTransient(async () =>
+    supabase.from("cms_audit_logs").insert({
+      actor_email: actorEmail,
+      action,
+      target_type: targetType,
+      target_id: targetId,
+      access_mode: accessMode,
+      detail
+    })
+  );
+  if (error) {
+    console.error(`[audit] ${action} ${targetType} ${targetId} 没记进审计日志：${error.code ?? ""} ${error.message ?? ""}`);
+  }
 }
 
 async function createRevision(
@@ -85,12 +108,24 @@ async function createRevision(
   payload: Record<string, unknown>
 ) {
   const supabase = createSupabaseAdminClient();
-  await supabase.from("cms_revisions").insert({
-    entity_type: entityType,
-    entity_id: entityId,
-    payload,
-    actor_email: actorEmail
-  });
+  /*
+   * Neither this nor the audit writer ever looked at `error`, and supabase-js
+   * returns it rather than throwing -- so a busy database dropped the entry
+   * and nothing anywhere said so. The save itself is already committed by now,
+   * so a failure here must not fail the edit; it just has to stop being
+   * invisible.
+   */
+  const { error } = await retryTransient(async () =>
+    supabase.from("cms_revisions").insert({
+      entity_type: entityType,
+      entity_id: entityId,
+      payload,
+      actor_email: actorEmail
+    })
+  );
+  if (error) {
+    console.error(`[revision] ${entityType} ${entityId} 没写进修订历史：${error.code ?? ""} ${error.message ?? ""}`);
+  }
 }
 
 function parseBlocksJson(blocksJson: string): unknown[] {
@@ -388,8 +423,17 @@ export async function listArticles(
       }
       return built;
     };
-    const categoryQuery = buildCategoryQuery(articleSelect);
-    let { data: categoryData, error: categoryError, count: categoryCount } = await categoryQuery;
+    /*
+     * Listing retries too, not just writing.
+     *
+     * The admin's own search is `title ILIKE '%q%' OR body_plain ILIKE '%q%'`
+     * over 15,527 articles, and the exact row count behind the pager costs
+     * several times the query itself -- measured at 294ms without it and
+     * 2,084ms with it for 退党. Under concurrent load that crosses the 8s
+     * ceiling, and an editor gets an error for typing a word.
+     */
+    let { data: categoryData, error: categoryError, count: categoryCount } =
+      await retryTransient(async () => buildCategoryQuery(articleSelect));
     if (categoryError && isMissingEditorialColumn(categoryError)) {
       // 010 and 015 are applied by hand; ask again for what exists.
       articleSelect = withoutMissing(categoryError);
@@ -425,7 +469,7 @@ export async function listArticles(
       if (cursor?.updatedAt) built = built.lt("updated_at", cursor.updatedAt);
       return built.range(offset, offset + (useCursor ? pageSize : pageSize - 1));
     };
-    let { data, error, count } = await buildPlainQuery(articleSelect);
+    let { data, error, count } = await retryTransient(async () => buildPlainQuery(articleSelect));
     if (error && isMissingEditorialColumn(error)) {
       articleSelect = withoutMissing(error);
       ({ data, error, count } = await buildPlainQuery(articleSelect));
@@ -614,20 +658,6 @@ async function setArticleTaxonomy(
  * on the article. The write is a single UPDATE by id -- repeating it sets the
  * same columns to the same values, so a retry cannot double anything up.
  */
-const TRANSIENT_DB_CODES = new Set(["57014", "40001", "08006", "08003"]);
-
-async function retryTransient<T extends { error: { code?: string } | null }>(
-  run: () => Promise<T>
-): Promise<T> {
-  let delay = 400;
-  for (let attempt = 1; ; attempt += 1) {
-    const result = await run();
-    const code = result.error?.code ?? "";
-    if (!result.error || !TRANSIENT_DB_CODES.has(code) || attempt >= 3) return result;
-    await new Promise((resolve) => setTimeout(resolve, delay));
-    delay *= 2;
-  }
-}
 
 export async function upsertArticleRecord(
   // createdBy/updatedBy are deliberately not part of the input: they are decided
