@@ -4635,6 +4635,23 @@ body:has(.hero--full-bleed) > header .search {
 
 .article-cols { grid-template-columns: minmax(0, 1fr) 280px; align-items: start; }
 
+/*
+ * And back to one column on a phone.
+ *
+ * base.css collapses `.cols` and `.cols--narrow` at 980px. `.article-cols` is
+ * a third class added here, later in the cascade, so it was never in that list
+ * and its two-column rule won on every screen size. On a 390px phone the
+ * sidebar still claimed its 280px and left about 110px for the article, which
+ * set the headline one character per line.
+ *
+ * Declared beside the rule it corrects rather than added to the list in
+ * base.css: the next column layout added here will be read next to this.
+ */
+@media (max-width: 980px) {
+  .article-cols { grid-template-columns: 1fr; gap: 44px; }
+  .article-page .side { position: static; top: auto; }
+}
+
 .article-surface {
   background: #fff;
   padding: 44px 52px 56px;
