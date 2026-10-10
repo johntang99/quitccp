@@ -18,7 +18,11 @@ const BASE = process.env.MEASURE_BASE_URL ?? "http://localhost:4020";
 const argv = process.argv.slice(2);
 const countFor = (flag, fallback) => {
   const i = argv.indexOf(flag);
-  return i === -1 ? fallback : Number(argv[i + 1]) || fallback;
+  if (i === -1) return fallback;
+  /* `|| fallback` here meant `--videos 0` asked for ten: 0 is falsy, so the
+     one value worth passing explicitly was the one that could not be. */
+  const given = Number(argv[i + 1]);
+  return Number.isFinite(given) && given >= 0 ? given : fallback;
 };
 const WANT_ARTICLES = countFor("--articles", 10);
 const WANT_VIDEOS = countFor("--videos", 10);

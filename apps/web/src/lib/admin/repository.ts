@@ -595,58 +595,141 @@ async function setArticleTaxonomy(
   }
 
   /*
-   * Replacing the categories is a delete followed by an insert, with no
-   * transaction around the pair. If the insert fails the article is left with
-   * none at all -- and the editor is told 保存失败, so they assume nothing
-   * happened and never go looking. A transient timeout between the two was
-   * enough to strip an article's categories.
+   * One call, one transaction.
    *
-   * Both halves retry, and the delete's own error is checked, which it was not.
+   * Replacing the categories used to be a delete followed by an insert with
+   * nothing around the pair. Both halves retry, which narrows the window, but
+   * it cannot close it: if the insert still fails the article is left with no
+   * categories at all, and the editor is told 保存失败 and assumes nothing
+   * happened. Categories are how an article is reached, so that article stays
+   * published and drops out of every index that would have listed it, with
+   * nothing to report it.
+   *
+   * `set_article_categories` (024) does both halves inside one plpgsql body,
+   * so the article ends with either the new set or the old one and there is no
+   * third outcome. It is also one round-trip instead of two, which costs more
+   * in production than it did locally: the admin runs in iad1 and the database
+   * is across a network.
    */
+  const setCategories = await retryTransient(async () =>
+    supabase.rpc("set_article_categories", { p_article_id: articleId, p_category_ids: ids })
+  );
+  if (setCategories.error && !isMissingFunction(setCategories.error)) throw setCategories.error;
+  if (setCategories.error) await replaceCategoriesWithoutRpc(supabase, articleId, ids);
+
+  /*
+   * Two round-trips for the whole tag list, not two per tag.
+   *
+   * This was a loop -- upsert the tag, insert the map row, next tag -- so ten
+   * tags meant twenty sequential calls to a database in another region. That
+   * is a save's longest pole in production, where each call costs real latency
+   * rather than the near-nothing it costs from a laptop on the same continent.
+   *
+   * And the map insert never read its own error, so a tag that failed to
+   * attach did so silently: the editor was told the save succeeded, and the
+   * tag was simply gone. The same bug the revision and audit writes had.
+   */
+  const bySlug = new Map<string, string>();
+  for (const raw of tags) {
+    const name = raw.trim();
+    if (!name) continue;
+    /* Keyed by slug, because that is what the unique index is on: two names
+       that slug the same would otherwise hit the same row twice in one
+       statement, which Postgres rejects outright. */
+    const slug = toSlug(name);
+    if (!bySlug.has(slug)) bySlug.set(slug, name);
+  }
+
+  let tagIds: string[] = [];
+  if (bySlug.size > 0) {
+    const upserted = await retryTransient(async () =>
+      supabase
+        .from("cms_article_tags")
+        .upsert(
+          [...bySlug].map(([slug, name]) => ({ slug, name })),
+          { onConflict: "slug" }
+        )
+        .select("id")
+    );
+    if (upserted.error) throw upserted.error;
+    tagIds = (upserted.data ?? []).map((row) => String((row as { id: string }).id));
+  }
+
+  /* Cleared through the same function when the list is empty, so removing an
+     article's last tag is the same single transaction as changing them. */
+  const setTags = await retryTransient(async () =>
+    supabase.rpc("set_article_tags", { p_article_id: articleId, p_tag_ids: tagIds })
+  );
+  if (setTags.error && !isMissingFunction(setTags.error)) throw setTags.error;
+  if (setTags.error) await replaceTagsWithoutRpc(supabase, articleId, tagIds);
+}
+
+/**
+ * True when the database has not had 024 run against it yet.
+ *
+ * Migrations here are applied by hand in the SQL editor, but code reaches
+ * production the moment it is pushed. Between those two events every save
+ * would fail on a missing function, so both callers fall back to the
+ * delete-then-insert they used before 024 -- no worse than yesterday, rather
+ * than broken. Once the migration is in, this never fires again.
+ */
+function isMissingFunction(error: { code?: string; message?: string } | null) {
+  const code = error?.code ?? "";
+  const message = error?.message ?? "";
+  return (
+    code === "42883" ||
+    code === "PGRST202" ||
+    /does not exist|could not find the function/i.test(message)
+  );
+}
+
+async function replaceCategoriesWithoutRpc(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  articleId: string,
+  ids: string[]
+) {
   const cleared = await retryTransient(async () =>
     supabase.from("cms_article_category_map").delete().eq("article_id", articleId)
   );
   if (cleared.error) throw cleared.error;
+  if (ids.length === 0) return;
 
-  if (ids.length > 0) {
-    // position 0 is the primary category; see 011_category_map_position.sql.
-    const rows = ids.map((categoryId, index) => ({
-      article_id: articleId,
-      category_id: categoryId,
-      position: index
-    }));
-    const { error } = await retryTransient(async () =>
-      supabase.from("cms_article_category_map").insert(rows)
+  // position 0 is the primary category; see 011_category_map_position.sql.
+  const rows = ids.map((categoryId, index) => ({
+    article_id: articleId,
+    category_id: categoryId,
+    position: index
+  }));
+  const { error } = await retryTransient(async () =>
+    supabase.from("cms_article_category_map").insert(rows)
+  );
+  if (error && isMissingPosition(error)) {
+    const fallback = await retryTransient(async () =>
+      supabase.from("cms_article_category_map").insert(rows.map(({ position, ...rest }) => rest))
     );
-    if (error && isMissingPosition(error)) {
-      const fallback = await retryTransient(async () =>
-        supabase.from("cms_article_category_map").insert(rows.map(({ position, ...rest }) => rest))
-      );
-      if (fallback.error) throw fallback.error;
-    } else if (error) {
-      throw error;
-    }
+    if (fallback.error) throw fallback.error;
+  } else if (error) {
+    throw error;
   }
+}
 
-  const clearedTags = await retryTransient(async () =>
+async function replaceTagsWithoutRpc(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  articleId: string,
+  tagIds: string[]
+) {
+  const cleared = await retryTransient(async () =>
     supabase.from("cms_article_tag_map").delete().eq("article_id", articleId)
   );
-  if (clearedTags.error) throw clearedTags.error;
-  for (const rawTag of tags) {
-    const tag = rawTag.trim();
-    if (!tag) continue;
-    const slug = toSlug(tag);
-    const { data: tagData, error: tagError } = await supabase
-      .from("cms_article_tags")
-      .upsert({ slug, name: tag }, { onConflict: "slug" })
-      .select("id")
-      .single();
-    if (tagError) throw tagError;
-    await supabase.from("cms_article_tag_map").insert({
-      article_id: articleId,
-      tag_id: tagData.id
-    });
-  }
+  if (cleared.error) throw cleared.error;
+  if (tagIds.length === 0) return;
+
+  const linked = await retryTransient(async () =>
+    supabase
+      .from("cms_article_tag_map")
+      .insert(tagIds.map((tagId) => ({ article_id: articleId, tag_id: tagId })))
+  );
+  if (linked.error) throw linked.error;
 }
 
 /**

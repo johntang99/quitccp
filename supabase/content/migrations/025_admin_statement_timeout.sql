@@ -1,0 +1,51 @@
+-- Give an article save room to finish.
+--
+-- Measured on production (2026-10-10), saving the longest articles through the
+-- real admin endpoint:
+--
+--   郭小林：“发配”老马号   29,522 字   3,473ms  ok
+--   王友琴：文革“斗争会”   27,455 字   3,636ms  ok
+--   九评之九               20,617 字   3,236ms  ok
+--   九评之七               19,034 字  28,030ms  FAILED
+--
+-- The failure was not the article. Repeating that same save gave 20,731ms (ok,
+-- after two internal retries), then 3,128 / 2,780 / 3,307ms. And timing the
+-- UPDATE on its own, 25 times in a row, gave a 491ms median and a 758ms worst
+-- case with no spike at all.
+--
+-- So the write is normally cheap and the database occasionally stalls -- most
+-- likely autovacuum on the TOAST table behind `body_markdown`/`body_plain`,
+-- which a long article rewrites on every save. Whatever the cause, the stall
+-- is measured in seconds and the ceiling is 8, so the unlucky statement is
+-- cancelled (57014) rather than finishing a moment late. The admin then
+-- retries twice, hits the same wall twice more, and spends 28 seconds telling
+-- an editor their save failed.
+--
+-- 30s converts every failure observed into a slow save.
+--
+-- The cost, stated plainly: `service_role` is not only the admin's role. The
+-- public site reads through it too -- article pages, search, settings -- so
+-- this also lets a stalled *reader* query hold its pooled connection for 30s
+-- instead of being cancelled at 8. That is the real objection to doing it this
+-- way, and it is worth weighing rather than waving past.
+--
+-- It is accepted here because a public query that needs more than 8 seconds is
+-- already a broken page: Vercel ends the request long before 30s on its own
+-- default function budget, so the reader's experience does not change. What
+-- changes is that the abandoned statement keeps a connection for longer, which
+-- matters only if several happen at once.
+--
+-- The surgical alternative, if that ever bites: mint the admin's writes under
+-- their own role (`create role cms_writer`, granted the same rights, with its
+-- own `statement_timeout`) and sign a JWT for it with JWT_SECRET, leaving
+-- `service_role` at 8s for everything a reader can reach. More moving parts
+-- than the problem currently justifies.
+--
+-- Run this in the SQL editor. It takes effect on new connections; existing
+-- pooled ones keep the old value until they are recycled.
+
+alter role service_role set statement_timeout = '30s';
+
+-- PostgREST caches role settings, so tell it to re-read them rather than
+-- waiting for a redeploy.
+notify pgrst, 'reload config';
