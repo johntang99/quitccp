@@ -40,7 +40,7 @@ function internalLinks(html, from) {
   for (const m of html.matchAll(/<a[^>]+href="([^"]+)"/g)) {
     let url;
     try {
-      url = new URL(m[1], from);
+      url = new URL(unescapeAttr(m[1]), from);
     } catch {
       continue;
     }
@@ -52,11 +52,22 @@ function internalLinks(html, from) {
   return out;
 }
 
+/* Attribute values arrive HTML-escaped. Requesting one without decoding sends
+   `&amp;w=1200` where the browser sends `&w=1200`, and an image proxy answers
+   that with a 400 -- a broken image that is broken only for this crawler. */
+const unescapeAttr = (value) =>
+  value
+    .replaceAll("&amp;", "&")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">");
+
 function imagesIn(html, from) {
   const out = new Set();
   for (const m of html.matchAll(/<img[^>]+src="([^"]+)"/g)) {
     try {
-      const url = new URL(m[1], from);
+      const url = new URL(unescapeAttr(m[1]), from);
       if (!url.protocol.startsWith("http")) continue;
       out.add(url.href);
     } catch {
