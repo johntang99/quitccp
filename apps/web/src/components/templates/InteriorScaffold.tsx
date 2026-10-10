@@ -29,6 +29,13 @@ const sectionConfig: Record<string, SectionNav> = {
       // from tuidang.org/faq/ on 2026-10-07, so sending readers to the old site
       // would send them to a copy that is about to stop being the master.
       { slug: "faq", label: "三退问答" },
+      /*
+       * The 相关报道 FAQ category, which is the largest of the six (23 entries)
+       * and had no way in from the menu -- a reader reached it only by opening
+       * 三退问答 and noticing the category list. It lives under /services/faq
+       * rather than as a page of its own, so the tab carries an href.
+       */
+      { slug: "coverage", label: "退党与移民相关报道", href: "/services/faq/c/xgbd" },
       { slug: "privacy", label: "安全与隐私" },
       // Our own 信息变更与联系我们 page, which hands off to the subdomain's
       // cert-modify form. The tab used to jump straight to the old site's

@@ -30,12 +30,22 @@ export function FaqIndexPage({ groups, q }: { groups: PublicFaqGroup[]; q: strin
   );
 }
 
+/*
+ * Categories that the section menu lists in their own right.
+ *
+ * Most categories are reached through 三退问答 and should leave that tab lit.
+ * 相关报道 has its own tab, so on its page the menu has to agree with where
+ * the reader actually is.
+ */
+const TAB_FOR_CATEGORY: Record<string, string> = { xgbd: "coverage" };
+
 /** /services/faq/c/<slug> — every question in one category. */
 export function FaqCategoryPage({ group }: { group: PublicFaqGroup }) {
+  const tabSlug = TAB_FOR_CATEGORY[group.slug] ?? "faq";
   return (
     <>
-      <InteriorHead section="services" slug="faq" title={group.name} subtitle={group.summary} />
-      <InteriorTabs section="services" slug="faq" />
+      <InteriorHead section="services" slug={tabSlug} title={group.name} subtitle={group.summary} />
+      <InteriorTabs section="services" slug={tabSlug} />
       <section className="sec" style={{ paddingTop: 44 }}>
         <div className="wrap">
           <p className="faq-crumb">
