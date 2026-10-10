@@ -63,7 +63,7 @@ const sectionConfig: Record<string, { label: string; baseHref: string; tabs: Sec
       { slug: "network", label: "全球网络" },
       { slug: "accountability", label: "公开与问责" },
       { slug: "team", label: "理事会与团队" },
-      { slug: "history", label: "历史沿革" },
+      { slug: "history", label: "退党大事记" },
       { slug: "contact", label: "联系我们", href: "/services/contact" }
     ]
   },

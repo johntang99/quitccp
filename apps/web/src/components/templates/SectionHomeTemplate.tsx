@@ -1302,7 +1302,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
             { label: "全球服务网络", href: "/about/network" },
             { label: "公开与问责", href: "/about/accountability" },
             { label: "理事会与团队", href: "/about/team" },
-            { label: "历史沿革", href: "/about/history" }
+            { label: "退党大事记", href: "/about/history" }
           ];
 
     return (
@@ -1762,7 +1762,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
       ? asObjectArray(relatedPanel.links).map((row) => ({ label: asString(row.label), href: asString(row.href, "#") }))
       : [
           { label: "公开与问责", href: "/about/accountability" },
-          { label: "历史沿革", href: "/about/history" },
+          { label: "退党大事记", href: "/about/history" },
           { label: "联系我们", href: "/services/contact" }
         ];
     const joinPanel = asRecord(payload.joinPanel);

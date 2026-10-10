@@ -149,7 +149,7 @@ const ABOUT_BLOCK_DEFAULTS: Record<(typeof ABOUT_BLOCK_KEYS)[number], unknown> =
       { label: "全球服务网络", href: "/about/network" },
       { label: "公开与问责", href: "/about/accountability" },
       { label: "理事会与团队", href: "/about/team" },
-      { label: "历史沿革", href: "/about/history" }
+      { label: "退党大事记", href: "/about/history" }
     ],
     downloadPanelTitle: "下载",
     downloadPanelBody: "年度工作报告与经审计财务报表，可自由下载与转载。",
@@ -233,7 +233,7 @@ const ABOUT_BLOCK_DEFAULTS: Record<(typeof ABOUT_BLOCK_KEYS)[number], unknown> =
     ]
   },
   history: {
-    eyebrow: "历史沿革",
+    eyebrow: "退党大事记",
     heading: "二〇〇五年至今",
     timeline: [
       { date: "2004.11", body: "《九评共产党》系列社论发表，开始有民众公开声明退出中共组织。" },
@@ -366,7 +366,7 @@ const ABOUT_PAGE_DEFAULT_CONTENTS: Record<string, Record<string, unknown>> = {
       title: "相关",
       links: [
         { label: "公开与问责", href: "/about/accountability" },
-        { label: "历史沿革", href: "/about/history" },
+        { label: "退党大事记", href: "/about/history" },
         { label: "联系我们", href: "/services/contact" }
       ]
     },
