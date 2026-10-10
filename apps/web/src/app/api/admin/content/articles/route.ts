@@ -4,6 +4,20 @@ import { listArticles, listCategories, upsertArticleRecord } from "@/lib/admin/r
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { explainSaveFailure } from "@/lib/admin/save-errors";
 
+/*
+ * Long enough for the retries to finish.
+ *
+ * A save that meets the 8s statement timeout retries up to three times with
+ * backoff -- 25 seconds in the worst case. Vercel's default ceiling for a
+ * function is well below that, so in production the platform would kill the
+ * request mid-retry and the editor would get a gateway error instead of the
+ * save the retry was about to land. Measured locally: one article took 28.8s
+ * to save this way, and succeeded.
+ *
+ * The search routes already declare 60 for the same reason.
+ */
+export const maxDuration = 60;
+
 export async function GET(request: Request) {
   const user = await getAdminSessionUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
