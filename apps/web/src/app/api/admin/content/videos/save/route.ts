@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { findVideoBySlug, listVideoCategories, saveVideo } from "@/lib/admin/video-repository";
+import { explainSaveFailure } from "@/lib/admin/save-errors";
 
 /**
  * Save endpoint for the video form.
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
       editorArchive: flag("editorArchive")
     }, user.email);
   } catch (error) {
-    return reject(error instanceof Error ? error.message : "保存失败。");
+    return reject(explainSaveFailure(error));
   }
 
   if (wantsJson) {

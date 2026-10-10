@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { listArticles, listCategories, upsertArticleRecord } from "@/lib/admin/repository";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { explainSaveFailure } from "@/lib/admin/save-errors";
 
 export async function GET(request: Request) {
   const user = await getAdminSessionUser();
@@ -126,7 +127,7 @@ export async function POST(request: Request) {
       user.email
     );
   } catch (error) {
-    return reject(error instanceof Error ? error.message : "保存失败。");
+    return reject(explainSaveFailure(error));
   }
 
   if (wantsJson) {
