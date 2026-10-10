@@ -6,8 +6,25 @@
     "fps": "source",
     "crf": 18,
     "dir": "artifacts/hero",
-    "fade": false
+    "fade": true
   },
-  "music": null,
-  "clips": []
+  "music": {
+    "loop": true,
+    "lufs": -16,
+    "from": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/home/music/1791659276299-bright-days-ahead-sba-346835983.mp3?download=bright-days-ahead-SBA-346835983.mp3"
+  },
+  "clips": [
+    {
+      "source": "https://www.ganjingworld.com/video/1it83uph6pt4VFjqwZSHVLmio1dj1c",
+      "from": 420,
+      "to": 425,
+      "note": ""
+    },
+    {
+      "source": "https://www.ganjingworld.com/video/1it83uph6pt4VFjqwZSHVLmio1dj1c",
+      "from": 700,
+      "to": 705,
+      "note": ""
+    }
+  ]
 }
