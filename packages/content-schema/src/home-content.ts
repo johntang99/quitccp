@@ -517,7 +517,14 @@ export const homeContentDefaults: HomeContent = {
     lede: "",
     moreLabel: "进入视频库",
     moreHref: "/videos",
-    // The eight series pages that already exist under /videos.
+    /*
+       * The categories that actually exist in cms_video_categories.
+       *
+       * This row used to end with 其它系列 -> /videos/others, which is not one
+       * of them and answered 404 straight from the homepage. 希望的路 -- 99
+       * films, the third largest series -- had no tab at all, and neither did
+       * 文化艺术.
+       */
     series: [
       { label: "全部", href: "/videos", active: true },
       { label: "三退前线", href: "/videos/frontline" },
@@ -526,7 +533,8 @@ export const homeContentDefaults: HomeContent = {
       { label: "九评系列", href: "/videos/jiuping" },
       { label: "铁证如山", href: "/videos/ironclad" },
       { label: "觉醒之旅", href: "/videos/awakening" },
-      { label: "其它系列", href: "/videos/others" }
+      { label: "希望的路", href: "/videos/hope-road" },
+        { label: "文化艺术", href: "/videos/culture" }
     ],
     // Mirrors the 本期推荐 block already published on /videos, so the homepage
     // and the library agree rather than each carrying its own copy.
