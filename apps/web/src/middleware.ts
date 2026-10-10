@@ -80,5 +80,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/:year(\\d{4})/:month(\\d{2})/:day(\\d{2})/:id(\\d+)", "/:year(\\d{4})/:month(\\d{2})/:day(\\d{2})/:id(\\d+)/"]
+  matcher: [
+    "/:year(\\d{4})/:month(\\d{2})/:day(\\d{2})/:id(\\d+)",
+    "/:year(\\d{4})/:month(\\d{2})/:day(\\d{2})/:id(\\d+)/"
+  ]
 };

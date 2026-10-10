@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { SITE_LANGUAGES } from "@/lib/site-languages";
+import { SITE_LANGUAGES, SITE_SOCIALS } from "@/lib/site-languages";
+
+/* Icon paths, keyed by the label in SITE_SOCIALS -- moved here with the icons
+   themselves when the topbar was removed. */
+const SOCIAL_ICON: Record<string, string> = {
+  Facebook: "M14 8.5V6.8c0-.8.2-1.2 1.4-1.2H17V2.6c-.3 0-1.2-.1-2.3-.1-2.4 0-4 1.4-4 4.1v1.9H8v3h2.7V21H14v-8.5h2.6l.4-3H14z",
+  "X": "M17.5 3h3l-6.6 7.5L21.8 21h-6l-4.7-6.1L5.6 21h-3l7-8L2.5 3h6.2l4.3 5.6L17.5 3zm-1.1 16.2h1.7L7.7 4.7H5.9l10.5 14.5z",
+  YouTube: "M22.5 7.5a2.8 2.8 0 0 0-1.9-2C18.9 5 12 5 12 5s-6.9 0-8.6.5a2.8 2.8 0 0 0-1.9 2A29 29 0 0 0 1 12a29 29 0 0 0 .5 4.5 2.8 2.8 0 0 0 1.9 2C5.1 19 12 19 12 19s6.9 0 8.6-.5a2.8 2.8 0 0 0 1.9-2A29 29 0 0 0 23 12a29 29 0 0 0-.5-4.5zM9.8 15.2V8.8l5.7 3.2-5.7 3.2z"
+};
 
 export function SiteFooter() {
   return (
@@ -33,6 +41,7 @@ export function SiteFooter() {
                 </a>
               ))}
             </div>
+
           </div>
           <div>
             <h5>服务</h5>
@@ -97,6 +106,31 @@ export function SiteFooter() {
         </div>
         <div className="foot-bottom">
           <span>© 2005-2026 全球退党服务中心 · 501(c)(3) 非营利组织</span>
+          <div className="foot-reach">
+            {/* Both came down from the topbar. They sit on the bottom line
+                rather than in the brand column because neither is part of the
+                site's structure: 免翻墙链接 is a utility a reader inside China
+                may need before anything else works, and the social icons are
+                where a reader looks once they are no longer in the masthead. */}
+            <Link className="foot-reach-link" href="/resources/tools">
+              免翻墙链接
+            </Link>
+            <div className="socials" aria-label="社交渠道">
+              {SITE_SOCIALS.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  aria-label={social.label}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <svg viewBox="0 0 24 24">
+                    <path d={SOCIAL_ICON[social.label]} />
+                  </svg>
+                </a>
+              ))}
+            </div>
+          </div>
           <span>
             {/* Both documents were imported from www.tuidang.org on 2026-10-07
                 and live in the CMS now; the old copies stop resolving when that

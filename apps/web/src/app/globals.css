@@ -1977,10 +1977,21 @@ body:has(.hero--full-bleed) > header .search {
 .hero-sound svg path:first-child { fill: #fff; }
 
 @media (max-width: 600px) {
-  /* The phone hero is 420px rather than 780px, so a percentage would put the
-     button in the middle of the picture. A fixed lift keeps it clear of both
-     the bottom edge and the card. */
-  .hero-sound { right: 18px; bottom: 160px; width: 68px; height: 68px; }
+  /* Measured down from the top, not up from the bottom.
+     `bottom` is relative to the hero, and on a phone the hero no longer ends
+     where the picture does -- the card sits below it rather than over it, so
+     any `bottom` value lands somewhere in the card's text and moves again
+     whenever that text changes length. Anchoring to `--hero-photo-h` puts the
+     button a fixed 16px above the picture's bottom edge, which is also the
+     card's top edge: on the footage, where it is legible, and the last thing
+     the eye passes before the words start. */
+  .hero-sound {
+    right: 18px;
+    width: 68px;
+    height: 68px;
+    top: calc(var(--hero-photo-h) - 68px - 16px);
+    bottom: auto;
+  }
   .hero-sound svg { width: 31px; height: 31px; }
 }
 
@@ -2125,6 +2136,24 @@ body:has(.hero--full-bleed) > header .search {
     width: auto;
     max-width: 42em;
     padding: 26px 24px 24px;
+  }
+}
+
+/* On a phone the card clears the photograph instead of covering its lower
+   third. The screen is tall enough to show the two in sequence, and the heroes
+   chosen for this site all carry their subject -- a face, a parade, a title
+   burnt into the frame -- in exactly the band the card used to sit over. */
+@media (max-width: 600px) {
+  .hero--full-bleed .hero-grid {
+    padding-top: var(--hero-photo-h);
+  }
+  /* Off the photograph, the see-through treatment has nothing left to see
+     through: over the page's cream it only thinned the text. */
+  .hero--full-bleed .hero-copy {
+    background: var(--card, #fff);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: var(--rule, #e3e3e3);
   }
 }
 
@@ -3559,8 +3588,14 @@ body:has(.hero--full-bleed) > header .search {
 @media (max-width: 980px) {
   .brand-logo { height: 46px; }
 }
+/* On a phone the brand bar wraps and the banner gets a whole row to itself, so
+   it is sized by that row's width instead of by a height that left two thirds
+   of the row empty. `width:100%` on the link is what makes the row genuinely
+   its own; the cap stops the artwork being blown past its native size on a
+   600px tablet. */
 @media (max-width: 600px) {
-  .brand-logo { height: 36px; }
+  .brand { width: 100%; }
+  .brand-logo { width: 100%; height: auto; max-width: 430px; }
 }
 
 /* --------------------------------------------------------------------------
@@ -4671,6 +4706,64 @@ body:has(.hero--full-bleed) > header .search {
 
 .band-split { grid-template-columns: minmax(0, 1fr); gap: 32px; }
 }
+
+/* --------------------------------------------------------------------------
+   Language picker, in the brand row where the topbar's language list used to be.
+   -------------------------------------------------------------------------- */
+.langpick { position: relative; }
+
+/* Sizing and colour come from `btn btn--line-light btn--sm` in the markup, so
+   this button and 捐助我们 beside it cannot drift apart the next time those
+   are touched. Two of the browser's own <button> defaults have to be undone
+   by hand, because `.btn` was written for the <a> elements it has always been
+   put on and never had to override them: `background` (the UA paints
+   ButtonFace, a near-white, behind the gold text -- unreadable), and
+   `line-height` (the UA's `normal` draws it 5px shorter than the <a>, which
+   inherits the body's). */
+.langpick-btn { gap: 6px; line-height: inherit; background: transparent; }
+.langpick-caret { width: 14px; height: 14px; flex: none; }
+
+.langpick-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  min-width: 160px;
+  background: #fff;
+  border: 1px solid var(--rule, #e3e3e3);
+  border-radius: 4px;
+  box-shadow: 0 14px 34px -18px rgba(32, 24, 66, .5);
+}
+.langpick-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink, #201842);
+  padding: 9px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.langpick-menu button:hover { background: rgba(32, 24, 66, .06); }
+.langpick-menu button.on { color: var(--seal, #4a3c96); font-weight: 500; }
+
+/* 免翻墙链接 and the social icons, on the footer's bottom line beside the
+   copyright and the legal links. */
+.foot-reach { display: flex; align-items: center; gap: 14px; }
+.foot-reach-link {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--gold, #e6c66a);
+  border-bottom: 1px solid rgba(230, 198, 106, .45);
+  padding-bottom: 2px;
+}
+.foot-reach-link:hover { border-bottom-color: var(--gold, #e6c66a); }
 
 /* ---------- article page ---------- */
 /*
