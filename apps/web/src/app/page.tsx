@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
 import { TemplateRenderer } from "@/components/templates/TemplateRenderer";
 import { getRenderablePage } from "@/lib/public-content";
+
+/* The one page whose canonical is genuinely "/" -- declared here rather than in
+   the root layout, which handed the same claim to every page beneath it. */
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 /**
  * The homepage reads its content from the CMS, so it must not be frozen at
