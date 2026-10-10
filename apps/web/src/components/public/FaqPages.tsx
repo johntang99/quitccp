@@ -82,10 +82,13 @@ export function FaqItemPage({
   item: PublicFaqItem;
   category: { slug: string; name: string };
 }) {
+  /* A question inside 相关报道 lights that tab, the same as its category page:
+     the menu should agree with the trail directly under it. */
+  const tabSlug = TAB_FOR_CATEGORY[category.slug] ?? "faq";
   return (
     <>
-      <InteriorHead section="services" slug="faq" title={item.question} subtitle="" />
-      <InteriorTabs section="services" slug="faq" />
+      <InteriorHead section="services" slug={tabSlug} title={item.question} subtitle="" />
+      <InteriorTabs section="services" slug={tabSlug} />
       <section className="sec" style={{ padding: "44px 0 88px" }}>
         <div className="wrap">
           <p className="faq-crumb">
