@@ -221,7 +221,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
           </div>
         </section>
         <section className="sec sec--ink" style={{ padding: "64px 0" }}>
-          <div className="wrap" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 56, alignItems: "center" }}>
+          <div className="wrap band-split">
             <div>
               <p className="eyebrow eyebrow--onink">{asString(verifyBand.eyebrow, "查询验证")}</p>
               <h2 className="h2" style={{ color: "var(--paper)" }}>
@@ -1778,7 +1778,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
               <h2 className="h2" style={{ fontSize: 24, marginBottom: 30 }}>
                 {asString(boardPanel.heading, "Board of Directors")}
               </h2>
-              <div className="people" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
+              <div className="people cols-3">
                 {boardPeople.map((row) => (
                   <div key={`${row.name}-${row.roleLine1}-${row.roleLine2}`} className="person">
                     <img src={row.image} alt="" />
@@ -1803,7 +1803,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
               <h2 className="h2" style={{ fontSize: 24, marginBottom: 30 }}>
                 {asString(staffPanel.heading, "Staff")}
               </h2>
-              <div className="people" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
+              <div className="people cols-3">
                 {staffPeople.map((row) => (
                   <div key={`${row.name}-${row.roleLine1}-${row.roleLine2}`} className="person">
                     <img src={row.image} alt="" />
@@ -1990,7 +1990,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
                 </a>
               ) : null}
             </div>
-            <div className="cities" style={{ gridTemplateColumns: "repeat(3,1fr)", gap: "0 32px" }}>
+            <div className="cities cols-3" style={{ gap: "0 32px" }}>
               {bandLinks.map((row, index) => (
                 <div key={asString(row.label) || index}>
                   <a href={asString(row.href, "/involve/volunteer")} style={{ color: "var(--lav-lt)" }}>

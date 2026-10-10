@@ -346,7 +346,7 @@ export function FormTemplate({ title, section, slug, content }: TemplatePageData
           <div className="wrap cols">
             <div>
               {roles.length > 0 ? (
-                <div className="rgrid" style={{ gridTemplateColumns: "1fr 1fr", marginBottom: 40 }}>
+                <div className="rgrid rgrid--two" style={{ marginBottom: 40 }}>
                   {roles.map((row, index) => {
                     const href = asString(row.href);
                     const inner = (
