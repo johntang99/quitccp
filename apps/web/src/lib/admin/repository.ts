@@ -550,7 +550,20 @@ async function setArticleTaxonomy(
     ids.push(String(made.id));
   }
 
-  await supabase.from("cms_article_category_map").delete().eq("article_id", articleId);
+  /*
+   * Replacing the categories is a delete followed by an insert, with no
+   * transaction around the pair. If the insert fails the article is left with
+   * none at all -- and the editor is told 保存失败, so they assume nothing
+   * happened and never go looking. A transient timeout between the two was
+   * enough to strip an article's categories.
+   *
+   * Both halves retry, and the delete's own error is checked, which it was not.
+   */
+  const cleared = await retryTransient(async () =>
+    supabase.from("cms_article_category_map").delete().eq("article_id", articleId)
+  );
+  if (cleared.error) throw cleared.error;
+
   if (ids.length > 0) {
     // position 0 is the primary category; see 011_category_map_position.sql.
     const rows = ids.map((categoryId, index) => ({
@@ -558,17 +571,23 @@ async function setArticleTaxonomy(
       category_id: categoryId,
       position: index
     }));
-    const { error } = await supabase.from("cms_article_category_map").insert(rows);
+    const { error } = await retryTransient(async () =>
+      supabase.from("cms_article_category_map").insert(rows)
+    );
     if (error && isMissingPosition(error)) {
-      await supabase
-        .from("cms_article_category_map")
-        .insert(rows.map(({ position, ...rest }) => rest));
+      const fallback = await retryTransient(async () =>
+        supabase.from("cms_article_category_map").insert(rows.map(({ position, ...rest }) => rest))
+      );
+      if (fallback.error) throw fallback.error;
     } else if (error) {
       throw error;
     }
   }
 
-  await supabase.from("cms_article_tag_map").delete().eq("article_id", articleId);
+  const clearedTags = await retryTransient(async () =>
+    supabase.from("cms_article_tag_map").delete().eq("article_id", articleId)
+  );
+  if (clearedTags.error) throw clearedTags.error;
   for (const rawTag of tags) {
     const tag = rawTag.trim();
     if (!tag) continue;
