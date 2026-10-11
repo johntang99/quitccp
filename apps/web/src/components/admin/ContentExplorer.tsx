@@ -542,6 +542,10 @@ export function ContentExplorer({ initialLocale = "zh", initialPath }: { initial
   // Mirrors `activeData` synchronously so successive writes in one tick compose.
   const activeDataRef = useRef<Record<string, unknown> | null>(null);
   const [jsonDraft, setJsonDraft] = useState("{}");
+  /* What the file looked like when it was last loaded or saved. 预览 opens the
+     live page, so without this there was no way to tell an editor that what
+     they are about to look at is not what they just typed. */
+  const [savedJson, setSavedJson] = useState("{}");
   const [status, setStatus] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"form" | "json">("form");
   const [revisions, setRevisions] = useState<ContentRevisionItem[]>([]);
@@ -678,6 +682,7 @@ const UNEDITABLE_PATHS = new Set([
     if (!response.ok || !payload.row) throw new Error(payload.error || "加载文件失败");
     setActiveData(payload.row.data);
     setJsonDraft(toPrettyJson(payload.row.data));
+    setSavedJson(toPrettyJson(payload.row.data));
     // Drafts are per-file; carrying them across a file switch would show one
     // page's JSON in another page's textarea.
     setHomeJsonDrafts({});
@@ -758,12 +763,13 @@ const UNEDITABLE_PATHS = new Set([
     setStatus("已自动填充当前 About 页面完整内容，请点击保存使其生效。");
   }, [activePath, activeData, activeDataMatchesPath]);
 
-  const saveFile = async () => {
-    if (!activePath) return;
+  /** Returns whether the save actually went through; 保存并预览 needs to know. */
+  const saveFile = async (): Promise<boolean> => {
+    if (!activePath) return false;
     const parsed = parseObject(jsonDraft);
     if (!parsed) {
       setStatus("JSON 格式错误：请修复后再保存");
-      return;
+      return false;
     }
     setStatus("正在保存...");
     const response = await fetch("/api/admin/content/file", {
@@ -778,12 +784,14 @@ const UNEDITABLE_PATHS = new Set([
     const payload = (await response.json()) as { error?: string };
     if (!response.ok) {
       setStatus(payload.error || "保存失败");
-      return;
+      return false;
     }
     setStatus("保存成功");
     setActiveData(parsed);
+    setSavedJson(toPrettyJson(parsed));
     await loadFiles(activePath);
     await loadRevisions(activePath);
+    return true;
   };
 
   const importPrototype = async () => {
@@ -963,6 +971,43 @@ const UNEDITABLE_PATHS = new Set([
 
   const jsonValid = Boolean(parseObject(jsonDraft));
   const previewPath = guessPreviewPath(activePath);
+
+  /* Compared as parsed objects, not as text: 格式化 rewrites the whitespace
+     without changing anything, and that should not count as an edit. */
+  const dirty = (() => {
+    if (!activePath) return false;
+    const now = parseObject(jsonDraft);
+    const was = parseObject(savedJson);
+    if (!now || !was) return jsonDraft.trim() !== savedJson.trim();
+    return JSON.stringify(now) !== JSON.stringify(was);
+  })();
+
+  /**
+   * 预览 opens the live page, which shows what is *saved* -- so an editor who
+   * typed something and pressed 预览 saw their old text and reported that
+   * preview was broken. It was not; it was answering a different question.
+   *
+   * With unsaved edits the button now saves first and says so in its label.
+   * The tab is opened synchronously, inside the click, because a `window.open`
+   * that happens after an `await` has lost the user gesture and browsers
+   * silently block it -- which would have turned this fix into the same
+   * complaint.
+   */
+  const openPreview = async () => {
+    if (!previewPath) return;
+    if (!dirty) {
+      window.open(previewPath, "_blank");
+      return;
+    }
+    const tab = window.open("about:blank", "_blank");
+    const saved = await saveFile();
+    if (!saved) {
+      tab?.close();
+      return;
+    }
+    if (tab) tab.location.href = previewPath;
+    else setStatus("改动已保存，但浏览器拦下了新窗口——请手动打开首页查看。");
+  };
   const isHomeEditor = activePath === HOME_PATH;
   // Pages edited block by block rather than as JSON textareas: About, Involve,
   // Services and Resources. Every set is the same declaration shape and the
@@ -1051,8 +1096,14 @@ const UNEDITABLE_PATHS = new Set([
               格式化
             </button>
             {previewPath ? (
-              <button className="admin-btn" type="button" onClick={() => window.open(previewPath, "_blank")}>
-                预览
+              <button
+                className="admin-btn"
+                type="button"
+                onClick={openPreview}
+                disabled={dirty && !jsonValid}
+                title={dirty ? "有未保存的改动：会先保存再打开预览" : "打开这个页面查看"}
+              >
+                {dirty ? "保存并预览" : "预览"}
               </button>
             ) : null}
             {hasAboutDefaults ? (
@@ -1061,7 +1112,7 @@ const UNEDITABLE_PATHS = new Set([
               </button>
             ) : null}
             <button className="admin-btn admin-btn-primary" type="button" onClick={saveFile} disabled={!jsonValid}>
-              保存
+              {dirty ? "保存 •" : "保存"}
             </button>
           </div>
 

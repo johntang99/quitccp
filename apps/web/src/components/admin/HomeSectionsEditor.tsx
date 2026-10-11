@@ -146,6 +146,9 @@ const FIELD_ORDER: Record<string, string[]> = {
 };
 
 /** Plain-text fields that hold an image URL. */
+/** Hero 描述的上限：超过这个长度，首页的卡片放不下，手机上会被截断。 */
+const HERO_BODY_MAX = 120;
+
 const IMAGE_FIELDS = new Set(["image", "poster", "backgroundImage", "asideImage"]);
 
 /** Fields that get a purpose-built editor rather than a JSON textarea. */
@@ -826,23 +829,45 @@ export function HomeSectionsEditor({
           );
         };
 
-        const renderText = (key: string) =>
-          IMAGE_FIELDS.has(key) ? (
-            <div key={key}>
-              <span style={fieldCaption}>{FIELD_LABELS[key] ?? key}</span>
-              {imageField([section.key, key], `${section.label} · ${FIELD_LABELS[key] ?? key}`, String(value[key] ?? ""))}
-            </div>
-          ) : (
+        const renderText = (key: string) => {
+          if (IMAGE_FIELDS.has(key)) {
+            return (
+              <div key={key}>
+                <span style={fieldCaption}>{FIELD_LABELS[key] ?? key}</span>
+                {imageField([section.key, key], `${section.label} · ${FIELD_LABELS[key] ?? key}`, String(value[key] ?? ""))}
+              </div>
+            );
+          }
+          const text = String(value[key] ?? "");
+          /* Only the hero's own body is capped. It sits in a card over the
+             photograph, and past ~120 characters the card either swallows the
+             picture or the sentence is clamped mid-word on a phone -- the
+             reader never reaches the end either way. Other sections set their
+             text in open page width and have no such ceiling. */
+          const capped = section.key === "hero" && key === "body";
+          const over = capped ? text.length - HERO_BODY_MAX : 0;
+          return (
             <label key={key}>
               {FIELD_LABELS[key] ?? key}
               <textarea
                 className="admin-textarea"
                 style={{ minHeight: key === "body" || key === "lede" ? 84 : 46 }}
-                value={String(value[key] ?? "")}
+                /* Never shorter than what is already saved: silently cutting an
+                   editor's existing sentence is worse than showing them it is
+                   long and letting them trim it. */
+                maxLength={capped ? Math.max(HERO_BODY_MAX, text.length) : undefined}
+                value={text}
                 onChange={(event) => updateField([section.key, key], event.target.value)}
               />
+              {capped ? (
+                <span style={{ color: over > 0 ? "#b42318" : "#777", fontSize: 12 }}>
+                  {text.length} / {HERO_BODY_MAX} 字
+                  {over > 0 ? ` · 超出 ${over} 字，首页上会被截断，请删减` : ""}
+                </span>
+              ) : null}
             </label>
           );
+        };
 
         return (
           <details
