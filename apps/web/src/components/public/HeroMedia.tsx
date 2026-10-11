@@ -226,11 +226,15 @@ export function HeroBackgroundVideo({
    * rejected. So 「打开首页时就出声」 cannot be obeyed literally, and this does
    * the two things that are actually possible.
    *
-   * First it tries, because the rule is not absolute: a browser does allow it
-   * once the visitor has built up enough history with the site (Chrome's media
-   * engagement index), and on a return visit that often succeeds. If the
-   * attempt is rejected the video goes straight back to muted and keeps
-   * playing -- a silent backdrop, never a stalled one.
+   * So the backdrop starts muted and playing, every time, without asking --
+   * that is the one thing no browser refuses, and it is what guarantees the
+   * reader sees motion instead of a black rectangle.
+   *
+   * Only then is sound reached for, because the rule is not absolute: a
+   * browser does allow it once the visitor has built up enough history with
+   * the site (Chrome's media engagement index). If the attempt does not take,
+   * the video returns to muted and keeps playing -- a silent backdrop, never
+   * a stalled one.
    *
    * When it is refused, the first real click or key anywhere on the page is a
    * gesture the browser accepts, so sound is switched on then. That listener is
@@ -253,27 +257,57 @@ export function HeroBackgroundVideo({
     if (remembered !== "on" && !soundOn) return;
 
     let cancelled = false;
-    const unmute = () => {
+
+    /** The state the backdrop must always end up in: silent, but moving. */
+    const fallBackToSilence = () => {
+      if (cancelled) return;
+      video.muted = true;
+      setMuted(true);
+      void video.play().catch(() => {});
+    };
+
+    /*
+     * Reaching for sound without ever risking the picture.
+     *
+     * `play()` resolving is not the same as the video still running. On a phone
+     * the promise resolves and the browser then suspends a video it will not
+     * allow to be audible -- so the old code read that resolution as success,
+     * set the speaker to "on", and left a black rectangle that only started
+     * when the reader touched the screen. The button said sound was on; nothing
+     * was playing.
+     *
+     * So the outcome is checked rather than assumed, and checked a beat later,
+     * because the suspension lands after the promise. Anything other than
+     * "still playing, still unmuted" goes back to silence.
+     */
+    const tryUnmute = () => {
       if (cancelled || chosen.current) return;
+      if (video.paused) {
+        // Not running yet: get the picture going. Sound can wait for a gesture.
+        fallBackToSilence();
+        return;
+      }
       video.muted = false;
       void video.play().then(
         () => {
-          if (!cancelled && !chosen.current) setMuted(false);
+          window.setTimeout(() => {
+            if (cancelled || chosen.current) return;
+            if (video.paused || video.muted) fallBackToSilence();
+            else setMuted(false);
+          }, 300);
         },
-        () => {
-          // Refused. Silent and running beats correct and frozen.
-          video.muted = true;
-          void video.play().catch(() => {});
-        }
+        fallBackToSilence
       );
     };
 
-    unmute();
+    /* Muted first, always. It is the one thing no browser refuses, so the
+       backdrop is already moving before anything is attempted on top of it. */
+    fallBackToSilence();
 
     const onGesture = () => {
       window.removeEventListener("pointerdown", onGesture);
       window.removeEventListener("keydown", onGesture);
-      unmute();
+      tryUnmute();
     };
     window.addEventListener("pointerdown", onGesture);
     window.addEventListener("keydown", onGesture);
