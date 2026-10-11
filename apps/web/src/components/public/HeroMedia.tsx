@@ -203,8 +203,10 @@ export function HeroBackgroundVideo({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
-  // Starts false so the server and the first client paint agree on the poster;
-  // the effect decides whether this reader should get motion at all.
+  /* Whether this reader should get motion -- not whether the element exists.
+     It starts false because the server cannot know about 减少动态效果 or
+     省流量模式; the effect below settles it on the client. The <video> itself
+     is rendered either way, so nothing is swapped out underneath the reader. */
   const [play, setPlay] = useState(false);
   const [failed, setFailed] = useState(false);
   /** True once a visitor has worked the button; their choice then outranks the setting. */
@@ -318,6 +320,27 @@ export function HeroBackgroundVideo({
     };
   }, [play, hasAudio, soundOn]);
 
+  /*
+   * Start the picture.
+   *
+   * This used to be the `autoPlay` attribute, which only worked because the
+   * element was mounted at the same moment it was wanted. Now the element is
+   * server-rendered and waits here instead -- which is what removes the hand-
+   * off that showed a still first: the <img> was swapped for a <video> once
+   * React hydrated, and only then did the video start loading, so the hero sat
+   * on its poster for a third of a second before the first frame arrived.
+   *
+   * `preload` is raised to "auto" only once motion is wanted, so a reader on
+   * 省流量模式 or 减少动态效果 never pays to download a film they will not see.
+   */
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !play) return;
+    video.preload = "auto";
+    video.muted = true;
+    void video.play().catch(() => {});
+  }, [play]);
+
   // Driven from state rather than set once on the element: the muted attribute
   // and the property can disagree after hydration, and the property is the one
   // the browser actually plays by.
@@ -338,7 +361,10 @@ export function HeroBackgroundVideo({
     }
   };
 
-  if (failed || !play) {
+  /* Only a video that cannot load falls back to a still. Everything else --
+     including a reader who has asked for no motion -- gets the <video>
+     element, showing its poster. See the mounting note on `play` above. */
+  if (failed) {
     return poster ? (
       <div className="hero-media">
         <img src={poster} alt={alt} />
@@ -354,7 +380,9 @@ export function HeroBackgroundVideo({
           ref={videoRef}
           src={src}
           poster={poster}
-          autoPlay
+          /* No `autoPlay` attribute: whether this reader gets motion is the
+             effect's call, not the markup's. The element is here from the
+             first byte of HTML all the same, which is the point. */
           muted
           loop
           playsInline
