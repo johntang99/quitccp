@@ -89,7 +89,12 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
     image: asString(row.image),
     badge: asString(row.badge),
     footLabel: asString(row.footLabel),
-    footHref: asString(row.footHref, "/news")
+    /* Empty means "work it out from the column", which is what an editor gets
+       by leaving the field alone. A default of "/news" here would make an
+       unset field indistinguishable from one deliberately pointed at the news
+       index, and the automatic link could never tell whether it was allowed
+       to fill it in. */
+    footHref: asString(row.footHref)
   }));
 
   const videoItems = asObjectArray(videoRow.items).map((row) => ({

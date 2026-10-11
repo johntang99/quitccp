@@ -184,9 +184,14 @@ function withLiveChannels(
     cards: channels.cards.map((card) => {
       const resolved = live.channelLeads.get(card.title);
       if (!resolved) return card;
-      // The category page, replacing the old menu slugs that returned 404.
-      const foot = `/news/${resolved.slug}`;
-      if (!resolved.card) return { ...card, footHref: foot, leadHref: foot };
+      /* The category page, replacing the old menu slugs that returned 404 --
+         but only where the editor has not named a destination themselves.
+         This used to overwrite unconditionally, so a link typed in the admin
+         was discarded on render: the field saved, it looked right, and it did
+         nothing. An editor's own answer wins; the automatic one fills the
+         silence. */
+      const foot = card.footHref || `/news/${resolved.slug}`;
+      if (!resolved.card) return { ...card, footHref: foot, leadHref: card.leadHref || foot };
       return {
         ...card,
         image: resolved.card.image,

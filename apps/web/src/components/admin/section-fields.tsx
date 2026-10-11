@@ -13,6 +13,8 @@ export interface RowField {
   key: string;
   label: string;
   kind?: "text" | "area" | "image" | "video-flag" | "flag" | "list" | "links" | "meta-list" | "bars";
+  /** A line under the input, for a field whose empty value means something. */
+  hint?: string;
 }
 
 /** A repeating list of records: `blank` is the template a new row starts from. */
@@ -429,6 +431,9 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
               value={current}
               onChange={(event) => updateField(path, event.target.value)}
             />
+            {field.hint ? (
+              <span style={{ color: "#777", fontSize: 12 }}>{field.hint}</span>
+            ) : null}
           </label>
         );
       })}

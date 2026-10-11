@@ -240,15 +240,25 @@ const ROW_EDITORS: Record<string, RowEditorSpec> = {
       image: "",
       badge: "",
       footLabel: "",
-      footHref: "/news"
+      // Empty, not "/news": a new card should take its own column's page.
+      footHref: ""
     },
-    // 图片、导读标题、导读链接、底部链接地址 are filled from the latest article
-    // in this column, so they are not editable here. 栏目名称 decides which
-    // column that is -- it has to match a news category name.
+    // 图片、导读标题 are filled from the latest article in this column, so they
+    // are not editable here. 栏目名称 decides which column that is -- it has to
+    // match a news category name.
+    //
+    // 底部链接地址 is editable, and was not: it was filled in automatically and
+    // then had no way to be corrected. Left empty it still fills itself in, so
+    // nobody has to know the slug of their own column.
     fields: [
       { key: "title", label: "栏目名称（Channel name，须与新闻分类同名）" },
       { key: "en", label: "英文标签（Latin label，如 INVESTIGATIONS）" },
-      { key: "footLabel", label: "底部链接文字（Foot label）" }
+      { key: "footLabel", label: "底部链接文字（Foot label）" },
+      {
+        key: "footHref",
+        label: "底部链接地址（Foot link）",
+        hint: "留空＝自动指向这个栏目的分类页。要指去别处就填，例如 /videos 或完整网址。"
+      }
     ]
   },
   "video.items": {
