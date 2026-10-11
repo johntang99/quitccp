@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SITE_LANGUAGES, SITE_SOCIALS } from "@/lib/site-languages";
+import { SECTION_CONFIG, loadSectionNavOverrides, mergeSectionNav } from "@/lib/section-nav";
 
 /* Icon paths, keyed by the label in SITE_SOCIALS -- moved here with the icons
    themselves when the topbar was removed. */
@@ -9,7 +10,25 @@ const SOCIAL_ICON: Record<string, string> = {
   YouTube: "M22.5 7.5a2.8 2.8 0 0 0-1.9-2C18.9 5 12 5 12 5s-6.9 0-8.6.5a2.8 2.8 0 0 0-1.9 2A29 29 0 0 0 1 12a29 29 0 0 0 .5 4.5 2.8 2.8 0 0 0 1.9 2C5.1 19 12 19 12 19s6.9 0 8.6-.5a2.8 2.8 0 0 0 1.9-2A29 29 0 0 0 23 12a29 29 0 0 0-.5-4.5zM9.8 15.2V8.8l5.7 3.2-5.7 3.2z"
 };
 
-export function SiteFooter() {
+/**
+ * The footer, with the sections called what the editors call them.
+ *
+ * Only the four places that are genuinely a section's NAME follow the entry in
+ * 页面内容 -> nav/section-tabs.json: the two column headings that name one, and
+ * the three links that go to a section's own front page. An editor who renames
+ * 我们的服务 to 三退登记与证明 would otherwise leave the footer saying the old
+ * word, with nothing in the admin able to reach it.
+ *
+ * Everything else here keeps its own wording on purpose, and auto-filling it
+ * would be a different change nobody asked for: /about reads 使命与原则 rather
+ * than the section's 关于我们, /about/accountability appears twice under two
+ * headings, and 三退故事 / 安全访问 / 办理退党证明 each say something the tab
+ * they point at does not.
+ */
+export async function SiteFooter() {
+  const sections = await loadSections();
+  const name = (key: string, fallback: string) => sections[key]?.label?.trim() || fallback;
+
   return (
     <footer className="foot">
       <div className="wrap">
@@ -44,7 +63,7 @@ export function SiteFooter() {
 
           </div>
           <div>
-            <h5>服务</h5>
+            <h5>{name("services", "服务")}</h5>
             <ul>
               <li>
                 <Link href="/services/declare">声明三退</Link>
@@ -67,16 +86,16 @@ export function SiteFooter() {
             <h5>内容</h5>
             <ul>
               <li>
-                <Link href="/news">新闻与报告</Link>
+                <Link href="/news">{name("news", "新闻与报告")}</Link>
               </li>
               <li>
                 <Link href="/involve/stories">三退故事</Link>
               </li>
               <li>
-                <Link href="/videos">视频</Link>
+                <Link href="/videos">{name("videos", "视频")}</Link>
               </li>
               <li>
-                <Link href="/resources">资源馆</Link>
+                <Link href="/resources">{name("resources", "资源馆")}</Link>
               </li>
               <li>
                 <Link href="/about/network">全球网络</Link>
@@ -84,7 +103,7 @@ export function SiteFooter() {
             </ul>
           </div>
           <div>
-            <h5>关于我们</h5>
+            <h5>{name("about", "关于我们")}</h5>
             <ul>
               <li>
                 <Link href="/about">使命与原则</Link>
@@ -141,4 +160,16 @@ export function SiteFooter() {
       </div>
     </footer>
   );
+}
+
+/**
+ * Never throws: a database hiccup leaves the shipped names in place rather
+ * than taking the footer -- and with it every page -- down with it.
+ */
+async function loadSections() {
+  try {
+    return mergeSectionNav(SECTION_CONFIG, await loadSectionNavOverrides());
+  } catch {
+    return SECTION_CONFIG;
+  }
 }
