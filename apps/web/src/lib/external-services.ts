@@ -123,12 +123,44 @@ export const EXTERNAL_LINK_PROPS = {
 } as const;
 
 /**
+ * This site's own hosts, which a full URL may legitimately name.
+ *
+ * Matched by exact host, never by suffix: service., santui. and donation.
+ * .tuidang.org are separate sites on separate systems, and they are precisely
+ * the links that do need to open in a new tab.
+ */
+const OWN_HOSTS = new Set(
+  [process.env.NEXT_PUBLIC_SITE_URL, "https://www.tuidang.org", "https://tuidang.org"]
+    .map((value) => {
+      try {
+        return new URL(value ?? "").host.toLowerCase();
+      } catch {
+        return "";
+      }
+    })
+    .filter(Boolean)
+);
+
+/**
  * Props for a href that may be internal or external (e.g. one resolved from CMS
  * content). Returns the outbound props only when the link actually leaves this
  * origin, so internal links keep normal same-tab behaviour.
+ *
+ * It used to decide that on `http://` alone, which is not the same question --
+ * an editor who pastes the full address of one of our own pages, as they
+ * naturally do when copying it out of the address bar, got a link that opened
+ * a second tab onto the site the reader was already on. The 阅读全文 button on
+ * the homepage was exactly that.
  */
 export function externalLinkProps(href: string) {
-  return /^https?:\/\//i.test(href.trim()) ? EXTERNAL_LINK_PROPS : {};
+  const raw = href.trim();
+  if (!/^https?:\/\//i.test(raw)) return {};
+  try {
+    return OWN_HOSTS.has(new URL(raw).host.toLowerCase()) ? {} : EXTERNAL_LINK_PROPS;
+  } catch {
+    // Not a URL we can read: treat it as leaving, which is the safe assumption.
+    return EXTERNAL_LINK_PROPS;
+  }
 }
 
 /**
