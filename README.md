@@ -53,7 +53,7 @@ Precedence, highest first:
 
 1. real environment variables (Vercel's project settings, or `FOO=bar npm start`)
 2. `apps/web/.env.local` — supported if you create one, but not used here
-3. the repo-root `.env.local`aaaa
+3. the repo-root `.env.local'
 
 
 On Vercel the root file does not exist — it is gitignored — so the loader is a
