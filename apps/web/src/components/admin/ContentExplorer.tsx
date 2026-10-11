@@ -983,17 +983,21 @@ const UNEDITABLE_PATHS = new Set([
   })();
 
   /**
-   * 预览 opens the live page, which shows what is *saved* -- so an editor who
-   * typed something and pressed 预览 saw their old text and reported that
-   * preview was broken. It was not; it was answering a different question.
+   * Opens the live page -- which is the published one, not a draft of it.
    *
-   * With unsaved edits the button now saves first and says so in its label.
+   * This button used to say 预览, and 预览 in Chinese means "look at it before
+   * it goes out". So an editor typed something, pressed it, saw their old text,
+   * and reported that preview was broken. The button was fine; its name made a
+   * promise the button had never been able to keep. It says 看网页 now, which
+   * is what it actually does.
+   *
+   * With unsaved edits it saves first and says so in its label.
    * The tab is opened synchronously, inside the click, because a `window.open`
    * that happens after an `await` has lost the user gesture and browsers
    * silently block it -- which would have turned this fix into the same
    * complaint.
    */
-  const openPreview = async () => {
+  const openLivePage = async () => {
     if (!previewPath) return;
     if (!dirty) {
       window.open(previewPath, "_blank");
@@ -1006,7 +1010,7 @@ const UNEDITABLE_PATHS = new Set([
       return;
     }
     if (tab) tab.location.href = previewPath;
-    else setStatus("改动已保存，但浏览器拦下了新窗口——请手动打开首页查看。");
+    else setStatus("改动已保存，但浏览器拦下了新窗口——请手动打开这个页面查看。");
   };
   const isHomeEditor = activePath === HOME_PATH;
   // Pages edited block by block rather than as JSON textareas: About, Involve,
@@ -1099,11 +1103,11 @@ const UNEDITABLE_PATHS = new Set([
               <button
                 className="admin-btn"
                 type="button"
-                onClick={openPreview}
+                onClick={openLivePage}
                 disabled={dirty && !jsonValid}
-                title={dirty ? "有未保存的改动：会先保存再打开预览" : "打开这个页面查看"}
+                title={dirty ? "有未保存的改动：会先保存，再打开线上页面" : "打开线上页面看看"}
               >
-                {dirty ? "保存并预览" : "预览"}
+                          {dirty ? "保存并看网页" : "看网页"}
               </button>
             ) : null}
             {hasAboutDefaults ? (

@@ -5,6 +5,20 @@ import type { AdminRole } from "./types";
 const LOCKOUT_MINUTES = 15;
 const MAX_FAILURES = 5;
 
+/**
+ * Locking an account after five wrong passwords is off for now.
+ *
+ * The editors are still learning the admin, and a mistyped password costing
+ * someone fifteen minutes in the middle of their work teaches them nothing
+ * except to be afraid of the tool. It goes back on once everyone is trained --
+ * set ADMIN_LOCKOUT=on in the environment, no code change needed.
+ *
+ * Failures are still counted while it is off. That way the counter is already
+ * meaningful on the day it starts being enforced, and a successful login
+ * resets it, so nobody is locked out by attempts they made months earlier.
+ */
+const LOCKOUT_ENABLED = (process.env.ADMIN_LOCKOUT ?? "").toLowerCase() === "on";
+
 export interface AdminUserRow {
   id: string;
   email: string;
@@ -93,6 +107,7 @@ export async function findAdminUserById(id: string): Promise<AdminUserRow | null
 }
 
 export function isAccountLocked(user: AdminUserRow): boolean {
+  if (!LOCKOUT_ENABLED) return false;
   if (!user.lockedUntil) return false;
   return new Date(user.lockedUntil).getTime() > Date.now();
 }
@@ -100,7 +115,7 @@ export function isAccountLocked(user: AdminUserRow): boolean {
 export async function recordAdminLoginFailure(user: AdminUserRow) {
   const supabase = createSupabaseAdminClient();
   const failures = user.failedLoginAttempts + 1;
-  const shouldLock = failures >= MAX_FAILURES;
+  const shouldLock = LOCKOUT_ENABLED && failures >= MAX_FAILURES;
   const lockedUntil = shouldLock ? new Date(Date.now() + LOCKOUT_MINUTES * 60_000).toISOString() : null;
   const { error } = await supabase
     .from("cms_admin_users")
