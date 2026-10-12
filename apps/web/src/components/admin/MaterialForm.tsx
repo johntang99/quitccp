@@ -1,4 +1,5 @@
 "use client";
+import { useAutoSlug } from "./use-auto-slug";
 
 import { useEffect, useRef, useState } from "react";
 import { ImagePickerModal } from "./ImagePickerModal";
@@ -92,34 +93,15 @@ export function MaterialForm({ initial, categories, mode }: MaterialFormProps) {
   }, []);
 
   /*
-   * The slug is the download page's URL, so it drops the characters that do not
-   * belong in one -- quotes, brackets, 、？！ and the full-width punctuation the
-   * titles are full of -- and lowercases the rest. Nothing is invented: not one
-   * of the site's existing slugs contains a capital letter.
+   * The slug is the public address, so Chinese in the title is romanised on the
+   * way in: 首钢炼钢厂 becomes shougang-liangangchang rather than characters a
+   * browser will percent-encode into something unreadable. The conversion needs
+   * a pinyin dictionary, which lives on the server -- see `use-auto-slug.ts`.
    *
-   * Chinese is left as it is. Romanising it would need a pinyin dictionary
-   * shipped to the browser, and the slug stays editable for anyone who wants
-   * the pinyin form the older material slugs use.
+   * It stops following the moment the editor types in the slug box, and never
+   * follows at all when editing an existing material: a slug is the public URL.
    */
-  const buildSlug = (value: string) => {
-    const base = value
-      .trim()
-      .toLowerCase()
-      .replace(/[\s\u3000]+/g, "-")
-      .replace(/[^0-9a-z\u3400-\u4dbf\u4e00-\u9fff-]+/g, "")
-      .replace(/-{2,}/g, "-")
-      .replace(/^-+|-+$/g, "");
-    if (!base || !datePrefix) return base;
-    const now = new Date();
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${base}`;
-  };
-
-  useEffect(() => {
-    if (slugTouched) return;
-    setSlug(buildSlug(title));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, datePrefix, slugTouched]);
+  useAutoSlug(title, { enabled: !slugTouched, withDate: datePrefix }, setSlug);
 
   const updateFile = (index: number, patch: Partial<MaterialFileValue>) =>
     setFiles((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));

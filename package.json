@@ -47,5 +47,8 @@
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "pinyin-pro": "^3.29.5"
   }
 }
