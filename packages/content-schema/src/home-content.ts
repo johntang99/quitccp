@@ -478,11 +478,11 @@ export const homeContentDefaults: HomeContent = {
         title: "专题报导与时政评论",
         en: "FEATURES & COMMENTARY",
         leadTitle: "专题：被改写的七十年——从大饥荒到今天的官方叙事",
-        leadHref: "/news/commentary",
+        leadHref: "/news/topics-commentary",
         image: "https://www.tuidang.org/wp-content/uploads/2026/07/2026.07.29-P.png",
         badge: "",
         footLabel: "全部专题与评论 →",
-        footHref: "/news/commentary"
+        footHref: "/news/topics-commentary"
       },
       {
         title: "国际声援行动",
@@ -498,11 +498,26 @@ export const homeContentDefaults: HomeContent = {
         title: "三退新闻",
         en: "TUIDANG NEWS",
         leadTitle: "济州岛服务点重启，义工在码头与免税店前轮班守候",
-        leadHref: "/news/stories",
+        leadHref: "/news/withdrawal-stories",
         image: "https://www.tuidang.org/wp-content/uploads/2026/06/2026.06.10-J.jpg",
         badge: "▶",
         footLabel: "全部三退新闻 →",
-        footHref: "/news/stories"
+        footHref: "/news/withdrawal-stories"
+      },
+      {
+        /* The one card with no 新闻栏目 behind it. The other four have their
+           photograph and 导读 replaced at render time by the newest article in
+           the matching category; this one points at the 九评 films instead, so
+           what is typed here and in the admin is what shows. */
+        title: "九评共产党",
+        en: "NINE COMMENTARIES",
+        leadTitle: "九评之一：评共产党是什么",
+        leadHref: "/videos/九评之一：评共产党是什么",
+        image:
+          "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/articles/fa/faf09d88a1467a2d.gif",
+        badge: "▶",
+        footLabel: "全部九评影片 →",
+        footHref: "/videos/jiuping"
       }
     ]
   },

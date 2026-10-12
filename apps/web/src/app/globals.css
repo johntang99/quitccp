@@ -2893,9 +2893,26 @@ body:has(.hero--full-bleed) > header .search {
 }
 .bsheet-cats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* The column count follows the number of 栏目 cards rather than being fixed
+     at four. It was fixed, so a fifth card added in the admin dropped onto a
+     second row on its own, one quarter of the band wide, next to three empty
+     columns -- the band looked broken rather than extended. */
+  grid-template-columns: repeat(var(--cats, 4), minmax(0, 1fr));
   gap: 24px;
 }
+/* Five across leaves about 208px a card where four left 266px, and the card
+   head is what runs out of room first: 专题报导与时政评论 is nine characters
+   at 22px, wider than the text column 208px leaves. So at five the band
+   tightens its own gutters and steps the type down a notch, which keeps every
+   栏目 name on one line. That matters beyond neatness -- a name that wrapped
+   would push that one card's photograph lower than the other four, and the
+   row of photographs reads as a single band. */
+.bsheet-cats[data-cats="5"] { gap: 18px; }
+.bsheet-cats[data-cats="5"] .bsheet-cat-head { padding: 20px 18px 16px; }
+.bsheet-cats[data-cats="5"] .bsheet-cat-name { font-size: 19px; }
+.bsheet-cats[data-cats="5"] .bsheet-cat-en { font-size: 12px; letter-spacing: 0.08em; }
+.bsheet-cats[data-cats="5"] .bsheet-cat-lead { padding: 18px 18px 0; font-size: 17px; }
+.bsheet-cats[data-cats="5"] .bsheet-cat-foot { margin: 14px 18px 8px; font-size: 13px; }
 .bsheet-cat {
   display: flex;
   flex-direction: column;
@@ -2914,7 +2931,7 @@ body:has(.hero--full-bleed) > header .search {
   border-color: var(--cream-rule);
   box-shadow: 0 2px 4px rgba(26, 23, 38, 0.05), 0 28px 48px -24px rgba(26, 23, 38, 0.32);
 }
-.bsheet-cat-head { display: flex; flex-direction: column; gap: 4px; padding: 22px 24px 18px; }
+.bsheet-cat-head { display: flex; flex-direction: column; gap: 4px; padding: 22px 24px 18px; min-height: 92px; }
 .bsheet-cat-en {
   font-family: var(--mono);
   font-size:13px;
@@ -2974,6 +2991,9 @@ body:has(.hero--full-bleed) > header .search {
 
 @media (max-width: 1080px) {
   .bsheet-cats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Two columns would leave the fifth card alone on a third row; three fills
+     the band as 3 + 2. */
+  .bsheet-cats[data-cats="5"] { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
   .bsheet-body { grid-template-columns: minmax(0, 1fr) 1px minmax(0, 320px); gap: 28px; }
   .bsheet-row { grid-template-columns: 30px minmax(0, 1fr) 96px; }
   .bsheet-row img, .bsheet-row-blank { width: 96px; height: 70px; }
@@ -2986,6 +3006,16 @@ body:has(.hero--full-bleed) > header .search {
   .bsheet-gutter { display: none; }
   .bsheet-band { padding: 48px 0 28px; }
   .bsheet-cats { grid-template-columns: minmax(0, 1fr); }
+  /* Repeated for the five-card band: the three-column rule above is an
+     attribute selector, so it outranks this one on specificity no matter that
+     it comes first, and without this line a phone would get three columns. */
+  .bsheet-cats[data-cats="5"] { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  /* At full width a card has all the room it needs, so the five-card band
+     drops its tightening and reads like the four-card one. */
+  .bsheet-cats[data-cats="5"] .bsheet-cat-head { padding: 22px 24px 18px; }
+  .bsheet-cats[data-cats="5"] .bsheet-cat-name { font-size: 22px; }
+  .bsheet-cats[data-cats="5"] .bsheet-cat-lead { padding: 20px 24px 0; font-size: 18px; }
+  .bsheet-cats[data-cats="5"] .bsheet-cat-foot { margin: 16px 24px 8px; font-size: 14px; }
   .bsheet-cat-lead { min-height: 0; }
 }
 

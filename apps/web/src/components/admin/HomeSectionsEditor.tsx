@@ -243,21 +243,33 @@ const ROW_EDITORS: Record<string, RowEditorSpec> = {
       // Empty, not "/news": a new card should take its own column's page.
       footHref: ""
     },
-    // 图片、导读标题 are filled from the latest article in this column, so they
-    // are not editable here. 栏目名称 decides which column that is -- it has to
-    // match a news category name.
+    // 栏目名称 decides which news category a card follows. When it matches
+    // one, that column's newest article supplies the picture and the 导读, and
+    // whatever is typed in those three fields below is replaced at render
+    // time. When it does not -- 九评共产党 points at the films, not at a news
+    // category -- nothing replaces them, and they are the only way to give the
+    // card a picture and a headline at all. They were not editable here, which
+    // left such a card permanently stuck with whatever it was created with.
     //
-    // 底部链接地址 is editable, and was not: it was filled in automatically and
-    // then had no way to be corrected. Left empty it still fills itself in, so
-    // nobody has to know the slug of their own column.
+    // 底部链接地址 is the same story: it used to fill itself in and then had no
+    // way to be corrected. Left empty it still fills itself in, so nobody has
+    // to know the slug of their own column.
     fields: [
       { key: "title", label: "栏目名称（Channel name，须与新闻分类同名）" },
       { key: "en", label: "英文标签（Latin label，如 INVESTIGATIONS）" },
+      {
+        key: "image",
+        label: "图片（Image）",
+        kind: "image",
+        hint: "栏目名称与新闻分类同名时，这里填什么都会被该栏目最新一篇文章的图替换；只有不同名的卡片（例如「九评共产党」）才用这里设的图。"
+      },
+      { key: "leadTitle", label: "导读标题（Lead headline）", kind: "area", hint: "同上：同名栏目会被自动替换。" },
+      { key: "leadHref", label: "导读链接（Lead link）", hint: "同上：同名栏目会被自动替换。" },
       { key: "footLabel", label: "底部链接文字（Foot label）" },
       {
         key: "footHref",
         label: "底部链接地址（Foot link）",
-        hint: "留空＝自动指向这个栏目的分类页。要指去别处就填，例如 /videos 或完整网址。"
+        hint: "留空＝自动指向这个栏目的分类页。要指去别处就填，例如 /videos/jiuping 或完整网址。"
       }
     ]
   },
@@ -382,7 +394,7 @@ function orderFields(sectionKey: string, keys: string[]): string[] {
 function couplingNote(sectionKey: string, data: Record<string, unknown>): string | null {
   const variantOf = (key: string) => String(asRow(data[key]).variant ?? "");
   if (sectionKey === "channels" && variantOf("news") === "broadsheet") {
-    return "「新闻与报告」正在使用「报刊头版」版式，本区块已并入其中显示，这里的「版式」选择不起作用。每张卡片的图片、导读标题与链接由该栏目最新一篇文章自动填入；这里设置显示哪几个栏目、栏目名称与底部链接文字。栏目名称须与新闻分类同名，否则该卡片不会自动更新。";
+    return "「新闻与报告」正在使用「报刊头版」版式，本区块已并入其中显示，这里的「版式」选择不起作用。栏目名称与新闻分类同名的卡片，图片和导读标题由该栏目最新一篇文章自动填入，这里填的会被覆盖；不同名的卡片（例如「九评共产党」指向影片）不会自动更新，图片和导读要在这里自己填。";
   }
   if (
     (sectionKey === "services" || sectionKey === "voices") &&
@@ -403,7 +415,7 @@ function couplingNote(sectionKey: string, data: Record<string, unknown>): string
     return "「报刊头版」版式把「栏目卡片（专题栏目）」并入本区块一起显示；栏目卡片仍在该区块里编辑。头条与「最新发布」三条由文章库自动填入——标记为「重要」的最新一篇作头条，其余按发布时间排——这里只设置标题与链接文字。";
   }
   if (sectionKey === "channels") {
-    return "每张卡片的图片、导读标题与链接由该栏目最新一篇文章自动填入；这里设置显示哪几个栏目、栏目名称与底部链接文字。栏目名称须与新闻分类同名，否则该卡片不会自动更新。";
+    return "栏目名称与新闻分类同名的卡片，图片和导读标题由该栏目最新一篇文章自动填入，这里填的会被覆盖；不同名的卡片（例如「九评共产党」指向影片）不会自动更新，图片和导读要在这里自己填。";
   }
   if (sectionKey === "video") {
     return "大图影片与「最新上线」四张卡片由视频库自动填入——标记为「重要」的最新一部作大图，其余按发布时间排——这里只设置区块标题、系列导航与按钮文字。";

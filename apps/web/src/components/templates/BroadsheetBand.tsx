@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { HomeContent } from "@quitccp/content-schema";
 import { externalLinkProps } from "@/lib/external-services";
 
@@ -6,7 +7,7 @@ import { externalLinkProps } from "@/lib/external-services";
  *
  * Implements `docs/prototypes/home-news-section-html`. The two sections used to read as
  * unrelated blocks; here they share one broadsheet page: masthead rules, a
- * lead story set against a numbered 最新发布 column, then the four 专题栏目
+ * lead story set against a numbered 最新发布 column, then the 专题栏目
  * cards under a rule-flanked band title.
  *
  * Design values (rules, type scale, card shadow and hover motion) are lifted
@@ -100,7 +101,15 @@ export function BroadsheetBand({ news, channels }: BroadsheetBandProps) {
               <span className="bsheet-band-rule" aria-hidden="true" />
             </div>
 
-            <div className="bsheet-cats">
+            {/* The band sizes its own columns from the card count, so adding a
+                fifth 栏目 in the admin widens the grid instead of wrapping the
+                card onto a row of its own. `data-cats` carries the same number
+                for the handful of rules that only apply at five. */}
+            <div
+              className="bsheet-cats"
+              data-cats={channels.cards.length}
+              style={{ "--cats": channels.cards.length } as CSSProperties}
+            >
               {channels.cards.map((card) => (
                 <article key={card.title} className="bsheet-cat">
                   <div className="bsheet-cat-head">
