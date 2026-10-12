@@ -70,6 +70,16 @@ export interface SectionBlockDef {
   rows?: Record<string, RowEditorSpec>;
   /** Single nested records. */
   objects?: Record<string, ObjectEditorSpec>;
+  /**
+   * Pulls the page's own `title` and `subtitle` into this block.
+   *
+   * They are one text, not two: on a section's front page the page title IS
+   * the line across the hero. Editing them two screens apart from the hero's
+   * pictures made the hero look half-editable, so the block that renders them
+   * can claim them -- the fields still write `title` and `subtitle`, so there
+   * is one copy of the words, just in the place they are seen.
+   */
+  pageTitleFields?: { title: string; subtitle: string };
 }
 
 export function asRow(value: unknown): Record<string, unknown> {

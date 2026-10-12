@@ -126,7 +126,8 @@ export const SERVICES_BLOCKS: Record<string, SectionBlockDef[]> = {
     {
       key: "hero",
       label: "首屏 Hero（背景照片与证书图）",
-      note: "两张图互相独立：只放背景、只放证书、或两张都放，都可以；两个都留空，首屏就回到纯色底。文字用的是本页的「标题」和「副标题」，不在这里改。",
+      note: "首屏上看到的全部在这里：两行字、背景照片、右侧那张图。两张图互相独立——只放背景、只放证书、或两张都放都可以；两个都留空，首屏就回到纯色底。右侧那张图读者点一下会放大。",
+      pageTitleFields: { title: "大标题（Title）", subtitle: "导语（Subtitle）" },
       text: [
         {
           key: "image",

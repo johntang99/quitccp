@@ -1158,22 +1158,30 @@ const UNEDITABLE_PATHS = new Set([
                 />
               ) : blockEditorBlocks ? (
                 <>
-                  <label>
-                    页面标题
-                    <input
-                      className="admin-input"
-                      value={String((activeData.title as string) ?? "")}
-                      onChange={(event) => updateField(["title"], event.target.value)}
-                    />
-                  </label>
-                  <label>
-                    页面副标题
-                    <textarea
-                      className="admin-textarea"
-                      value={String((activeData.subtitle as string) ?? "")}
-                      onChange={(event) => updateField(["subtitle"], event.target.value)}
-                    />
-                  </label>
+                  {/* A block may have claimed these two -- see `pageTitleFields`.
+                      Rendering them here as well would put the same words in two
+                      boxes on one screen, and leave an editor wondering which
+                      one the page reads. */}
+                  {blockEditorBlocks.some((block) => block.pageTitleFields) ? null : (
+                    <>
+                      <label>
+                        页面标题
+                        <input
+                          className="admin-input"
+                          value={String((activeData.title as string) ?? "")}
+                          onChange={(event) => updateField(["title"], event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        页面副标题
+                        <textarea
+                          className="admin-textarea"
+                          value={String((activeData.subtitle as string) ?? "")}
+                          onChange={(event) => updateField(["subtitle"], event.target.value)}
+                        />
+                      </label>
+                    </>
+                  )}
                   <AboutSectionsEditor
                     blocks={blockEditorBlocks}
                     data={activeData}

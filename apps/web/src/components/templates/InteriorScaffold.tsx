@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Route } from "next";
 import { EXTERNAL_LINK_PROPS } from "@/lib/external-services";
+import { FigureZoom } from "@/components/public/FigureZoom";
 import { SECTION_CONFIG, loadSectionNavOverrides, mergeSectionNav, type SectionTab } from "@/lib/section-nav";
 
 
@@ -110,8 +111,7 @@ export async function InteriorHead({
         </div>
         {figure ? (
           <div className="phead-figure">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={figure} alt={hero?.figureAlt ?? ""} />
+            <FigureZoom src={figure} alt={hero?.figureAlt ?? ""} caption={hero?.figureAlt} />
           </div>
         ) : null}
       </div>

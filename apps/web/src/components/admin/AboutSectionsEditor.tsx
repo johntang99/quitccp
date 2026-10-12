@@ -350,6 +350,9 @@ export function AboutSectionsEditor({
   onJsonDraft
 }: AboutSectionsEditorProps) {
   const { imageField, recordFields, rowsEditor } = createFieldRenderers({ updateField, onPickImage });
+  /* The page's own two strings, for a block that has claimed them. */
+  const pageTitle = typeof data.title === "string" ? data.title : "";
+  const pageSubtitle = typeof data.subtitle === "string" ? data.subtitle : "";
 
   const stringList = (
     blockKey: string,
@@ -479,9 +482,33 @@ export function AboutSectionsEditor({
                 </fieldset>
               ))}
 
-              {textFields.length > 0 || listFields.length > 0 ? (
+              {block.pageTitleFields ? (
                 <fieldset style={fieldsetStyle}>
                   <legend style={legendStyle}>文字 Text</legend>
+                  <label>
+                    {block.pageTitleFields.title}
+                    <textarea
+                      className="admin-textarea"
+                      style={{ minHeight: 46 }}
+                      value={String(pageTitle ?? "")}
+                      onChange={(event) => updateField(["title"], event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    {block.pageTitleFields.subtitle}
+                    <textarea
+                      className="admin-textarea"
+                      style={{ minHeight: 84 }}
+                      value={String(pageSubtitle ?? "")}
+                      onChange={(event) => updateField(["subtitle"], event.target.value)}
+                    />
+                  </label>
+                </fieldset>
+              ) : null}
+
+              {textFields.length > 0 || listFields.length > 0 ? (
+                <fieldset style={fieldsetStyle}>
+                  <legend style={legendStyle}>{block.pageTitleFields ? "图片 Media" : "文字 Text"}</legend>
                   {textFields.map((field) =>
                     field.kind === "image" ? (
                       <div key={field.key}>
