@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { isGanjingWatchUrl, toEmbedUrl } from "@/lib/video-host";
+import { isGanjingWatchUrl, isVimeoWatchUrl, toEmbedUrl } from "@/lib/video-host";
 import { GanjingEmbedNotice } from "./GanjingEmbedNotice";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { MarkdownEditor, type MarkdownEditorHandle } from "./MarkdownEditor";
@@ -206,8 +206,8 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
   const embed = toEmbedUrl(value.sourceUrl);
   const isFile = /\.mp4(\?|$)/i.test(value.sourceUrl);
   /* Flagged rather than rewritten under the editor's hands; 改成 /embed/ does it. */
-  const ganjingWatch = isGanjingWatchUrl(value.sourceUrl);
-  const backupGanjingWatch = isGanjingWatchUrl(value.backupUrl);
+  const ganjingWatch = isGanjingWatchUrl(value.sourceUrl) || isVimeoWatchUrl(value.sourceUrl);
+  const backupGanjingWatch = isGanjingWatchUrl(value.backupUrl) || isVimeoWatchUrl(value.backupUrl);
 
   /**
    * Same order as the article form: stop at the first thing that is missing
@@ -266,12 +266,12 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                 name="sourceUrl"
                 value={value.sourceUrl}
                 onChange={(event) => set("sourceUrl", event.target.value)}
-                placeholder="https://www.youtube.com/watch?v=… 或 .mp4 地址"
+                placeholder="干净世界 / YouTube / Vimeo 的地址，或 .mp4 直链"
                 style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
               />
               <span className="hint">
                 支持 YouTube、干净世界、Vimeo，以及 .mp4 文件地址。
-                干净世界请用 <code>/embed/</code> 地址，不要用浏览器地址栏里的 <code>/video/</code>。
+                干净世界和 Vimeo 从地址栏复制来的地址嵌不进播放器，粘进来会提示一键改好。
                 {value.sourceUrl ? ` 识别为：${platformOf(value.sourceUrl)}` : ""}
               </span>
               {ganjingWatch ? (

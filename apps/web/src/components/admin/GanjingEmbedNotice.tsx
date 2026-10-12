@@ -24,6 +24,16 @@ export function GanjingEmbedNotice({ url, onFix }: { url: string; onFix: () => v
   const fixed = toEmbedUrl(url);
   if (!fixed || fixed === url.trim()) return null;
 
+  /* Two sites, one problem, so one notice. Gan Jing World answers an embedded
+     /video/ page with a frame-ancestors header and Vimeo answers vimeo.com
+     with X-Frame-Options; either way the reader gets an empty rectangle where
+     the film should be, and either way the fix is the player address. */
+  const vimeo = /vimeo\.com/i.test(url);
+  const headline = vimeo
+    ? "这是 Vimeo 的观看地址，播放器嵌不进去"
+    : "这是干净世界的 /video/ 地址，播放器嵌不进去";
+  const action = vimeo ? "改成播放器地址" : "改成 /embed/";
+
   return (
     <div
       style={{
@@ -37,7 +47,7 @@ export function GanjingEmbedNotice({ url, onFix }: { url: string; onFix: () => v
         color: "#6b5312"
       }}
     >
-      <strong style={{ display: "block", marginBottom: 4 }}>这是干净世界的 /video/ 地址，播放器嵌不进去</strong>
+      <strong style={{ display: "block", marginBottom: 4 }}>{headline}</strong>
       <div style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12, wordBreak: "break-all" }}>
         <div style={{ textDecoration: "line-through", opacity: 0.65 }}>{url.trim()}</div>
         <div style={{ color: "#1f7a4d" }}>{fixed}</div>
@@ -48,7 +58,7 @@ export function GanjingEmbedNotice({ url, onFix }: { url: string; onFix: () => v
         style={{ marginTop: 8 }}
         onClick={onFix}
       >
-        改成 /embed/
+        {action}
       </button>
     </div>
   );

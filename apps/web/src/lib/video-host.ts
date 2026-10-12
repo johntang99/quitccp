@@ -63,6 +63,27 @@ export function toEmbedUrl(url: string): string {
   );
   if (ganjing) return `https://www.ganjingworld.com/embed/${ganjing[1]}`;
 
+  /*
+   * Vimeo refuses the frame too, and more bluntly: vimeo.com answers with
+   * `X-Frame-Options: sameorigin`, so the browser shows a broken-page glyph
+   * where the film should be. player.vimeo.com carries no such header.
+   *
+   * 追查国际 publish everything on Vimeo, so the address an editor copies is
+   * always the watch one. Four shapes lead to the same film:
+   *
+   *   vimeo.com/338376050                     the usual one
+   *   vimeo.com/338376050/a1b2c3d4e5          unlisted; the second part is a
+   *                                           key the player needs as ?h=
+   *   vimeo.com/channels/<name>/338376050     from a channel page
+   *   vimeo.com/groups/<name>/videos/338376050
+   */
+  const vimeo = value.match(
+    /vimeo\.com\/(?:channels\/[^/]+\/|groups\/[^/]+\/videos\/)?(\d{6,12})(?:\/([A-Za-z0-9]+))?/
+  );
+  if (vimeo && !/player\.vimeo\.com/i.test(value)) {
+    return `https://player.vimeo.com/video/${vimeo[1]}${vimeo[2] ? `?h=${vimeo[2]}` : ""}`;
+  }
+
   return value;
 }
 
@@ -80,4 +101,10 @@ export function isFileUrl(url: string): boolean {
  */
 export function isGanjingWatchUrl(url: string): boolean {
   return /ganjingworld\.com\/(?:[a-z]{2}-[A-Z]{2}\/)?(?:video|live)\/[A-Za-z0-9]+/i.test((url ?? "").trim());
+}
+
+/** The Vimeo address off the browser bar, which cannot be embedded either. */
+export function isVimeoWatchUrl(url: string): boolean {
+  const value = (url ?? "").trim();
+  return /vimeo\.com\//i.test(value) && !/player\.vimeo\.com/i.test(value);
 }

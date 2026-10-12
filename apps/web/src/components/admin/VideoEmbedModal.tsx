@@ -107,14 +107,14 @@ export function VideoEmbedModal({
               insert();
             }
           }}
-          placeholder="https://www.ganjingworld.com/embed/… 或 https://www.youtube.com/watch?v=…"
+          placeholder="干净世界 / YouTube / Vimeo 的地址，或 .mp4 直链"
           style={{ fontFamily: "ui-monospace, Menlo, monospace", width: "100%" }}
         />
 
         {/* Stated up front, not only after a wrong address is pasted. */}
         <p style={{ margin: "6px 0 0", color: "#8a90a0", fontSize: 12.5, lineHeight: 1.65 }}>
-          干净世界要用 <code>/embed/</code> 地址。从地址栏复制来的是 <code>/video/</code>，
-          嵌进页面播不了 —— 粘进来会自动改好。
+          支持干净世界、YouTube、Vimeo，以及 .mp4 直链。干净世界和 Vimeo 从地址栏复制来的那种
+          （<code>/video/</code>、<code>vimeo.com/数字</code>）嵌进页面播不了 —— 粘进来会自动改好。
           {trimmed && known ? <strong style={{ color: "#555" }}> 识别为：{host.label}</strong> : null}
           {trimmed && !known ? (
             <strong style={{ color: "#b42318" }}> 认不出这个地址，插不进去</strong>
