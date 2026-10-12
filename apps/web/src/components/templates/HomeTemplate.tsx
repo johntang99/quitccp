@@ -465,6 +465,7 @@ export async function HomeTemplate({ content }: TemplatePageData) {
           voices={voices}
           feed={streamRows}
           updatedAt={santui?.fetchedAt ?? null}
+          total={santui?.total ?? null}
         />
       ) : null}
 

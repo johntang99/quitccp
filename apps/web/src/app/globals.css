@@ -2333,7 +2333,14 @@ body:has(.hero--full-bleed) > header .search {
   align-items: end;
   color: var(--dawn-onink);
 }
-.dawn-count { display: flex; flex-direction: column; gap: 20px; }
+/* No flex `gap` here on purpose. It used to be 20px, which stacked on top of
+   each child's own margin: the rule sat 36px below the figure and the source
+   line 26px below the label, where the design calls for 15px and 6px. The
+   spacing between these five lines is a typographic decision per pair, not one
+   number applied between all of them. */
+.dawn-count { display: flex; flex-direction: column; gap: 0; }
+.dawn-count > .dawn-figure { margin-top: 22px; }
+.dawn-count > .dawn-count-label { margin-top: 13px; }
 
 .dawn-live {
   display: flex;
@@ -2369,21 +2376,68 @@ body:has(.hero--full-bleed) > header .search {
   font-weight: 700;
   line-height: .9;
 }
+/* The condensed numeral face. Not a theme token: --serif/--sans/--mono are
+   the site's three voices and an editor can change them, whereas this one is
+   load-bearing -- the figure only fits, and only holds still while it counts,
+   because this particular face has equal-width digits. See `app/fonts.ts`. */
+.dawn-figure { --cond: var(--font-cond), "Noto Sans SC", sans-serif; }
 .dawn-figure-num {
-  font-size: clamp(72px, 13.9vw, 200px);
-  letter-spacing: -.03em;
-  color: #F6F3FC;
+  font-family: var(--cond);
+  font-weight: 300;
+  /* Equal-width digits. Without this the count-up changes width every frame
+     and the whole line shakes -- which is exactly what the old site does. */
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: 0;
+  color: #FBFAFE;
+  /* A floor that cannot overflow at any viewport, for the moment before the
+     script measures the column and for readers with no JavaScript at all.
+     RegistryCounter replaces it with the exact fit. */
+  font-size: clamp(42px, 9.5vw, 162px);
+  display: inline-block;
 }
+/* The thousands separators carry the gold that 「亿」 used to, dimmed so they
+   group the digits without competing with them. */
+.dawn-figure-sep { color: rgba(240, 212, 140, .72); font-weight: 300; }
+/* Only reached before the first santui sync, where the band still shows 4.67 亿. */
 .dawn-figure-unit {
   font-size: clamp(64px, 12.2vw, 176px);
   color: var(--dawn-gold);
 }
-.dawn-count-label {
-  margin: 0;
-  font-family: var(--serif);
-  font-size: clamp(20px, 2.1vw, 30px);
-  line-height: 1.5;
+.dawn-figure-rule {
+  display: block;
+  height: 1px;
+  margin-top: 15px;
+  /* Set by RegistryCounter once it has measured the figure. The fallback is
+     the full column, which is what it looked like before and is harmless. */
+  width: var(--figure-w, 100%);
+  background: linear-gradient(90deg, rgba(214, 172, 78, .85), rgba(214, 172, 78, .06));
 }
+/* The sentence under the figure and the provenance line under that are one
+   block of running text: same face, same size, same colour, written together
+   so a later edit cannot leave them mismatched. Only weight and colour set
+   「4.67 亿」 apart, and only the link marks itself out in the line below. */
+.dawn-count-label,
+.dawn-count .count-source {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  color: #DCD5F0;
+  /* base.css gives .count-source its own tracking; cancel it here or the two
+     lines are set differently despite sharing everything else. */
+  letter-spacing: normal;
+}
+.dawn-count .count-source {
+  margin-top: 6px;
+  /* Deliberately allowed to wrap. This line used to be nowrap with an ellipsis,
+     which silently dropped its tail when it did not fit -- and its tail is the
+     link to how the figure is counted. Two lines beats a missing link. */
+  white-space: normal;
+}
+.dawn-count .count-source a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.dawn-count .count-source a:hover { color: var(--gold-lt); }
+.dawn-count-yi { font-weight: 700; color: var(--gold-lt); margin-right: 7px; }
 
 .dawn-aside { display: flex; flex-direction: column; gap: 22px; padding-bottom: 10px; }
 .dawn-stats {
@@ -2529,10 +2583,12 @@ body:has(.hero--full-bleed) > header .search {
   background: var(--card);
   border-radius: 6px;
   box-shadow: 0 30px 70px -30px rgba(40, 24, 90, .45);
-  padding: 36px 34px 28px;
+  /* Was 36/34/28 with a 16px gap. Against the rest of the page these cards
+     read as slack -- the band above them sets its lines 6 to 22px apart. */
+  padding: 28px 26px 22px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 .dawn-card-top { display: flex; justify-content: space-between; align-items: center; }
 .dawn-card-tag {
@@ -2549,20 +2605,38 @@ body:has(.hero--full-bleed) > header .search {
   font-size: clamp(22px, 2.2vw, 28px);
   color: var(--ink-band);
 }
+/* Sits directly under the Chinese title, close enough to read as part of it.
+   Mono and letter-spaced so it carries weight at a small size without
+   competing with the serif heading above it. */
+.dawn-card-en {
+  margin-top: -6px;
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: .06em;
+  color: var(--dawn-accent);
+}
+.dawn-cards--5 .dawn-card-en { font-size: 13px; }
 .dawn-card-desc {
   margin: 0;
   font-size: 15px;
-  line-height:var(--lh-body);
+  /* --lh-body is 1.8, which is right for an article column and far too open
+     for four lines inside a card. */
+  line-height: 1.65;
   color: var(--ink-mid);
-  /* Keeps the three cards' link lists aligned when the copy differs in length. */
-  min-height: 84px;
+  /* Keeps the cards' link lists aligned when the copy differs in length. */
+  min-height: 78px;
 }
 .dawn-card-links { display: flex; flex-direction: column; }
+/* The last rule in the list closes it off, so a card without a button does not
+   trail away into blank white. */
+.dawn-card-links a:last-child { border-bottom: 1px solid var(--rule); }
 .dawn-card-links a {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 0;
+  /* 14px top and bottom put 28px between one link's text and the next. */
+  padding: 10px 0;
   border-top: 1px solid var(--rule);
   color: var(--ink-band);
   text-decoration: none;
@@ -2571,7 +2645,10 @@ body:has(.hero--full-bleed) > header .search {
 .dawn-card-links a span:last-child { color: var(--dawn-accent); }
 .dawn-card-links a:hover { color: var(--dawn-accent); }
 .dawn-card-cta {
-  margin-top: 6px;
+  /* Sits on the card's floor. The row's height is set by whichever card is
+     tallest, so with `6px` the button floated wherever its own card's content
+     happened to end, leaving a band of empty white beneath it. */
+  margin-top: auto;
   background: var(--dawn-accent);
   color: #fff;
   text-align: center;
@@ -2587,6 +2664,16 @@ body:has(.hero--full-bleed) > header .search {
 /* The design tightens the cards when a fourth one joins the row; at three they
    keep the roomier setting they were drawn with. */
 .dawn-cards--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+/* Five across leaves 208px a card where four left 266px. Everything inside
+   tightens a notch rather than the type simply shrinking: the gutter, the
+   padding, the rule spacing. */
+.dawn-cards--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; }
+.dawn-cards--5 .dawn-card { padding: 24px 20px 20px; gap: 10px; }
+.dawn-cards--5 .dawn-card h3 { font-size: clamp(18px, 1.5vw, 21px); }
+.dawn-cards--5 .dawn-card-tag { font-size: 12px; letter-spacing: .06em; }
+.dawn-cards--5 .dawn-card-desc { font-size: 14px; min-height: 92px; }
+.dawn-cards--5 .dawn-card-links a { font-size: 14px; padding: 9px 0; }
+.dawn-cards--5 .dawn-card-cta { font-size: 15px; padding: 11px; }
 .dawn-cards--4 .dawn-card { padding: 32px 28px 26px; }
 .dawn-cards--4 .dawn-card h3 { font-size: clamp(20px, 1.9vw, 25px); }
 .dawn-cards--4 .dawn-card-desc { min-height: 112px; }
@@ -2598,26 +2685,18 @@ body:has(.hero--full-bleed) > header .search {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px;
+  gap: 12px;
+  padding: 16px 16px 14px;
   border-radius: 6px;
   background: #F5F2FB;
   /* Grows so the card's foot lines up with the other cards' CTAs. */
   flex-grow: 1;
 }
-.dawn-wit-mark {
-  font-family: var(--serif);
-  font-weight: 700;
-  font-size: 48px;
-  line-height: .5;
-  height: 20px;
-  color: var(--gold-muted);
-}
 .dawn-wit blockquote {
   margin: 0;
   font-family: var(--serif);
-  font-size: 16px;
-  line-height:var(--lh-body);
+  font-size: 15px;
+  line-height: 1.65;
   color: var(--ink-band);
   flex-grow: 1;
 }

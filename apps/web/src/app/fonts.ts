@@ -1,4 +1,4 @@
-import { Noto_Serif_SC } from "next/font/google";
+import { Barlow_Condensed, Noto_Serif_SC } from "next/font/google";
 
 // Headings only. The CSS has always *asked* for Noto Serif SC, but nothing ever
 // shipped it, so headings fell back to Songti SC on a Mac and SimSun on Windows,
@@ -19,4 +19,30 @@ export const notoSerifSC = Noto_Serif_SC({
   preload: false,
   variable: "--font-serif-sc",
   fallback: ["Songti SC", "serif"],
+});
+
+/**
+ * The registry figure on the homepage, and nothing else.
+ *
+ * It has one job: carry 467,293,946 at ~160px in the space 4.67 亿 used to
+ * occupy, while a count-up animation runs through it. That rules out the faces
+ * already loaded here -- Noto Serif SC's digits are not the same width (nine
+ * `1`s are 422px where nine `0`s are 537px, and `tabular-nums` cannot fix it
+ * because the face carries no tabular set), so every frame of the animation
+ * would be a different width and the whole line would jitter.
+ *
+ * Barlow Condensed is tabular once `font-variant-numeric` asks for it, and is
+ * the narrowest of the condensed faces that are -- which is what lets eleven
+ * characters fit a column that previously held four.
+ *
+ * Latin only, one weight, and in practice only twelve glyphs (0-9 , and the
+ * digits' spacing), so this costs a few kilobytes rather than the megabytes a
+ * CJK webfont would.
+ */
+export const barlowCondensed = Barlow_Condensed({
+  weight: ["300"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-cond",
+  fallback: ["Noto Sans SC", "sans-serif"],
 });

@@ -158,6 +158,13 @@ export interface HomeContent {
     cards: {
       tag: string;
       title: string;
+      /**
+       * A Latin name set under the Chinese title, for a card whose subject is
+       * known by one -- ENDCCP's petition is signed and shared as "End CCP"
+       * far more often than by its Chinese name. Omitted on cards that have
+       * no such name, which is most of them.
+       */
+      en?: string;
       body: string;
       links: LinkItem[];
       /** Optional button at the foot of the card; blank label hides it. */

@@ -34,10 +34,10 @@ export function WitnessCard({
 
   return (
     <>
+      {/* No oversized opening quote mark. It cost 36px of height inside an
+          already crowded card and said nothing the <blockquote> and the
+          attribution beneath it did not already say. */}
       <figure className="dawn-wit">
-        <span className="dawn-wit-mark" aria-hidden="true">
-          “
-        </span>
         <blockquote>{shown.quote}</blockquote>
         <figcaption>
           {shown.image ? <img src={shown.image} alt="" /> : <span className="dawn-wit-blank" />}

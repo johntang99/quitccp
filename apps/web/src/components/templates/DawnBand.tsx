@@ -1,6 +1,7 @@
 import type { HomeContent } from "@quitccp/content-schema";
 import { externalLinkProps } from "@/lib/external-services";
 import { WitnessCard } from "@/components/public/WitnessCard";
+import { RegistryCounter } from "@/components/public/RegistryCounter";
 
 /**
  * 曙光 — the merged 实时登记册 + 我们的服务 band.
@@ -23,9 +24,21 @@ interface DawnBandProps {
   feed: { region: string; name: string; text: string; at: string; kind?: string }[];
   /** ISO timestamp of the last santui sync, when one is available. */
   updatedAt?: string | null;
+  /**
+   * The exact registry total from the santui snapshot, e.g. 467293946.
+   *
+   * `registry.count` beside it is the same figure rounded to 「4.67 亿」. The
+   * band shows both: the exact number as the headline figure, the rounded one
+   * leading the sentence under it, because the two answer different questions
+   * -- "how many exactly" and "how big is that".
+   *
+   * Null on a machine that has never synced, where the band falls back to the
+   * 亿 figure alone rather than inventing a precise one.
+   */
+  total?: number | null;
 }
 
-export function DawnBand({ registry, services, voices, feed, updatedAt }: DawnBandProps) {
+export function DawnBand({ registry, services, voices, feed, updatedAt, total }: DawnBandProps) {
   // The 见证 card only appears when there is something to show in it; without
   // it the row stays the three cards it was.
   const showWitness = voices.enabled && voices.items.length > 0;
@@ -60,18 +73,41 @@ export function DawnBand({ registry, services, voices, feed, updatedAt }: DawnBa
               {registry.liveLabel}
             </span>
             <p className="dawn-figure">
-              {/* The numeral and its unit are sized differently in the design,
-                  so they are separate spans rather than one string. */}
-              <span className="dawn-figure-num">{splitCount(registry.count).value}</span>
-              <span className="dawn-figure-unit">{splitCount(registry.count).unit}</span>
+              {/* The exact total once santui has been synced; the rounded 亿
+                  figure only while it never has. */}
+              {total ? (
+                <RegistryCounter total={total} className="dawn-figure-num" />
+              ) : (
+                <>
+                  <span className="dawn-figure-num">{splitCount(registry.count).value}</span>
+                  <span className="dawn-figure-unit">{splitCount(registry.count).unit}</span>
+                </>
+              )}
             </p>
-            <p className="dawn-count-label">{registry.countLabel}</p>
-              {updatedAt ? (
-                <p className="count-source">
-                  来源：全球退党服务中心登记册 · 更新于{" "}
-                  <time dateTime={updatedAt}>{updatedAt.slice(0, 10)}</time>
-                </p>
-              ) : null}
+            {/* A hairline the width of the figure. Barlow Condensed at weight
+                200 is a very light stroke on a dark gradient, and without
+                something under it the figure floats. */}
+            <span className="dawn-figure-rule" aria-hidden="true" />
+            <p className="dawn-count-label">
+              {/* 4.67 亿 leads the sentence as its subject: same face and size
+                  as the words after it, told apart by weight and colour. */}
+              {total ? <strong className="dawn-count-yi">{registry.count}</strong> : null}
+              {registry.countLabel}
+            </p>
+            {updatedAt ? (
+              <p className="count-source">
+                来源：全球退党服务中心登记册 · 更新于{" "}
+                <time dateTime={updatedAt}>{updatedAt.slice(0, 10)}</time>
+                {registry.noteHref ? (
+                  <>
+                    {" · "}
+                    <a href={registry.noteHref} {...externalLinkProps(registry.noteHref)}>
+                      {registry.noteLabel}
+                    </a>
+                  </>
+                ) : null}
+              </p>
+            ) : null}
           </div>
 
           {/* A promoted banner takes the whole right column when one is set;
@@ -157,7 +193,9 @@ export function DawnBand({ registry, services, voices, feed, updatedAt }: DawnBa
           </a>
         </div>
 
-        <div className={`dawn-cards${showWitness ? " dawn-cards--4" : ""}`}>
+        {/* The column count follows the number of cards: three service cards
+            plus 见证者 made four, and the ENDCCP card makes five. */}
+        <div className={`dawn-cards dawn-cards--${services.cards.length + (showWitness ? 1 : 0)}`}>
           {services.cards.map((card, index) => (
             <article key={card.title} className="dawn-card">
               <div className="dawn-card-top">
@@ -167,6 +205,11 @@ export function DawnBand({ registry, services, voices, feed, updatedAt }: DawnBa
                 <span className="dawn-card-rule" aria-hidden="true" />
               </div>
               <h3>{card.title}</h3>
+              {/* The Latin name, where the subject has one people recognise.
+                  Same idiom as the 专题栏目 cards, which pair INVESTIGATIONS
+                  with 追查国际调查报告 -- only there the Latin line sits above
+                  the Chinese one, and here it reads as the name beneath it. */}
+              {card.en ? <span className="dawn-card-en">{card.en}</span> : null}
               <p className="dawn-card-desc">{card.body}</p>
               <div className="dawn-card-links">
                 {card.links.map((link) => (
@@ -201,7 +244,12 @@ export function DawnBand({ registry, services, voices, feed, updatedAt }: DawnBa
                 <span className="dawn-card-rule" aria-hidden="true" />
               </div>
               <h3>{voices.heading}</h3>
-              <p className="dawn-card-desc dawn-card-desc--quiet">{voices.lede}</p>
+              {/* Skipped when the CMS leaves it blank. Rendering an empty <p>
+                  would still claim the paragraph's min-height, so the card
+                  would carry the gap without the words. */}
+              {voices.lede.trim() ? (
+                <p className="dawn-card-desc dawn-card-desc--quiet">{voices.lede}</p>
+              ) : null}
               <WitnessCard
                 items={voices.items}
                 moreLabel={voices.moreLabel}

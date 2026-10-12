@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notoSerifSC } from "./fonts";
+import { barlowCondensed, notoSerifSC } from "./fonts";
 import { loadTheme, themeToCss } from "@/lib/public-theme";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
@@ -44,7 +44,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     // hydrating markup legitimately differ by that one attribute.
     <html
       lang="zh-CN"
-      className={notoSerifSC.variable}
+      className={`${notoSerifSC.variable} ${barlowCondensed.variable}`}
       suppressHydrationWarning
     >
       <head>

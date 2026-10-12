@@ -67,6 +67,7 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
   const serviceCards = asObjectArray(servicesRow.cards).map((row) => ({
     tag: asString(row.tag),
     title: asString(row.title),
+    en: asString(row.en),
     body: asString(row.body),
     links: links(row.links, []),
     ctaLabel: asString(row.ctaLabel),
