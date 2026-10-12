@@ -328,18 +328,39 @@ export async function saveMaterial(input: MaterialInput, actorEmail: string): Pr
     id = String(data.id);
   }
 
-  /* A material's address carries its category, so the redirect needs the
-     category it was under when the old slug was live -- not the one it is being
-     moved to in this same save. */
+  /*
+   * A material's address is /resources/downloads/<category>/<slug>, so both
+   * halves can move it. Comparing only the slug missed the other half: filing a
+   * material under a different category changes its address just as surely as
+   * renaming it, and left the old one dead.
+   *
+   * The category can also be unknown on the way in -- a material saved with no
+   * category has an empty map -- so each half falls back to the other side's
+   * value, and the redirect is recorded only when the two addresses actually
+   * differ.
+   */
   const previousSlug = previous ? String((previous as { slug?: string }).slug ?? "") : "";
-  if (previousSlug && previousSlug !== input.slug) {
-    const map = (previous as { cms_material_category_map?: { cms_material_categories?: { slug?: string } }[] })
-      .cms_material_category_map;
-    const oldCategory = map?.[0]?.cms_material_categories?.slug;
-    if (oldCategory) {
+  if (previousSlug) {
+    const oldCategory = (
+      previous as { cms_material_category_map?: { cms_material_categories?: { slug?: string } }[] }
+    ).cms_material_category_map?.[0]?.cms_material_categories?.slug;
+
+    const newCategory = input.categoryIds[0]
+      ? (
+          await supabase
+            .from("cms_material_categories")
+            .select("slug")
+            .eq("id", input.categoryIds[0])
+            .maybeSingle()
+        ).data?.slug
+      : undefined;
+
+    const from = oldCategory ?? newCategory;
+    const to = newCategory ?? oldCategory;
+    if (from && to) {
       await recordSlugRedirect(
-        publicPath.material(oldCategory, previousSlug),
-        publicPath.material(oldCategory, input.slug)
+        publicPath.material(String(from), previousSlug),
+        publicPath.material(String(to), input.slug)
       );
     }
   }
