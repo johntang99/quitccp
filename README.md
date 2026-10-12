@@ -22,6 +22,7 @@ npm run build
 
 git add .
 git commit -m "Update: describe your changes"
+git pull --rebase
 git push
 ```
 
