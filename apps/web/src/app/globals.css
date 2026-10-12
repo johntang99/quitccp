@@ -2477,9 +2477,42 @@ body:has(.hero--full-bleed) > header .search {
 /* ---- declaration feed: a continuously moving trail ---- */
 .dawn-feed {
   overflow: hidden;
-  /* Cards fade out at both edges instead of being cut off mid-word. */
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+  /*
+   * Runs the full width of the screen, not the width of the page.
+   *
+   * The declarations are a passing crowd, and a crowd that stops short of both
+   * margins reads as a widget rather than a procession. Everything else in the
+   * band stays on the 1136px measure; only this breaks out.
+   *
+   * `50%` here resolves against `.dawn-inner`'s content box, so `50% - 50vw`
+   * is exactly the distance from that box's edge to the screen's. Applied to
+   * both sides it widens the element to the viewport without naming 100vw,
+   * which would have been a few pixels too wide wherever a scrollbar takes up
+   * room. `.dawn` already clips, so nothing can spill into a page scroll.
+   */
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  /* Cards fade out at both edges instead of being cut off mid-word.
+
+     Bounded rather than a flat percentage: now that the band runs the width of
+     the screen, 5% is 19px on a phone -- too abrupt to read as a fade -- and
+     110px on an ultrawide, where it eats most of a card. The clamp keeps the
+     fade the same few dozen pixels everywhere. */
+  --dawn-feed-fade: clamp(28px, 4%, 90px);
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 var(--dawn-feed-fade),
+    #000 calc(100% - var(--dawn-feed-fade)),
+    transparent
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 var(--dawn-feed-fade),
+    #000 calc(100% - var(--dawn-feed-fade)),
+    transparent
+  );
 }
 .dawn-feed-track {
   display: flex;
