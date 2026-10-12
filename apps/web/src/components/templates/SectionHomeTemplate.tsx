@@ -158,6 +158,9 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
     const contactSection = asRecord(payload.contactSection);
     const contactPrimaryAction = asRecord(contactSection.primaryAction);
     const contactSecondaryAction = asRecord(contactSection.secondaryAction);
+    /* Both halves are optional and independent: a page can take the photograph
+       without the figure, or the figure without the photograph. */
+    const headHero = asRecord(payload.hero);
 
     return (
       <>
@@ -167,6 +170,11 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
           title={heading}
           subtitle={subtitle}
           slim={false}
+          hero={{
+            image: asString(headHero.image),
+            figure: asString(headHero.figure),
+            figureAlt: asString(headHero.figureAlt)
+          }}
           actions={
             <>
               {(() => {

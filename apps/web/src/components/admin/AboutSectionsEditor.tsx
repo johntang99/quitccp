@@ -349,7 +349,7 @@ export function AboutSectionsEditor({
   jsonErrors,
   onJsonDraft
 }: AboutSectionsEditorProps) {
-  const { recordFields, rowsEditor } = createFieldRenderers({ updateField, onPickImage });
+  const { imageField, recordFields, rowsEditor } = createFieldRenderers({ updateField, onPickImage });
 
   const stringList = (
     blockKey: string,
@@ -482,17 +482,34 @@ export function AboutSectionsEditor({
               {textFields.length > 0 || listFields.length > 0 ? (
                 <fieldset style={fieldsetStyle}>
                   <legend style={legendStyle}>文字 Text</legend>
-                  {textFields.map((field) => (
-                    <label key={field.key}>
-                      {field.label}
-                      <textarea
-                        className="admin-textarea"
-                        style={{ minHeight: field.area ? 84 : 46 }}
-                        value={String(value[field.key] ?? "")}
-                        onChange={(event) => updateField([block.key, field.key], event.target.value)}
-                      />
-                    </label>
-                  ))}
+                  {textFields.map((field) =>
+                    field.kind === "image" ? (
+                      <div key={field.key}>
+                        <span style={fieldCaption}>{field.label}</span>
+                        {imageField(
+                          [block.key, field.key],
+                          `${block.label} · ${field.label}`,
+                          String(value[field.key] ?? "")
+                        )}
+                        {field.hint ? (
+                          <span style={{ color: "#777", fontSize: 12 }}>{field.hint}</span>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <label key={field.key}>
+                        {field.label}
+                        <textarea
+                          className="admin-textarea"
+                          style={{ minHeight: field.area ? 84 : 46 }}
+                          value={String(value[field.key] ?? "")}
+                          onChange={(event) => updateField([block.key, field.key], event.target.value)}
+                        />
+                        {field.hint ? (
+                          <span style={{ color: "#777", fontSize: 12 }}>{field.hint}</span>
+                        ) : null}
+                      </label>
+                    )
+                  )}
                   {listFields.map((field) =>
                     field.key === "__self"
                       ? stringListSelf(block.key, field, selfArray ?? [])

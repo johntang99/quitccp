@@ -5104,3 +5104,71 @@ body:has(.hero--full-bleed) > header .search {
 @media (prefers-reduced-motion: reduce) {
   .vthumb img { transition: none; }
 }
+
+/* --------------------------------------------------------------------------
+   Section head with a photograph behind it and an object beside the words.
+
+   Built on `.phead` rather than beside it: the band already carries the
+   breadcrumb, the heading, the standfirst and the buttons, and all four should
+   look the same here as on every other section. What this adds is a
+   photograph underneath and a figure to the right of the copy.
+
+   The brand gradient stays, laid over the photograph rather than replaced by
+   it. A hero photograph is chosen for its mood, not for the contrast it
+   happens to offer white text -- and this one is a bright office. Keeping the
+   gradient means the heading's legibility does not depend on which picture an
+   editor picks next.
+   -------------------------------------------------------------------------- */
+.phead--figure { overflow: hidden; }
+
+.phead-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.phead-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Already blurred in the source; this keeps it from fighting the text when
+     an editor swaps in something sharper. */
+  filter: saturate(0.85);
+}
+/* The gradient, back on top of the picture. */
+.phead--figure::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  /* Weighted to the left, where the words are. The heading sits over the
+     opaque end and keeps its contrast whatever photograph is behind it; the
+     right thins out so the picture is actually visible rather than merely
+     present. Measured over this photograph the heading is ~13:1. */
+  background: linear-gradient(100deg, rgba(42, 34, 104, 0.95) 0%, rgba(42, 34, 104, 0.88) 38%, rgba(42, 34, 104, 0.52) 68%, rgba(42, 34, 104, 0.34) 100%);
+}
+.phead--figure > .wrap { position: relative; z-index: 2; }
+
+.phead-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.82fr);
+  gap: clamp(24px, 4vw, 56px);
+  align-items: center;
+}
+.phead-figure { justify-self: end; max-width: 100%; }
+.phead-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 3px;
+  /* A certificate is a physical thing; the shadow is what stops it reading as
+     a flat panel pasted on the band. */
+  box-shadow: 0 18px 44px -18px rgba(10, 7, 30, 0.75);
+}
+
+@media (max-width: 900px) {
+  /* Stacked, words first: the figure is evidence for the claim above it, and
+     a picture that arrives before the sentence it illustrates is decoration. */
+  .phead-split { grid-template-columns: minmax(0, 1fr); gap: 26px; }
+  .phead-figure { justify-self: stretch; }
+  .phead-figure img { max-width: 420px; margin: 0 auto; }
+}

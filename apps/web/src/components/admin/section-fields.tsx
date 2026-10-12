@@ -54,8 +54,14 @@ export interface SectionBlockDef {
    * nothing, which is the exact confusion this consolidation set out to remove.
    */
   managedElsewhere?: { fields: string[]; label: string; managedOn: string };
-  /** Plain string fields, in render order, with their captions. */
-  text?: { key: string; label: string; area?: boolean }[];
+  /**
+   * Plain string fields, in render order, with their captions.
+   *
+   * `kind: "image"` swaps the box for the media picker. The value stored is
+   * still a plain string, so nothing about the page's shape changes -- an
+   * editor just stops having to paste a storage URL by hand.
+   */
+  text?: { key: string; label: string; area?: boolean; kind?: "image"; hint?: string }[];
   /** Fields that are a plain list of strings, one per line. */
   lists?: { key: string; label: string; hint?: string }[];
   /** Markdown bodies. A block may hold more than one (body plus a footnote). */

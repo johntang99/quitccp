@@ -124,6 +124,27 @@ function markdownBlock(label: string, note?: string): SectionBlockDef {
 export const SERVICES_BLOCKS: Record<string, SectionBlockDef[]> = {
   "pages/services-index.json": [
     {
+      key: "hero",
+      label: "首屏 Hero（背景照片与证书图）",
+      note: "两张图互相独立：只放背景、只放证书、或两张都放，都可以；两个都留空，首屏就回到纯色底。文字用的是本页的「标题」和「副标题」，不在这里改。",
+      text: [
+        {
+          key: "image",
+          label: "背景照片（Background）",
+          kind: "image",
+          hint: "横幅照片，建议 1600×440 上下。品牌紫色渐变会盖在它上面，所以照片亮一点无妨——但别选左半边有重要内容的，那一侧压得最重。"
+        },
+        { key: "imageAlt", label: "背景照片说明（Alt）" },
+        {
+          key: "figure",
+          label: "右侧图（Figure）",
+          kind: "image",
+          hint: "放在文字右边的那张图，现在是证明样本。手机上它会落到文字下方。"
+        },
+        { key: "figureAlt", label: "右侧图说明（Alt）" }
+      ]
+    },
+    {
       key: "primaryAction",
       label: "顶部主按钮 Primary button",
       text: [
