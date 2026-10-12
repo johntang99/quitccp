@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
+import { findSlugRedirect, publicPath } from "@/lib/slug-redirects";
 import { PageFromRoute } from "@/components/PageFromRoute";
 import { VideoDetail } from "@/components/public/VideoDetail";
 import { VideoCategoryPage } from "@/components/public/videos/VideoCategoryPage";
@@ -47,6 +48,8 @@ export default async function VideosPage({
     }
     const video = await getRenderableVideo(slug);
     if (video) return <VideoDetail video={video} />;
+    const moved = await findSlugRedirect(publicPath.video(decodeURIComponent(slug)));
+    if (moved) permanentRedirect(moved);
     notFound();
   }
 

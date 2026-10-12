@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
+import { findSlugRedirect, publicPath } from "@/lib/slug-redirects";
 import { NewsListingPage } from "@/components/public/news/NewsListingPage";
 import { TemplateRenderer } from "@/components/templates/TemplateRenderer";
 import type { NewsSort } from "@/lib/public-content";
@@ -77,6 +78,12 @@ export default async function NewsSlugPage({
   if (listing) return <NewsListingPage listing={listing} />;
 
   const article = await getRenderableArticle(slug);
-  if (!article) notFound();
+  /* Only once the slug has failed to resolve. A renamed article is rare; the
+     other 15,370 must not pay for a redirect lookup they never need. */
+  if (!article) {
+    const moved = await findSlugRedirect(publicPath.article(decodeURIComponent(slug)));
+    if (moved) permanentRedirect(moved);
+    notFound();
+  }
   return <TemplateRenderer {...article} />;
 }

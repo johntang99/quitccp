@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { indexContentById, indexContentByIds } from "@/lib/search-index";
+import { publicPath, recordSlugRedirect } from "@/lib/slug-redirects";
 
 /**
  * Videos and their categories.
@@ -416,6 +417,13 @@ export async function saveVideo(input: VideoInput, actorEmail: string): Promise<
   };
 
   let id = input.id?.trim() ?? "";
+  /* Read before the write, while the old slug still exists, so a rename can
+     leave a redirect behind rather than a dead address. */
+  const previousSlug = id
+    ? ((await supabase.from("cms_videos").select("slug").eq("id", id).maybeSingle()).data?.slug ??
+       null)
+    : null;
+
   if (id) {
     let { error } = await supabase.from("cms_videos").update(withFlags).eq("id", id);
     // Saving must not fail just because 016 has not been applied; everything
@@ -432,6 +440,10 @@ export async function saveVideo(input: VideoInput, actorEmail: string): Promise<
     if (error) throw error;
     if (!data) throw new Error("保存失败：数据库没有返回新建视频的 id。");
     id = String(data.id);
+  }
+
+  if (previousSlug && previousSlug !== input.slug) {
+    await recordSlugRedirect(publicPath.video(previousSlug), publicPath.video(input.slug));
   }
 
   if (input.category) {

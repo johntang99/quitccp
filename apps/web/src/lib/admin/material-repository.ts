@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { indexContentById } from "@/lib/search-index";
+import { publicPath, recordSlugRedirect } from "@/lib/slug-redirects";
 
 /**
  * 真相点资料 — the downloadable materials.
@@ -296,6 +297,17 @@ export async function saveMaterial(input: MaterialInput, actorEmail: string): Pr
   const missingAuthorship = (error: unknown) =>
     /created_by|updated_by/.test(JSON.stringify(error ?? ""));
 
+  /* Before the write: once the row is updated the old slug is unrecoverable. */
+  const previous = id
+    ? (
+        await supabase
+          .from("cms_materials")
+          .select("slug, cms_material_category_map(position, cms_material_categories(slug))")
+          .eq("id", id)
+          .maybeSingle()
+      ).data
+    : null;
+
   if (id) {
     let { error } = await supabase.from("cms_materials").update(row).eq("id", id);
     if (error && missingAuthorship(error)) {
@@ -314,6 +326,22 @@ export async function saveMaterial(input: MaterialInput, actorEmail: string): Pr
     if (error) throw error;
     if (!data) throw new Error("保存失败：数据库没有返回新建资料的 id。");
     id = String(data.id);
+  }
+
+  /* A material's address carries its category, so the redirect needs the
+     category it was under when the old slug was live -- not the one it is being
+     moved to in this same save. */
+  const previousSlug = previous ? String((previous as { slug?: string }).slug ?? "") : "";
+  if (previousSlug && previousSlug !== input.slug) {
+    const map = (previous as { cms_material_category_map?: { cms_material_categories?: { slug?: string } }[] })
+      .cms_material_category_map;
+    const oldCategory = map?.[0]?.cms_material_categories?.slug;
+    if (oldCategory) {
+      await recordSlugRedirect(
+        publicPath.material(oldCategory, previousSlug),
+        publicPath.material(oldCategory, input.slug)
+      );
+    }
   }
 
   await supabase.from("cms_material_category_map").delete().eq("material_id", id);

@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
+import { findSlugRedirect, publicPath } from "@/lib/slug-redirects";
 import { PageFromRoute } from "@/components/PageFromRoute";
 import { TemplateRenderer } from "@/components/templates/TemplateRenderer";
 import { CulturePage } from "@/components/public/CulturePage";
@@ -46,7 +47,13 @@ export default async function ResourcesPage({ params, searchParams }: ResourcesP
 
     if (materialSlug) {
       const material = await getMaterial(materialSlug);
-      if (!material) notFound();
+      if (!material) {
+        const moved = await findSlugRedirect(
+          publicPath.material(decodeURIComponent(categorySlug), decodeURIComponent(materialSlug))
+        );
+        if (moved) permanentRedirect(moved);
+        notFound();
+      }
       return <MaterialDetailPage material={material} />;
     }
 

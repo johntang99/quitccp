@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { routeSeeds } from "@quitccp/content-schema";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { indexContentById, indexContentByIds } from "@/lib/search-index";
+import { publicPath, recordSlugRedirect } from "@/lib/slug-redirects";
 import type {
   ArticleRecord,
   AuditRecord,
@@ -814,6 +815,13 @@ export async function upsertArticleRecord(
     if (clash) throw new Error(`网址「${input.slug}」已被《${clash.title}》占用，请换一个。`);
   }
 
+  /* The slug as it stands before this save, so a rename can leave a redirect
+     behind. Read here rather than after the write, when it is already gone. */
+  const previousSlug = id
+    ? ((await supabase.from("cms_articles").select("slug").eq("id", id).maybeSingle()).data?.slug ??
+       null)
+    : null;
+
   const write = async (payload: Record<string, unknown>, select: string) =>
     id
       ? supabase.from("cms_articles").update(payload).eq("id", id).select(select).single()
@@ -835,6 +843,13 @@ export async function upsertArticleRecord(
   }
   if (result.error) throw result.error;
   const data = result.data as unknown as ArticleRow;
+
+  /* A rename leaves the old address pointing at the new one. Without this the
+     slug box's warning -- 原链接会失效 -- was the whole story: every inbound
+     link died, quietly. */
+  if (previousSlug && previousSlug !== data.slug) {
+    await recordSlugRedirect(publicPath.article(previousSlug), publicPath.article(String(data.slug)));
+  }
 
   await setArticleTaxonomy(String(data.id), input.category, input.secondaryCategories ?? [], input.tags);
   await createRevision("article", String(data.id), actorEmail, {
