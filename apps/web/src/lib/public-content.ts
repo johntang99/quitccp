@@ -2070,12 +2070,31 @@ export async function getMaterialsByCategory(categorySlug?: string): Promise<Pub
 }
 
 export async function getMaterial(slug: string): Promise<PublicMaterial | null> {
+  /*
+   * Route params arrive as they appear in the address -- percent-encoded -- so
+   * a slug with any Chinese in it reaches here as 2026-10-10-361%E5%90%8D…
+   * and never matches the row, which stores the characters themselves. Every
+   * other lookup in this file already decodes; this one did not, and the
+   * failure is invisible until an editor saves a material whose slug was not
+   * transliterated: it lists fine and 404s when opened.
+   *
+   * The try/catch is not decoration -- decodeURIComponent throws on a lone `%`,
+   * which is a legal character in a slug someone typed by hand.
+   */
+  const normalized = (() => {
+    try {
+      return decodeURIComponent(slug);
+    } catch {
+      return slug;
+    }
+  })();
+
   try {
     const supabase = createSupabaseAdminClient();
     const { data, error } = await supabase
       .from("cms_materials")
       .select(MATERIAL_SELECT)
-      .eq("slug", slug)
+      .eq("slug", normalized)
       .eq("status", "published")
       .maybeSingle();
     if (error || !data) return null;

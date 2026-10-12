@@ -50,8 +50,18 @@ export default async function ResourcesPage({ params, searchParams }: ResourcesP
       return <MaterialDetailPage material={material} />;
     }
 
+    /* Same reason as the material slug: the segment is percent-encoded, so a
+       category slug with Chinese in it would never match either. None has one
+       today, but the comparison should not be the thing that stops it. */
+    const decodedCategory = (() => {
+      try {
+        return decodeURIComponent(categorySlug);
+      } catch {
+        return categorySlug;
+      }
+    })();
     const categories = await getMaterialCategories();
-    const category = categories.find((row) => row.slug === categorySlug);
+    const category = categories.find((row) => row.slug === decodedCategory);
     if (!category) notFound();
     const materials = await getMaterialsByCategory(category.slug);
     return <MaterialCategoryPage category={category} materials={materials} />;
