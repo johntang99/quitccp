@@ -748,7 +748,7 @@ export async function upsertArticleRecord(
   // here from the signed-in actor, never supplied by the caller or the form.
   input: Omit<ArticleRecord, "updatedAt" | "createdBy" | "updatedBy">,
   actorEmail: string
-): Promise<ArticleRecord> {
+): Promise<ArticleRecord & { previousSlug: string | null }> {
   const supabase = createSupabaseAdminClient();
 
   // The editor's own summary wins; falling back to the body's opening only when
@@ -864,12 +864,19 @@ export async function upsertArticleRecord(
     locale: data.locale
   });
 
-  return toArticleRecord(data, {
-    category: input.category,
-    secondaryCategories: input.secondaryCategories ?? [],
-    tags: input.tags,
-    includeBody: true
-  });
+  /* The caller needs this to drop the old address from the cache: after a
+     rename the old URL is still a cached 200 page, so without it readers keep
+     getting the old article for the rest of the window instead of the redirect
+     recorded above. */
+  return Object.assign(
+    toArticleRecord(data, {
+      category: input.category,
+      secondaryCategories: input.secondaryCategories ?? [],
+      tags: input.tags,
+      includeBody: true
+    }),
+    { previousSlug }
+  );
 }
 
 export async function bulkUpdateArticleStatus(ids: string[], status: PageStatus, actorEmail: string) {

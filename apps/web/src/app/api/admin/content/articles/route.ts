@@ -106,8 +106,9 @@ export async function POST(request: Request) {
     .filter((name) => !known.includes(name));
   if (unknown.length > 0) return reject(`分类不存在：${unknown.join("、")}`);
 
+  let record: Awaited<ReturnType<typeof upsertArticleRecord>> | undefined;
   try {
-    await upsertArticleRecord(
+    record = await upsertArticleRecord(
       {
         id,
         slug,
@@ -146,8 +147,13 @@ export async function POST(request: Request) {
   }
 
   /* The public pages are cached now, so a save has to say so -- without this an
-     editor's change waits out the 300s window, which it never used to. */
-  revalidateNews([slug]);
+     editor's change waits out the 300s window, which it never used to.
+     The old slug goes too: after a rename its address is still a cached 200
+     page, so readers would keep getting the old article instead of the
+     redirect the save just recorded. */
+  revalidateNews(
+    record?.previousSlug && record.previousSlug !== slug ? [slug, record.previousSlug] : [slug]
+  );
 
   if (wantsJson) {
     // The id matters for a new article: the form switches to editing it, so a
