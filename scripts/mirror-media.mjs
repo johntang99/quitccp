@@ -170,7 +170,11 @@ async function worker() {
     const object = plan.shift();
     if (!object) return;
     try {
-      bytes += await download(object.key);
+      /* Not `bytes += await download(...)`: that reads `bytes` before
+         awaiting, so two workers finishing around each other lose one of the
+         additions and the reported total comes out short. */
+      const received = await download(object.key);
+      bytes += received;
     } catch (error) {
       failures.push({ key: object.key, message: error.message });
     }
