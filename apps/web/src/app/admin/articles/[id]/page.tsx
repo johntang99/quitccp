@@ -37,7 +37,7 @@ export default async function EditArticlePage({ params, searchParams }: EditArti
         <strong>{statusLabel}</strong>
         <h2 style={{ margin: 0, fontSize: 18 }}>编辑文章</h2>
         <code style={{ color: "#8a90a0" }}>/news/{article.slug}</code>
-        <a className="admin-btn" style={{ marginLeft: "auto" }} href={`/news/${article.slug}`} target="_blank" rel="noopener noreferrer">
+        <a className="admin-btn" style={{ marginLeft: "auto" }} href={`/admin/preview/news/${article.slug}`} target="_blank" rel="noopener noreferrer">
           在站点查看 ↗
         </a>
       </section>

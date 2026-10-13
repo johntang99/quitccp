@@ -584,76 +584,42 @@ export async function getRenderablePage(section: string, slug = "index"): Promis
 }
 
 /**
- * One article, cached in the instance that served it.
+ * One article, by its public slug. Published only, and no dynamic API in it --
+ * no cookies, no headers, no search params -- so the route that calls it can be
+ * generated once and served from cache.
  *
- * The 2026-10-13 flood put 477 million requests on a single article. Each one
- * ran this function, and this function queries Postgres -- so a database with
- * sixty connections was asked to answer hundreds of times a second until it
- * stopped answering at all, and the whole site went down with it.
+ * That property is the whole point. Until 2026-10-13 this function read the
+ * admin session cookie to decide whether to include drafts, which alone kept
+ * all 15,374 article pages out of every cache: each request rendered fresh and
+ * queried Postgres. The attack that day sent 477 million requests at one
+ * article, and every one of them reached the database. Drafts now live behind
+ * `getRenderableArticlePreview` and the admin's own route.
  *
- * Caching the route itself is the obvious fix and is not available: the page
- * takes `searchParams` for the twelve listing slugs, which marks the whole
- * route dynamic, and `no-store` is then set no matter what `revalidate` says.
- * Measured, not assumed -- `revalidate = 300` was added first and the header
- * did not move. Next's own `unstable_cache` is out for a different reason:
- * reading it would mean reading cookies inside it, via `isAdminViewer`, which
- * it forbids.
- *
- * So the copy is kept here, per instance. A flood against one article now
- * costs one query a minute from each instance serving it rather than one per
- * request, which is the difference between a slow page and a dead database.
- *
- * Three things this deliberately does not do:
- *
- * **It never caches a miss.** `loadRenderableArticle` returns null both for an
- * article that does not exist and for a database that would not answer, and
- * the two are indistinguishable here. Caching the second would pin a 404 onto
- * a real article for the length of the TTL -- which is how the homepage came
- * to serve its fallback for hours this morning.
- *
- * **It is skipped for editors.** A signed-in viewer reads drafts and expects a
- * save to show immediately, so they always get the live row. A reader may be
- * up to a minute behind, which is well inside what `/news` and the homepage
- * have served all along at five.
- *
- * **It is bounded.** The key is a slug from the URL, so an attacker chooses
- * it; an unbounded map is a way to exhaust memory with invented paths.
+ * The copy is kept by Next, not here: an in-process map was the stopgap while
+ * the route still said `no-store`, and it was worse in both directions -- one
+ * per instance rather than shared, and nothing could clear it when an editor
+ * saved. `revalidate` plus `revalidatePath` on save does both properly.
  */
-const articleCache = new Map<string, { value: RenderablePage; at: number }>();
-const ARTICLE_CACHE_LIMIT = 200;
-const ARTICLE_CACHE_TTL_MS = 60_000;
-
 export async function getRenderableArticle(slug: string): Promise<RenderablePage | null> {
-  const key = (() => {
-    try {
-      return decodeURIComponent(slug);
-    } catch {
-      return slug;
-    }
-  })();
-
-  const editor = await isAdminViewer();
-  if (!editor) {
-    const hit = articleCache.get(key);
-    if (hit && Date.now() - hit.at < ARTICLE_CACHE_TTL_MS) return hit.value;
-    if (hit) articleCache.delete(key);
-  }
-
-  const article = await loadRenderableArticle(slug);
-
-  if (!editor && article) {
-    /* Map keeps insertion order, so the first key is the oldest. */
-    if (articleCache.size >= ARTICLE_CACHE_LIMIT) {
-      const oldest = articleCache.keys().next().value;
-      if (oldest !== undefined) articleCache.delete(oldest);
-    }
-    articleCache.set(key, { value: article, at: Date.now() });
-  }
-
-  return article;
+  return loadRenderableArticle(slug, false);
 }
 
-async function loadRenderableArticle(slug: string): Promise<RenderablePage | null> {
+/**
+ * The same article including drafts, uncached, for the admin's preview route.
+ *
+ * Kept apart from the public reader rather than branching inside it: the branch
+ * is what read cookies, and reading cookies is what kept the article pages out
+ * of the cache. The caller is responsible for the session check -- this function
+ * trusts whoever calls it, so it must never be reachable from a public route.
+ */
+export async function getRenderableArticlePreview(slug: string): Promise<RenderablePage | null> {
+  return loadRenderableArticle(slug, true);
+}
+
+async function loadRenderableArticle(
+  slug: string,
+  includeDrafts: boolean
+): Promise<RenderablePage | null> {
   const normalizedSlug = (() => {
     try {
       return decodeURIComponent(slug);
@@ -688,7 +654,11 @@ async function loadRenderableArticle(slug: string): Promise<RenderablePage | nul
       // what the 预览 button needs. Without this check an unpublished article
       // was live at its public URL, and the slug is the Chinese title -- not a
       // secret.
-      .in("status", (await isAdminViewer()) ? ["published", "review", "draft"] : ["published"])
+      /* The caller decides, so that nothing on the public path reads cookies.
+         Reading them is a dynamic API: it alone keeps this route out of the
+         cache, whatever else is fixed. Drafts now reach only the admin's own
+         preview route, which is behind a session check of its own. */
+      .in("status", includeDrafts ? ["published", "review", "draft"] : ["published"])
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle();

@@ -138,7 +138,7 @@ export async function ArticleTable({
                   </Link>
                   <a
                     className="admin-btn admin-btn-sm"
-                    href={`/news/${row.slug}`}
+                    href={`/admin/preview/news/${row.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ marginLeft: 4 }}

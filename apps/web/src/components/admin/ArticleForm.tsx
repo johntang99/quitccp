@@ -481,7 +481,7 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
               >
                 ✓ 已保存（{saved.status === "published" ? "已发布" : "草稿"}） · {saved.at}
                 　
-                <a href={`/news/${v.slug}`} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 400 }}>
+                <a href={`/admin/preview/news/${v.slug}`} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 400 }}>
                   查看 ↗
                 </a>
               </p>

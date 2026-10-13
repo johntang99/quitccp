@@ -13,12 +13,15 @@ import { T, articleHref, day } from "./newsTokens";
  */
 export function NewsListingPage({ listing }: { listing: NewsListing }) {
   const [lead, ...rest] = listing.items;
+  /* Page one in the default order is `/news/<slug>` and nothing else -- no
+     query string, no trailing number. That address is the one readers hold and
+     the one that has to be cacheable, so it must not carry anything the server
+     would have to read. Everything deeper goes to /news/<slug>/<page>, a route
+     of its own that may be dynamic. */
   const href = (page: number, sort: NewsSort = listing.sort) => {
-    const params = new URLSearchParams();
-    if (page > 1) params.set("page", String(page));
-    if (sort !== "latest") params.set("sort", sort);
-    const query = params.toString();
-    return `/news/${listing.slug}${query ? `?${query}` : ""}`;
+    const base = `/news/${listing.slug}`;
+    if (page <= 1 && sort === "latest") return base;
+    return `${base}/${Math.max(page, 1)}${sort === "latest" ? "" : `?sort=${sort}`}`;
   };
   // The lead treatment belongs to the first article of the first page. Deeper in
   // the listing nothing is "本栏头条", so every row runs as an ordinary card.

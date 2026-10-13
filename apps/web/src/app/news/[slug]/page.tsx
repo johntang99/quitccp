@@ -3,7 +3,6 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { findSlugRedirect, publicPath } from "@/lib/slug-redirects";
 import { NewsListingPage } from "@/components/public/news/NewsListingPage";
 import { TemplateRenderer } from "@/components/templates/TemplateRenderer";
-import type { NewsSort } from "@/lib/public-content";
 import { getNewsListing, getRenderableArticle, isNewsListingSlug } from "@/lib/public-content";
 
 /**
@@ -35,6 +34,23 @@ export const maxDuration = 15;
  * appears at once; this is only the ceiling for everything else.
  */
 export const revalidate = 300;
+
+/**
+ * Empty on purpose: nothing is built ahead of time, but the route becomes one
+ * that Next generates on demand and then caches, instead of one it re-renders
+ * for every request.
+ *
+ * Without this a dynamic segment with no `generateStaticParams` is treated as
+ * fully dynamic and answers `no-store`, which `revalidate` above does not
+ * change -- measured: removing `searchParams` and the cookie read was not
+ * enough on its own. Building all 15,374 ahead would take hours and pin the
+ * content to deploy time; `dynamicParams` is true by default, so the first
+ * reader of each article generates it and everyone after that is served the
+ * copy.
+ */
+export async function generateStaticParams() {
+  return [];
+}
 
 
 /**
@@ -93,26 +109,16 @@ export async function generateMetadata({
   };
 }
 
-export default async function NewsSlugPage({
-  params,
-  searchParams
-}: {
-  params: Promise<{ slug: string }>;
-  searchParams: Promise<Record<string, string | undefined>>;
-}) {
+export default async function NewsSlugPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  /* `searchParams` is read inside this branch and nowhere else. Awaiting it
-     marks the render dynamic, and it used to sit above this line, so all
-     15,374 articles were rendered fresh on every request even though only the
-     twelve listing pages have anything to page through. See
-     `isNewsListingSlug`. */
+  /* No `searchParams`, deliberately -- see `revalidate` above. Paging and
+     sorting live at /news/<slug>/<page>, which is a route of its own and may
+     be dynamic, because nobody floods page seven. This one serves the first
+     page of a listing and all 15,374 articles, which is what has to be
+     cacheable. */
   if (isNewsListingSlug(slug)) {
-    const query = await searchParams;
-    const page = Number(query.page ?? "1") || 1;
-    const sort: NewsSort = query.sort === "oldest" ? "oldest" : "latest";
-
-    const listing = await getNewsListing(slug, page, sort);
+    const listing = await getNewsListing(slug, 1, "latest");
     if (listing) return <NewsListingPage listing={listing} />;
   }
 
