@@ -83,8 +83,10 @@ export function MobileNav({
     };
   }, [open]);
 
+  /* `usePathname` is typed as possibly null -- it is, before hydration and on
+     the error page, which has no route of its own. Nothing is "current" then. */
   const isCurrent = (href: string) =>
-    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+    !pathname ? false : href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <>

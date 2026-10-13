@@ -573,13 +573,26 @@ export async function getRenderablePage(section: string, slug = "index"): Promis
       contentPath,
       content
     };
-  } catch {
-    if (!fallback) return null;
-    return {
-      ...fallback,
-      contentPath,
-      content: fallback.content ?? {}
-    };
+  } catch (error) {
+    /*
+     * A failed read is allowed to fail.
+     *
+     * This used to answer with `fallback` -- the prototype's own copy -- and on
+     * 2026-10-13 that is exactly what the homepage served for several hours
+     * while Postgres was unreachable: 四亿六千多万 and an article list from
+     * August, indistinguishable from the real page. Worse, Next saw a render
+     * that returned content, so it cached it, and the wrong page outlived the
+     * outage.
+     *
+     * Throwing buys the opposite behaviour on both counts. Next keeps serving
+     * the last good copy of any page it already holds -- which is the live
+     * content, minutes old -- and it never stores this one. Where there is no
+     * copy to fall back on, `app/error.tsx` says plainly what is happening.
+     *
+     * On a site whose own words are 「每一分钱、每一个数字，都可以被检验」, a
+     * number nobody can check is worse than no number.
+     */
+    throw error;
   }
 }
 
@@ -843,12 +856,19 @@ async function loadRenderableArticle(
         inlineFigure: {}
       }
     };
-  } catch {
-    // /news/article used to serve the prototype's sample article -- an invented
-    // ceremony, publicly reachable, on a site whose whole claim is documentary
-    // accuracy. The seed content is still the page *skeleton* for virtual
-    // articles; it is simply no longer served as an article in its own right.
-    return null;
+  } catch (error) {
+    /*
+     * Not `return null`, which the route reads as "no such article" and turns
+     * into a 404 -- a real article, told to every reader that it does not
+     * exist, and the 404 cached alongside. During the 2026-10-13 outage that is
+     * what happened: 1,816 of 2,000 logged requests were 404s on articles that
+     * were sitting in the database all along.
+     *
+     * Throwing keeps the two apart. A missing row still returns null above; a
+     * database that will not answer stops the render, so Next serves the last
+     * good copy and caches nothing.
+     */
+    throw error;
   }
 }
 
