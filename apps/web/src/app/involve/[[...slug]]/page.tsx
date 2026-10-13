@@ -1,5 +1,9 @@
 import { PageFromRoute } from "@/components/PageFromRoute";
 
+/* Bounded even though this route is prerendered: regeneration still opens a
+   database connection, and an unbounded render holds it for five minutes. */
+export const maxDuration = 15;
+
 /**
  * Lets a copy of the page exist between the reader and Postgres.
  *

@@ -5,6 +5,10 @@ import { NewsHeader } from "@/components/public/news/NewsHeader";
 import { NewsHero } from "@/components/public/news/NewsHero";
 import { getNewsHome } from "@/lib/public-content";
 
+/* Bounded even though this route is prerendered: regeneration still opens a
+   database connection, and an unbounded render holds it for five minutes. */
+export const maxDuration = 15;
+
 export const revalidate = 300;
 
 /** The two categories the design gives a band of their own. */

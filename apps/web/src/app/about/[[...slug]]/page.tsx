@@ -1,5 +1,9 @@
 import { PageFromRoute } from "@/components/PageFromRoute";
 
+/* Bounded even though this route is prerendered: regeneration still opens a
+   database connection, and an unbounded render holds it for five minutes. */
+export const maxDuration = 15;
+
 /**
  * 使命与原则, 理事会与团队, 公开与问责 -- the pages under /about that take no
  * parameter.

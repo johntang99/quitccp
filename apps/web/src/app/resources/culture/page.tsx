@@ -14,6 +14,10 @@ import { getCultureListing, getRenderablePage } from "@/lib/public-content";
  * The body is the branch it replaces, unchanged.
  */
 export const dynamic = "force-dynamic";
+/* Without this the route inherits Vercel's 300-second default -- the
+   condition that held database connections for five minutes each and took
+   Postgres down on 2026-10-13. Every DB-touching route needs its own bound. */
+export const maxDuration = 15;
 
 export default async function ResourcesCulturePage({
   searchParams

@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import { PageFromRoute } from "@/components/PageFromRoute";
 
+/* Bounded even though this route is prerendered: regeneration still opens a
+   database connection, and an unbounded render holds it for five minutes. */
+export const maxDuration = 15;
+
 /** The two legal documents. Anything else under /legal/ is a 404. */
 const PAGES = new Set(["privacy", "terms"]);
 
