@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { barlowCondensed, notoSerifSC } from "./fonts";
 import { loadTheme, themeToCss } from "@/lib/public-theme";
+import { mediaFailoverScript } from "@/lib/media-failover";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import "./globals.css";
@@ -27,6 +28,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const theme = await loadTheme();
+  const mediaFailover = mediaFailoverScript();
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -56,6 +58,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
+        {/* Before the body, so it is listening while the first images load:
+            media that fails at the primary host is retried at the mirror. */}
+        {mediaFailover ? (
+          <script id="media-failover" dangerouslySetInnerHTML={{ __html: mediaFailover }} />
+        ) : null}
       </head>
       <body>
         <SiteHeader />
