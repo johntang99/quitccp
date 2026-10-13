@@ -35,7 +35,6 @@ export const maxDuration = 15;
 
 interface ResourcesPageProps {
   params: Promise<{ slug?: string[] }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 /**
@@ -48,9 +47,19 @@ interface ResourcesPageProps {
  */
 const RESOURCE_PAGES = new Set(["index", "press", "magazine", "culture", "tools", "downloads"]);
 
-export default async function ResourcesPage({ params, searchParams }: ResourcesPageProps) {
+export const revalidate = 300;
+
+/**
+ * Empty on purpose: a dynamic segment with no `generateStaticParams` is treated
+ * as fully dynamic and answers `no-store`, whatever `revalidate` says. Measured
+ * on /news/[slug].
+ */
+export async function generateStaticParams() {
+  return [];
+}
+
+export default async function ResourcesPage({ params }: ResourcesPageProps) {
   const resolved = await params;
-  const query = await searchParams;
   const slug = resolved.slug?.[0];
 
   /*
@@ -90,41 +99,9 @@ export default async function ResourcesPage({ params, searchParams }: ResourcesP
     return <MaterialCategoryPage category={category} materials={materials} />;
   }
 
-  if (slug === "culture") {
-    const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] ?? "" : value ?? "");
-    const filter = first(query.filter) || "all";
-    const page = Number(first(query.page)) || 1;
-    const [listing, stored] = await Promise.all([
-      getCultureListing(filter, page),
-      getRenderablePage("resources", "culture")
-    ]);
-    // Before the sub-categories are seeded there is nothing to show; fall back
-    // to the stored page rather than render an empty archive.
-    if (listing.total > 0) {
-      const content = (stored?.content ?? {}) as Record<string, unknown>;
-      const panel = (content.freeUsePanel ?? {}) as Record<string, string>;
-      const related = (content.relatedPanel ?? {}) as { title?: string; links?: { label: string; href: string }[] };
-      return (
-        <CulturePage
-          title={typeof content.title === "string" ? content.title : "中华传统文化"}
-          subtitle={typeof content.subtitle === "string" ? content.subtitle : ""}
-          listing={listing}
-          activeFilter={filter}
-          freeUse={
-            panel.title
-              ? {
-                  title: panel.title,
-                  body: panel.body ?? "",
-                  buttonLabel: panel.buttonLabel ?? "",
-                  buttonHref: panel.buttonHref ?? "/resources/downloads"
-                }
-              : undefined
-          }
-          related={related.title ? { title: related.title, links: related.links ?? [] } : undefined}
-        />
-      );
-    }
-  }
+  /* 中华传统文化 has moved to /resources/culture/page.tsx: it is the only page
+     here that reads the query string, and reading it kept this whole section
+     out of the cache. */
 
   if (slug === "downloads") {
     const [categories, page] = await Promise.all([
@@ -160,7 +137,7 @@ export default async function ResourcesPage({ params, searchParams }: ResourcesP
   }
 
   if (!slug || RESOURCE_PAGES.has(slug)) {
-    return <PageFromRoute section="resources" slug={slug} query={query} />;
+    return <PageFromRoute section="resources" slug={slug} />;
   }
 
   const article = await getRenderableArticle(slug);

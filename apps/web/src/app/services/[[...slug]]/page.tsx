@@ -24,16 +24,20 @@ import {
 export const maxDuration = 15;
 
 
-export default async function ServicesPage({
-  params,
-  searchParams
-}: {
-  params: Promise<{ slug?: string[] }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export const revalidate = 300;
+
+/**
+ * Empty on purpose: a dynamic segment with no `generateStaticParams` is treated
+ * as fully dynamic and answers `no-store`, whatever `revalidate` says. Measured
+ * on /news/[slug].
+ */
+export async function generateStaticParams() {
+  return [];
+}
+
+export default async function ServicesPage({ params }: { params: Promise<{ slug?: string[] }> }) {
   const resolved = await params;
   const segments = resolved.slug ?? [];
-  const query = await searchParams;
 
   /*
    * The FAQ is three pages, not one: the card index, a category listing, and a
@@ -42,15 +46,11 @@ export default async function ServicesPage({
    * already use.
    */
   if (segments[0] === "faq") {
-    const q = typeof query.q === "string" ? query.q : "";
-
-    if (segments.length === 1) {
-      const groups = await getPublicFaq(q);
-      // Before migration 023 there is nothing to show; fall through to the
-      // stored page so the tab is never a dead end.
-      if (groups.length > 0 || q) return <FaqIndexPage groups={groups} q={q} />;
-      return <PageFromRoute section="services" slug="faq" />;
-    }
+    /* `/services/faq` itself has moved to services/faq/page.tsx: its search box
+       reads the query string, and reading it kept this whole section out of the
+       cache. A static segment wins over this catch-all, so that address never
+       arrives here. What remains are the deeper FAQ pages, none of which take a
+       parameter. */
 
     /*
      * `/services/faq/d/<id>` -- a stable address keyed on the old doc id.

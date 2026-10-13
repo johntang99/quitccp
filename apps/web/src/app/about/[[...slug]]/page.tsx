@@ -1,14 +1,26 @@
 import { PageFromRoute } from "@/components/PageFromRoute";
 
-export default async function AboutPage({
-  params,
-  searchParams
-}: {
-  params: Promise<{ slug?: string[] }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+/**
+ * 使命与原则, 理事会与团队, 公开与问责 -- the pages under /about that take no
+ * parameter.
+ *
+ * 全球网络 does take one and has moved to its own route, because reading
+ * `searchParams` here would mark every page in this section dynamic: they would
+ * each be rendered, with their database queries, on every request. That is the
+ * property the 2026-10-13 flood was built around on /news.
+ */
+export const revalidate = 300;
+
+/**
+ * Empty on purpose: a dynamic segment with no `generateStaticParams` is treated
+ * as fully dynamic and answers `no-store`, whatever `revalidate` says. Measured
+ * on /news/[slug].
+ */
+export async function generateStaticParams() {
+  return [];
+}
+
+export default async function AboutPage({ params }: { params: Promise<{ slug?: string[] }> }) {
   const resolved = await params;
-  // 全球网络 filters its service points and pages through them, so the template
-  // needs the query string; without it both controls were inert links to "#".
-  return <PageFromRoute section="about" slug={resolved.slug?.[0]} query={await searchParams} />;
+  return <PageFromRoute section="about" slug={resolved.slug?.[0]} />;
 }
