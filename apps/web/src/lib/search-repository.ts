@@ -77,7 +77,7 @@ function envFlag(name: string, fallback = false): boolean {
   return ["1", "true", "yes", "on"].includes(raw.toLowerCase());
 }
 
-function getConfiguredPrimaryBackend(): SearchBackend {
+export function getConfiguredPrimaryBackend(): SearchBackend {
   const raw = (process.env.SEARCH_PRIMARY_BACKEND ?? "substring").trim().toLowerCase();
   if (raw === "meilisearch") return "meilisearch";
   if (raw === "pg_trgm") return "pg_trgm";
