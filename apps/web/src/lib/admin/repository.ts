@@ -1385,10 +1385,16 @@ export async function upsertVideoRecord(
 
 export async function deleteVideoById(id: string, actorEmail: string) {
   const supabase = createSupabaseAdminClient();
+  /* Read before the delete: afterwards there is no row to learn the slug from,
+     and the caller needs it to drop the film's own page from the cache --
+     otherwise a deleted video stays readable for the rest of its window. */
+  const slug =
+    (await supabase.from("cms_videos").select("slug").eq("id", id).maybeSingle()).data?.slug ?? null;
+
   const { error } = await supabase.from("cms_videos").delete().eq("id", id);
   if (error) throw error;
   await createAudit(actorEmail, "video.delete", "video", id, "write");
-  return true;
+  return { ok: true as const, slug: slug ? String(slug) : null };
 }
 
 function parseJsonObject(raw: string): Record<string, unknown> {

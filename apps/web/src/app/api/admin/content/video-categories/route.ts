@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { upsertVideoCategory } from "@/lib/admin/video-repository";
+import { revalidateVideos } from "@/lib/admin/revalidate-videos";
 
 export async function POST(request: Request) {
   const user = await getAdminSessionUser();
@@ -27,5 +28,8 @@ export async function POST(request: Request) {
     const message = error instanceof Error ? error.message : "保存失败。";
     return back(`error=${encodeURIComponent(message)}`);
   }
+  /* A series' name or order shows on the video home and on every listing. */
+  await revalidateVideos();
+
   return back(`msg=${encodeURIComponent(`已保存「${name}」。`)}`);
 }

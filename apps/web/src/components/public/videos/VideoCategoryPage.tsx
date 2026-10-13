@@ -26,12 +26,14 @@ export function VideoCategoryPage({
   const grid = rest.slice(3);
   const firstIndex = (category.page - 1) * category.pageSize + 1;
   const lastIndex = firstIndex + category.videos.length - 1;
+  /* Page one in the default order is `/videos/<slug>` and nothing else -- that
+     address is the one readers hold and the one that has to be cacheable, so it
+     must carry nothing the server has to read. Everything deeper goes to
+     /videos/<slug>/<page>, a route of its own that may be dynamic. */
   const href = (page: number, sort: VideoSort = category.sort) => {
-    const params = new URLSearchParams();
-    if (page > 1) params.set("page", String(page));
-    if (sort !== "latest") params.set("sort", sort);
-    const query = params.toString();
-    return `/videos/${category.slug}${query ? `?${query}` : ""}`;
+    const base = `/videos/${category.slug}`;
+    if (page <= 1 && sort === "latest") return base;
+    return `${base}/${Math.max(page, 1)}${sort === "latest" ? "" : `?sort=${sort}`}`;
   };
 
   return (

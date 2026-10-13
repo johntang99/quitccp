@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { findVideoBySlug, listVideoCategories, saveVideo } from "@/lib/admin/video-repository";
 import { explainSaveFailure } from "@/lib/admin/save-errors";
+import { revalidateVideos } from "@/lib/admin/revalidate-videos";
 
 /*
  * Long enough for the retries to finish.
@@ -97,6 +98,9 @@ export async function POST(request: Request) {
   } catch (error) {
     return reject(explainSaveFailure(error));
   }
+
+  /* The public pages are cached now, so a save has to say so. */
+  await revalidateVideos(slug ? [slug] : []);
 
   if (wantsJson) {
     return NextResponse.json({

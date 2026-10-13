@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { deleteVideoById } from "@/lib/admin/repository";
+import { revalidateVideos } from "@/lib/admin/revalidate-videos";
 
 export async function POST(request: Request) {
   const user = await getAdminSessionUser();
@@ -12,6 +13,8 @@ export async function POST(request: Request) {
   const id = String(formData.get("id") ?? "").trim();
   if (!id) return NextResponse.json({ error: "Missing video id" }, { status: 400 });
 
-  await deleteVideoById(id, user.email);
+  const { slug } = await deleteVideoById(id, user.email);
+  await revalidateVideos(slug ? [slug] : []);
+
   return NextResponse.redirect(new URL("/admin/videos", request.url), 303);
 }

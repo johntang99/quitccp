@@ -47,6 +47,16 @@ export const maxDuration = 15;
  */
 export const revalidate = 300;
 
+/**
+ * Empty on purpose, exactly as on /news/[slug]: without it a dynamic segment is
+ * treated as fully dynamic and answers `no-store`, whatever `revalidate` says.
+ * Measured there, not assumed. Nothing is built ahead; the first reader of each
+ * film generates it and everyone after is served the copy.
+ */
+export async function generateStaticParams() {
+  return [];
+}
+
 
 /** The section's own CMS page. Everything else is a category or a video. */
 const VIDEO_PAGES = new Set(["index"]);
@@ -59,20 +69,16 @@ const PARTY_CULTURE = "party-culture";
 const DUO = ["ironclad", "awakening"];
 const PAIRS = ["hope-road", "step-back"];
 
-export default async function VideosPage({
-  params,
-  searchParams
-}: {
-  params: Promise<{ slug?: string[] }>;
-  searchParams: Promise<Record<string, string | undefined>>;
-}) {
+export default async function VideosPage({ params }: { params: Promise<{ slug?: string[] }> }) {
   const resolved = await params;
   const slug = resolved.slug?.[0];
 
+  /* No `searchParams`, deliberately -- see `generateStaticParams` below. Paging
+     and sorting live at /videos/<slug>/<page>, a route of its own that may be
+     dynamic; this one serves the video home, the first page of every series and
+     all 760 films, which is what has to be cacheable. */
   if (slug && !VIDEO_PAGES.has(slug)) {
-    const query = await searchParams;
-    const sort: VideoSort = query.sort === "oldest" ? "oldest" : "latest";
-    const category = await getVideoCategory(slug, Number(query.page ?? "1") || 1, sort);
+    const category = await getVideoCategory(slug, 1, "latest");
     if (category) {
       const siblings = await listPublicVideoCategories();
       return <VideoCategoryPage category={category} siblings={siblings} />;

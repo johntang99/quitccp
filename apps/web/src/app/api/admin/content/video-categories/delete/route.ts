@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { deleteVideoCategory } from "@/lib/admin/video-repository";
+import { revalidateVideos } from "@/lib/admin/revalidate-videos";
 
 export async function POST(request: Request) {
   const user = await getAdminSessionUser();
@@ -18,5 +19,7 @@ export async function POST(request: Request) {
   } catch (error) {
     return back(`error=${encodeURIComponent(error instanceof Error ? error.message : "删除失败。")}`);
   }
+  await revalidateVideos();
+
   return back(`msg=${encodeURIComponent("分类已删除。")}`);
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { listVideos, upsertVideoRecord } from "@/lib/admin/repository";
+import { revalidateVideos } from "@/lib/admin/revalidate-videos";
 
 export async function GET() {
   const user = await getAdminSessionUser();
@@ -47,5 +48,7 @@ export async function POST(request: Request) {
     },
     user.email
   );
+
+  await revalidateVideos(slug ? [slug] : []);
   return NextResponse.redirect(new URL("/admin/videos", request.url), 303);
 }

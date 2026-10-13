@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { bulkSetVideoCategory, bulkSetVideoStatus } from "@/lib/admin/video-repository";
+import { revalidateVideos } from "@/lib/admin/revalidate-videos";
 
 /** Bulk re-file or re-status, the video half of the article bulk endpoint. */
 export async function POST(request: Request) {
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
     if (action === "category") {
       if (!category) return back("请先选择目标分类。");
       const changed = await bulkSetVideoCategory(ids, category);
+      await revalidateVideos();
       return back(`已把 ${changed} 个视频的主分类改为「${category}」。`);
     }
     if (action === "published" || action === "draft" || action === "archived") {
@@ -33,6 +35,7 @@ export async function POST(request: Request) {
         return back("只有管理员或超级管理员可以发布或归档。编辑请先「保存草稿」，再请管理员发布。");
       }
       const changed = await bulkSetVideoStatus(ids, action);
+      await revalidateVideos();
       const label = action === "published" ? "已发布" : action === "draft" ? "草稿" : "已归档";
       return back(`已把 ${changed} 个视频设为${label}。`);
     }

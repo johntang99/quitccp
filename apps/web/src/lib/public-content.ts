@@ -1060,6 +1060,9 @@ const VIDEO_VIRTUAL_LISTINGS: Record<string, { name: string; filter?: "featured"
   featured: { name: "重要影片", filter: "featured" }
 };
 
+/** The listing slugs under /videos that are not database categories. */
+export const VIDEO_VIRTUAL_LISTING_SLUGS: readonly string[] = Object.keys(VIDEO_VIRTUAL_LISTINGS);
+
 /**
  * One video category's listing.
  *
@@ -1291,14 +1294,6 @@ export function isEchoOfBody(summary: string, firstParagraph: string): boolean {
  * Kept deliberately cheap and failure-tolerant: a public page must render when
  * there is no cookie, and must not blow up if the session cannot be checked.
  */
-async function isAdminViewer(): Promise<boolean> {
-  try {
-    const { getAdminSessionUser } = await import("@/lib/admin/auth");
-    return (await getAdminSessionUser()) !== null;
-  } catch {
-    return false;
-  }
-}
 
 /**
  * The news section's categories, in the order they appear everywhere: the tab
