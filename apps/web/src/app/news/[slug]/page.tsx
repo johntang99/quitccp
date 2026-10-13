@@ -4,7 +4,7 @@ import { findSlugRedirect, publicPath } from "@/lib/slug-redirects";
 import { NewsListingPage } from "@/components/public/news/NewsListingPage";
 import { TemplateRenderer } from "@/components/templates/TemplateRenderer";
 import type { NewsSort } from "@/lib/public-content";
-import { getNewsListing, getRenderableArticle } from "@/lib/public-content";
+import { getNewsListing, getRenderableArticle, isNewsListingSlug } from "@/lib/public-content";
 
 /**
  * A content page renders in about a second. Without this it inherits Vercel's
@@ -20,6 +20,21 @@ import { getNewsListing, getRenderableArticle } from "@/lib/public-content";
  * requests instead of holding them until something breaks.
  */
 export const maxDuration = 15;
+
+/**
+ * Lets a copy of the page exist between the reader and Postgres.
+ *
+ * Without this the route carries `no-store`: every request renders fresh and
+ * queries the database, which is exactly the property the 2026-10-13 flood was
+ * built around -- 477 million hits on one article, each one its own function
+ * invocation and database round trip. The same flood against a cached route is
+ * a CDN hit that costs nothing and never reaches Postgres.
+ *
+ * Five minutes matches `/news` and the homepage, which have been served this
+ * way all along. An editor's save calls `revalidatePath`, so a change still
+ * appears at once; this is only the ceiling for everything else.
+ */
+export const revalidate = 300;
 
 
 /**
@@ -86,12 +101,20 @@ export default async function NewsSlugPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const { slug } = await params;
-  const query = await searchParams;
-  const page = Number(query.page ?? "1") || 1;
-  const sort: NewsSort = query.sort === "oldest" ? "oldest" : "latest";
 
-  const listing = await getNewsListing(slug, page, sort);
-  if (listing) return <NewsListingPage listing={listing} />;
+  /* `searchParams` is read inside this branch and nowhere else. Awaiting it
+     marks the render dynamic, and it used to sit above this line, so all
+     15,374 articles were rendered fresh on every request even though only the
+     twelve listing pages have anything to page through. See
+     `isNewsListingSlug`. */
+  if (isNewsListingSlug(slug)) {
+    const query = await searchParams;
+    const page = Number(query.page ?? "1") || 1;
+    const sort: NewsSort = query.sort === "oldest" ? "oldest" : "latest";
+
+    const listing = await getNewsListing(slug, page, sort);
+    if (listing) return <NewsListingPage listing={listing} />;
+  }
 
   const article = await getRenderableArticle(slug);
   /* Only once the slug has failed to resolve. A renamed article is rare; the

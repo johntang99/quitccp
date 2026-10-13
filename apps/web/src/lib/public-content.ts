@@ -583,7 +583,77 @@ export async function getRenderablePage(section: string, slug = "index"): Promis
   }
 }
 
+/**
+ * One article, cached in the instance that served it.
+ *
+ * The 2026-10-13 flood put 477 million requests on a single article. Each one
+ * ran this function, and this function queries Postgres -- so a database with
+ * sixty connections was asked to answer hundreds of times a second until it
+ * stopped answering at all, and the whole site went down with it.
+ *
+ * Caching the route itself is the obvious fix and is not available: the page
+ * takes `searchParams` for the twelve listing slugs, which marks the whole
+ * route dynamic, and `no-store` is then set no matter what `revalidate` says.
+ * Measured, not assumed -- `revalidate = 300` was added first and the header
+ * did not move. Next's own `unstable_cache` is out for a different reason:
+ * reading it would mean reading cookies inside it, via `isAdminViewer`, which
+ * it forbids.
+ *
+ * So the copy is kept here, per instance. A flood against one article now
+ * costs one query a minute from each instance serving it rather than one per
+ * request, which is the difference between a slow page and a dead database.
+ *
+ * Three things this deliberately does not do:
+ *
+ * **It never caches a miss.** `loadRenderableArticle` returns null both for an
+ * article that does not exist and for a database that would not answer, and
+ * the two are indistinguishable here. Caching the second would pin a 404 onto
+ * a real article for the length of the TTL -- which is how the homepage came
+ * to serve its fallback for hours this morning.
+ *
+ * **It is skipped for editors.** A signed-in viewer reads drafts and expects a
+ * save to show immediately, so they always get the live row. A reader may be
+ * up to a minute behind, which is well inside what `/news` and the homepage
+ * have served all along at five.
+ *
+ * **It is bounded.** The key is a slug from the URL, so an attacker chooses
+ * it; an unbounded map is a way to exhaust memory with invented paths.
+ */
+const articleCache = new Map<string, { value: RenderablePage; at: number }>();
+const ARTICLE_CACHE_LIMIT = 200;
+const ARTICLE_CACHE_TTL_MS = 60_000;
+
 export async function getRenderableArticle(slug: string): Promise<RenderablePage | null> {
+  const key = (() => {
+    try {
+      return decodeURIComponent(slug);
+    } catch {
+      return slug;
+    }
+  })();
+
+  const editor = await isAdminViewer();
+  if (!editor) {
+    const hit = articleCache.get(key);
+    if (hit && Date.now() - hit.at < ARTICLE_CACHE_TTL_MS) return hit.value;
+    if (hit) articleCache.delete(key);
+  }
+
+  const article = await loadRenderableArticle(slug);
+
+  if (!editor && article) {
+    /* Map keeps insertion order, so the first key is the oldest. */
+    if (articleCache.size >= ARTICLE_CACHE_LIMIT) {
+      const oldest = articleCache.keys().next().value;
+      if (oldest !== undefined) articleCache.delete(oldest);
+    }
+    articleCache.set(key, { value: article, at: Date.now() });
+  }
+
+  return article;
+}
+
+async function loadRenderableArticle(slug: string): Promise<RenderablePage | null> {
   const normalizedSlug = (() => {
     try {
       return decodeURIComponent(slug);
@@ -1740,6 +1810,37 @@ const NEWS_VIRTUAL_LISTINGS: Record<string, { name: string; en: string; filter?:
   featured: { name: "重要报导", en: "FEATURED", filter: "featured" },
   "editor-archive": { name: "精彩保留", en: "EDITOR'S PICKS", filter: "editor_archive" }
 };
+
+/**
+ * Whether `/news/<slug>` is one of the twelve listing pages rather than an
+ * article.
+ *
+ * `getNewsListing` already decides this from the same two constants, but it is
+ * async and the page cannot call it without first reading `searchParams` for
+ * the paging arguments -- and reading `searchParams` opts the whole route out
+ * of caching. That is how all 15,374 articles came to be rendered fresh on
+ * every request, which is the property the 2026-10-13 flood was built around:
+ * 477 million hits on one article, each one a function invocation and a
+ * database round trip, because nothing between the reader and Postgres was
+ * allowed to hold a copy.
+ *
+ * So the branch is decided here instead, from two in-memory objects and no
+ * arguments. The listing slugs are twelve fixed latin words; an article slug
+ * is a Chinese title. They cannot collide.
+ */
+export function isNewsListingSlug(slug: string): boolean {
+  const decoded = (() => {
+    try {
+      return decodeURIComponent(slug);
+    } catch {
+      /* A lone % makes decodeURIComponent throw. Such a slug is not one of the
+         twelve either way. */
+      return slug;
+    }
+  })();
+  if (decoded in NEWS_VIRTUAL_LISTINGS) return true;
+  return NEWS_CATEGORIES.some((row) => row.slug === decoded);
+}
 
 /**
  * One category's articles, paged — what the tab row and every 更多 → lead to.

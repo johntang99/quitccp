@@ -32,6 +32,21 @@ import { getRenderableVideo, getVideoCategory, getVideoHome, listPublicVideoCate
  */
 export const maxDuration = 15;
 
+/**
+ * Lets a copy of the page exist between the reader and Postgres.
+ *
+ * Without this the route carries `no-store`: every request renders fresh and
+ * queries the database, which is exactly the property the 2026-10-13 flood was
+ * built around -- 477 million hits on one article, each one its own function
+ * invocation and database round trip. The same flood against a cached route is
+ * a CDN hit that costs nothing and never reaches Postgres.
+ *
+ * Five minutes matches `/news` and the homepage, which have been served this
+ * way all along. An editor's save calls `revalidatePath`, so a change still
+ * appears at once; this is only the ceiling for everything else.
+ */
+export const revalidate = 300;
+
 
 /** The section's own CMS page. Everything else is a category or a video. */
 const VIDEO_PAGES = new Set(["index"]);
