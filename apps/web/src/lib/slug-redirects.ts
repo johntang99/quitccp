@@ -35,8 +35,51 @@ export const publicPath = {
  *
  * Both spellings are checked because the migrated rows carry a trailing slash
  * and ours do not.
+ *
+ * ## Why this caches
+ *
+ * The note above says the lookup "costs nothing until the page was going to
+ * fail anyway". That held only while 404s were rare. On 2026-10-13 a flood hit
+ * one article at ~500 req/s; with the database already struggling every one of
+ * those became a 404, and every 404 came straight here for an uncached query.
+ * The middleware's own lookup was written with a cache for exactly this reason
+ * -- "a database round trip on each of 15,371 articles so that the handful
+ * which were ever renamed resolve" -- and this copy went without one.
+ *
+ * Misses are cached too, and that is the point: under a flood the answer is
+ * almost always "no redirect", so caching only the hits would leave the
+ * expensive case uncovered.
+ *
+ * The cap is not housekeeping. The key is attacker-controlled -- any URL at
+ * all -- so an unbounded map is a way to exhaust memory with made-up paths.
  */
+const cache = new Map<string, { value: string | null; at: number }>();
+const CACHE_LIMIT = 1000;
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+function cacheGet(path: string): { value: string | null } | null {
+  const hit = cache.get(path);
+  if (!hit) return null;
+  if (Date.now() - hit.at > CACHE_TTL_MS) {
+    cache.delete(path);
+    return null;
+  }
+  return hit;
+}
+
+function cacheSet(path: string, value: string | null): void {
+  /* Map preserves insertion order, so the first key is the oldest. */
+  if (cache.size >= CACHE_LIMIT) {
+    const oldest = cache.keys().next().value;
+    if (oldest !== undefined) cache.delete(oldest);
+  }
+  cache.set(path, { value, at: Date.now() });
+}
+
 export async function findSlugRedirect(path: string): Promise<string | null> {
+  const cached = cacheGet(path);
+  if (cached) return cached.value;
+
   try {
     const withSlash = path.endsWith("/") ? path : `${path}/`;
     const supabase = createSupabaseAdminClient();
@@ -46,13 +89,20 @@ export async function findSlugRedirect(path: string): Promise<string | null> {
       .in("legacy_url", [path, withSlash])
       .limit(1)
       .maybeSingle();
-    if (error || !data) return null;
+    if (error) return null;
+    if (!data) {
+      cacheSet(path, null);
+      return null;
+    }
     const destination = String(data.destination_url ?? "");
     /* Only ever redirect inside the site. A row that somehow held an absolute
        URL would otherwise turn a 404 into an open redirect. */
-    return destination.startsWith("/") ? destination : null;
+    const resolved = destination.startsWith("/") ? destination : null;
+    cacheSet(path, resolved);
+    return resolved;
   } catch {
-    /* A redirect lookup must not turn a 404 into a 500. */
+    /* A redirect lookup must not turn a 404 into a 500. Not cached: a failure
+       is about the database, not about this path. */
     return null;
   }
 }
