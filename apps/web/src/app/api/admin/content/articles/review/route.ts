@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { canReviewArticles, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { getArticleById, upsertArticleRecord } from "@/lib/admin/repository";
+import { revalidateNews } from "@/lib/admin/revalidate-news";
 
 export async function POST(request: Request) {
   const user = await getAdminSessionUser();
@@ -20,5 +21,8 @@ export async function POST(request: Request) {
   const nextStatus =
     decision === "approved" ? "published" : decision === "rejected" ? "archived" : "draft";
   await upsertArticleRecord({ ...article, status: nextStatus }, user.email);
+  /* Approving publishes it and rejecting hides it; either way the public pages
+     are now wrong until told. */
+  revalidateNews(article.slug ? [article.slug] : []);
   return NextResponse.redirect(new URL("/admin/articles", request.url), 303);
 }

@@ -3,7 +3,15 @@
 import { useState } from "react";
 
 /**
- * 立即发布 — forces the public pages to rebuild instead of waiting out the
+ * 立即发布 — drops every cached public page at once.
+ *
+ * Article saves, deletes and bulk actions now clear what they touched on their
+ * own, so this is no longer the normal way to publish. It stays for the pages
+ * that have no save of their own behind them -- a theme change, a stored page
+ * edited elsewhere -- and for the case where something looks stale and nobody
+ * wants to work out why.
+ *
+ * (original note) forces the public pages to rebuild instead of waiting out the
  * five-minute ISR window.
  */
 export function RevalidateButton() {

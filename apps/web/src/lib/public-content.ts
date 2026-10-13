@@ -1798,6 +1798,19 @@ const NEWS_VIRTUAL_LISTINGS: Record<string, { name: string; en: string; filter?:
  * arguments. The listing slugs are twelve fixed latin words; an article slug
  * is a Chinese title. They cannot collide.
  */
+/**
+ * Every address under /news that lists articles rather than being one.
+ *
+ * An editor's save changes more pages than the article's own: the headline
+ * appears on the homepage, on /news, in its category, and in archive. All of
+ * those are cached now, so all of them have to be told. Enumerated here so the
+ * admin routes cannot drift from the twelve this module actually serves.
+ */
+export const NEWS_LISTING_SLUGS: readonly string[] = [
+  ...Object.keys(NEWS_VIRTUAL_LISTINGS),
+  ...NEWS_CATEGORIES.map((row) => row.slug)
+];
+
 export function isNewsListingSlug(slug: string): boolean {
   const decoded = (() => {
     try {

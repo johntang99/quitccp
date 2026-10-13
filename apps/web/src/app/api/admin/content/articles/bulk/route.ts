@@ -1,6 +1,28 @@
 import { NextResponse } from "next/server";
 import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { bulkSetPrimaryCategory, bulkUpdateArticleStatus } from "@/lib/admin/repository";
+import { revalidateNews } from "@/lib/admin/revalidate-news";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+
+/**
+ * The slugs behind a batch of ids, so their own pages can be dropped too.
+ *
+ * One query rather than one per article, and a failure here must not fail the
+ * operation: the write has already happened, and the listings are invalidated
+ * either way. The cost of missing a slug is one article page that is stale for
+ * the rest of its window, not a lost edit.
+ */
+async function slugsFor(ids: string[]): Promise<string[]> {
+  try {
+    const { data } = await createSupabaseAdminClient()
+      .from("cms_articles")
+      .select("slug")
+      .in("id", ids);
+    return (data ?? []).map((row) => String((row as { slug?: unknown }).slug ?? "")).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
 
 export async function POST(request: Request) {
   const user = await getAdminSessionUser();
@@ -23,7 +45,11 @@ export async function POST(request: Request) {
     if (action === "category") {
       const target = String(formData.get("category") ?? "").trim();
       if (!target) throw new Error("请先选择目标分类。");
+      /* Read before the move: afterwards these slugs are unchanged, but doing it
+         in one place keeps both branches alike. */
+      const touched = await slugsFor(ids);
       const moved = await bulkSetPrimaryCategory(ids, target, user.email);
+      revalidateNews(touched);
       const msg = `已把 ${moved} 篇的主分类改为「${target}」。`;
       return NextResponse.redirect(
         new URL(`${back}${back.includes("?") ? "&" : "?"}msg=${encodeURIComponent(msg)}`, request.url),
@@ -36,7 +62,9 @@ export async function POST(request: Request) {
     }
     const nextStatus =
       action === "publish" ? "published" : action === "archive" ? "archived" : "draft";
+    const touched = await slugsFor(ids);
     await bulkUpdateArticleStatus(ids, nextStatus, user.email);
+    revalidateNews(touched);
     const label = action === "publish" ? "发布" : action === "archive" ? "归档" : "退回草稿";
     const msg = `已把 ${ids.length} 篇${label}。`;
     return NextResponse.redirect(

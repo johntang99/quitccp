@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidateNews } from "@/lib/admin/revalidate-news";
 import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { listArticles, listCategories, upsertArticleRecord } from "@/lib/admin/repository";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
@@ -145,12 +145,9 @@ export async function POST(request: Request) {
     return reject(explainSaveFailure(error));
   }
 
-  /* The public article page is cached now, so a save has to say so -- without
-     this an editor's change waits out the 300s window, which it never used to.
-     The listing pages carry the headline and summary, so they go too. */
-  revalidatePath(`/news/${slug}`);
-  revalidatePath("/news");
-  revalidatePath("/");
+  /* The public pages are cached now, so a save has to say so -- without this an
+     editor's change waits out the 300s window, which it never used to. */
+  revalidateNews([slug]);
 
   if (wantsJson) {
     // The id matters for a new article: the form switches to editing it, so a

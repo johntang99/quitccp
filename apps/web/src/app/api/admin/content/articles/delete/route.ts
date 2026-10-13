@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
-import { deleteArticleById } from "@/lib/admin/repository";
+import { deleteArticleById, getArticleById } from "@/lib/admin/repository";
+import { revalidateNews } from "@/lib/admin/revalidate-news";
 
 export async function POST(request: Request) {
   const user = await getAdminSessionUser();
@@ -12,6 +13,13 @@ export async function POST(request: Request) {
   const id = String(formData.get("id") ?? "").trim();
   if (!id) return NextResponse.json({ error: "Missing article id" }, { status: 400 });
 
+  /* Read before the delete: afterwards there is no row to learn the slug from,
+     and without it the article's own page keeps answering from cache for the
+     rest of the window -- a deleted article, still readable. */
+  const slug = (await getArticleById(id))?.slug ?? "";
+
   await deleteArticleById(id, user.email);
+  revalidateNews(slug ? [slug] : []);
+
   return NextResponse.redirect(new URL("/admin/articles", request.url), 303);
 }

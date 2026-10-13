@@ -63,7 +63,7 @@ export default async function AdminDashboardPage() {
           <RevalidateButton />
         </div>
         <p className="dash-note">
-          编辑保存后，公开页面最多 5 分钟才会更新。改完想立刻看到效果，按「立即发布」。
+          文章保存、删除或批量操作后，相关公开页面会立刻更新，不需要做任何事。
         </p>
         <div className="dash-stats">
           {[
