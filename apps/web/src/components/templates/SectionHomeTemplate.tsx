@@ -1138,7 +1138,6 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
           { title: "数据与统计方法", body: "数字计入规则、去重方式与已知局限。", badge: "说明页", href: "/about/numbers" },
           { title: "可授权图片", body: "历年活动、服务点与证明颁发现场，高分辨率，含摄影署名要求。", badge: "图片库", href: "#" },
           { title: "标识与标准字", body: "机构标识、标准色与使用规范。", badge: "品牌规范", href: "#" },
-          { title: "财务与治理", body: "Form 990、经审计报表、理事会名单。", badge: "问责页", href: "/about/accountability" },
           { title: "安全事件档案", body: "针对本机构的威胁事件、报案与处理经过。", badge: "档案", href: "#" }
         ];
     const faqSection = asRecord(payload.faqSection);
@@ -1308,7 +1307,6 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
         : [
             { label: "数字与统计方法", href: "/about/numbers" },
             { label: "全球服务网络", href: "/about/network" },
-            { label: "公开与问责", href: "/about/accountability" },
             { label: "理事会与团队", href: "/about/team" },
             { label: "退党大事记", href: "/about/history" }
           ];
@@ -1769,7 +1767,6 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
     const relatedLinks = asObjectArray(relatedPanel.links).length
       ? asObjectArray(relatedPanel.links).map((row) => ({ label: asString(row.label), href: asString(row.href, "#") }))
       : [
-          { label: "公开与问责", href: "/about/accountability" },
           { label: "退党大事记", href: "/about/history" },
           { label: "联系我们", href: "/services/contact" }
         ];

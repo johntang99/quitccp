@@ -581,8 +581,7 @@ export function LongFormTemplate({ title, section, slug, content, faqGroups }: T
             variant: asString(row.variant, "seal")
           }))
         : [
-            { label: "下载历年数据（CSV）", href: "#", variant: "seal" },
-            { label: "年度报告", href: "/about/accountability", variant: "line" }
+            { label: "下载历年数据（CSV）", href: "#", variant: "seal" }
           ];
 
     const relatedLinksRaw = asObjectArray(payload.relatedLinks);
@@ -590,7 +589,6 @@ export function LongFormTemplate({ title, section, slug, content, faqGroups }: T
       relatedLinksRaw.length > 0
         ? relatedLinksRaw.map((row) => ({ label: asString(row.label), href: asString(row.href, "#") }))
         : [
-            { label: "公开与问责", href: "/about/accountability" },
             { label: "全球服务网络", href: "/about/network" },
             { label: "年度报告 PDF", href: "#" },
             { label: "研究合作联络", href: "/services/contact" }
@@ -681,7 +679,6 @@ export function LongFormTemplate({ title, section, slug, content, faqGroups }: T
       relatedLinksRaw.length > 0
         ? relatedLinksRaw.map((row) => ({ label: asString(row.label), href: asString(row.href, "#") }))
         : [
-            { label: "年度报告", href: "/about/accountability" },
             { label: "历年数据", href: "/about/numbers" },
             { label: "机构公告与声明", href: "/news" },
             { label: "《九评共产党》全文", href: "/resources" }
