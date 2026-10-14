@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isKnownLegacyId } from "@/lib/legacy-redirect-ids";
 
 /**
  * Serves the 301s for the old WordPress URLs.
@@ -9,6 +10,23 @@ import { NextResponse, type NextRequest } from "next/server";
  *
  * The matcher below restricts this to the one shape every legacy URL has --
  * /YYYY/MM/DD/<id>/ -- so a normal page request never pays for a lookup.
+ *
+ * ## Why the id is checked against a shipped set first
+ *
+ * This is the last place on the public path where a request can still reach
+ * Postgres, and the 2026-10-13 flood is aimed at precisely this URL shape.
+ *
+ * Both caches below are keyed by the exact URL, which means they only help
+ * when the same URL repeats. An attacker who randomises the id -- the same
+ * trick as the `rnd=` parameter that defeated the CDN -- gets a cache miss
+ * every time, and every miss is a guaranteed database query. Rate limiting
+ * would only decide how fast that happens.
+ *
+ * So the question "could this id resolve at all?" is answered without the
+ * database, from a 33 KB set of the ~15.5k ids that exist. An id outside it
+ * is 404ed here having cost nothing, and no flood of invented ids can reach
+ * Postgres. Regenerate the set after a migration:
+ * `node scripts/build-legacy-id-set.mjs`.
  */
 
 const LEGACY_PATH = /^\/\d{4}\/\d{2}\/\d{2}\/\d+\/?$/;
@@ -58,6 +76,17 @@ function legacyIdPath(pathname: string): string | null {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (!LEGACY_PATH.test(pathname)) return NextResponse.next();
+
+  /*
+   * Before the database: can this id resolve at all?
+   *
+   * An id we have never heard of cannot produce a redirect by either route
+   * below, so asking Postgres about it only ever returns "no" -- at the cost
+   * of a connection. Answering from the shipped set instead is what stops a
+   * flood of invented ids from becoming a flood of queries.
+   */
+  const id = Number(pathname.match(/\/(\d+)\/?$/)?.[1]);
+  if (!Number.isInteger(id) || !isKnownLegacyId(id)) return NextResponse.next();
 
   /*
    * The table first, then the id.
