@@ -189,7 +189,7 @@ export default async function AdminDashboardPage() {
             而不是没有相关内容。请检查：
             <br />1. Supabase 是否正常（数据库不可达时搜索会整体失败）。
             <br />2. Vercel 环境变量 <code>SEARCH_PRIMARY_BACKEND</code> 是否被改成了无效值。
-            <br />3. 打开 <code>/api/search?q=三退</code> 看返回的 backend 字段是哪一个。
+            <br />3. 在本浏览器打开 <code>/api/search?q=三退</code> 看返回的 backend 字段是哪一个（需登录后台，退出后会返回 401）。
           </p>
         ) : null}
         {search.state === "fallback" ? (
