@@ -32,3 +32,5 @@ quitccp-platform@*
 # Migration backups written by scripts/rehost-wp-content.mjs — contain full
 # article bodies, and are local safety nets rather than source.
 backups/
+.vercel
+.env*

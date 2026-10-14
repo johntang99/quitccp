@@ -10,14 +10,10 @@ npm run dev
 
 npm install
 
-# Verify the production build WITHOUT breaking a running dev server.
-# `next dev` and `next build` both write to .next by default, so a plain
-# `npm run build` replaces the chunks the dev server is serving and localhost:4020
-# starts 500ing with "Cannot find module ./vendor-chunks/...".
-# build:check writes to .next-verify instead, so both can run at once.
-npm run build:check
 
-# The real deploy build (writes .next). Stop the dev server first.
+vercel firewall attack-mode enable
+
+
 npm run build
 
 git add .
@@ -116,5 +112,5 @@ Notes:
   - `npm run benchmark:search -- artifacts/phase5/query-results-pg.json`
   - `npm run benchmark:search -- artifacts/phase5/query-results-meili.json`
   sss
-  
+
 
