@@ -472,9 +472,12 @@ vercel metrics vercel.firewall_action.count --since 3h -a count \
 | 2026-10-14 | `8ece24c` 搜索正文扫描加 5 秒数据库侧上限；生产实测 7 条查询结果一致、耗时未退化 |
 | 2026-10-14 | 第 9 条防火墙规则：`/search` 每 IP 20 次/60 秒 → Challenge |
 | 2026-10-14 | 日志存档（Log Drain → R2）代码写完并本地验证；等 R2 权限开通，见 `workers/vercel-log-drain/README.md` |
+| 2026-10-14 | 第 7 条规则补进第 4 个 JA4 指纹 `t13d1513h2_…b17c474a414d`（108.7M，打的是旧 WordPress 地址，和已封指纹同一密码套件哈希）；仍用 Challenge |
+| 2026-10-14 | 数据库从 MICRO 升到 SMALL：连接 60→90、`shared_buffers` 256→512 MB、swap 消失；重启造成约 60 秒停机 |
+| 2026-10-14 | 向 Vercel 提交账单调整申请，工单 **#CSE_01R1jOvOSBDtVpJS**，金额 $271.41，附 `vercel-billing-evidence.md` |
 | 2026-10-13～14 | 本文档建立并多次更新 |
 
-待补充：Vercel credit 申请结果、R2 镜像上线结果、日志存档上线结果、数据库升级决定、布局三次查询是否缓存。
+待补充：Vercel credit 申请结果（工单 #CSE_01R1jOvOSBDtVpJS，10-14 提交）、R2 镜像上线结果、日志存档上线结果、数据库升级决定、布局三次查询是否缓存。
 
 待定夺：drain 里要不要带读者 IP（`proxy.clientIp`）。Vercel 可在团队层面关掉（Settings → Security & Privacy → IP Address Visibility），但关掉就失去按 IP 追攻击源的能力，而现有防火墙规则正是按 IP 和 JA4 建的。
 
