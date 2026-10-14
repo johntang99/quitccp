@@ -41,8 +41,15 @@ npx wrangler deploy
 建的时候 Vercel 会自动测一次这个端点，Worker 对带 `x-vercel-verify` 的请求
 直接回 200 并把这个头原样送回，所以能一次通过。
 
-**5. 设保留期**（可选，但建议）：Cloudflare → R2 → tuidang-logs → Settings →
-Object lifecycle rules，对前缀 `logs/` 设 90 天后删除。不设就是永久留着。
+**5. 设保留期**：Cloudflare → R2 → tuidang-logs → Settings → Object lifecycle
+rules，对前缀 `logs/` 设 **14 天**后删除。
+
+14 天是这么来的：保留期由「发现得多晚」决定，不是由「查得多勤」决定。周五
+夜里出事、周一才看是 3 天；旧 WordPress 地址那个绕过，我们是隔了约 24 小时
+才找出来的；想对比「这周二 vs 上周二」至少要 8 天。再往后就没人问「某条请求
+长什么样」了，只会问「那阵子正常吗」——那是聚合该回答的，不是原始行。
+
+7 天是下限，14 天是舒服的。在 R2 上这个选择几乎不花钱，所以不必为省钱压到 7 天。
 
 ## 怎么看
 

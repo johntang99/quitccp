@@ -123,12 +123,23 @@ R2                       media.tuidang.org/articles/f7/f725911b111ce6f2.jpeg
 在 **tuidang.org 所在的那个 Cloudflare 账号**里——R2 的自定义域名必须和桶在同一个账号，这是 Cloudflare 的硬规则。
 
 1. 左侧 **Build → Storage & databases → R2** → **Create bucket**
-   名字 `tuidang-media`，位置 Automatic
-   （首次使用需要开通 R2，账号上要存一张付款方式；6 GB 在免费额度内——10 GB
-   存储、出站永久免费——存卡只是开通要求）
+   建**两个**桶，位置都选 Automatic：
+   - `tuidang-media` —— 媒体镜像（本方案）
+   - `tuidang-logs` —— 日志存档（见 `workers/vercel-log-drain/README.md`）
+
+   （首次使用需要开通 R2，账号上要存一张付款方式；两个桶加起来 6 GB 出头，
+   在免费额度内——10 GB 存储、出站永久免费——存卡只是开通要求）
+
+   > 两个桶一次建好，是因为申请一次 Cloudflare 权限就不容易。只建一个的话，
+   > 等日志那边要用的时候还得再麻烦人一次。
+
 2. **Manage API tokens → Create API token**，权限 **Object Read & Write**，
-   范围限定 `tuidang-media`。创建后的那一页会显示 **Access Key ID** 与
-   **Secret Access Key**，**只显示这一次**
+   范围勾上**这两个桶**（`tuidang-media` 和 `tuidang-logs`）。创建后的那一页
+   会显示 **Access Key ID** 与 **Secret Access Key**，**只显示这一次**
+
+   > ⚠️ 这里最容易漏：如果范围只勾了 `tuidang-media`，日志存档那边会拿到一个
+   > 写不进去的令牌，又要重来一轮。
+
 3. **Account ID** 在 R2 页面右侧，也可以从浏览器地址栏读：
    `dash.cloudflare.com/<Account ID>/...`
 
