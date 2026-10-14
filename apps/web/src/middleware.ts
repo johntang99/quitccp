@@ -75,6 +75,25 @@ function legacyIdPath(pathname: string): string | null {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  /*
+   * `/news/a/<id>` is the destination of the redirect below, and nothing stops
+   * a request arriving there directly -- so it needs the same gate, one step
+   * earlier than the route itself can apply it.
+   *
+   * The route does check the id, but by the time a route can call
+   * `notFound()` the layout has already rendered, and the layout reads the
+   * theme and the navigation: three database queries per invented id,
+   * measured. Refusing here means nothing renders at all. An unmatched URL
+   * gets Next's prerendered 404, which costs no queries, so that is what an
+   * unknown id is turned into.
+   */
+  const directId = pathname.match(/^\/news\/a\/(\d+)\/?$/)?.[1];
+  if (directId !== undefined) {
+    if (isKnownLegacyId(Number(directId))) return NextResponse.next();
+    return NextResponse.rewrite(new URL("/_not-found", request.url), { status: 404 });
+  }
+
   if (!LEGACY_PATH.test(pathname)) return NextResponse.next();
 
   /*
@@ -111,6 +130,10 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/:year(\\d{4})/:month(\\d{2})/:day(\\d{2})/:id(\\d+)",
-    "/:year(\\d{4})/:month(\\d{2})/:day(\\d{2})/:id(\\d+)/"
+    "/:year(\\d{4})/:month(\\d{2})/:day(\\d{2})/:id(\\d+)/",
+    /* The redirect's own destination, so an invented id is refused before any
+       layout renders. See the note at the top of `middleware`. */
+    "/news/a/:id(\\d+)",
+    "/news/a/:id(\\d+)/"
   ]
 };
