@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { deleteArticleById, getArticleById } from "@/lib/admin/repository";
 import { revalidateNews } from "@/lib/admin/revalidate-news";
+import { warmPathsForDeletedArticle } from "@/lib/admin/warm-paths";
 
 export async function POST(request: Request) {
   const user = await getAdminSessionUser();
@@ -21,5 +22,9 @@ export async function POST(request: Request) {
   await deleteArticleById(id, user.email);
   revalidateNews(slug ? [slug] : []);
 
-  return NextResponse.redirect(new URL("/admin/articles", request.url), 303);
+  /* The article's own page is gone, so there is nothing to warm there -- but
+     the listings it vanished from are about to be read. */
+  const back = new URL("/admin/articles", request.url);
+  back.searchParams.set("warm", warmPathsForDeletedArticle().join(","));
+  return NextResponse.redirect(back, 303);
 }

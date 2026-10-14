@@ -4,6 +4,7 @@ import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } f
 import { listArticles, listCategories, upsertArticleRecord } from "@/lib/admin/repository";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { explainSaveFailure } from "@/lib/admin/save-errors";
+import { warmPathsForArticle } from "@/lib/admin/warm-paths";
 
 /*
  * Long enough for the retries to finish.
@@ -164,12 +165,16 @@ export async function POST(request: Request) {
       .eq("slug", slug)
       .eq("locale", locale)
       .maybeSingle();
+    const savedSlug = saved ? String(saved.slug) : slug;
     return NextResponse.json({
       ok: true,
       id: saved ? String(saved.id) : id,
-      slug: saved ? String(saved.slug) : slug,
+      slug: savedSlug,
       status,
-      savedAt: new Date().toISOString()
+      savedAt: new Date().toISOString(),
+      /* The browser warms these; see lib/admin/warm-paths.ts for why it is
+         the browser and not us. */
+      warm: warmPathsForArticle(savedSlug)
     });
   }
 

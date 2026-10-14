@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { saveMaterial, type MaterialFile } from "@/lib/admin/material-repository";
 import { revalidateMaterials } from "@/lib/admin/revalidate-pages";
+import { warmPathsForMaterial } from "@/lib/admin/warm-paths";
 
 /** Parses the form's `filesJson`, dropping rows an editor left blank. */
 function parseFiles(raw: string): MaterialFile[] {
@@ -74,5 +75,11 @@ export async function POST(request: Request) {
 
   // Back to the same material, not to the list: an editor usually saves more
   // than once, and bouncing to the list loses their place.
-  return NextResponse.redirect(new URL(`/admin/materials/${savedId}?msg=saved`, request.url), 303);
+  /* This form posts and redirects rather than saving over fetch, so the paths
+     to warm travel in the query string and a small client component on the
+     landing page does the fetching. */
+  const back = new URL(`/admin/materials/${savedId}`, request.url);
+  back.searchParams.set("msg", "saved");
+  back.searchParams.set("warm", warmPathsForMaterial(slug).join(","));
+  return NextResponse.redirect(back, 303);
 }

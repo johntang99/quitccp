@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { MaterialForm } from "@/components/admin/MaterialForm";
+import { WarmPages } from "@/components/admin/WarmPages";
 import { MaterialTabs } from "@/components/admin/MaterialTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { getMaterial, listMaterialCategories } from "@/lib/admin/material-repository";
@@ -20,6 +21,8 @@ export default async function EditMaterialPage({ params, searchParams }: PagePro
 
   return (
     <AdminShell user={user}>
+      {/* Builds the pages this material appears on, named in ?warm= by the save. */}
+      <WarmPages />
       <MaterialTabs active="search" />
       <h2 style={{ margin: "0 0 6px" }}>{material.title}</h2>
       {query.msg === "saved" ? (

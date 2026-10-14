@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { MarkdownEditor, type MarkdownEditorHandle } from "./MarkdownEditor";
+import { warmPages } from "@/lib/admin/warm-pages";
 
 /**
  * The single article form, used for both creating and editing.
@@ -207,12 +208,16 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
         id?: string;
         slug?: string;
         savedAt?: string;
+        warm?: string[];
       };
       if (!response.ok || !payload.ok) {
         setError(payload.error || "保存失败。");
         return;
       }
       setSaved({ at: new Date().toLocaleTimeString("zh-CN", { hour12: false }), status });
+      /* Build the pages this article appears on now, so the editor's own click
+         through to the public page is a hit rather than a 1.5s render. */
+      warmPages(payload.warm ?? []);
       setV((prev) => ({ ...prev, status }));
       // A new article becomes the article being edited, so the next save
       // updates it instead of refusing the slug as already taken.

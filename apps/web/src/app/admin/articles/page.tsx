@@ -5,6 +5,7 @@ import { ArticleTabs } from "@/components/admin/ArticleTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { listArticleAuthors, searchArticles, type ArticleSearchFilters } from "@/lib/admin/article-search";
 import { listCategories } from "@/lib/admin/repository";
+import { WarmPages } from "@/components/admin/WarmPages";
 
 interface PageProps {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -60,6 +61,7 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
 
   return (
     <AdminShell user={user}>
+      <WarmPages />
       <ArticleTabs active="search" />
 
       {params.msg ? (

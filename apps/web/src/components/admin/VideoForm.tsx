@@ -5,6 +5,7 @@ import { isGanjingWatchUrl, isVimeoWatchUrl, toEmbedUrl } from "@/lib/video-host
 import { GanjingEmbedNotice } from "./GanjingEmbedNotice";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { MarkdownEditor, type MarkdownEditorHandle } from "./MarkdownEditor";
+import { warmPages } from "@/lib/admin/warm-pages";
 
 /**
  * The single video form, used for both creating and editing.
@@ -109,12 +110,15 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
         headers: { accept: "application/json" },
         body
       });
-      const payload = (await response.json()) as { ok?: boolean; error?: string; id?: string };
+      const payload = (await response.json()) as { ok?: boolean; error?: string; id?: string; warm?: string[] };
       if (!response.ok || !payload.ok) {
         setError(payload.error || "保存失败。");
         return;
       }
       setSaved({ at: new Date().toLocaleTimeString("zh-CN", { hour12: false }), status });
+      /* Build the pages this video appears on now, so the editor's own click
+         through to the public page is a hit rather than a full render. */
+      warmPages(payload.warm ?? []);
       setValue((prev) => ({ ...prev, status }));
       // A new video becomes the video being edited, so the next save updates it
       // rather than refusing the slug as already taken.

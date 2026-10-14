@@ -3,6 +3,7 @@ import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } f
 import { findVideoBySlug, listVideoCategories, saveVideo } from "@/lib/admin/video-repository";
 import { explainSaveFailure } from "@/lib/admin/save-errors";
 import { revalidateVideos } from "@/lib/admin/revalidate-videos";
+import { warmPathsForVideo } from "@/lib/admin/warm-paths";
 
 /*
  * Long enough for the retries to finish.
@@ -108,7 +109,8 @@ export async function POST(request: Request) {
       id: savedId,
       slug,
       status,
-      savedAt: new Date().toISOString()
+      savedAt: new Date().toISOString(),
+      warm: warmPathsForVideo(slug)
     });
   }
 
