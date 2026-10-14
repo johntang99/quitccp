@@ -122,6 +122,16 @@ R2                       media.tuidang.org/articles/f7/f725911b111ce6f2.jpeg
 
 在 **tuidang.org 所在的那个 Cloudflare 账号**里——R2 的自定义域名必须和桶在同一个账号，这是 Cloudflare 的硬规则。
 
+> **先确认谁来点第一下。** 开通 R2 要绑付款方式，Cloudflare 把「make purchases」
+> 只给了 **Super Administrator**；**Administrator 明确「不能管理账单资料」**，
+> 按钮会是灰的、带一把锁。2026-10-14 实际撞到过这个：John 被授予的是
+> Administrator / Entire account，按钮点不动。
+>
+> 开通是**一次性的账户级动作**，之后建桶、建 API 令牌都在 Administrator
+> 权限内。所以最省事的做法是请一位 Super admin 点一次
+> `dash.cloudflare.com/<Account ID>/r2/plans`，而不是给人提权。
+> 若希望长期自助，加一个 **Billing** 角色即可（只管账单与订阅，不扩大其它权限）。
+
 1. 左侧 **Build → Storage & databases → R2** → **Create bucket**
    建**两个**桶，位置都选 Automatic：
    - `tuidang-media` —— 媒体镜像（本方案）
