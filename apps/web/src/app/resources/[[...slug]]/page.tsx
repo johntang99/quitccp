@@ -76,7 +76,7 @@ export default async function ResourcesPage({ params }: ResourcesPageProps) {
         const moved = await findSlugRedirect(
           publicPath.material(decodeURIComponent(categorySlug), decodeURIComponent(materialSlug))
         );
-        if (moved) permanentRedirect(moved);
+        if (moved) permanentRedirect(encodeURI(moved));
         notFound();
       }
       return <MaterialDetailPage material={material} />;

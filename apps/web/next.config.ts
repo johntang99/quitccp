@@ -96,6 +96,33 @@ const LEGACY_PAGES = [
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: repoRoot,
+  /**
+   * Ships the Pages Router 500 page into the serverless bundle.
+   *
+   * `src/pages/500.tsx` exists because the App Router cannot answer one case:
+   * when a statically generated route fails during on-demand generation, Next
+   * bypasses `app/error.tsx` entirely and falls back to the Pages Router's 500.
+   *
+   * It worked locally and not on Vercel, which is the whole reason this entry
+   * is here. `next start` serves from the full `.next` directory, so the file
+   * is simply there; a Vercel function gets only what file tracing decided it
+   * needed, and nothing *imports* 500.html, so tracing never included it. The
+   * production logs said so plainly:
+   *
+   *   Failed to load static file for page: /500 ENOENT:
+   *   open '/var/task/apps/web/.next/server/pages/500.html'
+   *
+   * So the honest error page was failing to render exactly when it was needed,
+   * and the reader got a bare platform error instead. Naming the files here
+   * forces them into the bundle.
+   */
+  outputFileTracingIncludes: {
+    "/**": [
+      "./.next/server/pages/500.html",
+      "./.next/server/pages/500.js",
+      "./.next/server/pages/_error.js"
+    ]
+  },
   async redirects() {
     return LEGACY_PAGES.map((r) => ({ ...r, permanent: true }));
   },

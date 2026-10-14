@@ -127,7 +127,18 @@ export default async function NewsSlugPage({ params }: { params: Promise<{ slug:
      other 15,370 must not pay for a redirect lookup they never need. */
   if (!article) {
     const moved = await findSlugRedirect(publicPath.article(decodeURIComponent(slug)));
-    if (moved) permanentRedirect(moved);
+    /*
+     * `encodeURI`, because a Location header is latin1 and 15,493 of the
+     * 15,530 rows in the redirect map are titles in Chinese. Handing one to
+     * `permanentRedirect` raw throws `TypeError: Invalid character in header
+     * content ["location"]` inside `setHeader` -- which production logs were
+     * full of, with every one of them becoming a 500 for a reader who had
+     * simply followed an old link.
+     *
+     * The middleware does not need this: it assigns to `URL.pathname`, whose
+     * setter percent-encodes on the way in.
+     */
+    if (moved) permanentRedirect(encodeURI(moved));
     notFound();
   }
   return <TemplateRenderer {...article} />;

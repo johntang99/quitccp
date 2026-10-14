@@ -86,7 +86,7 @@ export default async function VideosPage({ params }: { params: Promise<{ slug?: 
     const video = await getRenderableVideo(slug);
     if (video) return <VideoDetail video={video} />;
     const moved = await findSlugRedirect(publicPath.video(decodeURIComponent(slug)));
-    if (moved) permanentRedirect(moved);
+    if (moved) permanentRedirect(encodeURI(moved));
     notFound();
   }
 
