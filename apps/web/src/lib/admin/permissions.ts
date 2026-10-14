@@ -51,7 +51,20 @@ const MATRIX: Record<Capability, readonly AdminRole[]> = {
   // content, and rolling back a bad edit is part of editing. 审计日志 stays with
   // the admins -- that is the record of who did what, not content.
   "revisions.restore": ["super_admin", "content_admin", "editor"],
-  "publish.revalidate": ["super_admin", "content_admin", "editor"],
+  /*
+   * Narrowed 2026-10-14, after every save route was taught to clear its own
+   * caches. An editor no longer has any reason to reach for this: their work
+   * is live the moment they save it.
+   *
+   * It is kept away from them because of what it costs. Measured: after
+   * `revalidatePath("/", "layout")` the next request for a page is a MISS, not
+   * a stale copy being refreshed in the background -- so every page anyone
+   * then asks for blocks on a full database render. Across 15,374 articles,
+   * while the site is under attack, that is the 2026-10-13 chain again. The
+   * editor most likely to press it is one who cannot see their change, which
+   * was the very problem the save-time invalidation removed.
+   */
+  "publish.revalidate": ["super_admin", "content_admin"],
   "users.view": ["super_admin", "content_admin"],
   "users.manage.editors": ["super_admin", "content_admin"],
   // An admin who could mint admins would be a super admin with extra steps.

@@ -4,6 +4,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { MISS_RETENTION_DAYS, listSearchMisses } from "@/lib/search-misses";
 import { RevalidateButton } from "@/components/admin/RevalidateButton";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
+import { can } from "@/lib/admin/permissions";
 import {
   SYNC_INTERVAL_HOURS,
   getDashboardStats,
@@ -60,10 +61,13 @@ export default async function AdminDashboardPage() {
       <section className="admin-card">
         <div className="dash-head">
           <h2 style={{ margin: 0 }}>平台概览</h2>
-          <RevalidateButton />
+          {/* Hidden rather than shown-and-refused: an editor seeing a button
+              they cannot use would press it when their change seems missing,
+              which is the moment this tool is least appropriate. */}
+          {can(user, "publish.revalidate") ? <RevalidateButton /> : null}
         </div>
         <p className="dash-note">
-          文章保存、删除或批量操作后，相关公开页面会立刻更新，不需要做任何事。
+          保存文章、视频、页面内容、资料、分类或问答后，相关公开页面会立刻更新，不需要做任何事。
         </p>
         <div className="dash-stats">
           {[
