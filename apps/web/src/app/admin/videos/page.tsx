@@ -3,6 +3,7 @@ import { VideoTable } from "@/components/admin/VideoTable";
 import { VideoTabs } from "@/components/admin/VideoTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { listVideoCategories, searchVideos, type VideoSearchFilters } from "@/lib/admin/video-repository";
+import { WarmPages } from "@/components/admin/WarmPages";
 
 interface PageProps {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -55,6 +56,7 @@ export default async function AdminVideosPage({ searchParams }: PageProps) {
 
   return (
     <AdminShell user={user}>
+      <WarmPages />
       <VideoTabs active="search" />
 
       {!result.ready ? (

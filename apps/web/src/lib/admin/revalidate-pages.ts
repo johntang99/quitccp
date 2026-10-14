@@ -45,9 +45,19 @@ export function revalidatePage(section: string, slug = "index") {
  * Materials live under /resources: the item itself, the category listing that
  * lists it, and the resources home that counts them.
  */
-export function revalidateMaterials(slugs: Iterable<string> = []) {
-  for (const slug of slugs) {
-    if (slug) revalidatePath(`/resources/${slug}`);
+export function revalidateMaterials(slugs: Iterable<string> = [], categorySlugs: Iterable<string> = []) {
+  /*
+   * A material lives at /resources/downloads/<category>/<slug> and is listed
+   * on /resources/downloads/<category>. This used to clear `/resources/<slug>`
+   * -- an address materials have never had -- so the page that actually shows
+   * them was left to expire on its own, which a production test caught.
+   */
+  for (const categorySlug of categorySlugs) {
+    if (!categorySlug) continue;
+    revalidatePath(`/resources/downloads/${categorySlug}`);
+    for (const slug of slugs) {
+      if (slug) revalidatePath(`/resources/downloads/${categorySlug}/${slug}`);
+    }
   }
   revalidatePath("/resources");
   revalidatePath("/resources/downloads");

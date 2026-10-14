@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
-import { saveMaterial, type MaterialFile } from "@/lib/admin/material-repository";
+import { listMaterialCategories, saveMaterial, type MaterialFile } from "@/lib/admin/material-repository";
 import { revalidateMaterials } from "@/lib/admin/revalidate-pages";
 import { warmPathsForMaterial } from "@/lib/admin/warm-paths";
 
@@ -69,18 +69,34 @@ export async function POST(request: Request) {
       .filter(Boolean)
   }, user.email);
 
-  /* The material's own page, its category listing and the resources home
-     all show it; without this the editor sees the old copy for five minutes. */
-  revalidateMaterials([slug]);
 
   // Back to the same material, not to the list: an editor usually saves more
   // than once, and bouncing to the list loses their place.
   /* This form posts and redirects rather than saving over fetch, so the paths
      to warm travel in the query string and a small client component on the
      landing page does the fetching. */
+  /*
+   * The material's public address needs its primary category, which the form
+   * sends as ids. The first checked one is the primary -- the form says so to
+   * the editor, and the public page is built the same way.
+   */
+  let primaryCategorySlug = "";
+  const firstCategoryId = String(formData.get("categoryIds") ?? "").split(",")[0]?.trim();
+  if (firstCategoryId) {
+    try {
+      const { rows } = await listMaterialCategories();
+      primaryCategorySlug = rows.find((row) => row.id === firstCategoryId)?.slug ?? "";
+    } catch {
+      /* Warming is best effort; a save must not fail over it. */
+    }
+  }
+
+  /* Now that the category is known, clear the pages that actually show it. */
+  revalidateMaterials([slug], primaryCategorySlug ? [primaryCategorySlug] : []);
+
   const back = new URL(`/admin/materials/${savedId}`, request.url);
   back.searchParams.set("msg", "saved");
   /* A fragment, so the paths cannot be rendered into this page's own links. */
-  back.hash = `warm=${encodeURIComponent(warmPathsForMaterial(slug).join(","))}`;
+  back.hash = `warm=${encodeURIComponent(warmPathsForMaterial(slug, primaryCategorySlug).join(","))}`;
   return NextResponse.redirect(back, 303);
 }

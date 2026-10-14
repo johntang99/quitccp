@@ -1,3 +1,5 @@
+import { publicPath } from "@/lib/slug-redirects";
+
 /**
  * The pages worth generating straight after a save, instead of leaving them to
  * the first visitor.
@@ -53,11 +55,23 @@ export function warmPathsForVideo(slug: string, status?: string): string[] {
 
 /**
  * Materials are not on the homepage, so warming it would be wasted work --
- * the resources index and the material itself are where they appear.
+ * the resources index and the download index are where they appear.
+ *
+ * The item's own address is `/resources/downloads/<category>/<slug>`, not
+ * `/resources/<slug>`. A production test warmed the second shape and got a
+ * 404: it is not where materials live, and no amount of warming makes it one.
+ * `publicPath.material` is the single definition of that address, so this uses
+ * it rather than spelling the path out a second time and drifting again.
+ *
+ * Without a category there is no item address to warm, only the indexes.
  */
-export function warmPathsForMaterial(slug: string): string[] {
-  const paths = ["/resources"];
-  if (slug) paths.push(`/resources/${encodeURIComponent(slug)}`);
+export function warmPathsForMaterial(slug: string, categorySlug?: string): string[] {
+  if (!categorySlug) return ["/resources/downloads"];
+  /* Measured on production: a material shows on its category listing and on
+     its own page. It is on neither /resources nor /resources/downloads, so
+     warming those would build pages that did not change. */
+  const paths = [`/resources/downloads/${categorySlug}`];
+  if (slug) paths.push(publicPath.material(categorySlug, slug));
   return paths;
 }
 
