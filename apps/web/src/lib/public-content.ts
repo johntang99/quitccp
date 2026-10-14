@@ -2488,6 +2488,16 @@ export async function getArticleSlugByLegacyId(legacyId: number): Promise<string
     .select("slug")
     .eq("legacy_id", legacyId)
     .maybeSingle();
-  if (error || !data) return null;
+  /*
+   * An unreachable database is not the same answer as "no such article", and
+   * conflating them is expensive here: the caller turns null into `notFound()`,
+   * and that 404 is cached -- so one query failing during an outage would 404
+   * a real article for an hour afterwards, long after the database recovered.
+   * This is the same mistake `loadRenderableArticle` was fixed for; let the
+   * failure be a failure, and let stale-while-revalidate serve the last good
+   * answer instead.
+   */
+  if (error) throw error;
+  if (!data) return null;
   return String(data.slug);
 }
