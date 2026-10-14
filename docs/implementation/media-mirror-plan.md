@@ -122,9 +122,22 @@ R2                       media.tuidang.org/articles/f7/f725911b111ce6f2.jpeg
 
 在 **tuidang.org 所在的那个 Cloudflare 账号**里——R2 的自定义域名必须和桶在同一个账号，这是 Cloudflare 的硬规则。
 
-1. **R2 Object Storage → Create bucket**，名字 `tuidang-media`，位置 Automatic
-2. **Manage API tokens → Create API token**，权限 **Object Read & Write**，范围限定 `tuidang-media`
-3. 记下 **Account ID**、**Access Key ID**、**Secret Access Key**
+1. 左侧 **Build → Storage & databases → R2** → **Create bucket**
+   名字 `tuidang-media`，位置 Automatic
+   （首次使用需要开通 R2，账号上要存一张付款方式；6 GB 在免费额度内——10 GB
+   存储、出站永久免费——存卡只是开通要求）
+2. **Manage API tokens → Create API token**，权限 **Object Read & Write**，
+   范围限定 `tuidang-media`。创建后的那一页会显示 **Access Key ID** 与
+   **Secret Access Key**，**只显示这一次**
+3. **Account ID** 在 R2 页面右侧，也可以从浏览器地址栏读：
+   `dash.cloudflare.com/<Account ID>/...`
+
+> 导航路径按 2026-10 的 Cloudflare 界面写。它改过版——旧版 R2 在一级菜单，
+> 现在收在 Storage & databases 下面。找不到就直接搜 "R2"。
+
+> ⚠️ 必须在 **tuidang.org 所在的那个账号**里建（`Chou.amen@gmail…`）。
+> 同一个人可能有多个 Cloudflare 账号，各自的 Account ID 不同；建错账号的话
+> `media.tuidang.org` 接不上去。
 
 ## 1.2 填进根目录 `.env.local`
 
