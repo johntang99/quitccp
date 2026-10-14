@@ -110,6 +110,15 @@ function mapChars(text: string, table: Readonly<Record<string, string>>): string
  * variant forms -- most Latin text, and Han characters shared by both scripts --
  * costs one condition exactly as before.
  */
+/**
+ * Postgres cancelled the statement itself (SQLSTATE 57014), rather than the
+ * query being wrong or the database being unreachable.
+ */
+function isStatementTimeout(error: unknown): boolean {
+  const code = (error as { code?: unknown } | null)?.code;
+  return String(code ?? "") === "57014";
+}
+
 export function termVariants(term: string, withSynonyms = true): string[] {
   const forms = new Set<string>();
   // Synonyms first, then every script form of each: a reader typing 三退 in
@@ -377,7 +386,13 @@ async function searchOneType(
     // queries the title and summary could not answer.
     if (results.length >= limit) break;
 
-    const isBodyTier = index >= SYNONYM_TIERS;
+    /*
+     * The body scan is the last tier and the only expensive one: two Chinese
+     * characters cannot use the trigram indexes from migration 020, so it is a
+     * sequential pass over 120MB of prose -- measured at 2.1s warm and 8.6s
+     * cold for 鲍彤.
+     */
+    const isBodyTier = index === config.tiers.length - 1;
 
     let rows: Record<string, unknown>[];
     try {
@@ -389,8 +404,18 @@ async function searchOneType(
        * timeout, and when it ends a scan the earlier tiers have usually found
        * something. Those results stand, and `truncated` tells the page to say
        * the search was cut short rather than claim nothing matched.
+       *
+       * This used to read `index >= SYNONYM_TIERS`, and SYNONYM_TIERS is
+       * Infinity -- so it was never true, and every timeout was rethrown. The
+       * graceful path above has therefore never run: a search slow enough to
+       * be cancelled showed the reader an error page rather than the results
+       * the earlier tiers had already found.
+       *
+       * Only a cancelled statement degrades. 57014 is Postgres saying it
+       * stopped the scan itself; anything else is a real fault and must not be
+       * dressed up as "we found some of it".
        */
-      if (isBodyTier) {
+      if (isBodyTier && isStatementTimeout(error)) {
         truncated = true;
         break;
       }
