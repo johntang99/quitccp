@@ -84,6 +84,25 @@ const LEGACY_PAGES = [
   { source: "/privacy-policy", destination: "/legal/privacy" },
   { source: "/terms-of-service", destination: "/legal/terms" },
 
+  // Retired 2026-10-14 at the board's request. /about/accountability was a
+  // directory of the places a hostile party would go to file something false
+  // about the centre -- the IRS exempt-organization search, ProPublica,
+  // Charity Navigator -- and they would rather not point at them while the
+  // site is under attack. Every link to it was removed first; this closes the
+  // address itself.
+  //
+  // A permanent redirect and not a 404 on purpose. The page had inbound links
+  // and is indexed, and a permanent redirect is the signal that actually
+  // retires a URL: Google follows it, drops the old address and keeps whatever
+  // authority it had. (Next answers `permanent: true` with 308 rather than
+  // 301; search engines treat the two the same.)
+  //
+  // Note for whoever comes next: do NOT also add it to robots.txt. Blocking
+  // the crawl stops Google seeing this redirect, which leaves the old URL in
+  // the index longer, not shorter. The page's content is still in the database
+  // under pages/about-index.json -> accountability, so none of it is lost.
+  { source: "/about/accountability", destination: "/about" },
+
   // The FAQ kept the old numeric ids, so each question lands on itself
   // rather than on the index: /docs/694368/什么是三退/ -> /services/faq/d/694368
   { source: "/docs/:id(\\d+)/:rest*", destination: "/services/faq/d/:id" },
