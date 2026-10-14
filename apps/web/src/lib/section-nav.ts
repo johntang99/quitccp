@@ -1,5 +1,7 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { SITE_CHROME_TAG, SITE_CHROME_TTL_SECONDS } from "@/lib/site-chrome-cache";
 import { EXTERNAL_SERVICES } from "@/lib/external-services";
 
 /**
@@ -93,8 +95,13 @@ export function mergeSectionNav(
  * `cache` dedupes this across the several places on a page that ask -- the tab
  * row and the breadcrumb both do -- so a page costs one query, not six.
  */
-export const loadSectionNavOverrides = cache(async (): Promise<unknown> => {
-  try {
+/*
+ * Cached across requests as well. `error` is separated from "no row": a
+ * missing entry is a real answer worth caching, a failed query is not -- see
+ * site-chrome-cache.ts.
+ */
+const loadSectionNavOverridesUncached = unstable_cache(
+  async (): Promise<unknown> => {
     const supabase = createSupabaseAdminClient();
     const { data, error } = await supabase
       .from("cms_content_entries")
@@ -102,8 +109,17 @@ export const loadSectionNavOverrides = cache(async (): Promise<unknown> => {
       .eq("path", SECTION_NAV_PATH)
       .eq("locale", "zh")
       .maybeSingle();
-    if (error || !data) return null;
+    if (error) throw error;
+    if (!data) return null;
     return (data as { data?: unknown }).data ?? null;
+  },
+  ["section-nav-overrides"],
+  { tags: [SITE_CHROME_TAG], revalidate: SITE_CHROME_TTL_SECONDS }
+);
+
+export const loadSectionNavOverrides = cache(async (): Promise<unknown> => {
+  try {
+    return await loadSectionNavOverridesUncached();
   } catch {
     /* A missing table or a database hiccup leaves the shipped labels in
        place, which is the right answer: the menu is not worth a 500. */

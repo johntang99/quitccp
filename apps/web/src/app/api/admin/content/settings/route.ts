@@ -3,6 +3,8 @@ import { getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { can } from "@/lib/admin/permissions";
 import { listSettings, upsertSettingRecord } from "@/lib/admin/repository";
 import { readFormData } from "@/lib/admin/form-request";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { SITE_CHROME_TAG } from "@/lib/site-chrome-cache";
 
 export async function GET() {
   const user = await getAdminSessionUser();
@@ -27,5 +29,14 @@ export async function POST(request: Request) {
   if (!settingKey) return NextResponse.json({ error: "settingKey is required" }, { status: 400 });
 
   await upsertSettingRecord({ id, settingKey, valueJson }, user.email);
+
+  /*
+   * `site.theme` and `site.nav` are the chrome on every page, and they are now
+   * cached across requests, so a save has to drop the tag or the editor would
+   * keep seeing the old menu for an hour. The pages that already rendered it
+   * have it baked into their HTML, which is why the paths go too.
+   */
+  revalidateTag(SITE_CHROME_TAG);
+  revalidatePath("/", "layout");
   return NextResponse.redirect(new URL("/admin/settings", request.url), 303);
 }

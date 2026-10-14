@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { contentPathToRoutes } from "@/lib/content-paths";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { deleteContentFile, getContentFileByPath, upsertContentFile } from "@/lib/admin/content-repository";
+import { SITE_CHROME_TAG } from "@/lib/site-chrome-cache";
 
 function parseData(raw: unknown): Record<string, unknown> {
   if (typeof raw === "string") {
@@ -64,6 +65,12 @@ export async function PUT(request: Request) {
     // Drop the cached HTML for the page(s) this entry renders, so the edit is
     // live on the next request instead of waiting for the revalidate window.
     // Never let a cache miss fail the save itself.
+    /* The section tab labels live in a content entry (nav/section-tabs.json)
+       and are now cached across requests, so the tag goes regardless of which
+       entry was saved -- it is one cheap drop, and getting it wrong means an
+       editor renames a section and the menu keeps the old name for an hour. */
+    revalidateTag(SITE_CHROME_TAG);
+
     const revalidated: string[] = [];
     for (const route of contentPathToRoutes(path)) {
       try {

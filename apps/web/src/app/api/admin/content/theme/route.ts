@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { can } from "@/lib/admin/permissions";
 import { upsertSettingRecord } from "@/lib/admin/repository";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { THEME_SETTING_KEY, loadTheme, mergeTheme } from "@/lib/public-theme";
+import { SITE_CHROME_TAG } from "@/lib/site-chrome-cache";
 
 export async function GET() {
   const user = await getAdminSessionUser();
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
   // them. Without this the homepage's `revalidate = 300` means a saved theme
   // does not reach production for up to five minutes -- and only then if someone
   // happens to request the page.
+  revalidateTag(SITE_CHROME_TAG);
   revalidatePath("/", "layout");
   return NextResponse.json({ ok: true, theme });
 }
@@ -54,6 +56,7 @@ export async function DELETE() {
     .delete()
     .eq("setting_key", THEME_SETTING_KEY);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  revalidateTag(SITE_CHROME_TAG);
   revalidatePath("/", "layout");
   return NextResponse.json({ ok: true, theme: await loadTheme() });
 }

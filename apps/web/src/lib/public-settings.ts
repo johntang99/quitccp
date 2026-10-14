@@ -1,4 +1,6 @@
+import { unstable_cache } from "next/cache";
 import { getHomepageHero, mainNav } from "@/lib/site-data";
+import { SITE_CHROME_TAG, SITE_CHROME_TTL_SECONDS } from "@/lib/site-chrome-cache";
 import { SECTION_CONFIG, loadSectionNavOverrides, mergeSectionNav } from "@/lib/section-nav";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 
@@ -44,17 +46,29 @@ function parseHeroValue(value: unknown): Partial<HomepageHeroContent> {
   };
 }
 
-async function listPublicSettings(keys: string[]): Promise<Map<string, unknown>> {
-  try {
+/*
+ * Cached across requests, keyed by the set of keys asked for. Throws on a
+ * database error so nothing is stored -- see site-chrome-cache.ts. Caching the
+ * empty map would hide the editors' own menu labels for an hour.
+ */
+const listPublicSettingsUncached = unstable_cache(
+  async (keys: string[]): Promise<[string, unknown][]> => {
     const supabase = createSupabaseAdminClient();
     const { data, error } = await supabase
       .from("cms_site_settings")
       .select("setting_key, value_json")
       .in("setting_key", keys);
     if (error) throw error;
-    return new Map(
-      ((data ?? []) as SiteSettingRow[]).map((row) => [String(row.setting_key), row.value_json])
-    );
+    /* An array rather than a Map: the cache serialises what it stores. */
+    return ((data ?? []) as SiteSettingRow[]).map((row) => [String(row.setting_key), row.value_json]);
+  },
+  ["public-settings"],
+  { tags: [SITE_CHROME_TAG], revalidate: SITE_CHROME_TTL_SECONDS }
+);
+
+async function listPublicSettings(keys: string[]): Promise<Map<string, unknown>> {
+  try {
+    return new Map(await listPublicSettingsUncached(keys));
   } catch {
     return new Map();
   }

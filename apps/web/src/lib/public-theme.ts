@@ -1,5 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { type Theme, themeDefaults } from "@/lib/theme-css";
+import { unstable_cache } from "next/cache";
+import { SITE_CHROME_TAG, SITE_CHROME_TTL_SECONDS } from "@/lib/site-chrome-cache";
 
 export { themeToCss, FONT_ROLES, themeDefaults } from "@/lib/theme-css";
 export type { Theme } from "@/lib/theme-css";
@@ -32,8 +34,14 @@ export function mergeTheme(stored: unknown): Theme {
   return out as Theme;
 }
 
-export async function loadTheme(): Promise<Theme> {
-  try {
+/*
+ * Cached across requests, not just within one: the root layout reads this on
+ * every dynamic render. Throws on a database error so that nothing is stored
+ * -- see the note in site-chrome-cache.ts; caching the fallback would pin the
+ * default palette in place for an hour after a blip.
+ */
+const loadThemeUncached = unstable_cache(
+  async (): Promise<Theme> => {
     const supabase = createSupabaseAdminClient();
     const { data, error } = await supabase
       .from("cms_site_settings")
@@ -42,6 +50,14 @@ export async function loadTheme(): Promise<Theme> {
       .maybeSingle();
     if (error) throw error;
     return mergeTheme(data?.value_json);
+  },
+  ["site-theme"],
+  { tags: [SITE_CHROME_TAG], revalidate: SITE_CHROME_TTL_SECONDS }
+);
+
+export async function loadTheme(): Promise<Theme> {
+  try {
+    return await loadThemeUncached();
   } catch {
     // An unreachable DB must never take the site's styling down with it.
     return themeDefaults;
