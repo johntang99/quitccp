@@ -471,9 +471,12 @@ vercel metrics vercel.firewall_action.count --since 3h -a count \
 | 2026-10-14 | `d6044da` `/news/a/<id>` 同样加闸并改为可缓存（`ƒ` → `●`） |
 | 2026-10-14 | `8ece24c` 搜索正文扫描加 5 秒数据库侧上限；生产实测 7 条查询结果一致、耗时未退化 |
 | 2026-10-14 | 第 9 条防火墙规则：`/search` 每 IP 20 次/60 秒 → Challenge |
+| 2026-10-14 | 日志存档（Log Drain → R2）代码写完并本地验证；等 R2 权限开通，见 `workers/vercel-log-drain/README.md` |
 | 2026-10-13～14 | 本文档建立并多次更新 |
 
-待补充：Vercel credit 申请结果、R2 镜像上线结果、数据库升级决定、布局三次查询是否缓存。
+待补充：Vercel credit 申请结果、R2 镜像上线结果、日志存档上线结果、数据库升级决定、布局三次查询是否缓存。
+
+待定夺：drain 里要不要带读者 IP（`proxy.clientIp`）。Vercel 可在团队层面关掉（Settings → Security & Privacy → IP Address Visibility），但关掉就失去按 IP 追攻击源的能力，而现有防火墙规则正是按 IP 和 JA4 建的。
 
 ### 每次改完防火墙规则，照这个单子核一遍
 

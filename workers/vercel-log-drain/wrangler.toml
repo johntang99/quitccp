@@ -1,0 +1,16 @@
+name = "vercel-log-drain"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+# Where the logs land. The bucket must exist before the first deploy:
+#   npx wrangler r2 bucket create tuidang-logs
+[[r2_buckets]]
+binding = "LOG_BUCKET"
+bucket_name = "tuidang-logs"
+
+# The drain's signature secret is NOT here. It is set out of band, so it never
+# enters git:
+#   npx wrangler secret put DRAIN_SIGNATURE_SECRET
+
+[observability]
+enabled = true
