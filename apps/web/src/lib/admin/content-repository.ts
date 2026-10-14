@@ -376,6 +376,10 @@ export async function restoreContentRevision(revisionId: string, actorEmail: str
     "write",
     { revisionId }
   );
+
+  /* The caller has to clear the cache of whatever this entry renders, and only
+     the revision row knows which path that was. */
+  return { locale: String(data.locale), path: String(data.path) };
 }
 
 export async function exportContentEntries(locale: string, actorEmail: string) {

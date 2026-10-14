@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { deleteCategoryById } from "@/lib/admin/repository";
+import { revalidateNews } from "@/lib/admin/revalidate-news";
 
 export async function POST(request: Request) {
   const user = await getAdminSessionUser();
@@ -14,6 +15,9 @@ export async function POST(request: Request) {
 
   try {
     await deleteCategoryById(id, user.email);
+  /* So the editor sees their change now instead of up to five minutes
+     later -- and with stale-while-revalidate, possibly much later. */
+    revalidateNews();
     return NextResponse.redirect(new URL("/admin/categories", request.url), 303);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to delete category";

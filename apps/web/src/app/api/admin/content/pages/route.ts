@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { listPages, upsertPageRecord } from "@/lib/admin/repository";
+import { revalidatePage } from "@/lib/admin/revalidate-pages";
 
 export async function GET() {
   const user = await getAdminSessionUser();
@@ -27,6 +28,13 @@ export async function POST(request: Request) {
     | "archived";
   const blocksJson = String(formData.get("blocksJson") ?? "[]");
 
-  await upsertPageRecord({ id, section, slug, title, locale: "zh", status, blocksJson }, user.email);
+  const saved = await upsertPageRecord(
+    { id, section, slug, title, locale: "zh", status, blocksJson },
+    user.email
+  );
+  /* Clear it now rather than letting it expire: the route is `revalidate =
+     300`, and with stale-while-revalidate the editor checking their own work
+     would be shown the old copy and have no way to tell why. */
+  revalidatePage(saved.section, saved.slug);
   return NextResponse.redirect(new URL("/admin/content", request.url), 303);
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { moveFaq } from "@/lib/admin/faq-repository";
 import { guardFaqWrite } from "@/lib/admin/faq-guard";
+import { revalidateFaq } from "@/lib/admin/revalidate-pages";
 
 export async function POST(request: Request) {
   const { user, error } = await guardFaqWrite();
@@ -9,5 +10,8 @@ export async function POST(request: Request) {
   const id = String(form.get("id") ?? "").trim();
   const direction = String(form.get("direction") ?? "") === "up" ? "up" : "down";
   if (id) await moveFaq(id, direction, user!.email);
+  /* So the editor sees their change now instead of up to five minutes
+     later -- and with stale-while-revalidate, possibly much later. */
+  revalidateFaq();
   return NextResponse.redirect(new URL("/admin/faq", request.url), 303);
 }

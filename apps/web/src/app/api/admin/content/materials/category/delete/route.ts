@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { deleteMaterialCategory, listMaterialCategories } from "@/lib/admin/material-repository";
 import { guardMaterialWrite } from "@/lib/admin/material-guard";
+import { revalidateMaterials } from "@/lib/admin/revalidate-pages";
 
 /**
  * Delete a material category.
@@ -29,5 +30,8 @@ export async function POST(request: Request) {
   }
 
   await deleteMaterialCategory(id);
+  /* So the editor sees their change now instead of up to five minutes
+     later -- and with stale-while-revalidate, possibly much later. */
+  revalidateMaterials();
   return back(`已删除「${target.name}」。`, "msg");
 }

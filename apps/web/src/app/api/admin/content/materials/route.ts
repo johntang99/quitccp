@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { saveMaterial, type MaterialFile } from "@/lib/admin/material-repository";
+import { revalidateMaterials } from "@/lib/admin/revalidate-pages";
 
 /** Parses the form's `filesJson`, dropping rows an editor left blank. */
 function parseFiles(raw: string): MaterialFile[] {
@@ -66,6 +67,10 @@ export async function POST(request: Request) {
       .map((value) => value.trim())
       .filter(Boolean)
   }, user.email);
+
+  /* The material's own page, its category listing and the resources home
+     all show it; without this the editor sees the old copy for five minutes. */
+  revalidateMaterials([slug]);
 
   // Back to the same material, not to the list: an editor usually saves more
   // than once, and bouncing to the list loses their place.

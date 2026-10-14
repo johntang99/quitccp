@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { listCategories, upsertCategoryRecord } from "@/lib/admin/repository";
+import { revalidateNews } from "@/lib/admin/revalidate-news";
 
 export async function GET() {
   const user = await getAdminSessionUser();
@@ -44,5 +45,8 @@ export async function POST(request: Request) {
       303
     );
   }
+  /* So the editor sees their change now instead of up to five minutes
+     later -- and with stale-while-revalidate, possibly much later. */
+  revalidateNews();
   return NextResponse.redirect(new URL("/admin/categories", request.url), 303);
 }
