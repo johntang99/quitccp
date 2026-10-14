@@ -110,7 +110,7 @@ export async function POST(request: Request) {
       slug,
       status,
       savedAt: new Date().toISOString(),
-      warm: warmPathsForVideo(slug)
+      warm: warmPathsForVideo(slug, status)
     });
   }
 

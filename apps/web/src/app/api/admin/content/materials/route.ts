@@ -80,6 +80,7 @@ export async function POST(request: Request) {
      landing page does the fetching. */
   const back = new URL(`/admin/materials/${savedId}`, request.url);
   back.searchParams.set("msg", "saved");
-  back.searchParams.set("warm", warmPathsForMaterial(slug).join(","));
+  /* A fragment, so the paths cannot be rendered into this page's own links. */
+  back.hash = `warm=${encodeURIComponent(warmPathsForMaterial(slug).join(","))}`;
   return NextResponse.redirect(back, 303);
 }

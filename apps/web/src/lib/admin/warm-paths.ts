@@ -29,17 +29,25 @@
  * anonymous server loop that an attacker could learn to trigger.
  */
 
-/** A new or edited article shows up here. */
-export function warmPathsForArticle(slug: string): string[] {
+/**
+ * A new or edited article shows up here.
+ *
+ * The article's own address is only worth warming once it is published. A
+ * draft has no public page, so fetching it caches a 404 -- which a production
+ * test of a draft save duly produced. Publishing clears that entry again, so
+ * it was harmless, but it was also pointless work and an alarming thing for an
+ * editor to find in their browser's console.
+ */
+export function warmPathsForArticle(slug: string, status?: string): string[] {
   const paths = ["/", "/news"];
-  if (slug) paths.push(`/news/${encodeURIComponent(slug)}`);
+  if (slug && status === "published") paths.push(`/news/${encodeURIComponent(slug)}`);
   return paths;
 }
 
 /** Same for a video: the home page carries the latest, /videos lists them. */
-export function warmPathsForVideo(slug: string): string[] {
+export function warmPathsForVideo(slug: string, status?: string): string[] {
   const paths = ["/", "/videos"];
-  if (slug) paths.push(`/videos/${encodeURIComponent(slug)}`);
+  if (slug && status === "published") paths.push(`/videos/${encodeURIComponent(slug)}`);
   return paths;
 }
 

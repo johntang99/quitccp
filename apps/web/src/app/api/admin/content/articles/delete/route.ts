@@ -24,7 +24,10 @@ export async function POST(request: Request) {
 
   /* The article's own page is gone, so there is nothing to warm there -- but
      the listings it vanished from are about to be read. */
+  /* A fragment, not a query parameter: the list page renders its own filter
+     and pagination links from the parameters it receives, so `?warm=` came
+     back embedded in every one of them. A fragment never reaches the server. */
   const back = new URL("/admin/articles", request.url);
-  back.searchParams.set("warm", warmPathsForDeletedArticle().join(","));
+  back.hash = `warm=${encodeURIComponent(warmPathsForDeletedArticle().join(","))}`;
   return NextResponse.redirect(back, 303);
 }

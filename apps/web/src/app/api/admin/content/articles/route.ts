@@ -174,7 +174,7 @@ export async function POST(request: Request) {
       savedAt: new Date().toISOString(),
       /* The browser warms these; see lib/admin/warm-paths.ts for why it is
          the browser and not us. */
-      warm: warmPathsForArticle(savedSlug)
+      warm: warmPathsForArticle(savedSlug, status)
     });
   }
 
