@@ -660,7 +660,9 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
           </section>
 
           <section className="admin-card">
-            <h3 style={{ marginTop: 0 }}>封面图*</h3>
+            <h3 style={{ marginTop: 0 }}>
+              封面图<span className="req">*</span>
+            </h3>
             <input type="hidden" name="coverImage" value={value.coverImage} />
             {value.coverImage ? (
               <img
