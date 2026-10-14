@@ -1789,7 +1789,15 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
               <div className="people cols-3">
                 {boardPeople.map((row) => (
                   <div key={`${row.name}-${row.roleLine1}-${row.roleLine2}`} className="person">
-                    <img src={row.image} alt="" />
+                    {/* No portrait, no <img>. An empty src makes the browser
+                        re-request the page itself, and the grey square people
+                        see here is the image element's own background, so the
+                        placeholder has to keep the box rather than drop it. */}
+                    {row.image ? (
+                      <img src={row.image} alt="" />
+                    ) : (
+                      <span className="person-portrait-empty" aria-hidden="true" />
+                    )}
                     <b>{row.name}</b>
                     <span>
                       {row.roleLine1}
@@ -1814,7 +1822,15 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
               <div className="people cols-3">
                 {staffPeople.map((row) => (
                   <div key={`${row.name}-${row.roleLine1}-${row.roleLine2}`} className="person">
-                    <img src={row.image} alt="" />
+                    {/* No portrait, no <img>. An empty src makes the browser
+                        re-request the page itself, and the grey square people
+                        see here is the image element's own background, so the
+                        placeholder has to keep the box rather than drop it. */}
+                    {row.image ? (
+                      <img src={row.image} alt="" />
+                    ) : (
+                      <span className="person-portrait-empty" aria-hidden="true" />
+                    )}
                     <b>{row.name}</b>
                     <span>
                       {row.roleLine1}

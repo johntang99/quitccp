@@ -605,7 +605,7 @@ body > header{
 .stat4 b{display:block;font-family:var(--mono);font-size:27px;color:var(--seal);letter-spacing:-.01em}
 .stat4 span{font-size:13.5px;color:var(--muted)}
 .people{display:grid;grid-template-columns:repeat(4,1fr);gap:26px}
-.person img{width:100%;aspect-ratio:1;object-fit:cover;background:var(--rule);border-radius:2px}
+.person img,.person .person-portrait-empty{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:var(--rule);border-radius:2px}
 .person b{display:block;font-family:var(--serif);font-size:17px;margin:14px 0 4px;font-weight:600}
 .person span{font-size:13px;color:var(--muted);line-height:var(--lh-body)}
 .tl{border-left:2px solid var(--rule);padding-left:28px;margin-left:6px}
