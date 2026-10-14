@@ -202,6 +202,41 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
     }, 400);
     return () => window.clearTimeout(timer);
   }, [value.slug, value.id]);
+  /*
+   * Fetches the cover the platform already holds for this film. See
+   * lib/admin/video-cover-source.ts for why this is worth doing at all, and why
+   * the picture is copied into our own storage rather than hot-linked.
+   */
+  const [coverBusy, setCoverBusy] = useState(false);
+  const [coverNote, setCoverNote] = useState("");
+  const fetchCover = async () => {
+    const sourceUrl = value.sourceUrl.trim() || value.backupUrl.trim();
+    if (!sourceUrl) {
+      setCoverNote("先填视频地址，才能去取它的封面。");
+      return;
+    }
+    setCoverBusy(true);
+    setCoverNote("");
+    try {
+      const response = await fetch("/api/admin/content/videos/cover-from-source", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sourceUrl })
+      });
+      const payload = (await response.json()) as { ok?: boolean; url?: string; reason?: string; error?: string };
+      if (payload.ok && payload.url) {
+        set("coverImage", payload.url);
+        setCoverNote("已取到封面。");
+        return;
+      }
+      setCoverNote(payload.reason || payload.error || "没取到封面，请手动选择一张。");
+    } catch {
+      setCoverNote("取封面失败，请手动选择一张。");
+    } finally {
+      setCoverBusy(false);
+    }
+  };
+
   const [error, setError] = useState("");
 
   const set = <K extends keyof VideoFormValues>(key: K, next: VideoFormValues[K]) =>
@@ -226,7 +261,21 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
           ? "请选择分类。"
           : value.coverImageAlt.trim() && !value.coverImage.trim()
             ? "填了图片说明却没有封面图。"
-            : "";
+            : /*
+               * A film with no cover is skipped by the homepage band entirely --
+               * that query only lists films that have one -- and shows as a flat
+               * grey rectangle in every card grid. Nothing in the admin said so,
+               * so editors published films that silently never reached the home
+               * page.
+               *
+               * Only on publish, and only when there is a film to take a cover
+               * from: the 174 text-only episodes carried over from the old site
+               * have no player and no thumbnail to fetch, and refusing to
+               * publish those would be refusing to publish something correct.
+               */
+              status === "published" && value.sourceUrl.trim() && !value.coverImage.trim()
+              ? "请先设置封面图——没有封面的视频不会出现在首页。可以点「自动获取封面」。"
+              : "";
     if (complaint) {
       setError(complaint);
       return false;
@@ -611,7 +660,7 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
           </section>
 
           <section className="admin-card">
-            <h3 style={{ marginTop: 0 }}>封面图</h3>
+            <h3 style={{ marginTop: 0 }}>封面图*</h3>
             <input type="hidden" name="coverImage" value={value.coverImage} />
             {value.coverImage ? (
               <img
@@ -639,12 +688,19 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
               <button className="admin-btn admin-btn-sm" type="button" onClick={() => setPicker("cover")}>
                 选择或上传
               </button>
+              <button className="admin-btn admin-btn-sm" type="button" onClick={fetchCover} disabled={coverBusy}>
+                {coverBusy ? "获取中…" : "自动获取封面"}
+              </button>
               {value.coverImage ? (
                 <button className="admin-btn admin-btn-sm" type="button" onClick={() => set("coverImage", "")}>
                   移除
                 </button>
               ) : null}
             </div>
+            <p className="hint" style={{ marginTop: 6 }}>
+              {coverNote ||
+                "没有封面的视频不会出现在首页。「自动获取封面」会去 YouTube／干净世界／Vimeo 取这支片子自己的封面，存到本站。"}
+            </p>
             <div className="field" style={{ marginTop: 8 }}>
               <label htmlFor="coverImageAlt">图片说明</label>
               <input
