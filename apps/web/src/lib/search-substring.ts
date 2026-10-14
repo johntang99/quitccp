@@ -352,6 +352,50 @@ async function searchOneType(
       )
       .join(",");
 
+  /*
+   * The article body scan, through a database function that carries its own
+   * `statement_timeout = 5s` (migration 026).
+   *
+   * Only this one tier of this one table goes through a function, because only
+   * it is expensive: 2.4s against 36MB of prose, where cms_videos is 1.5MB
+   * (217ms) and cms_materials 1KB (95ms). The cheap tiers stay on PostgREST
+   * exactly as they were.
+   *
+   * One array parameter per term, because the planner has to be able to see
+   * the trigram index through it. An earlier version passed the whole thing as
+   * jsonb and matched with a subquery -- same results, but 19ms became 1935ms
+   * for 「铁证如山」, since that structure hides the index. The migration has
+   * the measurements.
+   *
+   * Four slots, so more than four distinct terms returns null and the caller
+   * uses the ordinary filter: that one query loses the timeout rather than
+   * every query losing the index.
+   *
+   * The needles are handed over unchanged -- still `escapeForOr`-ed -- so the
+   * results are identical to the filter this replaces. That escaping is lossy
+   * (it turns `,()` into spaces, so a search for 「（图文）」 cannot match) and
+   * a function argument would not need it, but fixing that changes what search
+   * finds, and this change is only about how long it may run.
+   */
+  const MAX_FUNCTION_TERMS = 4;
+  const runViaFunction = async (needleGroups: string[][]) => {
+    if (needleGroups.length === 0 || needleGroups.length > MAX_FUNCTION_TERMS) return null;
+    const slots: (string[] | null)[] = [null, null, null, null];
+    needleGroups.forEach((group, index) => {
+      slots[index] = group;
+    });
+    const { data, error } = await supabase.rpc("search_articles_body", {
+      p_t1: slots[0],
+      p_t2: slots[1],
+      p_t3: slots[2],
+      p_t4: slots[3],
+      p_locale: locale,
+      p_limit: limit
+    });
+    if (error) throw error;
+    return (data ?? []) as unknown as Record<string, unknown>[];
+  };
+
   const run = async (fields: string[], needleGroups: string[][]) => {
     let query = base();
     if (fields.length === 1) {
@@ -396,7 +440,10 @@ async function searchOneType(
 
     let rows: Record<string, unknown>[];
     try {
-      rows = await run(tier, needlesFor(true));
+      const needles = needlesFor(true);
+      rows =
+        (isBodyTier && config.type === "article" ? await runViaFunction(needles) : null) ??
+        (await run(tier, needles));
     } catch (error) {
       /*
        * Nothing here imposes a deadline -- the search waits as long as the
