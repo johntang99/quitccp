@@ -188,7 +188,18 @@ export const SECTION_CONFIG: Record<string, SectionNav> = {
       { slug: "index", label: "机构简介" },
       { slug: "numbers", label: "数字与统计方法" },
       { slug: "network", label: "全球网络" },
-      { slug: "accountability", label: "公开与问责" },
+      /* 公开与问责 (/about/accountability) was here until 2026-10-14. Removed
+         from the tab strip and the footer at the board's request: the page is a
+         directory of the places a hostile party would go to file something
+         false about the centre -- the IRS exempt-organization search,
+         ProPublica, Charity Navigator -- and they would rather not advertise
+         them while the site is under attack.
+
+         The page is still published and still answers at its address, and nine
+         content pages still link to it where the link means something in
+         context. Note that removing it from `order` in nav/section-tabs.json
+         would NOT have hidden it: mergeSectionNav keeps any tab the order
+         forgot, on purpose. The list here is the one that decides. */
       { slug: "team", label: "理事会与团队" },
       { slug: "history", label: "退党大事记" },
       { slug: "contact", label: "联系我们", href: "/services/contact" }

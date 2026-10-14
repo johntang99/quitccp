@@ -21,9 +21,24 @@ const SOCIAL_ICON: Record<string, string> = {
  *
  * Everything else here keeps its own wording on purpose, and auto-filling it
  * would be a different change nobody asked for: /about reads 使命与原则 rather
- * than the section's 关于我们, /about/accountability appears twice under two
- * headings, and 三退故事 / 安全访问 / 办理退党证明 each say something the tab
- * they point at does not.
+ * than the section's 关于我们, and 三退故事 / 安全访问 / 办理退党证明 each say
+ * something the tab they point at does not.
+ *
+ * ## Why 公开与问责 is not here
+ *
+ * It used to appear twice in this column, once as 公开与问责 and again as
+ * 年度报告, both pointing at /about/accountability. Removed 2026-10-14 at the
+ * board's request, together with the tab in nav/section-tabs.json.
+ *
+ * The reason is not that the page is wrong. It is that it is a directory of
+ * the places a hostile party would go to file something false about us -- the
+ * IRS exempt-organization search, ProPublica, Charity Navigator -- and the
+ * centre would rather not advertise them while it is under attack.
+ *
+ * The page itself is still published and still reachable at its address, and
+ * nine pages still link to it where the link means something in context. Form
+ * 990 remains a public record either way; this removes a standing signpost,
+ * not the disclosure.
  */
 export async function SiteFooter() {
   const sections = await loadSections();
@@ -110,12 +125,6 @@ export async function SiteFooter() {
               </li>
               <li>
                 <Link href="/about/team">理事会与团队</Link>
-              </li>
-              <li>
-                <Link href="/about/accountability">公开与问责</Link>
-              </li>
-              <li>
-                <Link href="/about/accountability">年度报告</Link>
               </li>
               <li>
                 <Link href="/services/contact">联系我们</Link>
