@@ -86,18 +86,18 @@ export async function POST(request: Request) {
   /*
    * Mirrored here, inline, rather than handed to `after()`.
    *
-   * It used to be `after(() => mirrorUploadInBackground(objectPath, …))`, on
-   * the principle that an editor should never wait for the mirror. The
-   * principle is right and the application of it was wrong: `after()` runs
-   * inside the same 30s budget, and fetching a 干净世界 cover spends most of
-   * that on the watch page and the image, so the background copy was routinely
-   * killed before it finished. Measured 2026-10-15, after the defence check
-   * raised it: 21 of the last 39 covers never reached R2, while ordinary
-   * uploads sat at 100%.
+   * It used to be `after(() => mirrorUploadInBackground(objectPath, …))`,
+   * which downloaded the bytes back out of Supabase to put them in R2. The
+   * bytes are already in memory here, so that was a round trip for nothing:
+   * this is one PUT of about 60 KB on a request that has already spent seconds
+   * fetching the picture, and nobody can feel it.
    *
-   * The bytes are already in memory, so this is one PUT of about 60 KB on a
-   * request that has already spent seconds fetching the picture. Nobody can
-   * feel it, and it cannot be cut short.
+   * Note for anyone reading the history: this change was first committed with
+   * the explanation that `after()` was being killed by the route's 30s budget.
+   * That was wrong. The log archive showed `after()` completing and R2
+   * rejecting the PUT with `411 Length Required` -- fixed in
+   * media-mirror-upload.ts, not here. Moving the write inline is still right,
+   * just for a duller reason.
    *
    * A failure here does not fail the request: the cover is in Supabase and the
    * page will render it. The mirror is the optimisation, and the defence check

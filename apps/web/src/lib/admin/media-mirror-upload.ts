@@ -89,17 +89,16 @@ export async function copyToMediaMirror(
  * `after()`, which downloaded those same bytes back out of Supabase to put
  * them in R2.
  *
- * That round trip was free of charge right up until it wasn't. Measured
- * 2026-10-15, after the defence check raised it: 21 of the last 39 covers --
- * 54% -- never reached R2, while ordinary uploads were at 100%. The route
- * allows 30s, and fetching a 干净世界 cover spends most of it on the watch
- * page (25s ceiling) and the image (20s ceiling); whatever `after()` had left
- * was often not enough to download and re-upload 60 KB, and the work was
- * killed with the function. Nothing failed loudly: the editor saw a cover, the
- * reader saw a cover, and the mirror simply did not have it.
+ * The round trip was pointless rather than harmful, and removing it is worth
+ * doing on its own: one PUT instead of a download and an upload, on bytes that
+ * never left memory.
  *
- * With the bytes already in memory the write is one PUT, so the caller does it
- * inline and the whole failure mode goes away.
+ * It is NOT what broke the covers. The first reading of that incident was that
+ * `after()` ran out of the route's 30s budget; the log archive said otherwise
+ * -- `after()` completed, logging 2-3 seconds after each request, and R2
+ * rejected the PUT itself with `411 Length Required`. The fix for that is in
+ * the headers below. This note stays because the wrong explanation was
+ * committed first and somebody reading the history deserves the correction.
  */
 export async function putToMediaMirror(
   objectPath: string,
@@ -116,21 +115,49 @@ export async function putToMediaMirror(
     return { status: "skipped", reason: `${(body.length / 1024 / 1024).toFixed(0)}MB 超过内联复制上限，留给同步脚本` };
   }
 
-  const response = await config.aws.fetch(`${config.endpoint}/${config.bucket}/${objectPath}`, {
-    method: "PUT",
-    body,
-    headers: {
-      "content-type": contentType || "application/octet-stream",
-      /* The same header `scripts/push-media-mirror.mjs` writes. Object keys
-         carry an upload timestamp and are never rewritten, so the mirror can
-         be cached for a year and Cloudflare can answer without asking R2. */
-      "cache-control": "public, max-age=31536000, immutable"
-    }
-  });
-  if (!response.ok) {
-    return { status: "skipped", reason: `写入 R2 失败：HTTP ${response.status}` };
+  const headers = {
+    "content-type": contentType || "application/octet-stream",
+    /*
+     * Set explicitly because R2 refuses a PUT without it, and the runtime does
+     * not always supply it.
+     *
+     * Read from the archive 2026-10-15: `HTTP 411 Length Required`, on 21 of
+     * the last 39 covers, while others in the same minutes went through. R2
+     * will not accept a chunked upload; when the runtime frames the body as a
+     * stream instead of a known-length buffer it sends
+     * `Transfer-Encoding: chunked` and R2 answers 411. The same code run from
+     * a laptop never does this -- 22 backfilled files, zero failures -- so it
+     * is the server runtime's framing, not the bytes.
+     *
+     * We know the length exactly, so there is no reason to let anything infer
+     * it.
+     */
+    "content-length": String(body.length),
+    /* The same header `scripts/push-media-mirror.mjs` writes. Object keys
+       carry an upload timestamp and are never rewritten, so the mirror can
+       be cached for a year and Cloudflare can answer without asking R2. */
+    "cache-control": "public, max-age=31536000, immutable"
+  };
+
+  /*
+   * Tried twice. The failure above was intermittent -- a copy succeeded at
+   * 19:16 and the next five did not -- and whatever makes the framing vary
+   * between calls is not ours to control. One retry costs a few hundred
+   * milliseconds on a path that already has the bytes in hand, and turns an
+   * intermittent fault into a rare one. A second failure is reported, and the
+   * dashboard check is what notices if it becomes the rule again.
+   */
+  let last = 0;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const response = await config.aws.fetch(`${config.endpoint}/${config.bucket}/${objectPath}`, {
+      method: "PUT",
+      body,
+      headers
+    });
+    if (response.ok) return { status: "copied", bytes: body.length };
+    last = response.status;
   }
-  return { status: "copied", bytes: body.length };
+  return { status: "skipped", reason: `写入 R2 失败：HTTP ${last}（已重试一次）` };
 }
 
 /**
