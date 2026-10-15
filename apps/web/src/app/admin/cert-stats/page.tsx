@@ -1,6 +1,5 @@
 import { AdminShell } from "@/components/admin/AdminShell";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
-import { can } from "@/lib/admin/permissions";
 
 /**
  * 退党证书月度统计 — a link out, not an embed, and that is the whole point of
@@ -55,18 +54,11 @@ import { can } from "@/lib/admin/permissions";
 export const dynamic = "force-dynamic";
 
 export default async function AdminCertStatsPage() {
+  /* Signing in is the only gate. The owner's decision, 2026-10-15: monthly
+     certificate counts are the organisation's own headline number, not
+     privileged information, so every role that can reach the admin sees them.
+     See the note beside this entry in permission-matrix.ts. */
   const user = await requireAdminSessionUser();
-  if (!can(user, "declarations.read")) {
-    return (
-      <AdminShell user={user}>
-        <section className="admin-card">
-          <h2 style={{ marginTop: 0 }}>退党证书统计</h2>
-          <p className="dash-note">这个页面需要三退声明的查看权限。</p>
-        </section>
-      </AdminShell>
-    );
-  }
-
   const url = process.env.CERT_STATS_URL?.trim() ?? "";
 
   return (
