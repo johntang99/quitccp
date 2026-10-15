@@ -199,6 +199,57 @@ export default async function AdminDashboardPage() {
         </section>
       ) : null}
 
+      {showDefense ? (
+        <section className="admin-card">
+          <h3 style={{ marginTop: 0 }}>防火墙里的两条例外</h3>
+          <p className="dash-note">
+            这里记的是两条<b>绕过全部防火墙规则</b>的放行规则。它们在 <b>Vercel</b> 的防火墙里，
+            不在 Cloudflare —— <code>tuidang.org</code> 在 Cloudflare 上只做 DNS，网站托管在 Vercel。
+            （只有 <code>service</code>、<code>santui</code> 那几个子域是 Cloudflare 代理的。）
+            找错地方会白费很多时间，这是 2026-10-15 真发生过的事。
+          </p>
+          <table className="admin-table" style={{ maxWidth: 720 }}>
+            <thead>
+              <tr><th style={{ width: 190 }}>规则</th><th>认什么</th><th>给谁用</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Allow 免翻 reverse proxy</td>
+                <td><code>td-auth</code> 请求头</td>
+                <td>Tom 维护的免翻墙反代。墙内读者靠它访问本站</td>
+              </tr>
+              <tr>
+                <td>Bypass for selfcheck probe</td>
+                <td><code>x-quitccp-probe</code> 请求头</td>
+                <td>上面「站点防护」里那三项需要真实渲染页面的检查</td>
+              </tr>
+            </tbody>
+          </table>
+          <p className="dash-note">
+            <b>Vercel 的 Bypass 会终止后续全部规则</b> —— 不只是跳过机器人挑战，而是连按 ASN 的封禁、
+            按 IP 的 300 次/分限速一起跳过。所以带着对的请求头，等于对全站免检。
+            反代那条绕不开：一台代理替很多人取页面，一分钟 300 次一下就超，不给它免检墙内就打不开。
+          </p>
+          <p className="dash-alert">
+            <b>免翻墙打不开了，先看这里。</b>命令行 <code>npx vercel firewall rules list</code>
+            　看那条 <code>Allow 免翻 reverse proxy</code> 还在不在、是不是还排在
+            「Rate limit per IP」上面。排到下面去就会被 300 次/分那条挡住，表现和被删掉一样。
+            <br />
+            <b>待办：</b><code>td-auth</code> 的值目前是一个 4 字符的短字符串，而且在邮件里传过。
+            方便时请 Tom 换成一串长随机字符串（nginx 那边改一行 <code>proxy_set_header</code>），
+            并把反代的出口 IP 给我们 —— 规则收紧成「这个头 <b>加</b> 这些 IP」之后，光知道头就没用了。
+            在那之前，上面还有一条 <code>Rate limit td-auth proxy</code>（3000 次/60 秒/IP）兜底，
+            万一值泄露也不至于变成洪水。
+          </p>
+          <p className="dash-note" style={{ marginBottom: 0 }}>
+            为什么这里是一段说明而不是一项自动检查：探针没法可靠地验证它。
+            Node 的 fetch 会复用连接，而「站点防护」的其他探针正带着放行头在同一个连接池上跑，
+            所以一个不带头的请求也会骑在已经放行过的连接上，永远返回正常 —— 测不出规则是不是被删了。
+            同样的原因，原来那项「防火墙挑战」探针也已经撤掉了。
+          </p>
+        </section>
+      ) : null}
+
       <section className="admin-card">
         <div className="dash-head">
           <h3 style={{ margin: 0 }}>登记册同步（santui.tuidang.org）</h3>

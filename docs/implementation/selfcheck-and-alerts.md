@@ -254,3 +254,48 @@ Vercel ──drain──▶ Worker ──▶ R2 原始 NDJSON（14 天）
 ——攻击取证用后者，那些数据只活在 Vercel 自己的保留期里。理由写在
 `workers/vercel-log-drain/README.md`，**不要因为看见 drain 里缺 IP 就把它
 打开**。
+
+
+---
+
+## 防火墙里的两条放行规则
+
+两条都在 **Vercel** 的防火墙里，不在 Cloudflare。`tuidang.org` 在 Cloudflare 上
+**只做 DNS**，网站托管在 Vercel；只有 `service`、`santui` 那几个子域是 Cloudflare
+代理的。2026-10-15 真的有人照着「请在 Cloudflare 中放行」去找，找不到 —— 判断是
+哪一层的办法是看响应头：
+
+```
+www.tuidang.org      server: Vercel      没有 cf-ray
+service.tuidang.org  server: cloudflare  有 cf-ray
+```
+
+| 规则 | 认什么 | 给谁用 |
+| --- | --- | --- |
+| `Rate limit td-auth proxy` | `td-auth` 请求头，3000 次/60 秒/IP | 安全网，见下 |
+| `Allow 免翻 reverse proxy` | `td-auth: tcxs` → Bypass | Tom 维护的免翻墙反代 |
+| `Bypass for selfcheck probe` | `x-quitccp-probe` → Bypass | 本文前面那三项探针 |
+
+**Vercel 的 Bypass 会终止后续全部规则** —— 不只是跳过托管的机器人挑战，而是连
+按 ASN 的封禁、按 IP 的 300 次/分限速一起跳过。带着对的请求头等于对全站免检。
+
+反代那条绕不开：一台代理替很多人取页面，第 3 条「Rate limit per IP」的 300 次/分
+一下就超，被挑战之后墙内读者就打不开了。所以它必须排在那条限速**上面**；排到
+下面去表现和被删掉一样，而且不会有任何报错。
+
+### 待办：把 `td-auth` 收紧
+
+`tcxs` 只有 4 个字符，而且在邮件里传过。请 Tom 换成一串长随机字符串（nginx 那边
+改一行 `proxy_set_header`），并提供反代的出口 IP —— 规则收紧成「这个头 **加** 这些
+IP」之后，光知道头就没用了。在那之前，上面那条 3000 次/60 秒/IP 的限速兜底，万一
+泄露也不至于变成洪水。
+
+### 为什么这三条没有对应的自动检查
+
+探针验不了它们。Node 的 fetch 复用连接，而别的探针正带着放行头在同一个连接池上
+跑，所以一个不带头的请求会骑在已经放行过的连接上，永远返回正常 —— 测不出规则是
+不是被删了。同一个原因让「防火墙还在挑战吗」那项探针被撤掉（见前文）。
+
+所以这件事在后台是**一段写死的说明**，不是一项检查：`/admin/dashboard` →
+「防火墙里的两条例外」。免翻墙打不开时，第一件事是
+`npx vercel firewall rules list` 看那条规则还在不在、顺序对不对。
