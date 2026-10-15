@@ -272,8 +272,9 @@ service.tuidang.org  server: cloudflare  有 cf-ray
 
 | 规则 | 认什么 | 给谁用 |
 | --- | --- | --- |
-| `Rate limit td-auth proxy` | `td-auth` 请求头，3000 次/60 秒/IP | 安全网，见下 |
-| `Allow 免翻 reverse proxy` | `td-auth: tcxs` → Bypass | Tom 维护的免翻墙反代 |
+| `Rate limit td-auth proxy` | 反代出口 IP，3000 次/60 秒 | 安全网，见下 |
+| `Allow 免翻 reverse proxy v2` | 出口 IP **并且** `td-auth` 请求头 → Bypass | Tom 维护的免翻墙反代 |
+| `Allow 免翻 reverse proxy`（旧） | 只认 `td-auth` 请求头 → Bypass | **待删**，见下 |
 | `Bypass for selfcheck probe` | `x-quitccp-probe` → Bypass | 本文前面那三项探针 |
 
 **Vercel 的 Bypass 会终止后续全部规则** —— 不只是跳过托管的机器人挑战，而是连
@@ -283,12 +284,30 @@ service.tuidang.org  server: cloudflare  有 cf-ray
 一下就超，被挑战之后墙内读者就打不开了。所以它必须排在那条限速**上面**；排到
 下面去表现和被删掉一样，而且不会有任何报错。
 
-### 待办：把 `td-auth` 收紧
+### 已收紧（2026-10-15 晚）
 
-`tcxs` 只有 4 个字符，而且在邮件里传过。请 Tom 换成一串长随机字符串（nginx 那边
-改一行 `proxy_set_header`），并提供反代的出口 IP —— 规则收紧成「这个头 **加** 这些
-IP」之后，光知道头就没用了。在那之前，上面那条 3000 次/60 秒/IP 的限速兜底，万一
-泄露也不至于变成洪水。
+原来的密钥是 4 个字符、在邮件里传过，而带着它的请求对全站免检。Tom 换成了
+32 位随机值并提供了出口 IP，所以 v2 规则的两个条件是 **AND**：光知道请求头、
+不是从那个 IP 来的，照样被挡。实测过 —— 拿正确的新密钥从别处请求，返回 429。
+
+**切换期间两条规则并存，这是故意的。** 先换规则则 Tom 的 nginx 还没改、免翻立刻
+断；先换 nginx 则规则还没改、一样断。所以新规则加在旧规则上面，谁匹配上都放行，
+中间始终有通路。
+
+**待办：Tom 确认新密钥生效后，删掉 `Allow 免翻 reverse proxy`（旧）那一条。**
+留着它等于那把 4 字符的旧密钥仍然有效。
+
+```bash
+npx vercel firewall rules remove "Allow 免翻 reverse proxy"
+npx vercel firewall publish
+```
+
+### 新增的一种失效方式
+
+IP 绑定换来了安全，也换来一个新的脆弱点：**反代换服务器、出口 IP 变了，规则就
+不再匹配**。表现是墙内打不开，而本站这边一切正常、没有任何报错 —— 对我们来说
+那只是又一个被挑战的请求。遇到这种情况先问 Tom 现在的出口 IP，再
+`rules edit` 改掉。
 
 ### 为什么这三条没有对应的自动检查
 

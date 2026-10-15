@@ -237,22 +237,27 @@ export default async function AdminDashboardPage() {
 
       {showDefense ? (
         <section className="admin-card">
-          <h3 style={{ marginTop: 0 }}>防火墙里的两条例外</h3>
+          <h3 style={{ marginTop: 0 }}>防火墙里的放行规则</h3>
           <p className="dash-note">
-            这里记的是两条<b>绕过全部防火墙规则</b>的放行规则。它们在 <b>Vercel</b> 的防火墙里，
+            这里记的是几条<b>绕过全部防火墙规则</b>的放行规则。它们在 <b>Vercel</b> 的防火墙里，
             不在 Cloudflare —— <code>tuidang.org</code> 在 Cloudflare 上只做 DNS，网站托管在 Vercel。
             （只有 <code>service</code>、<code>santui</code> 那几个子域是 Cloudflare 代理的。）
             找错地方会白费很多时间，这是 2026-10-15 真发生过的事。
           </p>
-          <table className="admin-table" style={{ maxWidth: 720 }}>
+          <table className="admin-table" style={{ maxWidth: 760 }}>
             <thead>
-              <tr><th style={{ width: 190 }}>规则</th><th>认什么</th><th>给谁用</th></tr>
+              <tr><th style={{ width: 210 }}>规则</th><th style={{ width: 230 }}>认什么</th><th>给谁用</th></tr>
             </thead>
             <tbody>
               <tr>
-                <td>Allow 免翻 reverse proxy</td>
-                <td><code>td-auth</code> 请求头</td>
+                <td>Allow 免翻 reverse proxy v2</td>
+                <td>出口 IP <b>并且</b> <code>td-auth</code> 请求头</td>
                 <td>Tom 维护的免翻墙反代。墙内读者靠它访问本站</td>
+              </tr>
+              <tr>
+                <td style={{ color: "#B54708" }}>Allow 免翻 reverse proxy（旧）</td>
+                <td>只认 <code>td-auth</code> 请求头</td>
+                <td><b>待删。</b>只为换密钥期间不断线而保留，Tom 确认新密钥生效后就撤掉</td>
               </tr>
               <tr>
                 <td>Bypass for selfcheck probe</td>
@@ -263,19 +268,21 @@ export default async function AdminDashboardPage() {
           </table>
           <p className="dash-note">
             <b>Vercel 的 Bypass 会终止后续全部规则</b> —— 不只是跳过机器人挑战，而是连按 ASN 的封禁、
-            按 IP 的 300 次/分限速一起跳过。所以带着对的请求头，等于对全站免检。
+            按 IP 的 300 次/分限速一起跳过。所以命中放行规则的请求，等于对全站免检。
             反代那条绕不开：一台代理替很多人取页面，一分钟 300 次一下就超，不给它免检墙内就打不开。
+          </p>
+          <p className="dash-note">
+            v2 比旧的那条严得多：<b>两个条件是「并且」</b>，光知道请求头、不是从那个 IP 来的照样被挡。
+            实测过 —— 拿着正确的新密钥从别处请求，返回 429。
           </p>
           <p className="dash-alert">
             <b>免翻墙打不开了，先看这里。</b>命令行 <code>npx vercel firewall rules list</code>
-            　看那条 <code>Allow 免翻 reverse proxy</code> 还在不在、是不是还排在
+            　看那条 <code>Allow 免翻 reverse proxy v2</code> 还在不在、是不是还排在
             「Rate limit per IP」上面。排到下面去就会被 300 次/分那条挡住，表现和被删掉一样。
             <br />
-            <b>待办：</b><code>td-auth</code> 的值目前是一个 4 字符的短字符串，而且在邮件里传过。
-            方便时请 Tom 换成一串长随机字符串（nginx 那边改一行 <code>proxy_set_header</code>），
-            并把反代的出口 IP 给我们 —— 规则收紧成「这个头 <b>加</b> 这些 IP」之后，光知道头就没用了。
-            在那之前，上面还有一条 <code>Rate limit td-auth proxy</code>（3000 次/60 秒/IP）兜底，
-            万一值泄露也不至于变成洪水。
+            <b>还有一个新的失效方式：反代换了服务器、出口 IP 变了，这条规则就不再匹配。</b>
+            表现是墙内打不开，而本站这边一切正常、没有任何报错 —— 对我们来说那只是又一个被挑战的请求。
+            遇到这种情况先问 Tom 现在的出口 IP，再用 <code>rules edit</code> 改掉。
           </p>
           <p className="dash-note" style={{ marginBottom: 0 }}>
             为什么这里是一段说明而不是一项自动检查：探针没法可靠地验证它。
