@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { mirrorRewrite, rewriteMediaUrl } from "@/lib/media-mirror";
+import { AwsClient } from "aws4fetch";
 
 /**
  * Whether the hardening put in during the attack of 2026-10-13 is still in
@@ -298,6 +299,124 @@ async function checkSearchBound(): Promise<DefenseCheck> {
 }
 
 /* ------------------------------------------------------------------ *
+ * 4. The log archive is still receiving
+ * ------------------------------------------------------------------ */
+
+/**
+ * Whether Vercel's log drain is still filing batches into R2.
+ *
+ * Vercel keeps runtime logs for a day. The archive exists because after
+ * 2026-10-13 the question we kept wanting to ask was "what was arriving at
+ * 03:40" and by the time anyone asked, the answer had expired. An archive that
+ * quietly stopped receiving is worse than no archive: it looks like one right
+ * up until the day somebody needs it.
+ *
+ * Nothing else would notice. The drain lives in Vercel's settings, the Worker
+ * in Cloudflare's, and a broken one between them makes no noise anywhere --
+ * the site serves pages exactly as before.
+ *
+ * Three hour-prefixes rather than a full listing, because the keys sort
+ * lexicographically and finding the newest by paging to the end of `logs/`
+ * gets more expensive every day the archive grows. The question is only ever
+ * "did anything arrive recently", and that is a bounded lookup.
+ */
+async function checkLogArchive(): Promise<DefenseCheck> {
+  const key = "log_archive";
+  const label = "日志存档";
+
+  const accountId = process.env.R2_ACCOUNT_ID?.trim();
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID?.trim();
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY?.trim();
+  const bucket = process.env.R2_LOG_BUCKET?.trim();
+  if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
+    return { key, label, state: "unknown", value: "未配置" };
+  }
+
+  const endpoint = process.env.R2_ENDPOINT?.trim() || `https://${accountId}.r2.cloudflarestorage.com`;
+  const aws = new AwsClient({ accessKeyId, secretAccessKey, service: "s3", region: "auto" });
+
+  const listPrefix = async (prefix: string, max: number) => {
+    const url = `${endpoint}/${bucket}?list-type=2&max-keys=${max}&prefix=${encodeURIComponent(prefix)}`;
+    const response = await aws.fetch(url, { signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) });
+    if (!response.ok) throw new Error(`R2 list ${response.status}`);
+    const xml = await response.text();
+    /* Parsed out of the <Contents> blocks rather than by scanning for <Key>
+       anywhere: a stray match outside a block once made an empty listing look
+       like a populated one. */
+    const blocks = [...xml.matchAll(/<Contents>([\s\S]*?)<\/Contents>/g)].map((m) => m[1]);
+    return blocks.map((b) => ({
+      size: Number(b.match(/<Size>(\d+)<\/Size>/)?.[1] ?? 0),
+      modified: b.match(/<LastModified>([^<]+)<\/LastModified>/)?.[1] ?? ""
+    }));
+  };
+
+  const p = (n: number) => String(n).padStart(2, "0");
+  const hourPrefix = (d: Date) =>
+    `logs/${d.getUTCFullYear()}/${p(d.getUTCMonth() + 1)}/${p(d.getUTCDate())}/${p(d.getUTCHours())}/`;
+
+  try {
+    const now = Date.now();
+    const recent = (
+      await Promise.all(
+        [0, 1, 2].map((back) => listPrefix(hourPrefix(new Date(now - back * 3_600_000)), 1000))
+      )
+    ).flat();
+
+    if (recent.length > 0) {
+      const bytes = recent.reduce((sum, o) => sum + o.size, 0);
+      const newest = recent
+        .map((o) => new Date(o.modified).getTime())
+        .filter((t) => Number.isFinite(t))
+        .sort((a, b) => b - a)[0];
+      const mins = newest ? Math.round((now - newest) / 60_000) : null;
+      const size = bytes > 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)}MB` : `${Math.round(bytes / 1024)}KB`;
+      return {
+        key,
+        label,
+        state: "ok",
+        value: `${recent.length} 批 / ${size}${mins === null ? "" : `（最近 ${mins} 分钟前）`}`
+      };
+    }
+
+    /* Nothing in three hours. An archive that has never received anything is
+       a drain that was never created -- a to-do, not a fault -- so the two are
+       told apart before anyone is alarmed. */
+    const ever = await listPrefix("logs/", 1);
+    if (ever.length === 0) {
+      return {
+        key,
+        label,
+        state: "unknown",
+        value: "还没有数据",
+        remedy:
+          "日志桶是空的，说明 Vercel 那边的 Log Drain 还没建起来。" +
+          "开通步骤见 workers/vercel-log-drain/README.md —— 建桶、设签名密钥、部署 Worker、" +
+          "在 Vercel 的 Team Settings → Drains 里指向它。"
+      };
+    }
+    return {
+      key,
+      label,
+      state: "bad",
+      value: "近 3 小时无新日志",
+      remedy:
+        "日志存档以前收到过数据，但最近 3 小时一批都没有 —— 这中间出了什么问题，而且不会报错，" +
+        "网站照常提供服务。按顺序查：Vercel → Team Settings → Drains，看这条 drain 是不是被停用或删了；" +
+        "Cloudflare → Workers → vercel-log-drain，看它的日志里有没有 403（签名密钥两边对不上）或 500。" +
+        "在修好之前这段时间的日志是补不回来的，Vercel 自己只留一天。"
+    };
+  } catch (error) {
+    return {
+      key,
+      label,
+      state: "unknown",
+      value: "读不到",
+      remedy: `列举 R2 日志桶失败：${error instanceof Error ? error.message : "未知错误"}`
+    };
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * There is no "is the firewall still challenging" probe, deliberately
  * ------------------------------------------------------------------ *
  *
@@ -539,12 +658,13 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
 
 /** Every check, run together. Never throws: a failed probe is a check result. */
 export async function getDefenseStatus(): Promise<DefenseReport> {
-  const [recent, search, rendered] = await Promise.all([
+  const [recent, search, archive, rendered] = await Promise.all([
     checkRecentMirrored(),
     checkSearchBound(),
+    checkLogArchive(),
     checkRenderedPage()
   ]);
-  const checks = [checkMirrorSwitch(), recent, search, ...rendered];
+  const checks = [checkMirrorSwitch(), recent, search, ...rendered, archive];
   return { checks, worst: worstOf(checks), checkedAt: new Date().toISOString() };
 }
 
