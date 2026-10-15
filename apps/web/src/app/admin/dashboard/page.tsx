@@ -5,7 +5,7 @@ import { MISS_RETENTION_DAYS, listSearchMisses } from "@/lib/search-misses";
 import { RevalidateButton } from "@/components/admin/RevalidateButton";
 import { SelfCheckButton } from "@/components/admin/SelfCheckButton";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
-import { readDefenseReport, type CheckState } from "@/lib/admin/defense-status";
+import { readDefenseEvents, readDefenseReport, type CheckState } from "@/lib/admin/defense-status";
 import { can } from "@/lib/admin/permissions";
 import {
   SYNC_INTERVAL_HOURS,
@@ -57,6 +57,14 @@ const WORST_LABEL: Record<CheckState, { text: string; tone: string }> = {
   unknown: { text: "部分测不到", tone: "#667085" }
 };
 
+/** How each recorded transition reads in the 最近的报警 list. */
+const EVENT_LABEL: Record<string, { text: string; tone: string }> = {
+  detected: { text: "发现", tone: "#B54708" },
+  new: { text: "已报警", tone: "#B42318" },
+  reminder: { text: "仍未恢复", tone: "#B42318" },
+  recovered: { text: "已恢复", tone: "#157347" }
+};
+
 /** Older than this and the self-check itself has probably stopped running. */
 const SELFCHECK_STALE_HOURS = 3;
 
@@ -76,13 +84,14 @@ export default async function AdminDashboardPage() {
      read it as "the site is broken, do not publish" -- the same reasoning that
      keeps the revalidate button off their dashboard. */
   const showDefense = can(user, "publish.revalidate");
-  const [stats, sync, search, misses, recent, defense] = await Promise.all([
+  const [stats, sync, search, misses, recent, defense, defenseEvents] = await Promise.all([
     getDashboardStats(),
     getSyncStatus(),
     getSearchStatus(),
     listSearchMisses(12),
     getRecentArticles(6),
-    showDefense ? readDefenseReport() : Promise.resolve(null)
+    showDefense ? readDefenseReport() : Promise.resolve(null),
+    showDefense ? readDefenseEvents() : Promise.resolve([])
   ]);
   const badge = SYNC_LABEL[sync.state];
   const searchBadge = SEARCH_LABEL[search.state];
@@ -193,6 +202,33 @@ export default async function AdminDashboardPage() {
               ))}
             </>
           )}
+          {defenseEvents.length > 0 ? (
+            <>
+              <h4 style={{ margin: "18px 0 6px", fontSize: 14 }}>最近的报警</h4>
+              <p className="dash-note" style={{ marginTop: 0 }}>
+                只记状态变化，不记每次检查 —— 每小时跑一次的检查如果把自己也记下来，
+                真正要紧的那两行会被两百行淹掉。「发现」那一行通常比邮件早一小时，
+                因为连续两次坏才发信：它回答的是<b>什么时候开始的</b>，邮件回答的只是什么时候告诉你的。
+              </p>
+              <table className="admin-table" style={{ maxWidth: 620, fontVariantNumeric: "tabular-nums" }}>
+                <thead>
+                  <tr><th style={{ width: 150 }}>时间</th><th style={{ width: 90 }}>发生了什么</th><th>哪一项</th></tr>
+                </thead>
+                <tbody>
+                  {defenseEvents.slice(0, 12).map((e, i) => {
+                    const badge = EVENT_LABEL[e.kind] ?? { text: e.kind, tone: "#667085" };
+                    return (
+                      <tr key={`${e.at}-${e.kind}-${i}`}>
+                        <td>{new Date(e.at).toLocaleString("zh-CN")}</td>
+                        <td style={{ color: badge.tone }}>{badge.text}</td>
+                        <td>{e.labels.join("、") || "—"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </>
+          ) : null}
           <p style={{ margin: "14px 0 0" }}>
             <SelfCheckButton />
           </p>

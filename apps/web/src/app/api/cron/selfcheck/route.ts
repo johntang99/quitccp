@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { getAdminSessionUser } from "@/lib/admin/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
-import { getDefenseStatus, saveDefenseReport, type DefenseCheck } from "@/lib/admin/defense-status";
+import {
+  appendDefenseEvent,
+  getDefenseStatus,
+  saveDefenseReport,
+  type DefenseCheck
+} from "@/lib/admin/defense-status";
 import { alertRecipient, sendAlertEmail } from "@/lib/notify";
 
 /**
@@ -199,6 +204,35 @@ export async function GET(request: Request) {
   let sent = false;
   if (kind) {
     sent = await sendAlertEmail(composeMail(kind, confirmed, report.checks));
+  }
+
+  /*
+   * The panel keeps only the latest run, so without this an alert arrives,
+   * the reader opens the dashboard, and the fault is already gone -- nothing
+   * to check the mail against. Transitions only; an hourly check that logged
+   * every run would bury the two lines that matter.
+   *
+   * `detected` is written on the run that first sees a failure, which is
+   * usually an hour before any mail. That hour is the difference between
+   * 「什么时候开始的」 and 「什么时候告诉我的」, and only the first is useful
+   * when you are trying to work out what changed.
+   */
+  const newlyBad = badKeys.filter((k) => !previous.seenKeys.includes(k));
+  const labelsFor = (keys: string[]) =>
+    report.checks.filter((c) => keys.includes(c.key)).map((c) => c.label);
+  if (newlyBad.length > 0) {
+    await appendDefenseEvent({
+      at: report.checkedAt,
+      kind: "detected",
+      labels: labelsFor(newlyBad)
+    });
+  }
+  if (kind) {
+    await appendDefenseEvent({
+      at: report.checkedAt,
+      kind,
+      labels: kind === "recovered" ? labelsFor(previous.alertedKeys) : labelsFor(confirmedKeys)
+    });
   }
 
   /* `seenKeys` is always this run's verdict, so the next run can tell a second

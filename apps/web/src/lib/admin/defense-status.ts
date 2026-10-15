@@ -738,3 +738,72 @@ export async function readDefenseReport(): Promise<DefenseReport | null> {
     return null;
   }
 }
+
+/* ------------------------------------------------------------------ *
+ * Alert history
+ * ------------------------------------------------------------------ */
+
+const HISTORY_KEY = "ops.selfcheck.history";
+/** Two months of ordinary weeks, and a hard stop on a flapping check. */
+const HISTORY_MAX = 50;
+
+export interface DefenseEvent {
+  at: string;
+  /**
+   * `detected` is the run that first saw a check fail -- before any mail, and
+   * often before anyone was told. It is recorded because the question an alert
+   * raises is「什么时候开始的」, and the mail can only answer「什么时候告诉我的」.
+   */
+  kind: "detected" | "new" | "reminder" | "recovered";
+  labels: string[];
+}
+
+/**
+ * Why this exists at all.
+ *
+ * The panel stores one row: the latest run. So an alert would arrive, the
+ * reader would open the dashboard, and by then the fault was fixed and
+ * everything was green -- nothing to confirm the mail against, nothing to say
+ * when it started or how long it lasted. 2026-10-15 is exactly that: 21 video
+ * covers had been missing from the mirror for hours, the alert went out at
+ * 19:09, and by 19:36 the dashboard showed seven green ticks and no trace.
+ *
+ * Only transitions are kept, not every run: an hourly check that logged
+ * itself would bury the two lines that matter under two hundred that do not.
+ */
+export async function appendDefenseEvent(event: DefenseEvent): Promise<void> {
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data } = await supabase
+      .from("cms_site_settings")
+      .select("value_json")
+      .eq("setting_key", HISTORY_KEY)
+      .maybeSingle();
+    const previous = Array.isArray(data?.value_json) ? (data.value_json as DefenseEvent[]) : [];
+    const next = [event, ...previous].slice(0, HISTORY_MAX);
+    await supabase
+      .from("cms_site_settings")
+      .upsert(
+        { setting_key: HISTORY_KEY, value_json: next, updated_at: new Date().toISOString() },
+        { onConflict: "setting_key" }
+      );
+  } catch (error) {
+    /* A lost history line must never cost the alert it describes. */
+    console.warn(`[selfcheck] 事件记录失败：${error instanceof Error ? error.message : "未知"}`);
+  }
+}
+
+/** Newest first. Empty when nothing has ever gone wrong, which is the good case. */
+export async function readDefenseEvents(): Promise<DefenseEvent[]> {
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data } = await supabase
+      .from("cms_site_settings")
+      .select("value_json")
+      .eq("setting_key", HISTORY_KEY)
+      .maybeSingle();
+    return Array.isArray(data?.value_json) ? (data.value_json as DefenseEvent[]) : [];
+  } catch {
+    return [];
+  }
+}
