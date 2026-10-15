@@ -77,11 +77,50 @@ export async function copyToMediaMirror(
   }
 
   const body = Buffer.from(await data.arrayBuffer());
+  return putToMediaMirror(objectPath, body, contentType || data.type);
+}
+
+/**
+ * Writes bytes already in hand straight to the mirror.
+ *
+ * Split out from `copyToMediaMirror` because one caller never needed the
+ * download half. `videos/cover-from-source` fetches the picture from YouTube
+ * or 干净世界, uploads it to Supabase, and used to hand the object path to
+ * `after()`, which downloaded those same bytes back out of Supabase to put
+ * them in R2.
+ *
+ * That round trip was free of charge right up until it wasn't. Measured
+ * 2026-10-15, after the defence check raised it: 21 of the last 39 covers --
+ * 54% -- never reached R2, while ordinary uploads were at 100%. The route
+ * allows 30s, and fetching a 干净世界 cover spends most of it on the watch
+ * page (25s ceiling) and the image (20s ceiling); whatever `after()` had left
+ * was often not enough to download and re-upload 60 KB, and the work was
+ * killed with the function. Nothing failed loudly: the editor saw a cover, the
+ * reader saw a cover, and the mirror simply did not have it.
+ *
+ * With the bytes already in memory the write is one PUT, so the caller does it
+ * inline and the whole failure mode goes away.
+ */
+export async function putToMediaMirror(
+  objectPath: string,
+  /* `Buffer<ArrayBuffer>` and not plain `Buffer`: the wider type admits a
+     SharedArrayBuffer-backed view, which `fetch` will not accept as a body.
+     Every caller here holds bytes from an `arrayBuffer()`, so the narrow type
+     is the true one and the compiler can check it. */
+  body: Buffer<ArrayBuffer>,
+  contentType?: string
+): Promise<MirrorCopyResult> {
+  const config = mirrorConfig();
+  if (!config) return { status: "skipped", reason: "R2 未配置" };
+  if (body.length > MAX_INLINE_COPY_BYTES) {
+    return { status: "skipped", reason: `${(body.length / 1024 / 1024).toFixed(0)}MB 超过内联复制上限，留给同步脚本` };
+  }
+
   const response = await config.aws.fetch(`${config.endpoint}/${config.bucket}/${objectPath}`, {
     method: "PUT",
     body,
     headers: {
-      "content-type": contentType || data.type || "application/octet-stream",
+      "content-type": contentType || "application/octet-stream",
       /* The same header `scripts/push-media-mirror.mjs` writes. Object keys
          carry an upload timestamp and are never rewritten, so the mirror can
          be cached for a year and Cloudflare can answer without asking R2. */

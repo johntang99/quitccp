@@ -21,7 +21,9 @@ const UA =
 const MIN_BYTES = 4000;
 
 export interface FoundCover {
-  bytes: Buffer;
+  /* Narrow on purpose -- see putToMediaMirror: a plain `Buffer` cannot be a
+     fetch body, and these bytes always come from an `arrayBuffer()`. */
+  bytes: Buffer<ArrayBuffer>;
   mime: string;
   /** Where it came from, for the audit trail and the editor's confirmation. */
   sourceUrl: string;
@@ -37,7 +39,7 @@ function youtubeIdOf(url: string): string {
   return match ? match[1] : "";
 }
 
-async function download(url: string): Promise<{ bytes: Buffer; mime: string } | null> {
+async function download(url: string): Promise<{ bytes: Buffer<ArrayBuffer>; mime: string } | null> {
   try {
     const response = await fetch(url, {
       headers: { "user-agent": UA },

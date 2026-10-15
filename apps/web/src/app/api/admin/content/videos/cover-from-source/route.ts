@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { after } from "next/server";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { objectPathFor } from "@/lib/admin/upload-policy";
 import { recordUploadedAsset, storageBucketName } from "@/lib/admin/media-storage";
 import { findCoverForSource } from "@/lib/admin/video-cover-source";
-import { mirrorUploadInBackground } from "@/lib/admin/media-mirror-upload";
+import { putToMediaMirror } from "@/lib/admin/media-mirror-upload";
 
 /**
  * Fetches the platform's own thumbnail for a video address and keeps a copy.
@@ -84,9 +83,32 @@ export async function POST(request: Request) {
     /* The cover is saved and usable; the library row is a convenience. */
   }
 
-  /* Same reasoning as the upload route: mirror it, but never make the editor
-     wait for it. See media-mirror-upload.ts. */
-  after(() => mirrorUploadInBackground(objectPath, found.mime));
+  /*
+   * Mirrored here, inline, rather than handed to `after()`.
+   *
+   * It used to be `after(() => mirrorUploadInBackground(objectPath, …))`, on
+   * the principle that an editor should never wait for the mirror. The
+   * principle is right and the application of it was wrong: `after()` runs
+   * inside the same 30s budget, and fetching a 干净世界 cover spends most of
+   * that on the watch page and the image, so the background copy was routinely
+   * killed before it finished. Measured 2026-10-15, after the defence check
+   * raised it: 21 of the last 39 covers never reached R2, while ordinary
+   * uploads sat at 100%.
+   *
+   * The bytes are already in memory, so this is one PUT of about 60 KB on a
+   * request that has already spent seconds fetching the picture. Nobody can
+   * feel it, and it cannot be cut short.
+   *
+   * A failure here does not fail the request: the cover is in Supabase and the
+   * page will render it. The mirror is the optimisation, and the defence check
+   * on the dashboard is what notices if it stops working.
+   */
+  const mirrored = await putToMediaMirror(objectPath, found.bytes, found.mime);
+  if (mirrored.status === "copied") {
+    console.log(`[media-mirror] 已复制到 R2: ${objectPath} (${mirrored.bytes} 字节)`);
+  } else {
+    console.warn(`[media-mirror] 未复制 ${objectPath}: ${mirrored.reason}`);
+  }
 
   return NextResponse.json({
     ok: true,
