@@ -172,17 +172,25 @@ export default async function AdminDashboardPage() {
                   确认 <code>/api/cron/selfcheck</code> 还在并且是 Enabled。
                 </p>
               ) : null}
-              {defense.checks
-                .filter((c) => c.state !== "ok" && c.remedy)
-                .map((c) => (
-                  <p className="dash-alert" key={c.key}>
-                    <b>
-                      {c.label}：{c.value}
-                    </b>
-                    <br />
-                    {c.remedy}
-                  </p>
-                ))}
+              {/* Grouped by remedy rather than one block per check: the three
+                  render-dependent probes share a single cause and a single
+                  fix, and printing the same paragraph three times reads as a
+                  bigger problem than it is. */}
+              {Array.from(
+                defense.checks
+                  .filter((c) => c.state !== "ok" && c.remedy)
+                  .reduce((groups, c) => {
+                    const found = groups.get(c.remedy!) ?? [];
+                    groups.set(c.remedy!, [...found, c]);
+                    return groups;
+                  }, new Map<string, typeof defense.checks>())
+              ).map(([remedy, group]) => (
+                <p className="dash-alert" key={group[0].key}>
+                  <b>{group.map((c) => `${c.label}：${c.value}`).join("　｜　")}</b>
+                  <br />
+                  {remedy}
+                </p>
+              ))}
             </>
           )}
           <p style={{ margin: "14px 0 0" }}>

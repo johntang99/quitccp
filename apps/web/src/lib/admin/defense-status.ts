@@ -22,10 +22,11 @@ import { mirrorRewrite, rewriteMediaUrl } from "@/lib/media-mirror";
  * either address.
  *
  * Hence the split below. Most checks read the database or Cloudflare directly
- * and need no HTTP to ourselves at all. The two that genuinely require a
+ * and need no HTTP to ourselves at all. The three that genuinely require a
  * rendered page are attempted anyway and degrade to `unknown` when the
- * challenge answers -- "could not measure", never "broken". See
- * PROBE_BYPASS_HEADER for how to let them through.
+ * challenge answers -- "could not measure", never "broken", and carrying the
+ * instructions for letting them through as their remedy, since the panel is
+ * where somebody will go looking. See PROBE_BYPASS_HEADER.
  *
  * ## What is deliberately not here
  *
@@ -76,6 +77,28 @@ function worstOf(checks: DefenseCheck[]): CheckState {
   if (checks.some((c) => c.state === "warn")) return "warn";
   if (checks.some((c) => c.state === "unknown")) return "unknown";
   return "ok";
+}
+
+/**
+ * The five characters React escapes when it writes text into HTML.
+ *
+ * Without this the freshness check below compares a database title against a
+ * page that spells it differently and concludes the page is stale -- and then
+ * mails about it. Three published articles have titles that trip it:
+ * 「性酷刑&妻小做人质…」, 「美德州A&M大学…」, 「幸存： \"烈士\"感想」.
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
+/** Whether the page says this, however the renderer chose to spell it. */
+function htmlContainsText(html: string, text: string): boolean {
+  return html.includes(text) || html.includes(escapeHtml(text));
 }
 
 function publicOrigin(): string {
@@ -328,51 +351,80 @@ async function checkChallengeActive(): Promise<DefenseCheck> {
  * ------------------------------------------------------------------ */
 
 /**
- * Fetches one published article page and reads two things off the same
- * response: whether the CDN served it from cache, and whether the HTML it
- * emitted points at the mirror.
+ * Fetches one published article page and reads three things off it.
  *
- * One fetch for both because they are the same question asked twice -- "is
- * what we built still what visitors get" -- and because both regress the same
- * silent way. A `cookies()` call added anywhere in the tree makes the page
- * dynamic again, and then every request in a flood reaches the database; a lost
- * environment variable sends every image back to Supabase. Neither logs
- * anything. Nothing else here would notice either one.
+ * One fetch for all three because they are the same question asked three ways
+ * -- "is what we built still what a visitor gets" -- and because all three
+ * regress the same silent way, with the page still rendering perfectly:
  *
- * Returns both checks as `unknown` when the firewall answers, which is what
- * happens until the Allow rule for PROBE_BYPASS_HEADER exists.
+ *   - 走 CDN 缓存    a `cookies()` call added anywhere in the tree makes the
+ *                   page dynamic again, and then every request in a flood
+ *                   reaches the database. This is the shape of 10-13.
+ *   - 内容是最新的    the save-time `revalidatePath` stops firing, so editors'
+ *                   changes never appear. Cached and wrong looks exactly like
+ *                   cached and right from the outside.
+ *   - 图片走镜像      a lost environment variable, or new code calling
+ *                   getPublicUrl() directly, sends images back to Supabase.
+ *
+ * Nothing else here would notice any of them, and none of them logs anything.
+ *
+ * The article chosen is the most recently *updated* one rather than the most
+ * recently published, because that is the only one whose freshness says
+ * anything: an article nobody has touched for a week would agree with its page
+ * even if revalidation had been broken the whole time.
+ *
+ * Returns all three as `unknown` when the firewall answers instead, which is
+ * what happens until the Allow rule for PROBE_BYPASS_HEADER exists. See the
+ * note at the top of this file for why this cannot be measured any other way.
  */
 async function checkRenderedPage(): Promise<DefenseCheck[]> {
   const cacheKey = "page_cached";
   const cacheLabel = "文章页走 CDN 缓存";
+  const freshKey = "page_fresh";
+  const freshLabel = "页面内容是最新的";
   const htmlKey = "page_media_r2";
   const htmlLabel = "页面图片指向镜像";
 
-  const blocked = (why: string): DefenseCheck[] => [
-    { key: cacheKey, label: cacheLabel, state: "unknown", value: why },
-    { key: htmlKey, label: htmlLabel, state: "unknown", value: why }
-  ];
+  const blocked = (why: string, remedy?: string): DefenseCheck[] =>
+    [
+      { key: cacheKey, label: cacheLabel },
+      { key: freshKey, label: freshLabel },
+      { key: htmlKey, label: htmlLabel }
+    ].map((c) => ({ ...c, state: "unknown" as CheckState, value: why, remedy }));
 
-  let slug: string | null = null;
+  /* The remedy for the one case that is expected rather than wrong. Written
+     out in full because this panel is where somebody will come looking for it
+     six months from now, not the documentation. */
+  const bypassRemedy =
+    "这三项需要真的取一次渲染好的页面，而我们自己的防火墙会挑战一切非浏览器请求 —— " +
+    "不是故障，是防火墙在干活。要让它们测得到，到 Vercel → 项目 → Firewall 新建一条规则，" +
+    "放在那条 Challenge 规则**上面**（规则自上而下匹配，Allow 命中后不再往下走）：" +
+    "If 请求头 x-quitccp-probe equals <一串随机字符串> → Then Allow。" +
+    "再把同一串字符串配成环境变量 PROBE_BYPASS_SECRET。" +
+    "这个请求头只决定防火墙要不要挑战这个请求，它能访问到的就是每个读者本来就能拿到的公开页面。" +
+    "详见 docs/implementation/selfcheck-and-alerts.md。";
+
+  let article: { slug: string; title: string } | null = null;
   try {
     const supabase = createSupabaseAdminClient();
     const { data } = await supabase
       .from("cms_articles")
-      .select("slug")
+      .select("slug, title")
       .eq("status", "published")
       .eq("locale", "zh")
-      .order("published_at", { ascending: false })
+      .order("updated_at", { ascending: false })
       .limit(1);
-    slug = data?.[0]?.slug ?? null;
+    const row = data?.[0];
+    if (row?.slug && row?.title) article = { slug: row.slug, title: row.title };
   } catch {
     return blocked("读不到文章");
   }
-  if (!slug) return blocked("没有已发布文章");
+  if (!article) return blocked("没有已发布文章");
 
-  const url = `${publicOrigin()}/news/${slug}`;
+  const url = `${publicOrigin()}/news/${article.slug}`;
   let response = await probe(url);
   if (!response) return blocked("连不上");
-  if (wasChallenged(response)) return blocked("被挑战页挡住");
+  if (wasChallenged(response)) return blocked("被挑战页挡住", bypassRemedy);
 
   /* A cold cache is a MISS once and a HIT after, which is not a fault. Only a
      second MISS means the page is being rendered per request. */
@@ -388,6 +440,7 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
 
   const checks: DefenseCheck[] = [];
 
+  /* --- 1. still served from the edge cache --- */
   if (!cacheHeader) {
     checks.push({ key: cacheKey, label: cacheLabel, state: "unknown", value: "没有缓存头" });
   } else if (/^(HIT|STALE|PRERENDER|REVALIDATED)$/i.test(cacheHeader)) {
@@ -402,10 +455,38 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
         `文章页连续两次都是 ${cacheHeader}，说明它又变成每次请求都重新渲染了 —— ` +
         "洪水会直接打到数据库，这正是 10-13 那晚的情形。" +
         "通常是某个组件里新加了 cookies()、headers() 或 noStore()，让整棵树退出了静态渲染。" +
-        "查最近改过的 layout 和 /news/[slug] 用到的组件。"
+        "查最近改过的 layout，和 /news/[slug] 这条路径上用到的组件。"
     });
   }
 
+  /* --- 2. the cached copy is the current one ---
+     Cached and stale looks identical to cached and correct from outside, so
+     this compares the page against the row it was rendered from. The title is
+     the right field to compare: it is on every article, it is what an editor
+     most often changes, and it appears in the HTML verbatim. */
+  const titleInPage = htmlContainsText(html, article.title);
+  if (titleInPage) {
+    checks.push({ key: freshKey, label: freshLabel, state: "ok", value: "与数据库一致" });
+  } else {
+    checks.push({
+      key: freshKey,
+      label: freshLabel,
+      state: "bad",
+      value: "页面是旧的",
+      remedy:
+        `最近改过的那篇文章（${article.slug}）在数据库里的标题是「${article.title}」，` +
+        "但线上页面里没有这个标题 —— 保存之后清缓存那一步没生效，" +
+        "编辑的改动不会出现在网站上，而且不会报任何错。" +
+        "先在后台随便保存一次那篇文章，看页面是否更新；" +
+        "不行的话查 /api/admin/content/articles 的 revalidatePath 调用，" +
+        "以及 next.config.ts 里这条路径的配置。"
+    });
+  }
+
+  /* --- 3. the images a visitor gets come from the mirror ---
+     Counting both hosts rather than just looking for the mirror: a page with no
+     images at all would otherwise pass, and the number that matters is how many
+     requests still land on unprotected Supabase Storage. */
   const rule = mirrorRewrite();
   if (!rule) {
     checks.push({ key: htmlKey, label: htmlLabel, state: "unknown", value: "镜像未开启" });
@@ -413,21 +494,49 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
     const mirrorHost = rule.to.replace(/^\/\//, "").replace(/\/$/, "");
     const onMirror = html.split(mirrorHost).length - 1;
     const onSupabase = html.split(rule.from).length - 1;
-    if (onMirror === 0 && onSupabase === 0) {
-      checks.push({ key: htmlKey, label: htmlLabel, state: "unknown", value: "这篇没有图" });
-    } else if (onSupabase === 0) {
-      checks.push({ key: htmlKey, label: htmlLabel, state: "ok", value: `${onMirror} 处全是镜像` });
-    } else {
+    if (onSupabase > 0) {
       checks.push({
         key: htmlKey,
         label: htmlLabel,
         state: "bad",
         value: `${onSupabase} 处仍指向 Supabase`,
         remedy:
-          "渲染出来的页面里还有直接指向 Supabase 的图片地址，这些请求绕过了 R2，" +
+          "渲染出来的页面里还有直接指向 Supabase 的图片地址，这些请求绕过 R2，" +
           "打在没有任何防护的 Storage 上。多半是新加的代码直接用了 getPublicUrl()，" +
           "没有经过 rewriteMediaUrl()。参考 docs/implementation/media-on-r2.md 里的清单。"
       });
+    } else if (onMirror === 0) {
+      checks.push({ key: htmlKey, label: htmlLabel, state: "unknown", value: "这篇没有图" });
+    } else {
+      /* The page points at the mirror -- but pointing at it and it answering
+         are two different things, and Cloudflare caches an R2 404 for four
+         hours, so a missing object stays missing well after it is fixed. One
+         HEAD closes that gap. The reader does not break either way: the
+         failover in media-failover.ts falls back to Supabase in the browser. */
+      /* The host is interpolated into a pattern, so its dots have to stop being
+         metacharacters -- otherwise media.tdinfo.org also matches mediaXtdinfo.org. */
+      const hostPattern = mirrorHost.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const first = html.match(new RegExp(`https?://${hostPattern}/[^"'\\\\\\s>)]+`));
+      let served: number | null = null;
+      if (first) {
+        const head = await probe(first[0], { method: "HEAD" });
+        served = head?.status ?? 0;
+      }
+      if (served !== null && served !== 200) {
+        checks.push({
+          key: htmlKey,
+          label: htmlLabel,
+          state: "warn",
+          value: `${onMirror} 处是镜像，但取不到`,
+          remedy:
+            `页面里的图片地址都指向镜像了，但抽查的那一个返回 HTTP ${served || "连不上"}。` +
+            "读者那一侧不会看到坏图 —— 浏览器会自动退回 Supabase —— 但图片少了 R2 的缓存和限速保护。" +
+            `地址：${first?.[0] ?? ""}。` +
+            "注意 Cloudflare 会把 R2 的 404 缓存 4 小时，所以补上文件之后要到 Cloudflare 后台清一次缓存才看得到。"
+        });
+      } else {
+        checks.push({ key: htmlKey, label: htmlLabel, state: "ok", value: `${onMirror} 处全是镜像` });
+      }
     }
   }
 
