@@ -238,13 +238,33 @@ async function checkMirrorComplete(): Promise<DefenseCheck> {
         : undefined;
     } while (token);
 
+    /*
+     * Paged, because PostgREST caps a select at 1000 rows and says nothing
+     * about it. The first version of this check read 1000 of 7,994 and
+     * reported「1000 个全在」-- a complete-sounding answer to a quarter of the
+     * question. It was caught only because the count is printed; had the value
+     * read「全在」the check would have looked healthy while six thousand files
+     * went unexamined.
+     *
+     * The count stays in the panel for that reason: a total that can be
+     * compared against the media library is what makes this check falsifiable.
+     */
     const supabase = createSupabaseAdminClient();
-    const { data, error } = await supabase
-      .from("cms_media_assets")
-      .select("storage_path, created_at")
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    const rows = data ?? [];
+    const PAGE = 1000;
+    const rows: { storage_path: string | null; created_at: string | null }[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supabase
+        .from("cms_media_assets")
+        .select("storage_path, created_at")
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (error) throw new Error(error.message);
+      const page = data ?? [];
+      rows.push(...page);
+      if (page.length < PAGE) break;
+      /* A runaway table must not turn an hourly check into a long job. */
+      if (rows.length >= 100_000) break;
+    }
 
     const missing: { key: string; url: string; createdAt: string }[] = [];
     for (const row of rows) {

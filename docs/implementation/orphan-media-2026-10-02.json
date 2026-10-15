@@ -1,0 +1,125 @@
+{
+  "deletedAt": "2026-10-15",
+  "why": "10 月 2 日内容迁移登记了文件却没上传。Supabase 对这些路径回 NoSuchKey，所以镜像不了，自检会永远停在「注意」。删除前扫过 22 张表 121 个文本列，零引用（唯一的命中是自检报告自己举例列出的文件名）。",
+  "pattern": "每个目录里编号最大的那一张 —— 典型的「登记 N 个、上传 N-1 个」",
+  "restore": "文件本身找不回来了。这份记录保留的是「哪些资料页少了一张图」，需要时按 storage_path 里的目录名去找对应的资料页补图。",
+  "rows": [
+    {
+      "id": "36ea9b50-2719-4ccb-967b-8dff11392af4",
+      "name": "3.jpg",
+      "storage_path": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/materials/zhenxiang-chuandan-daoyou/3.jpg",
+      "asset_type": "image",
+      "mime_type": "image/jpeg",
+      "byte_size": "217419",
+      "created_at": "2026-10-02T03:47:07.654Z"
+    },
+    {
+      "id": "d4b92c66-1735-4bda-ab0c-e7221cad644a",
+      "name": "1.jpg",
+      "storage_path": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/materials/zhenxiang-chuandan-huozhai-qiguan/1.jpg",
+      "asset_type": "image",
+      "mime_type": "image/jpeg",
+      "byte_size": "217419",
+      "created_at": "2026-10-02T03:47:04.694Z"
+    },
+    {
+      "id": "602bcecf-e5f0-42f1-90fd-5041478a6832",
+      "name": "3.jpg",
+      "storage_path": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/materials/tuidang-zhengming-fangxin/3.jpg",
+      "asset_type": "image",
+      "mime_type": "image/jpeg",
+      "byte_size": "217419",
+      "created_at": "2026-10-02T03:46:59.944Z"
+    },
+    {
+      "id": "ae2b2668-b86d-480c-b997-abed2cc06c17",
+      "name": "2.jpg",
+      "storage_path": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/materials/gei-haiwai-huaren-pengyou/2.jpg",
+      "asset_type": "image",
+      "mime_type": "image/jpeg",
+      "byte_size": "217419",
+      "created_at": "2026-10-02T03:46:55.380Z"
+    },
+    {
+      "id": "9446af49-868e-48f2-9999-c52e7bdb2712",
+      "name": "2.jpg",
+      "storage_path": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/materials/gei-haiwai-huaren-canguan-laoban/2.jpg",
+      "asset_type": "image",
+      "mime_type": "image/jpeg",
+      "byte_size": "217419",
+      "created_at": "2026-10-02T03:46:52.328Z"
+    },
+    {
+      "id": "f39f3726-04a4-45de-972e-49a2aefdeca6",
+      "name": "3.jpg",
+      "storage_path": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/materials/jingdian-ziliao-yilabao/3.jpg",
+      "asset_type": "image",
+      "mime_type": "image/jpeg",
+      "byte_size": "217419",
+      "created_at": "2026-10-02T02:07:16.272Z"
+    },
+    {
+      "id": "8cd536a3-500b-4dcc-a41e-4ddac94075c4",
+      "name": "4.jpg",
+      "storage_path": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/materials/425-zhenxiang-zhanban/4.jpg",
+      "asset_type": "image",
+      "mime_type": "image/jpeg",
+      "byte_size": "217419",
+      "created_at": "2026-10-02T02:07:05.405Z"
+    },
+    {
+      "id": "53979690-bde2-4233-bbd0-fcf140546cb8",
+      "name": "5.jpg",
+      "storage_path": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/materials/zhenxiang-zhanban-2/5.jpg",
+      "asset_type": "image",
+      "mime_type": "image/jpeg",
+      "byte_size": "217419",
+      "created_at": "2026-10-02T02:06:59.256Z"
+    },
+    {
+      "id": "ed7975d7-94f6-417e-a112-5acc9983fc98",
+      "name": "5.jpg",
+      "storage_path": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/materials/zhenxiang-zhanban-quan-ni-santui/5.jpg",
+      "asset_type": "image",
+      "mime_type": "image/jpeg",
+      "byte_size": "217419",
+      "created_at": "2026-10-02T02:06:49.129Z"
+    },
+    {
+      "id": "2cc6d67b-0ee3-4faf-b2d2-4c2b995debb7",
+      "name": "5.jpg",
+      "storage_path": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/materials/zhenxiang-zhanban-zifen-weian/5.jpg",
+      "asset_type": "image",
+      "mime_type": "image/jpeg",
+      "byte_size": "217419",
+      "created_at": "2026-10-02T02:06:43.975Z"
+    },
+    {
+      "id": "952762bf-636a-453a-af11-c626c5135d6b",
+      "name": "2.jpg",
+      "storage_path": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/materials/tuidang-zhengming-yilabao/2.jpg",
+      "asset_type": "image",
+      "mime_type": "image/jpeg",
+      "byte_size": "217419",
+      "created_at": "2026-10-02T02:06:37.181Z"
+    },
+    {
+      "id": "389c7b32-b1ed-438f-8006-b95b9ca0b743",
+      "name": "2.jpg",
+      "storage_path": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/materials/shougang-nuesha-canan/2.jpg",
+      "asset_type": "image",
+      "mime_type": "image/jpeg",
+      "byte_size": "217419",
+      "created_at": "2026-10-02T02:06:34.290Z"
+    },
+    {
+      "id": "2b144d63-cbc3-4668-93f3-5e7f36a576a9",
+      "name": "9.jpg",
+      "storage_path": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/materials/tuiguang-jiuping-xilie-zhanban/9.jpg",
+      "asset_type": "image",
+      "mime_type": "image/jpeg",
+      "byte_size": "217419",
+      "created_at": "2026-10-02T02:06:30.091Z"
+    }
+  ]
+}
