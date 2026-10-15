@@ -517,20 +517,38 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
   if (!article) return blocked("没有已发布文章");
 
   const url = `${publicOrigin()}/news/${article.slug}`;
-  let response = await probe(url);
-  if (!response) return blocked("连不上");
-  if (wasChallenged(response)) return blocked("被挑战页挡住", bypassRemedy);
 
-  /* A cold cache is a MISS once and a HIT after, which is not a fault. Only a
-     second MISS means the page is being rendered per request. */
-  let cacheHeader = response.headers.get("x-vercel-cache") ?? "";
-  let html = await response.text();
-  if (/^(MISS|BYPASS)$/i.test(cacheHeader)) {
-    const again = await probe(url);
-    if (again && !wasChallenged(again)) {
-      cacheHeader = again.headers.get("x-vercel-cache") ?? cacheHeader;
-      html = await again.text();
-    }
+  /*
+   * Asked up to three times, with a pause, and the best answer wins.
+   *
+   * Every deploy empties the CDN cache, so the first request for any page
+   * after one is a MISS by design -- that is the cache working, not failing.
+   * An earlier version asked twice back to back and still read MISS twice,
+   * because the second request raced the first one's cache write; it mailed
+   * about a page that answered HIT five times out of five a minute later.
+   * Widening the alert rule did not help, because on a day of frequent
+   * deploys the two runs it wants are both post-deploy.
+   *
+   * So the retry has to be the probe's, not the alerter's: a pause long
+   * enough for our own first request to have populated the cache. What this
+   * check exists to catch -- a page that went dynamic again -- misses on
+   * every request forever, and so still fails all three.
+   */
+  const CACHE_ATTEMPTS = 3;
+  const CACHE_RETRY_MS = 2500;
+  const CACHED = /^(HIT|STALE|PRERENDER|REVALIDATED)$/i;
+
+  let response: Response | null = null;
+  let cacheHeader = "";
+  let html = "";
+  for (let attempt = 0; attempt < CACHE_ATTEMPTS; attempt++) {
+    if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, CACHE_RETRY_MS));
+    response = await probe(url);
+    if (!response) return blocked("连不上");
+    if (wasChallenged(response)) return blocked("被挑战页挡住", bypassRemedy);
+    cacheHeader = response.headers.get("x-vercel-cache") ?? "";
+    html = await response.text();
+    if (CACHED.test(cacheHeader)) break;
   }
 
   const checks: DefenseCheck[] = [];
@@ -538,7 +556,7 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
   /* --- 1. still served from the edge cache --- */
   if (!cacheHeader) {
     checks.push({ key: cacheKey, label: cacheLabel, state: "unknown", value: "没有缓存头" });
-  } else if (/^(HIT|STALE|PRERENDER|REVALIDATED)$/i.test(cacheHeader)) {
+  } else if (CACHED.test(cacheHeader)) {
     checks.push({ key: cacheKey, label: cacheLabel, state: "ok", value: cacheHeader });
   } else {
     checks.push({
@@ -547,7 +565,7 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
       state: "bad",
       value: cacheHeader,
       remedy:
-        `文章页连续两次都是 ${cacheHeader}，说明它又变成每次请求都重新渲染了 —— ` +
+        `文章页连续 ${CACHE_ATTEMPTS} 次都是 ${cacheHeader}，说明它又变成每次请求都重新渲染了 —— ` +
         "洪水会直接打到数据库，这正是 10-13 那晚的情形。" +
         "通常是某个组件里新加了 cookies()、headers() 或 noStore()，让整棵树退出了静态渲染。" +
         "查最近改过的 layout，和 /news/[slug] 这条路径上用到的组件。"
