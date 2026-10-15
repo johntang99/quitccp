@@ -204,3 +204,11 @@ scripts/push-media-mirror.mjs               本地 → R2，增量
 workers/vercel-log-drain/                   日志存档（用 tuidang-logs 桶）
 docs/implementation/media-mirror-plan.md    当初的方案与第 3 步清单
 ```
+
+---
+
+## 怎么知道这套还在运转
+
+见 `selfcheck-and-alerts.md`。后台「站点防护」面板里有三项是关于这份文档的：
+镜像开关是否还在、最近 3 个上传是否已进 R2、渲染出来的页面里是否还有指向
+Supabase 的图片地址。坏掉会发邮件。

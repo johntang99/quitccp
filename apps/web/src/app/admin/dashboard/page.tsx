@@ -3,7 +3,9 @@ import type { Route } from "next";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { MISS_RETENTION_DAYS, listSearchMisses } from "@/lib/search-misses";
 import { RevalidateButton } from "@/components/admin/RevalidateButton";
+import { SelfCheckButton } from "@/components/admin/SelfCheckButton";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
+import { readDefenseReport, type CheckState } from "@/lib/admin/defense-status";
 import { can } from "@/lib/admin/permissions";
 import {
   SYNC_INTERVAL_HOURS,
@@ -35,6 +37,29 @@ const SYNC_LABEL: Record<string, { text: string; tone: string }> = {
   never: { text: "从未运行", tone: "#B42318" }
 };
 
+/**
+ * How a check's state is shown. `unknown` is grey rather than red on purpose:
+ * most of the probes that cannot measure are blocked by our own attack
+ * challenge, which is the firewall working, not a fault.
+ */
+const CHECK_LABEL: Record<CheckState, { text: string; tone: string }> = {
+  ok: { text: "正常", tone: "#157347" },
+  warn: { text: "注意", tone: "#B54708" },
+  bad: { text: "出问题", tone: "#B42318" },
+  unknown: { text: "测不到", tone: "#667085" }
+};
+
+/** The worst state in the set, as the panel's own badge. */
+const WORST_LABEL: Record<CheckState, { text: string; tone: string }> = {
+  ok: { text: "全部正常", tone: "#157347" },
+  warn: { text: "有一项需要注意", tone: "#B54708" },
+  bad: { text: "有项目出问题", tone: "#B42318" },
+  unknown: { text: "部分测不到", tone: "#667085" }
+};
+
+/** Older than this and the self-check itself has probably stopped running. */
+const SELFCHECK_STALE_HOURS = 3;
+
 function ago(hours: number | null) {
   if (hours === null) return "—";
   if (hours < 1) return `${Math.max(1, Math.round(hours * 60))} 分钟前`;
@@ -46,12 +71,18 @@ const num = (n: number) => (n < 0 ? "未知" : n.toLocaleString("zh-CN"));
 
 export default async function AdminDashboardPage() {
   const user = await requireAdminSessionUser();
-  const [stats, sync, search, misses, recent] = await Promise.all([
+  /* Only for the roles that could act on it. An editor seeing
+     「文章页走 CDN 缓存：MISS」 cannot do anything about it and would reasonably
+     read it as "the site is broken, do not publish" -- the same reasoning that
+     keeps the revalidate button off their dashboard. */
+  const showDefense = can(user, "publish.revalidate");
+  const [stats, sync, search, misses, recent, defense] = await Promise.all([
     getDashboardStats(),
     getSyncStatus(),
     getSearchStatus(),
     listSearchMisses(12),
-    getRecentArticles(6)
+    getRecentArticles(6),
+    showDefense ? readDefenseReport() : Promise.resolve(null)
   ]);
   const badge = SYNC_LABEL[sync.state];
   const searchBadge = SEARCH_LABEL[search.state];
@@ -92,6 +123,73 @@ export default async function AdminDashboardPage() {
           </p>
         ) : null}
       </section>
+
+      {showDefense ? (
+        <section className="admin-card">
+          <div className="dash-head">
+            <h3 style={{ margin: 0 }}>站点防护</h3>
+            {defense ? (
+              <span
+                className="dash-badge"
+                style={{ color: WORST_LABEL[defense.worst].tone, borderColor: WORST_LABEL[defense.worst].tone }}
+              >
+                {WORST_LABEL[defense.worst].text}
+              </span>
+            ) : null}
+          </div>
+          <p className="dash-note">
+            10 月 13 日那场攻击之后加的几道防护，这里看它们现在还在不在。每小时自动检查一次，
+            任何一项变成「出问题」会发一封邮件；同一个问题不会重复发，坏着的话每天提醒一次，
+            恢复了再发一封。「测不到」多半是被我们自己的防火墙挑战页挡住了 —— 那是防火墙在干活，不是故障。
+          </p>
+          {!defense ? (
+            <p className="dash-alert">
+              <b>还没有检查过。</b>每小时的自动检查还没跑第一次，或者 Vercel 的 Cron
+              还没认到 <code>/api/cron/selfcheck</code>。可以先点下面的「立即检查」手动跑一次。
+            </p>
+          ) : (
+            <>
+              <div className="dash-sync">
+                {defense.checks.map((c) => (
+                  <div key={c.key}>
+                    <b style={{ color: CHECK_LABEL[c.state].tone }}>{c.value}</b>
+                    <span>
+                      {c.label}
+                      {c.state === "ok" ? "" : `　${CHECK_LABEL[c.state].text}`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="dash-note">
+                检查于 {ago((Date.now() - new Date(defense.checkedAt).getTime()) / 3_600_000)}
+                　（{new Date(defense.checkedAt).toLocaleString("zh-CN")}）
+              </p>
+              {(Date.now() - new Date(defense.checkedAt).getTime()) / 3_600_000 > SELFCHECK_STALE_HOURS ? (
+                <p className="dash-alert">
+                  <b>自检本身可能已经停了。</b>上面这些结论是 {ago((Date.now() - new Date(defense.checkedAt).getTime()) / 3_600_000)}的，
+                  不代表现在的状态 —— 自检停掉之后这块面板不会报错，只会一直停在最后一次的结果，
+                  报警邮件也不会再发。请到 Vercel → 项目 → Settings → Cron Jobs，
+                  确认 <code>/api/cron/selfcheck</code> 还在并且是 Enabled。
+                </p>
+              ) : null}
+              {defense.checks
+                .filter((c) => c.state !== "ok" && c.remedy)
+                .map((c) => (
+                  <p className="dash-alert" key={c.key}>
+                    <b>
+                      {c.label}：{c.value}
+                    </b>
+                    <br />
+                    {c.remedy}
+                  </p>
+                ))}
+            </>
+          )}
+          <p style={{ margin: "14px 0 0" }}>
+            <SelfCheckButton />
+          </p>
+        </section>
+      ) : null}
 
       <section className="admin-card">
         <div className="dash-head">
