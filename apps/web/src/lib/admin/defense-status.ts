@@ -167,78 +167,162 @@ function checkMirrorSwitch(): DefenseCheck {
 }
 
 /* ------------------------------------------------------------------ *
- * 2. The newest uploads really are on the mirror
+ * 2. Every media file is on the mirror
  * ------------------------------------------------------------------ */
 
+/** Classified missing files, so the panel can say which kind it found. */
+const MAX_CLASSIFY = 25;
+
 /**
- * Checks the three most recent uploads answer on the mirror.
+ * Compares the whole media table against the whole bucket.
  *
- * The newest rows and not a count, because a count compares two numbers that
- * drift for honest reasons and says nothing about when the drift started. What
- * can actually break is the copy-on-upload step, and the newest rows are
- * exactly where that shows first.
+ * It used to check the three newest uploads, and that was not enough. On
+ * 2026-10-15 it did catch a real fault -- 21 of the last 39 video covers were
+ * never reaching R2 -- but only because the three newest all happened to be
+ * among the failures. Three good uploads landing afterwards would have turned
+ * the panel green with 21 files still missing, and nothing would ever have
+ * looked again. A window that small does not answer "is the mirror complete",
+ * it answers "did the last upload work", and those are different questions.
  *
- * It asks Cloudflare rather than Vercel, so the attack challenge is not in the
- * way: `media.tdinfo.org` is the mirror's own custom domain.
+ * The whole bucket is one paged LIST -- nine calls for 8,573 objects -- and the
+ * whole table is one column of one query. Comparing two sets is free. So the
+ * complete answer costs about what the three-file sample did.
+ *
+ * ## Why missing files are classified, not just counted
+ *
+ * 13 rows from the October content migration point at objects Supabase itself
+ * answers `NoSuchKey` for: each is the highest-numbered file in its folder,
+ * the signature of an import that registered N files and uploaded N-1. They
+ * cannot be mirrored, because there is nothing to mirror. Counting them with
+ * the real failures would leave this check permanently red, and a check that
+ * is always red is a check nobody reads.
+ *
+ * So each missing file is asked about at the source: gone from Supabase too is
+ * an orphan row (reported, not alarmed about); present at the source but not
+ * on the mirror is a copy that failed (alarmed about).
  */
-async function checkRecentMirrored(): Promise<DefenseCheck> {
-  const key = "mirror_recent";
-  const label = "最近上传已进镜像";
+async function checkMirrorComplete(): Promise<DefenseCheck> {
+  const key = "mirror_sync";
+  const label = "媒体已进镜像";
   const rule = mirrorRewrite();
   if (!rule) return { key, label, state: "unknown", value: "镜像未开启" };
 
-  let rows: { name: string | null; storage_path: string | null }[];
+  const accountId = process.env.R2_ACCOUNT_ID?.trim();
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID?.trim();
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY?.trim();
+  const bucket = process.env.R2_BUCKET?.trim();
+  if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
+    return { key, label, state: "unknown", value: "R2 未配置" };
+  }
+  const endpoint = process.env.R2_ENDPOINT?.trim() || `https://${accountId}.r2.cloudflarestorage.com`;
+  const aws = new AwsClient({ accessKeyId, secretAccessKey, service: "s3", region: "auto" });
+
   try {
+    /* Every key in the bucket. Paged, because a 1000-object page would have
+       reported a healthy mirror as broken the day the bucket outgrew it. */
+    const have = new Set<string>();
+    let token: string | undefined;
+    do {
+      const url =
+        `${endpoint}/${bucket}?list-type=2&max-keys=1000` +
+        (token ? `&continuation-token=${encodeURIComponent(token)}` : "");
+      const response = await aws.fetch(url, { signal: AbortSignal.timeout(20000) });
+      if (!response.ok) throw new Error(`R2 list ${response.status}`);
+      const xml = await response.text();
+      for (const [, block] of xml.matchAll(/<Contents>([\s\S]*?)<\/Contents>/g)) {
+        const k = block.match(/<Key>([^<]+)<\/Key>/)?.[1];
+        if (k) have.add(k);
+      }
+      token = /<IsTruncated>true<\/IsTruncated>/.test(xml)
+        ? xml.match(/<NextContinuationToken>([^<]+)<\/NextContinuationToken>/)?.[1]
+        : undefined;
+    } while (token);
+
     const supabase = createSupabaseAdminClient();
     const { data, error } = await supabase
       .from("cms_media_assets")
-      .select("name, storage_path")
-      .order("created_at", { ascending: false })
-      .limit(3);
+      .select("storage_path, created_at")
+      .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    rows = data ?? [];
+    const rows = data ?? [];
+
+    const missing: { key: string; url: string; createdAt: string }[] = [];
+    for (const row of rows) {
+      const path = String(row.storage_path ?? "");
+      const at = path.indexOf(rule.from.replace(/^\/\//, ""));
+      const cut = path.indexOf("/storage/v1/object/public/");
+      if (cut === -1 && at === -1) continue;
+      const after = path.slice(path.indexOf("/object/public/") + "/object/public/".length);
+      /* `bucket/key`, and the key may carry a `?download=` the reader needs but
+         R2 never saw -- stripping it is the difference between a true report
+         and 10 phantom misses. */
+      const raw = after.slice(after.indexOf("/") + 1).split("?")[0];
+      let decoded = raw;
+      try {
+        decoded = decodeURIComponent(raw);
+      } catch {
+        /* A key that will not decode is compared as written. */
+      }
+      if (have.has(decoded) || have.has(raw)) continue;
+      missing.push({ key: decoded, url: path, createdAt: String(row.created_at ?? "") });
+    }
+
+    if (missing.length === 0) {
+      return { key, label, state: "ok", value: `${rows.length} 个全在` };
+    }
+
+    /* Ask the source about each one, up to a bound: an archive that has lost
+       its source cannot be mirrored and must not be alarmed about. */
+    const sample = missing.slice(0, MAX_CLASSIFY);
+    const verdicts = await Promise.all(
+      sample.map(async (m) => {
+        const response = await probe(m.url, { method: "HEAD" });
+        /* Supabase answers 400 with a NoSuchKey body for a missing object, so
+           anything that is not a 200 counts as "not at the source". */
+        return { ...m, atSource: response?.status === 200 };
+      })
+    );
+    const broken = verdicts.filter((v) => v.atSource);
+    const orphans = verdicts.filter((v) => !v.atSource);
+    const unclassified = missing.length - sample.length;
+
+    if (broken.length === 0 && unclassified === 0) {
+      return {
+        key,
+        label,
+        state: "warn",
+        value: `${orphans.length} 个源文件已不存在`,
+        remedy:
+          `有 ${orphans.length} 个媒体记录指向的文件在 Supabase 上也已经没有了（返回 NoSuchKey），` +
+          "所以镜像不了 —— 这不是同步出问题。多半是内容迁移时登记了文件却没传上去。" +
+          `例如 ${orphans.slice(0, 3).map((o) => o.key).join("、")}。` +
+          "读者看不到坏图的前提是没有页面引用它们；确认之后可以把这些记录从媒体库删掉，这一项就会恢复正常。"
+      };
+    }
+
+    return {
+      key,
+      label,
+      state: "bad",
+      value: `${broken.length + unclassified} 个没进镜像`,
+      remedy:
+        `这些文件在 Supabase 上存在、但不在 ${rule.to.replace(/^\/\//, "").replace(/\/$/, "")} 上，` +
+        "说明复制那一步失败了。" +
+        `最近的几个：${broken.slice(0, 3).map((b) => b.key).join("、")}。` +
+        "先到 Vercel → Logs 搜 media-mirror 看报的是什么（HTTP 411 是 R2 拒绝没有 Content-Length 的请求，" +
+        "HTTP 403 多半是密钥问题）；再确认 R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET 都还在。" +
+        "读者那一侧暂时不受影响：取不到镜像会自动回退 Supabase。" +
+        (orphans.length > 0 ? `　另有 ${orphans.length} 个源文件本身已不存在，那是另一回事。` : "")
+    };
   } catch (error) {
     return {
       key,
       label,
       state: "unknown",
-      value: "读不到媒体表",
-      remedy: `查 cms_media_assets 失败：${error instanceof Error ? error.message : "未知错误"}`
+      value: "比对失败",
+      remedy: `对照 R2 与媒体表时出错：${error instanceof Error ? error.message : "未知错误"}`
     };
   }
-
-  /* `storage_path` holds a full public URL, not a path -- the column predates
-     the name. Only rows that look like one can be rewritten. */
-  const candidates = rows.filter((r) => (r.storage_path ?? "").includes(rule.from));
-  if (candidates.length === 0) {
-    return { key, label, state: "unknown", value: "没有可检查的新上传" };
-  }
-
-  const results = await Promise.all(
-    candidates.map(async (row) => {
-      const url = rewriteMediaUrl(row.storage_path as string, rule);
-      const response = await probe(url, { method: "HEAD" });
-      return { name: row.name ?? "(未命名)", ok: response !== null && response.status === 200, status: response?.status ?? 0 };
-    })
-  );
-
-  const missing = results.filter((r) => !r.ok);
-  if (missing.length === 0) {
-    return { key, label, state: "ok", value: `最近 ${results.length} 个都在` };
-  }
-  return {
-    key,
-    label,
-    state: "bad",
-    value: `${missing.length}/${results.length} 不在镜像上`,
-    remedy:
-      `这些最近上传的文件在 ${rule.to.replace(/^\/\//, "").replace(/\/$/, "")} 上取不到：` +
-      missing.map((m) => `${m.name}（HTTP ${m.status || "连不上"}）`).join("、") +
-      "。说明上传时的「复制进 R2」这一步失败了。先到 Vercel → Logs 搜 mirrorUpload 看报的是什么；" +
-      "再确认 R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET 四个变量都还在。" +
-      "读者那一侧暂时不受影响：取不到镜像会自动回退到 Supabase。" +
-      "补齐历史文件可以跑 scripts 里的增量同步。"
-  };
 }
 
 /* ------------------------------------------------------------------ *
@@ -677,7 +761,7 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
 /** Every check, run together. Never throws: a failed probe is a check result. */
 export async function getDefenseStatus(): Promise<DefenseReport> {
   const [recent, search, archive, rendered] = await Promise.all([
-    checkRecentMirrored(),
+    checkMirrorComplete(),
     checkSearchBound(),
     checkLogArchive(),
     checkRenderedPage()
