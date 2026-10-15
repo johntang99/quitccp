@@ -7,7 +7,7 @@ Vercel 的运行时日志只留一天。2026-10-13 那场攻击之后，我们�
 
 ## 现在的状态（2026-10-15）
 
-Worker **已部署并验证**，只差在 Vercel 那边把 drain 指过来。
+**全部开通完毕**，日志正在流入 R2。
 
 | | |
 | --- | --- |
@@ -15,7 +15,7 @@ Worker **已部署并验证**，只差在 Vercel 那边把 drain 指过来。
 | 桶 | `tuidang-logs`，保留期 14 天（lifecycle 规则 `expire-raw-logs-14d`） |
 | 签名密钥 | 已写入 Worker secret；同一个值记在根目录 `.env.local` 的 `VERCEL_DRAIN_SIGNATURE_SECRET` |
 | 后台可见 | `/admin/dashboard` →「站点防护」→「日志存档」，没收到数据会说 |
-| 还差 | **第 4 步**：Vercel → Team Settings → Drains |
+| Drain | 已建，名字 `quitccp`，Logs / NDJSON / Production |
 
 部署用的是 API token（`CLOUDFLARE_API_TOKEN`），不是 `wrangler login` ——
 localhost 上别的项目留下的 cookie 会把 login 的回调服务器撑爆（HTTP 431，
@@ -153,3 +153,50 @@ Visibility**，关掉之后所有 drain 里都不再带 IP。代价是丢掉按 
 
 第一次跑前三条时拿到的是 404 —— workers.dev 的路由还没传播开。几秒之后
 就正常了。重建时如果头几次请求 404，先等一会儿再试，不要以为部署失败了。
+
+
+## 建 drain 时会卡住的两个地方（2026-10-15 实际踩过）
+
+**一、密钥是 Vercel 生成的，不是你生成的。**
+
+第 3 步那个 Signature Verification Secret 输入框**打开时就已经预填了一串**，
+是 Vercel 自己生成的。文档（和这份 README 原来的写法）会让你以为是你生成一个
+填进去 —— 不是。所以顺序反过来：**先从 Vercel 复制，再写进 Worker**。
+
+```bash
+# 把 Vercel 那串写进根目录 .env.local 的 VERCEL_DRAIN_SIGNATURE_SECRET，然后
+cd workers/vercel-log-drain
+printf '%s' "$SECRET" | npx wrangler secret put DRAIN_SIGNATURE_SECRET
+```
+
+不用重新部署，secret 立即生效。
+
+顺带：Vercel 生成的是 32 位 base62，不是十六进制。我们原来用
+`openssl rand -hex 32` 生成的是 64 位 hex。两种都行 —— HMAC 对任意字符串
+都成立 —— 别因为格式不一样就以为粘错了。
+
+**二、Test 按钮发的是带签名的真实请求，不是所有权握手。**
+
+密钥没对上时它回 403，界面只说「Your endpoint sent a 403」，不告诉你为什么。
+Worker 这边拒得完全正确，但从界面上看不出问题在哪。
+
+分辨方法是挂实时日志看它到底发了什么：
+
+```bash
+cd workers/vercel-log-drain && npx wrangler tail --format json
+```
+
+实测抓到的：
+
+```
+POST → 403
+   user-agent          VercelDrain/1.0 (+https://vercel.com/docs/drains)
+   content-type        application/x-ndjson
+   content-length      582
+   x-vercel-signature  dd1b2a47a39e19330b80d63178f935ac4a11b811
+```
+
+带签名、带 582 字节样本数据 —— 所以不是握手。`x-vercel-verify` 那条路径只在
+别的场合用。密钥同步之后同一个请求就是 200 了。
+
+（macOS 上没有 `timeout` 命令，想给 tail 设时限得用 `gtimeout` 或者直接 Ctrl-C。）
