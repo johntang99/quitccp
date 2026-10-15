@@ -5,24 +5,43 @@ Vercel 的运行时日志只留一天。2026-10-13 那场攻击之后，我们�
 
 这个 Worker 把 Vercel 的日志接下来，原样写进我们自己的 R2，想留多久留多久。
 
-## 现在卡在哪
+## 现在的状态（2026-10-15）
 
-**等 R2 权限** —— 和媒体镜像卡在同一个地方。周先生给了 R2 权限之后，下面
-五步就能开。代码已经写完并在本地验证过（见文末「验证记录」）。
+Worker **已部署并验证**，只差在 Vercel 那边把 drain 指过来。
+
+| | |
+| --- | --- |
+| Worker 地址 | `https://vercel-log-drain.baam-edge.workers.dev` |
+| 桶 | `tuidang-logs`，保留期 14 天（lifecycle 规则 `expire-raw-logs-14d`） |
+| 签名密钥 | 已写入 Worker secret；同一个值记在根目录 `.env.local` 的 `VERCEL_DRAIN_SIGNATURE_SECRET` |
+| 后台可见 | `/admin/dashboard` →「站点防护」→「日志存档」，没收到数据会说 |
+| 还差 | **第 4 步**：Vercel → Team Settings → Drains |
+
+部署用的是 API token（`CLOUDFLARE_API_TOKEN`），不是 `wrangler login` ——
+localhost 上别的项目留下的 cookie 会把 login 的回调服务器撑爆（HTTP 431，
+cookie 按主机名存、不分端口）。
 
 ## 开通步骤
 
+第 1、2、3、5 步已经做完（2026-10-15）。留在这里是为了将来重建时照着走：
+
 ```bash
+export CLOUDFLARE_API_TOKEN=…   # 见根目录 .env.local
+export CLOUDFLARE_ACCOUNT_ID=…
+
 # 1. 建桶
 npx wrangler r2 bucket create tuidang-logs
 
-# 2. 设置签名密钥（先随手生成一个，第 4 步要把同一个值填进 Vercel）
-openssl rand -hex 32            # 把输出记下来
+# 2. 设置签名密钥（第 4 步要把同一个值填进 Vercel）
+openssl rand -hex 32
 cd workers/vercel-log-drain
-npx wrangler secret put DRAIN_SIGNATURE_SECRET
+printf '%s' "$SECRET" | npx wrangler secret put DRAIN_SIGNATURE_SECRET
 
 # 3. 部署，拿到 workers.dev 地址
 npx wrangler deploy
+
+# 5. 保留期
+npx wrangler r2 bucket lifecycle add tuidang-logs expire-raw-logs-14d logs/ --expire-days 14
 ```
 
 **4. 在 Vercel 建 drain**：Team Settings → Drains → Add Drain
@@ -116,3 +135,21 @@ Visibility**，关掉之后所有 drain 里都不再带 IP。代价是丢掉按 
 
 读取脚本也对着模拟的 R2 跑过完整流程：两个小时分区、100 条记录，统计结果
 （200×81、301×18、404×1）与原始日志完全吻合。
+
+
+## 验证记录（2026-10-15，线上 Worker）
+
+部署到 `https://vercel-log-drain.baam-edge.workers.dev` 之后，对着真实线上
+地址重跑了一遍：
+
+| 测试 | 结果 |
+| --- | --- |
+| GET | 405 |
+| `x-vercel-verify` 握手 | 200，并原样回送该头 |
+| 错误签名 | 403 |
+| 没有签名头 | 403 |
+| 正确签名 | 200 |
+| 写进 R2 | `logs/2026/10/15/08/…ndjson`，读回来与发出的 JSON 逐字相同 |
+
+第一次跑前三条时拿到的是 404 —— workers.dev 的路由还没传播开。几秒之后
+就正常了。重建时如果头几次请求 404，先等一会儿再试，不要以为部署失败了。
