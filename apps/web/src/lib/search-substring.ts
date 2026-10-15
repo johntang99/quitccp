@@ -1,4 +1,4 @@
-import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
 import { SIMPLIFIED_TO_TRADITIONAL, TRADITIONAL_TO_SIMPLIFIED } from "@/lib/zh-variants";
 import { synonymsOf } from "@/lib/search-synonyms";
 
@@ -306,7 +306,7 @@ async function searchOneType(
   locale: string,
   limit: number
 ): Promise<TypeOutcome> {
-  const supabase = createSupabaseAdminClient();
+  const supabase = createSupabasePublicClient();
   // One entry per term, each holding every form that term could take. Built per
   // tier because the cheap tiers can afford synonyms and the body tier cannot.
   const needlesFor = (withSynonyms: boolean) =>

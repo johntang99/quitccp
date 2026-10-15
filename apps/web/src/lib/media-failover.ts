@@ -1,5 +1,9 @@
 /**
- * Switches media over to the mirror when the primary host stops answering.
+ * Rescues media back to Supabase when the mirror stops answering.
+ *
+ * Reversed on 2026-10-15: see the note on direction inside the function. It was
+ * written when Supabase was the primary and the mirror the rescue; the server
+ * now serves mirror URLs, so the rescue runs the other way.
  *
  * Static-ifying the site protected the pages, not the media inside them. A
  * cached page comes from Vercel, but every image, audio file and video in it
@@ -28,27 +32,26 @@
  * need their URLs rewritten at the source, not rescued at load time.
  */
 
-const PUBLIC_OBJECT_PREFIX = "/storage/v1/object/public/";
+import { mirrorRewrite } from "@/lib/media-mirror";
 
 export function mediaFailoverScript(): string | null {
-  const mirrorHost = process.env.NEXT_PUBLIC_MEDIA_MIRROR_HOST?.trim().replace(/^https?:\/\//, "").replace(/\/$/, "");
-  if (!mirrorHost) return null;
+  const rule = mirrorRewrite();
+  if (!rule) return null;
 
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl) return null;
-
-  let sourceHost: string;
-  try {
-    sourceHost = new URL(supabaseUrl).host;
-  } catch {
-    return null;
-  }
-
-  const bucket = process.env.SUPABASE_STORAGE_BUCKET || "media";
-  /* The mirror keeps the bucket's own layout at its root, so the rewrite is
-     just: drop Supabase's API path, keep the object key. */
-  const from = `//${sourceHost}${PUBLIC_OBJECT_PREFIX}${bucket}/`;
-  const to = `//${mirrorHost}/`;
+  /*
+   * Which way round this runs changed on 2026-10-15. The server now rewrites
+   * stored URLs to the mirror before the page is sent, so what reaches the
+   * browser already names the mirror and this listener would never match it.
+   * It is therefore reversed here: it rescues a failed mirror request back to
+   * Supabase, which is the direction that is now useful.
+   *
+   * Both legs stay standing that way. Supabase remains the fallback for as
+   * long as the bucket is public; the day it is made private, this listener
+   * stops being able to help and should be removed rather than left to swap in
+   * a URL that cannot answer.
+   */
+  const from = rule.to;
+  const to = rule.from;
 
   /*
    * Deliberately not guarded by a per-element "tried once" flag. React may

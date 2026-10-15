@@ -5,7 +5,7 @@ import {
   type TemplateKind
 } from "@quitccp/content-schema";
 import { firstImageInMarkdown } from "@/lib/markdown-image";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
 import type { RenderablePage } from "./site-data";
 import { extractNewsSlugFromHref, toNewsArticleSlug } from "./news-linking";
 
@@ -451,7 +451,7 @@ function maybeResolveVirtualArticleRow(
 }
 
 async function findVirtualNewsArticle(slug: string): Promise<VirtualArticleCandidate | null> {
-  const supabase = createSupabaseAdminClient();
+  const supabase = createSupabasePublicClient();
   const { data, error } = await supabase
     .from("cms_content_entries")
     .select("path, data")
@@ -512,7 +512,7 @@ export async function getRenderablePage(section: string, slug = "index"): Promis
   const locale = "zh";
   const contentPath = pageRouteToContentPath(section, slug);
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const [{ data: pageRow, error: pageError }, { data: contentRow, error: contentError }] = await Promise.all([
       supabase
         .from("cms_pages")
@@ -653,7 +653,7 @@ async function loadRenderableArticle(
   };
 
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const listMapped = await findVirtualNewsArticle(normalizedSlug);
     const { data, error } = await supabase
       .from("cms_articles")
@@ -910,7 +910,7 @@ export async function getRenderableVideo(slug: string): Promise<PublicVideoRecor
   })();
 
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const { data, error } = await supabase
       .from("cms_videos")
       .select(
@@ -972,7 +972,7 @@ export async function getRenderableVideo(slug: string): Promise<PublicVideoRecor
  */
 async function videoSiblings(categorySlug: string, excludeSlug: string): Promise<PublicVideoCard[]> {
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const { data: cat } = await supabase
       .from("cms_video_categories")
       .select("id")
@@ -1020,7 +1020,7 @@ async function videoSiblings(categorySlug: string, excludeSlug: string): Promise
  */
 async function primaryCategory(articleId: string): Promise<{ name: string; slug: string }> {
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const { data } = await supabase
       .from("cms_article_category_map")
       .select("position, cms_article_categories(name, slug)")
@@ -1099,7 +1099,7 @@ export async function getVideoCategory(
   pageSize = 16
 ): Promise<PublicVideoCategory | null> {
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const virtual = VIDEO_VIRTUAL_LISTINGS[slug];
 
     let categoryId = "";
@@ -1164,7 +1164,7 @@ export async function listPublicVideoCategories(): Promise<
   { slug: string; name: string; total: number }[]
 > {
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const { data } = await supabase
       .from("cms_video_categories")
       .select("id, slug, name, sort_order")
@@ -1204,7 +1204,7 @@ export async function getRelatedArticles(
 ): Promise<{ href: string; image: string; tag: string; title: string; meta: string }[]> {
   if (!categoryName) return [];
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const { data: category } = await supabase
       .from("cms_article_categories")
       .select("id")
@@ -1413,7 +1413,7 @@ async function newsByCategory(
   categoryId: string,
   limit: number
 ): Promise<{ rows: Record<string, unknown>[]; total: number }> {
-  const supabase = createSupabaseAdminClient();
+  const supabase = createSupabasePublicClient();
   const { data, count } = await supabase
     .from("cms_articles")
     .select(`${NEWS_CARD_COLUMNS}, id, cms_article_category_map!inner(category_id)`, { count: "exact" })
@@ -1434,7 +1434,7 @@ async function newsByCategory(
  */
 export async function getNewsHome(): Promise<NewsHome> {
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
 
     const nameBySlug = new Map(NEWS_CATEGORIES.map((row) => [row.slug, row.name]));
     const { data: categoryRows } = await supabase
@@ -1546,7 +1546,7 @@ async function primaryCategoryNames(slugs: string[]): Promise<Map<string, string
   const unique = [...new Set(slugs)];
   if (unique.length === 0) return new Map();
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const { data: articles } = await supabase.from("cms_articles").select("id, slug").in("slug", unique);
     const slugById = new Map((articles ?? []).map((row) => [String(row.id), String(row.slug)]));
     if (slugById.size === 0) return new Map();
@@ -1600,7 +1600,7 @@ const CHANNEL_NAME_ALIASES: Record<string, string> = {
 export async function getHomeNews(channelNames: string[]): Promise<HomeNewsLive> {
   const empty: HomeNewsLive = { lead: null, leadIsFlagged: false, items: [], channelLeads: new Map() };
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
 
     const newest = async (build: (q: ReturnType<typeof baseQuery>) => ReturnType<typeof baseQuery>, limit: number) => {
       const { data } = await build(baseQuery());
@@ -1683,7 +1683,7 @@ export interface HomeVideoLive {
 export async function getHomeVideo(): Promise<HomeVideoLive> {
   const empty: HomeVideoLive = { feature: null, featureIsFlagged: false, featureCategory: "", items: [] };
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const columns =
       "id, slug, title, episode, description, cover_image, duration_seconds, published_at, source_url";
     const base = () =>
@@ -1741,7 +1741,7 @@ async function primaryVideoCategoryNames(ids: string[]): Promise<Map<string, str
   const unique = [...new Set(ids)];
   if (unique.length === 0) return new Map();
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const { data } = await supabase
       .from("cms_video_category_map")
       .select("video_id, position, cms_video_categories(name)")
@@ -1858,7 +1858,7 @@ export async function getNewsListing(
   if (!virtual && !meta) return null;
 
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const offset = (Math.max(page, 1) - 1) * pageSize;
 
     let categoryId = "";
@@ -1967,7 +1967,7 @@ export interface VideoHome {
  */
 export async function getVideoHome(): Promise<VideoHome> {
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const shelves = await getVideoLibrary(9);
 
     const featureColumns =
@@ -2119,7 +2119,7 @@ const MATERIAL_SELECT =
 
 export async function getMaterialCategories(): Promise<PublicMaterialCategory[]> {
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const [{ data: categories, error }, { data: maps, error: mapError }] = await Promise.all([
       supabase
         .from("cms_material_categories")
@@ -2152,7 +2152,7 @@ export async function getMaterialCategories(): Promise<PublicMaterialCategory[]>
 
 export async function getMaterialsByCategory(categorySlug?: string): Promise<PublicMaterial[]> {
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const { data, error } = await supabase
       .from("cms_materials")
       .select(MATERIAL_SELECT)
@@ -2189,7 +2189,7 @@ export async function getMaterial(slug: string): Promise<PublicMaterial | null> 
   })();
 
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const { data, error } = await supabase
       .from("cms_materials")
       .select(MATERIAL_SELECT)
@@ -2246,7 +2246,7 @@ export interface CultureListing {
 }
 
 async function categoryIdBySlug(
-  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  supabase: ReturnType<typeof createSupabasePublicClient>,
   slug: string
 ): Promise<string> {
   const { data } = await supabase.from("cms_article_categories").select("id").eq("slug", slug).maybeSingle();
@@ -2263,7 +2263,7 @@ export async function getCultureListing(filterKey = "all", page = 1, pageSize = 
     counts: { all: 0, article: 0, poetry: 0, music: 0 }
   };
   try {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const [plainId, poetryId, musicId] = await Promise.all([
       categoryIdBySlug(supabase, "culture"),
       categoryIdBySlug(supabase, "culture-poetry"),
@@ -2372,7 +2372,7 @@ export interface PublicFaqGroup {
  * question has nothing to do with the words typed.
  */
 export async function getPublicFaq(search = ""): Promise<PublicFaqGroup[]> {
-  const supabase = createSupabaseAdminClient();
+  const supabase = createSupabasePublicClient();
   const { data: categories, error } = await supabase
     .from("cms_faq_categories")
     .select("id, slug, name, summary, sort_order")
@@ -2423,7 +2423,7 @@ export async function getPublicFaq(search = ""): Promise<PublicFaqGroup[]> {
 export async function getPublicFaqItem(
   slug: string
 ): Promise<{ item: PublicFaqItem; category: { slug: string; name: string } } | null> {
-  const supabase = createSupabaseAdminClient();
+  const supabase = createSupabasePublicClient();
   const { data, error } = await supabase
     .from("cms_faqs")
     .select("slug, question, answer_markdown, category_id")
@@ -2462,7 +2462,7 @@ export async function getPublicFaqCategory(slug: string): Promise<PublicFaqGroup
  * it would break every link pointing at it. The id never changes.
  */
 export async function getPublicFaqSlugByLegacyId(legacyId: number): Promise<string | null> {
-  const supabase = createSupabaseAdminClient();
+  const supabase = createSupabasePublicClient();
   const { data, error } = await supabase
     .from("cms_faqs")
     .select("slug")
@@ -2482,7 +2482,7 @@ export async function getPublicFaqSlugByLegacyId(legacyId: number): Promise<stri
  * row pointing at it. See [[getPublicFaqSlugByLegacyId]].
  */
 export async function getArticleSlugByLegacyId(legacyId: number): Promise<string | null> {
-  const supabase = createSupabaseAdminClient();
+  const supabase = createSupabasePublicClient();
   const { data, error } = await supabase
     .from("cms_articles")
     .select("slug")

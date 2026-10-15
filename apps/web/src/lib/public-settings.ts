@@ -2,7 +2,7 @@ import { unstable_cache } from "next/cache";
 import { getHomepageHero, mainNav } from "@/lib/site-data";
 import { SITE_CHROME_TAG, SITE_CHROME_TTL_SECONDS } from "@/lib/site-chrome-cache";
 import { SECTION_CONFIG, loadSectionNavOverrides, mergeSectionNav } from "@/lib/section-nav";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
 
 export interface PublicNavItem {
   href: string;
@@ -53,7 +53,7 @@ function parseHeroValue(value: unknown): Partial<HomepageHeroContent> {
  */
 const listPublicSettingsUncached = unstable_cache(
   async (keys: string[]): Promise<[string, unknown][]> => {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const { data, error } = await supabase
       .from("cms_site_settings")
       .select("setting_key, value_json")

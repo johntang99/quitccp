@@ -1,4 +1,4 @@
-import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
 import { type Theme, themeDefaults } from "@/lib/theme-css";
 import { unstable_cache } from "next/cache";
 import { SITE_CHROME_TAG, SITE_CHROME_TTL_SECONDS } from "@/lib/site-chrome-cache";
@@ -42,7 +42,7 @@ export function mergeTheme(stored: unknown): Theme {
  */
 const loadThemeUncached = unstable_cache(
   async (): Promise<Theme> => {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const { data, error } = await supabase
       .from("cms_site_settings")
       .select("value_json")

@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
 import { SITE_CHROME_TAG, SITE_CHROME_TTL_SECONDS } from "@/lib/site-chrome-cache";
 import { EXTERNAL_SERVICES } from "@/lib/external-services";
 
@@ -102,7 +102,7 @@ export function mergeSectionNav(
  */
 const loadSectionNavOverridesUncached = unstable_cache(
   async (): Promise<unknown> => {
-    const supabase = createSupabaseAdminClient();
+    const supabase = createSupabasePublicClient();
     const { data, error } = await supabase
       .from("cms_content_entries")
       .select("data")

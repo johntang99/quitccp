@@ -1,4 +1,4 @@
-import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
 import { searchEverythingBySubstring, type SearchResultType } from "@/lib/search-substring";
 
 export interface SearchArticleResult {
@@ -134,7 +134,7 @@ async function searchWithPgTrgm(
   limit: number,
   offset: number
 ): Promise<SearchArticleResult[]> {
-  const supabase = createSupabaseAdminClient();
+  const supabase = createSupabasePublicClient();
   const { data, error } = await supabase.rpc("search_articles_trgm", {
     p_query: query,
     p_locale: locale,
@@ -205,7 +205,7 @@ async function searchWithIlikeFallback(
   limit: number,
   offset: number
 ): Promise<SearchArticleResult[]> {
-  const supabase = createSupabaseAdminClient();
+  const supabase = createSupabasePublicClient();
   const { data: fallbackRows, error: fallbackError } = await supabase
     .from("cms_articles")
     .select("id, slug, title, summary, section")
