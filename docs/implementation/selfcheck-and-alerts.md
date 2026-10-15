@@ -247,5 +247,10 @@ Vercel ──drain──▶ Worker ──▶ R2 原始 NDJSON（14 天）
 ### 刻意没存的东西
 
 任何从 `proxy.clientIp` 推导出来的数据。本站读者是海外华人，**「谁读了什么」
-这种永久可查的记录，不该作为一张流量图的副产品被创建出来**。原始存档里带不带
-IP 取决于 Vercel 的 IP Address Visibility 开关，而且无论如何只存在 14 天。
+这种永久可查的记录，不该作为一张流量图的副产品被创建出来**。
+
+2026-10-15 起原始存档里也不再有 IP 了：Vercel 的 IP Address Visibility 拆成
+两个开关，「Show in Log Drains」已关闭，「Show in Vercel Dashboard」保持开启
+——攻击取证用后者，那些数据只活在 Vercel 自己的保留期里。理由写在
+`workers/vercel-log-drain/README.md`，**不要因为看见 drain 里缺 IP 就把它
+打开**。

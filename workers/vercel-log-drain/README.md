@@ -107,16 +107,36 @@ R2 这边：存储 $0.015/GB/月（几毛钱），**出口流量免费**，写�
 Vercel 的 drain 支持 sampling rule（按环境 + 路径前缀设采样百分比），需要的话
 可以加一条兜底，比如生产环境只采 10%。
 
-## 一件要你拿主意的事
+## 读者 IP：已决定不存（2026-10-15）
 
-日志里有 `proxy.clientIp` —— 读者的 IP。本站读者是海外华人，把他们的 IP
-长期存进 R2 是一个需要你点头的决定，不是一个技术默认值。
+日志里本来有 `proxy.clientIp`。**现在没有了，这是刻意的，不要打开。**
 
-Vercel 可以在团队层面关掉：Settings → Security & Privacy → **IP Address
-Visibility**，关掉之后所有 drain 里都不再带 IP。代价是丢掉按 IP 追攻击源的
-能力——而我们现有的防火墙规则恰恰是按 IP 和 JA4 指纹建的。
+Vercel → Team Settings → Security & Privacy → IP Address Visibility 是两个
+独立开关，现在的状态是：
 
-折中做法：平时关掉，真出事时临时打开。要我怎么设，你说。
+| 开关 | 状态 | 为什么 |
+| --- | --- | --- |
+| Show in Vercel Dashboard | **开** | 攻击取证真正用到的地方。第 2 条按 ASN 的 Deny 规则就是从 Firewall data 里看出来的。这些数据只活在 Vercel 自己的保留期里 |
+| Show in Log Drains | **关** | 这条路会把真实读者的 IP 写进我们的 R2，存 14 天 |
+
+三条理由：
+
+**一、这些 IP 对我们几乎没有取证价值。** 攻击流量被防火墙挑战掉之后归到
+`firewall` 这个 source，而我们刻意没有订阅它（见上面的费用表）。所以 drain
+里的 IP 压倒性地是真实读者的，不是攻击者的 —— 我们花代价存下来的，恰好是
+最不需要的那部分。
+
+**二、防御能力一点不少。** 两个开关管的都是「展示和转发的去处」。防火墙的
+限速计数发生在边缘、用边缘看到的 IP；函数收到的 `x-forwarded-for` 也不受
+影响，所以 `lib/security/rate-limit.ts` 里那个加盐哈希照常工作。
+
+**三、这个项目早就定过这条规矩。** `lib/security/rate-limit.ts` 开头写着：
+「Raw IPs are never persisted or logged anywhere in the public intake path.
+Submitters in mainland China face real consequences if this data leaks.」
+drain 接上之后，正在悄悄推翻它。
+
+真出事时把这个开关和 `firewall` source 一起打开 —— 那才是攻击者 IP 真正
+所在的地方。和「平时不订阅 firewall」是同一个形状：平时省着，出事再开。
 
 ## 验证记录（2026-10-14，本地 `wrangler dev`，用的是生产真实日志）
 
