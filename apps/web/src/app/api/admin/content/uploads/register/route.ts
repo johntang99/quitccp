@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { after } from "next/server";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { recordUploadedAsset, storageBucketName } from "@/lib/admin/media-storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { downloadUrlFor, extensionOf } from "@/lib/admin/upload-policy";
+import { mirrorUploadInBackground } from "@/lib/admin/media-mirror-upload";
 
 /** Images stay images; everything else is a download. */
 function assetTypeFor(filename: string): string {
@@ -78,6 +80,21 @@ export async function POST(request: Request) {
     },
     user.email
   );
+
+  /*
+   * Mirror it, after the editor already has their answer.
+   *
+   * Inside `after()` because the copy is not what they are waiting for: the
+   * object is in Storage and the row is written, so the upload has succeeded
+   * whatever happens next. Blocking on it would mean a 40MB video makes the
+   * editor stare at a spinner for the mirror's benefit.
+   *
+   * The window this leaves is covered: until the copy lands, the page asks the
+   * mirror, gets a 404, and the listener in `media-failover.ts` falls back to
+   * Supabase. That stops being true once the bucket is private -- see the note
+   * in media-mirror-upload.ts.
+   */
+  after(() => mirrorUploadInBackground(path, String(body.contentType ?? object.metadata?.mimetype ?? "")));
 
   return NextResponse.json({ url, asset });
 }

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import { after } from "next/server";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { objectPathFor } from "@/lib/admin/upload-policy";
 import { recordUploadedAsset, storageBucketName } from "@/lib/admin/media-storage";
 import { findCoverForSource } from "@/lib/admin/video-cover-source";
+import { mirrorUploadInBackground } from "@/lib/admin/media-mirror-upload";
 
 /**
  * Fetches the platform's own thumbnail for a video address and keeps a copy.
@@ -81,6 +83,10 @@ export async function POST(request: Request) {
   } catch {
     /* The cover is saved and usable; the library row is a convenience. */
   }
+
+  /* Same reasoning as the upload route: mirror it, but never make the editor
+     wait for it. See media-mirror-upload.ts. */
+  after(() => mirrorUploadInBackground(objectPath, found.mime));
 
   return NextResponse.json({
     ok: true,
