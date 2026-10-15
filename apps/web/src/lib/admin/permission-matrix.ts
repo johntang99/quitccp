@@ -99,6 +99,11 @@ export const ADMIN_NAV_LINKS: readonly AdminNavLink[] = [
   { href: "/admin/video-studio", label: "影片拼接台" },
   { href: "/admin/theme", label: "主题与排版", needs: "theme.write" },
   { href: "/admin/users", label: "用户管理", needs: "users.view" },
+  // 退党证书统计 sits with the content screens rather than the operational
+  // ones: it is business data, and the people who work the 三退声明 queue are
+  // the people who ask for it. Hence `declarations.read` and not a technical
+  // permission.
+  { href: "/admin/cert-stats", label: "证书统计", needs: "declarations.read" },
   { href: "/admin/audit", label: "审计日志", needs: "audit.read" },
   // Next to 审计日志 because they are the two "what happened" screens, and
   // deliberately separate: that one is who did what inside the admin, this one
