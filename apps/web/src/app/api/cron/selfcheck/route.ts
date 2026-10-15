@@ -19,10 +19,18 @@ import { alertRecipient, sendAlertEmail } from "@/lib/notify";
  * one broken thing, and after the second day nobody opens them. So it mails on
  * transitions and not on states:
  *
- *   - a problem that was not in the previous run    -> mail
+ *   - a problem confirmed by two runs in a row      -> mail
  *   - the same problem, 24 hours later              -> mail, once a day
  *   - the same problem, any sooner                  -> nothing
  *   - everything healthy after something was broken -> mail, "recovered"
+ *
+ * Two runs in a row, and not one, because the first thing this ever mailed
+ * about was a false alarm. 2026-10-15, the first run after the firewall bypass
+ * went live: the article page came back MISS twice because nothing had yet
+ * fetched it through that path, and the next run -- and every run after --
+ * said HIT. Nothing was wrong. An hour's delay costs nothing against failures
+ * that are silent by definition, and it is what separates a signal from a
+ * flake.
  *
  * Only `bad` counts. `warn` is for things that are off because somebody turned
  * them off -- the attack challenge, after the attack -- and an alert that fires
@@ -40,10 +48,15 @@ const STATE_KEY = "ops.selfcheck.state";
 const REMINDER_HOURS = 24;
 
 interface AlertState {
-  /** Sorted, so two runs can be compared as strings. */
-  badKeys: string[];
+  /** What was bad in the previous run. A key has to appear twice to count. */
+  seenKeys: string[];
+  /** What has actually been mailed about and has not recovered since. */
+  alertedKeys: string[];
   notifiedAt: string;
 }
+
+/** Sorted so two runs can be compared as strings. */
+const sameSet = (a: string[], b: string[]) => a.join(",") === b.join(",");
 
 async function authorise(request: Request): Promise<string | null> {
   const secret = process.env.CRON_SECRET;
@@ -64,15 +77,20 @@ async function readState(): Promise<AlertState> {
       .select("value_json")
       .eq("setting_key", STATE_KEY)
       .maybeSingle();
-    const value = data?.value_json as Partial<AlertState> | undefined;
+    const value = data?.value_json as (Partial<AlertState> & { badKeys?: string[] }) | undefined;
+    /* `badKeys` is the shape this key had before the two-runs rule existed.
+       Reading it as both halves means the first run after deploying neither
+       re-mails what was already mailed nor forgets it. */
+    const legacy = Array.isArray(value?.badKeys) ? (value!.badKeys as string[]) : [];
     return {
-      badKeys: Array.isArray(value?.badKeys) ? (value!.badKeys as string[]) : [],
+      seenKeys: Array.isArray(value?.seenKeys) ? (value!.seenKeys as string[]) : legacy,
+      alertedKeys: Array.isArray(value?.alertedKeys) ? (value!.alertedKeys as string[]) : legacy,
       notifiedAt: typeof value?.notifiedAt === "string" ? value.notifiedAt : ""
     };
   } catch {
     /* Treated as "nothing was wrong last time". The cost of being wrong here is
        one extra mail, which is the right direction to fail in. */
-    return { badKeys: [], notifiedAt: "" };
+    return { seenKeys: [], alertedKeys: [], notifiedAt: "" };
   }
 }
 
@@ -145,20 +163,24 @@ export async function GET(request: Request) {
   /* Stored before any mail is decided: the dashboard panel reads this, and it
      should show the latest measurement even on a run that mails nothing. */
   await saveDefenseReport(report);
-  const bad = report.checks.filter((c) => c.state === "bad");
-  const badKeys = bad.map((c) => c.key).sort();
+  const badKeys = report.checks.filter((c) => c.state === "bad").map((c) => c.key).sort();
 
   const previous = await readState();
-  const changed = badKeys.join(",") !== previous.badKeys.join(",");
+
+  /* Bad now *and* bad in the previous run. A key failing for the first time is
+     recorded and waited on rather than mailed about -- see the note above. */
+  const confirmedKeys = badKeys.filter((k) => previous.seenKeys.includes(k));
+  const confirmed = report.checks.filter((c) => confirmedKeys.includes(c.key));
+
   const sinceNotice = previous.notifiedAt
     ? (Date.now() - new Date(previous.notifiedAt).getTime()) / 3_600_000
     : Infinity;
 
   let kind: "new" | "reminder" | "recovered" | null = null;
-  if (badKeys.length > 0) {
-    if (changed) kind = "new";
+  if (confirmedKeys.length > 0) {
+    if (!sameSet(confirmedKeys, previous.alertedKeys)) kind = "new";
     else if (sinceNotice >= REMINDER_HOURS) kind = "reminder";
-  } else if (previous.badKeys.length > 0) {
+  } else if (previous.alertedKeys.length > 0) {
     kind = "recovered";
   }
 
@@ -166,7 +188,7 @@ export async function GET(request: Request) {
      proven on demand. It deliberately does not touch the stored state. */
   const forced = new URL(request.url).searchParams.get("test") === "1";
   if (forced && !kind) {
-    const mail = composeMail(bad.length > 0 ? "new" : "recovered", bad, report.checks);
+    const mail = composeMail(confirmed.length > 0 ? "new" : "recovered", confirmed, report.checks);
     const sent = await sendAlertEmail({
       subject: `${mail.subject}（手动测试）`,
       body: `这是一封手动触发的测试邮件，用来确认报警链路通畅。\n\n${mail.body}`
@@ -176,22 +198,26 @@ export async function GET(request: Request) {
 
   let sent = false;
   if (kind) {
-    sent = await sendAlertEmail(composeMail(kind, bad, report.checks));
+    sent = await sendAlertEmail(composeMail(kind, confirmed, report.checks));
   }
 
-  if (kind === "recovered") {
-    await writeState({ badKeys: [], notifiedAt: "" });
-  } else if (kind) {
-    await writeState({ badKeys, notifiedAt: new Date().toISOString() });
-  } else if (changed) {
-    /* Nothing worth mailing, but the set moved -- keep the record honest. */
-    await writeState({ badKeys, notifiedAt: previous.notifiedAt });
-  }
+  /* `seenKeys` is always this run's verdict, so the next run can tell a second
+     failure from a first. `alertedKeys` only moves when something was mailed,
+     and `notifiedAt` only when it was mailed -- otherwise the daily reminder
+     would reset itself on every quiet run. */
+  await writeState({
+    seenKeys: badKeys,
+    alertedKeys: kind === "recovered" ? [] : kind ? confirmedKeys : previous.alertedKeys,
+    notifiedAt: kind === "recovered" ? "" : kind ? new Date().toISOString() : previous.notifiedAt
+  });
 
   return NextResponse.json({
     ok: report.worst !== "bad",
     worst: report.worst,
     alert: kind,
+    /* Bad this run but not yet confirmed by a second one. Visible here so a
+       human running it by hand can see what is being waited on. */
+    pending: badKeys.filter((k) => !confirmedKeys.includes(k)),
     mailed: sent,
     recipient: alertRecipient(),
     checks: report.checks,

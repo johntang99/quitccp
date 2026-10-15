@@ -298,53 +298,29 @@ async function checkSearchBound(): Promise<DefenseCheck> {
 }
 
 /* ------------------------------------------------------------------ *
- * 4. The firewall is still challenging
- * ------------------------------------------------------------------ */
-
-/**
- * One request to our own front door, expecting to be turned away.
+ * There is no "is the firewall still challenging" probe, deliberately
+ * ------------------------------------------------------------------ *
  *
- * This is the probe the challenge made possible rather than the one it broke:
- * while the attack rule is on, a plain server-side request is answered by the
- * firewall with 429 and `x-vercel-mitigated: challenge`. Getting the page
- * instead means the rule is no longer in front of it.
+ * There was one. It asked for the homepage without the bypass header and
+ * expected to be turned away, which worked until the bypass rule existed --
+ * and then reported "未挑战（HTTP 200）" on every run while the firewall was
+ * plainly still challenging everything else. Measured 2026-10-15: the same
+ * request from a laptop got 429, from inside the function 200.
  *
- * It reports `warn`, never `bad`, and the cron does not mail about `warn` --
- * because turning the challenge off is a decision somebody will make on
- * purpose once the attack is over, and an alert that fires on an intended
- * change teaches people to ignore alerts.
+ * The cause is that bot protection is decided largely from the TLS
+ * fingerprint, at connection time, and Node's fetch pools connections. The
+ * other probes in this file send the bypass header over that pool, so by the
+ * time the unheadered request goes out it is riding a connection the edge has
+ * already cleared. A probe cannot ask "what does an ordinary request get" from
+ * a process that is concurrently making extraordinary ones.
+ *
+ * It could be forced onto a fresh connection, but it was never worth much:
+ * it only ever reported `warn`, and turning the challenge off is a decision
+ * somebody makes on purpose once the attack is over. The firewall's own state
+ * is visible in `vercel firewall status`, which is the right place for it.
+ *
+ * Do not add it back without solving the connection reuse.
  */
-async function checkChallengeActive(): Promise<DefenseCheck> {
-  const key = "firewall_challenge";
-  const label = "防火墙挑战";
-  /* Deliberately without the bypass header: the question is what an ordinary
-     non-browser request gets. */
-  let response: Response | null = null;
-  try {
-    response = await fetch(publicOrigin() + "/", {
-      method: "GET",
-      cache: "no-store",
-      redirect: "manual",
-      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
-      headers: { "user-agent": UA }
-    });
-  } catch {
-    return { key, label, state: "unknown", value: "连不上" };
-  }
-
-  if (wasChallenged(response)) {
-    return { key, label, state: "ok", value: "生效中" };
-  }
-  return {
-    key,
-    label,
-    state: "warn",
-    value: `未挑战（HTTP ${response.status}）`,
-    remedy:
-      "非浏览器请求可以直接拿到页面，说明攻击期的 Challenge 规则已经不在首页前面了。" +
-      "如果是攻击结束后你主动关的，这条可以忽略；否则到 Vercel → Firewall 看规则是否被停用或挪了顺序。"
-  };
-}
 
 /* ------------------------------------------------------------------ *
  * 5 & 6. The two that need a rendered page
@@ -493,7 +469,23 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
   } else {
     const mirrorHost = rule.to.replace(/^\/\//, "").replace(/\/$/, "");
     const onMirror = html.split(mirrorHost).length - 1;
-    const onSupabase = html.split(rule.from).length - 1;
+    /*
+     * Counted as "prefix plus at least one filename character", not as a bare
+     * substring, because the page legitimately contains the prefix on its own.
+     * media-failover.ts ships a script holding both hosts as constants:
+     *
+     *   var f="//media.tdinfo.org/", t="//<ref>.supabase.co/.../media/";
+     *
+     * so a bare count reported「2 处仍指向 Supabase」on a page whose images were
+     * all on the mirror -- twice, because the string appears again in the RSC
+     * payload. The failover constant ends at the bucket; a real asset has a
+     * filename after it. That single character is the whole difference.
+     */
+    const assetRef = new RegExp(
+      rule.from.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "[A-Za-z0-9_%-]",
+      "g"
+    );
+    const onSupabase = (html.match(assetRef) ?? []).length;
     if (onSupabase > 0) {
       checks.push({
         key: htmlKey,
@@ -547,13 +539,12 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
 
 /** Every check, run together. Never throws: a failed probe is a check result. */
 export async function getDefenseStatus(): Promise<DefenseReport> {
-  const [recent, search, challenge, rendered] = await Promise.all([
+  const [recent, search, rendered] = await Promise.all([
     checkRecentMirrored(),
     checkSearchBound(),
-    checkChallengeActive(),
     checkRenderedPage()
   ]);
-  const checks = [checkMirrorSwitch(), recent, search, challenge, ...rendered];
+  const checks = [checkMirrorSwitch(), recent, search, ...rendered];
   return { checks, worst: worstOf(checks), checkedAt: new Date().toISOString() };
 }
 
