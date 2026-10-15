@@ -16,6 +16,10 @@
     {
       "path": "/api/cron/selfcheck",
       "schedule": "9 * * * *"
+    },
+    {
+      "path": "/api/cron/log-rollup",
+      "schedule": "12 * * * *"
     }
   ],
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ':/' ':(exclude,top)projects'"

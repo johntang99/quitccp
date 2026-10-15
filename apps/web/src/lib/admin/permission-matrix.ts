@@ -100,6 +100,11 @@ export const ADMIN_NAV_LINKS: readonly AdminNavLink[] = [
   { href: "/admin/theme", label: "主题与排版", needs: "theme.write" },
   { href: "/admin/users", label: "用户管理", needs: "users.view" },
   { href: "/admin/audit", label: "审计日志", needs: "audit.read" },
+  // Next to 审计日志 because they are the two "what happened" screens, and
+  // deliberately separate: that one is who did what inside the admin, this one
+  // is what the public site served. Same permission as the defence panel --
+  // an editor can neither act on a 5xx rate nor read it without alarm.
+  { href: "/admin/logs", label: "访问日志", needs: "publish.revalidate" },
   { href: "/admin/revisions", label: "修订历史", needs: "revisions.restore" },
   { href: "/admin/account", label: "我的账号" },
   { href: "/admin/logout", label: "退出", chrome: true }
