@@ -27,8 +27,15 @@
  *   node scripts/push-media-mirror.mjs --from ../quitccp-media-mirror --dry-run
  *   node scripts/push-media-mirror.mjs --from ../quitccp-media-mirror
  *
- * Afterwards, point a Cloudflare custom domain (media.tuidang.org, proxied) at
- * the bucket and set NEXT_PUBLIC_MEDIA_MIRROR_HOST=media.tuidang.org in Vercel.
+ * Afterwards, point a Cloudflare custom domain (media.tdinfo.org, proxied) at
+ * the bucket and set NEXT_PUBLIC_MEDIA_MIRROR_HOST=media.tdinfo.org in Vercel.
+ *
+ * The host is tdinfo.org and not a tuidang.org subdomain for one practical
+ * reason: R2 requires the bucket and its custom domain to sit in the same
+ * Cloudflare account, and nobody working on this has billing rights in the
+ * account that holds tuidang.org -- the R2 subscription button is simply greyed
+ * out there. A domain registered in our own account removes that dependency
+ * altogether. Done 2026-10-14; the mirror is live and verified.
  * Until that variable is set the site does not consult the mirror at all, so
  * uploading early changes nothing and risks nothing.
  */
@@ -228,10 +235,12 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(`
-下一步（Cloudflare 控制台，Alex 那边）：
-  1. R2 → ${bucket} → Settings → Public access → Connect a domain → media.tuidang.org
-  2. 等证书签好，验证：curl -I https://media.tuidang.org/home/<任一文件名>
+下一步（Cloudflare 控制台）：
+  1. R2 → ${bucket} → Settings → Custom Domains → Add → media.tdinfo.org
+     最低 TLS 选 1.2。Public Development URL（r2.dev）保持关闭 ——
+     开了它，所有 WAF 规则都能被绕过。
+  2. 等状态变 Active，验证：curl -I https://media.tdinfo.org/<任一文件名>
   3. Vercel → quitccp → Settings → Environment Variables
-     NEXT_PUBLIC_MEDIA_MIRROR_HOST=media.tuidang.org （Production）
+     NEXT_PUBLIC_MEDIA_MIRROR_HOST=media.tdinfo.org （Production）
   4. 重新部署一次，首页 <head> 里会多出 id="media-failover" 的那段脚本
 在第 3 步之前，站点完全不看镜像，所以前面几步随时可做，不影响线上。`);
