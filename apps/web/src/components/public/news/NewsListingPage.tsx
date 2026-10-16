@@ -1,6 +1,9 @@
 import { NEWS_CATEGORIES, type NewsCard, type NewsListing, type NewsSort } from "@/lib/public-content";
 import { NewsHeader } from "./NewsHeader";
 import { T, articleHref, day } from "./newsTokens";
+import { NewsRow } from "./NewsRow";
+import { NewsInfiniteRows } from "./NewsInfiniteRows";
+import { NEWS_MAX_CHUNK } from "./newsChunks";
 
 /**
  * A listing page: one category, or one of the section-wide scopes
@@ -27,6 +30,8 @@ export function NewsListingPage({ listing }: { listing: NewsListing }) {
   // the listing nothing is "本栏头条", so every row runs as an ordinary card.
   const showLead = Boolean(lead) && listing.page === 1;
   const rows = showLead ? rest : listing.items;
+  /* See the note beside <NewsInfiniteRows>. */
+  const scrolls = listing.page === 1 && listing.sort === "latest" && listing.pageCount > 1;
 
   return (
     <div className="news-page">
@@ -114,10 +119,38 @@ export function NewsListingPage({ listing }: { listing: NewsListing }) {
               {listing.total === 0 ? "这个栏目还没有文章。" : "本页文章已全部列于上方。"}
             </p>
           ) : (
-            rows.map((item) => <Row key={item.slug} item={item} />)
+            rows.map((item) => <NewsRow key={item.slug} item={item} />)
           )}
 
-          {listing.pageCount > 1 ? <Pager listing={listing} href={href} /> : null}
+          {/*
+            Infinite scroll only on the listing's own front page in the default
+            order. Deeper pages and 最早 keep plain pagination: those addresses
+            are where a reader lands from a link or a bookmark, and a page that
+            silently grows under them is not what they asked for.
+          */}
+          {scrolls ? (
+            <NewsInfiniteRows
+              slug={listing.slug}
+              startPage={1}
+              pageCount={listing.pageCount}
+              total={listing.total}
+              maxChunk={NEWS_MAX_CHUNK}
+            />
+          ) : null}
+
+          {/*
+            The pager stays rendered even when the scroll is on. It is the
+            fallback for every reader whose JavaScript never arrives -- a large
+            share here reach the site through a proxy from inside China -- and
+            `data-scrolls` lets CSS fold it away once the scroll takes over.
+            Hidden by CSS rather than dropped from the markup, because markup
+            that is not there cannot come back when the script fails.
+          */}
+          {listing.pageCount > 1 ? (
+            <div data-news-pager={scrolls ? "scrolls" : undefined}>
+              <Pager listing={listing} href={href} />
+            </div>
+          ) : null}
         </div>
 
         <aside style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -178,42 +211,6 @@ const OTHER_SCOPES = [
   { slug: "featured", name: "重要报导" },
   { slug: "editor-archive", name: "精彩保留" }
 ];
-
-function Row({ item }: { item: NewsCard }) {
-  return (
-    <a className="news-cat-row" href={articleHref(item.slug)}>
-      <span className="news-cat-row-thumb">
-        {item.image ? (
-          <img
-            src={item.image}
-            alt=""
-            style={{ width: "100%", aspectRatio: "16 / 9", height: "auto", objectFit: "cover", display: "block" }}
-          />
-        ) : (
-          <span style={{ display: "block", width: "100%", aspectRatio: "16 / 9", background: T.rule }} />
-        )}
-      </span>
-      <span style={{ display: "flex", flexDirection: "column", gap: 8, paddingRight: 8 }}>
-        <span
-          className="news-clamp-2"
-          style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 20, lineHeight: 1.5 }}
-        >
-          {item.title}
-        </span>
-        {item.summary ? (
-          <span className="news-clamp-2" style={{ fontSize: 14, lineHeight: "var(--lh-body)", color: T.muted }}>
-            {item.summary}
-          </span>
-        ) : null}
-        <span style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 2, fontSize: 13, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: T.mono, color: T.mutedSoft, whiteSpace: "nowrap" }}>{day(item.publishedAt)}</span>
-          {item.category ? <span className="news-cat-tag">{item.category}</span> : null}
-          <span style={{ marginLeft: "auto", color: T.seal, fontSize: 13 }}>阅读 →</span>
-        </span>
-      </span>
-    </a>
-  );
-}
 
 /** Pages around the current one, with ellipses where a run is skipped. */
 function pageNumbers(current: number, count: number): (number | "gap")[] {
