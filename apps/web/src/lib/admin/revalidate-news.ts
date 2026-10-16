@@ -52,12 +52,18 @@ export function revalidateNews(slugs: Iterable<string> = []) {
      * Chunk 1 is the server-rendered page, which the line above covers, and
      * the chunk route refuses anything below 2, so the loop starts there.
      *
-     * 154 paths looks reckless and is not: `revalidatePath` resolves to an
+     * 168 paths looks reckless and is not: `revalidatePath` resolves to an
      * implicit cache tag pushed onto one deduplicated array, and Next sends
      * the whole array to the cache in a single call at the end of the request
      * (`executeRevalidates` -> `incrementalCache.revalidateTag(tags)`).
-     * Nothing is rendered here either -- a chunk nobody has asked for has no
-     * cache entry to clear, and one that does is rebuilt by its next reader.
+     * Nothing is rendered here either -- clearing is marking, and a chunk is
+     * rebuilt by its next reader.
+     *
+     * The chunk route has to be a prerendered route for this to land at all.
+     * It once set its own `cache-control`, which parked it in the CDN's
+     * time-based cache where tags do not reach, and a measured save left
+     * every chunk on HIT while the pages went REVALIDATED. See
+     * `generateStaticParams` in that route.
      */
     for (let chunk = 2; chunk <= NEWS_MAX_CHUNK; chunk++) {
       revalidatePath(`/news/${slug}/chunk/${chunk}`);
