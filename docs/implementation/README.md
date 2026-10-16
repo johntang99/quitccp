@@ -30,6 +30,7 @@ Working notes for the quitccp build. Grouped by what you came here to do.
 | [article-migration-plan.md](./article-migration-plan.md) | 文章迁移计划 — the plan for the 15k WordPress posts |
 | [phase4-migration-verification.md](./phase4-migration-verification.md) | the dry-run / apply loop and what was checked |
 | [wp-taxonomy-live.md](./wp-taxonomy-live.md) | the old site's real category tree, as scraped |
+| [video-categories.md](./video-categories.md) | `/admin/video-categories`：名称、说明、排序归编辑；slug 只读 |
 | [video-categories-old-site.md](./video-categories-old-site.md) | 旧站视频 → 新站八个分类 |
 | [video-hosting-decision.md](./video-hosting-decision.md) | where the video files should live, with the bandwidth numbers. **Not Supabase** |
 

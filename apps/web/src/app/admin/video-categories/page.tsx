@@ -20,7 +20,10 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
         <h2 style={{ marginTop: 0 }}>视频分类 Video categories</h2>
         <p>
           可新增、重命名、排序；删除前需先移走该分类下的视频。
-          分类名称可用中文，slug 请用英文（它出现在网址里）。
+          名称和排序改完保存，网站上立刻就是新的。
+          <br />
+          slug 建好之后不能再改，只能看：它是分类页的网址，改了所有旧链接就全断了。
+          新建分类时 slug 可用英文填写（中文名称必须填）。
           <br />
           「页面说明」是分类页标题下面那句话，<b>整句都由你决定</b> —— 包括末尾那句
           「全部节目可自由下载、转载与再制作。」，它现在也存在这里，可以改、也可以删。
@@ -102,7 +105,6 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
                         aria-label={`${row.name} 的排序`}
                       />
                       <input className="admin-input" name="name" defaultValue={row.name} aria-label={`${row.name} 的名称`} required />
-                      <input className="admin-input" name="slug" defaultValue={row.slug} aria-label={`${row.name} 的 slug`} required />
                     </form>
                     {/* Outside the form on purpose: the delete half posts its
                         own fields, and a form inside a form is illegal HTML.

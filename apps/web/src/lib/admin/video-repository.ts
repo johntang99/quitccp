@@ -86,27 +86,41 @@ export async function upsertVideoCategory(
 ): Promise<void> {
   const supabase = createSupabaseAdminClient();
   const name = input.name.trim();
-  const explicit = input.slug?.trim().toLowerCase();
-  // Same rule as article categories: the slug is a URL, so it stays latin.
-  if (!explicit && !/[a-z0-9]/i.test(name)) {
-    throw new Error("请为中文分类名填写英文 slug（用于网址）。");
-  }
-  const slug =
-    explicit ||
-    name
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+  const isUpdate = Boolean(input.id?.trim());
 
-  const payload: Record<string, unknown> = { slug, name };
+  /*
+   * An existing category never gets a new slug. Same rule as the article
+   * categories, for the same reason and with the same enforcement.
+   *
+   * The slug is the category page's address. Renaming is what the editor
+   * actually wants -- the name is what readers see -- and it is free. Changing
+   * the address is not: `/videos/<old>` stops answering, and every link,
+   * bookmark and search result pointing at it breaks with no redirect behind
+   * it. The admin stopped offering the field; this refuses it too, rather than
+   * trusting the form to be the only caller.
+   */
+  const payload: Record<string, unknown> = { name };
+  if (!isUpdate) {
+    const explicit = input.slug?.trim().toLowerCase();
+    // Same rule as article categories: the slug is a URL, so it stays latin.
+    if (!explicit && !/[a-z0-9]/i.test(name)) {
+      throw new Error("请为中文分类名填写英文 slug（用于网址）。");
+    }
+    payload.slug =
+      explicit ||
+      name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+  }
   if (Number.isFinite(input.sortOrder)) payload.sort_order = Math.trunc(Number(input.sortOrder));
   /* `undefined` means the caller did not send the field, which must not be
      confused with an editor clearing it: the create form has no description
      box, and a blank there would wipe the sentence on every save. */
   if (input.description !== undefined) payload.description = input.description.trim() || null;
 
-  const { error } = input.id?.trim()
+  const { error } = isUpdate
     ? await supabase.from("cms_video_categories").update(payload).eq("id", input.id)
     : await supabase.from("cms_video_categories").insert(payload);
   if (error) throw error;
