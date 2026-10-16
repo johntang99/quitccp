@@ -9,8 +9,7 @@
     "start": "next start -p 4020",
     "lint": "echo \"ESLint setup pending (non-blocking scaffold)\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test src/**/*.test.ts",
-    "postbuild": "node scripts/strip-orphan-traces.mjs"
+    "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
     "@quitccp/content-schema": "0.1.0",

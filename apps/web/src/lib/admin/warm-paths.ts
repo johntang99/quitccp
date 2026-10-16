@@ -15,13 +15,11 @@ import { publicPath } from "@/lib/slug-redirects";
  *
  * ## Why only three
  *
- * A save invalidates about a hundred and eighty addresses -- sixteen pages
- * and the scroll chunks behind them. Warming them would mean a hundred and
- * eighty database renders every time an editor presses save, most of them
- * for category listings nobody is about to open. These three are where a new
- * article actually shows up and where someone is actually about to look. The
- * rest stay lazy, which is what lazy is for: a chunk costs one reader one
- * query, and only if a reader scrolls that far.
+ * A save invalidates sixteen addresses. Warming all sixteen would mean sixteen
+ * database renders every time an editor presses save, most of them for
+ * category listings nobody is about to open. These three are where a new
+ * article actually shows up and where someone is actually about to look.
+ * The rest stay lazy, which is what lazy is for.
  *
  * ## Why the browser does it, not the server
  *
