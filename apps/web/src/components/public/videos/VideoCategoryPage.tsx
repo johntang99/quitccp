@@ -1,5 +1,4 @@
 import type { PublicVideoCard, PublicVideoCategory, VideoSort } from "@/lib/public-content";
-import { videoCategoryLede } from "@/lib/video-categories";
 import { Duration, MONO, Play, SERIF, Still, videoHref } from "./VideoParts";
 import { THEME_BOOTSTRAP, VideoThemeToggle } from "./VideoThemeToggle";
 
@@ -68,7 +67,7 @@ export function VideoCategoryPage({
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: 15, lineHeight: "var(--lh-body)", color: "var(--muted)", maxWidth: 760 }}>
-                {videoCategoryLede(category.description)}
+                {category.description}
               </p>
             </div>
 

@@ -1,5 +1,6 @@
 import { AdminShell } from "@/components/admin/AdminShell";
 import { VideoTabs } from "@/components/admin/VideoTabs";
+import { VideoCategoryRowActions } from "@/components/admin/VideoCategoryRowActions";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { listVideoCategories } from "@/lib/admin/video-repository";
 
@@ -21,8 +22,9 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
           可新增、重命名、排序；删除前需先移走该分类下的视频。
           分类名称可用中文，slug 请用英文（它出现在网址里）。
           <br />
-          「页面说明」是分类页标题下面那句话。留空也没关系 —— 页面会只显示
-          「全部节目可自由下载、转载与再制作。」那一句，所有分类通用，不需要你重复输入。
+          「页面说明」是分类页标题下面那句话，<b>整句都由你决定</b> —— 包括末尾那句
+          「全部节目可自由下载、转载与再制作。」，它现在也存在这里，可以改、也可以删。
+          留空的话标题下面就什么都不显示。
         </p>
         {params.error ? (
           <p style={{ margin: "8px 0 0", color: "#b42318", background: "#fef3f2", padding: "8px 10px" }}>
@@ -77,7 +79,7 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
                       name="description"
                       defaultValue={row.description}
                       rows={2}
-                      placeholder="留空则只显示那句通用的转载说明"
+                      placeholder="留空则标题下面不显示任何文字"
                       style={{ width: "100%", minWidth: 260, resize: "vertical" }}
                       aria-label={`${row.name} 的页面说明`}
                     />
@@ -101,16 +103,18 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
                       />
                       <input className="admin-input" name="name" defaultValue={row.name} aria-label={`${row.name} 的名称`} required />
                       <input className="admin-input" name="slug" defaultValue={row.slug} aria-label={`${row.name} 的 slug`} required />
-                      <button className="admin-btn" type="submit">
-                        更新
-                      </button>
                     </form>
-                    <form method="post" action="/api/admin/content/video-categories/delete" style={{ marginTop: 8 }}>
-                      <input type="hidden" name="id" value={row.id} />
-                      <button className="admin-btn" type="submit">
-                        删除
-                      </button>
-                    </form>
+                    {/* Outside the form on purpose: the delete half posts its
+                        own fields, and a form inside a form is illegal HTML.
+                        The save button reaches back in via `form={…}`. */}
+                    <div style={{ marginTop: 6 }}>
+                      <VideoCategoryRowActions
+                        formId={`vc-${row.id}`}
+                        id={row.id}
+                        name={row.name}
+                        count={row.videoCount}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))
@@ -127,7 +131,7 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
           <input
             className="admin-input"
             name="description"
-            placeholder="页面说明（可留空，之后再补）"
+            placeholder="页面说明（标题下面那句话）"
             style={{ minWidth: 260 }}
           />
           <input

@@ -1050,7 +1050,15 @@ export interface PublicVideoCard {
 export interface PublicVideoCategory {
   slug: string;
   name: string;
-  /** Editable in 后台 → 视频分类. Empty is normal; see videoCategoryLede. */
+  /**
+   * The whole sentence under the title, exactly as an editor wrote it.
+   *
+   * Nothing is appended to it any more. 「全部节目可自由下载、转载与再制作。」
+   * used to be added in code on the grounds that it is true of all 13 pages;
+   * the owner's decision on 2026-10-16 was that a line nobody in the admin can
+   * see or reword does not belong on the page, whatever it says. Migration 029
+   * folded it into each row, so today's pages read exactly as they did.
+   */
   description: string;
   total: number;
   page: number;
