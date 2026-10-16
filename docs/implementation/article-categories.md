@@ -28,7 +28,8 @@ left behind:
 Categories used to list alphabetically by name, which says nothing useful once
 the names are Chinese — codepoint order is neither pinyin nor stroke order, let
 alone editorial importance. `sort_order` carries the intended order (lower
-first, name as the tie-break) and is editable per row.
+first, name as the tie-break) and is editable per row. Since migration `031` it
+orders the public news tabs too, not just this admin list.
 
 > **Requires `supabase/content/migrations/009_category_sort_order.sql`.**
 > That migration has to be run by hand against the content database, like every
@@ -46,10 +47,10 @@ Each row is one category. Five columns, two buttons:
 
 | column | stored in | what it reaches |
 |---|---|---|
-| 排序 `sort_order` | database | the order of **this admin list**. Not the public tabs — see below. |
-| 名称 `name` | database | the card kickers on `/news` and on the virtual listings. **Not** the category page's own title — see below. |
-| slug | database | the article filing, and the lookup `/news/<slug>` does. Changing it takes the public page offline — see below. |
-| 页面说明 `description` | database | the sentence under the title on `/news/<slug>`. Fully editable, and the only field here that does what it looks like it does. |
+| 排序 `sort_order` | database | the order of the public news tabs, and of this admin list. |
+| 名称 `name` | database | everywhere readers see the category: the tabs, the listing's own title, the card kickers. |
+| slug | database | the page's address. Read-only once created — see below. |
+| 页面说明 `description` | database | the sentence under the title on `/news/<slug>`. |
 | 文章数 | derived | read-only. |
 
 `description` is new; it needs
@@ -91,38 +92,52 @@ design and both documented where they live:
   category name in their breadcrumb, so a rename reaches them only when their
   own 300s window expires.
 
-## Two fields that look editable and are not
+## The slug is the one field an editor cannot change
 
-For the eight categories that have a public listing page, `name` and `slug` are
-**also** hardcoded, in `NEWS_CATEGORIES` in `lib/public-content.ts`. The public
-side reads the code, not the database:
+Names, 页面说明 and 排序 are the editors'. The slug is not, and the admin shows
+it as plain text in its own column rather than an input.
 
-```ts
-const meta = NEWS_CATEGORIES.find((row) => row.slug === slug);
-if (!virtual && !meta) return null;
-...
-const name = virtual ? virtual.name : meta!.name;
-```
+It is the category page's address. Changing it took that page offline twice
+over: the new slug is not in `NEWS_CATEGORIES`, so `/news/<new>` 404s, and the
+old slug no longer matched a database row, so `/news/<old>` 404s as well —
+along with every inbound link and every search result pointing at it. The admin
+offered the field anyway, right next to the name, with no hint that the two
+behaved nothing alike.
 
-Which means:
+`upsertCategoryRecord()` enforces it rather than trusting the form: an update
+builds its payload without `slug` at all, so a POST that carries one is ignored.
+Verified by posting `slug=hacked-slug` against a real session — HTTP 303, and
+the stored slug unchanged. Creating a category still takes one, since a new row
+needs an address.
 
-- **Renaming** a category in the admin changes the card kickers on `/news` and
-  on the virtual listings, which read the database — but not the `<h1>` of
-  `/news/<slug>`, nor the category tabs, which read the code. The two then
-  disagree until the constant is edited too.
-- **Changing a slug** takes the listing page offline. The new slug is not in
-  `NEWS_CATEGORIES`, so `/news/<new>` 404s; the old slug is still in the code
-  but no longer in the database, so `/news/<old>` 404s as well. Verified on
-  production: `/news/culture-music`, `/news/culture` and
-  `/news/resource-downloads` all return 404 today, for exactly this reason —
-  they exist in the database and not in the code.
-- **排序** orders this admin page. The public tabs follow the order of the
-  `NEWS_CATEGORIES` array, so changing a number here does not move a tab.
+## What the public side reads, and from where
 
-This is why the ten other categories in the database — 文化音乐, 资料下载, 待归类
-and the rest — have no page: a category only becomes public by being added to
-that constant, which is a code change.
+| | source |
+|---|---|
+| tab names, listing `<h1>`, card kickers | database — `getNewsCategoryTabs()` and the category row |
+| tab order | database `sort_order`, ascending, name as tie-break |
+| which categories are public at all | `NEWS_CATEGORIES` in `lib/public-content.ts` — a slug whitelist |
+| the English eyebrow (`WITHDRAWAL NEWS`) | `NEWS_CATEGORIES`; nothing in the admin edits it |
+| the names in `NEWS_CATEGORIES` | **fallback only**, used when the database cannot be read |
 
-If an editor needs a rename or a reorder to show on the site, it is a one-line
-edit to `NEWS_CATEGORIES` plus a deploy. 页面说明 is the field that needs
-neither.
+The whitelist stays a code change on purpose: `/news/<slug>` is an address the
+site commits to, and eighteen categories exist in the database while only eight
+are meant to be sections of the news. This is why 文化音乐, 资料下载, 待归类 and
+the rest have no page — `/news/culture-music` is a 404 today, and adding it
+means adding a line to that array.
+
+Proved rather than assumed: with the constant's name for `famous-quitccp`
+replaced by a placeholder locally, the page still rendered 名人退党 27 times and
+the placeholder zero times.
+
+One consequence of making names editable: the homepage's channel columns are
+configured by category *name*, in the homepage settings. `getNewsBand()` matches
+an asked-for name against both the editors' current names and the constant's, so
+a rename does not silently empty a homepage column.
+
+> **Requires `supabase/content/migrations/031_news_category_order.sql`.**
+> `sort_order` held leftovers from the WordPress import (1, 3, 4, 5, 10, 12, 25,
+> 30), which would have reshuffled the tab bar the moment the code above
+> shipped. The migration numbers the eight public categories 1..8 in exactly the
+> order the site showed before, so the deploy moved nothing, and pushes the ten
+> non-public categories to 100+ so the admin list does not interleave them.

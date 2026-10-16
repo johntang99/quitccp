@@ -20,7 +20,10 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
         <h2 style={{ marginTop: 0 }}>分类管理</h2>
         <p>
           可新增、重命名、排序分类；删除前需先移除该分类下文章映射。
-          分类名称可用中文，slug 请用英文（它出现在网址里）。
+          名称和排序改完保存，网站上立刻就是新的。
+          <br />
+          slug 建好之后不能再改，只能看：它是分类页的网址，改了旧链接就全断了。
+          新建分类时 slug 可用英文填写（中文名称必须填）。
           <br />
           「页面说明」是分类页标题下面那句话。留空的话，那里会沿用原来的
           「SLUG · N 篇」—— 那是网址和篇数，不是一句介绍。
@@ -95,13 +98,6 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
                         name="name"
                         defaultValue={row.name}
                         aria-label={`${row.name} 的名称`}
-                        required
-                      />
-                      <input
-                        className="admin-input"
-                        name="slug"
-                        defaultValue={row.slug}
-                        aria-label={`${row.name} 的 slug`}
                         required
                       />
                     </form>

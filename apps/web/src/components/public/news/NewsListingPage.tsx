@@ -1,4 +1,4 @@
-import { NEWS_CATEGORIES, type NewsCard, type NewsListing, type NewsSort } from "@/lib/public-content";
+import { getNewsCategoryTabs, type NewsCard, type NewsListing, type NewsSort } from "@/lib/public-content";
 import { NewsHeader } from "./NewsHeader";
 import { T, articleHref, day } from "./newsTokens";
 import { NewsRow } from "./NewsRow";
@@ -14,7 +14,9 @@ import { NEWS_MAX_CHUNK } from "./newsChunks";
  * sidebar. The masthead is the section's own <NewsHeader>, so the category tab
  * row stays put and a reader can move between categories from inside one.
  */
-export function NewsListingPage({ listing }: { listing: NewsListing }) {
+export async function NewsListingPage({ listing }: { listing: NewsListing }) {
+  /* Shares the header's query; see the note there. */
+  const tabs = await getNewsCategoryTabs();
   const [lead, ...rest] = listing.items;
   /* Page one in the default order is `/news/<slug>` and nothing else -- no
      query string, no trailing number. That address is the one readers hold and
@@ -188,7 +190,7 @@ export function NewsListingPage({ listing }: { listing: NewsListing }) {
 
           <div className="news-cat-panel news-cat-panel--dark">
             <span className="news-cat-panel-head news-cat-panel-head--dark">其他栏目</span>
-            {NEWS_CATEGORIES.filter((category) => category.slug !== listing.slug).map((category) => (
+            {tabs.filter((category) => category.slug !== listing.slug).map((category) => (
               <a key={category.slug} href={`/news/${category.slug}`} className="news-cat-other">
                 <span>{category.name}</span>
                 <span style={{ color: T.gold }} aria-hidden="true">→</span>

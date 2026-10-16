@@ -1,4 +1,4 @@
-import { NEWS_CATEGORIES } from "@/lib/public-content";
+import { getNewsCategoryTabs } from "@/lib/public-content";
 import { T } from "./newsTokens";
 
 /**
@@ -13,7 +13,7 @@ import { T } from "./newsTokens";
  * pages first shipped with a header of their own that dropped the tabs, which
  * left no way to move between categories from inside one.
  */
-export function NewsHeader({
+export async function NewsHeader({
   active,
   today,
   listing
@@ -29,6 +29,11 @@ export function NewsHeader({
    */
   listing?: { name: string; en: string; total: number; description?: string };
 }) {
+  /* The editors' names and order, not a constant's. `getNewsCategoryTabs` is
+     request-cached, so the sidebar asking for the same eight rows costs
+     nothing. */
+  const tabs = await getNewsCategoryTabs();
+
   // archive and latest are the whole section: they light 全部新闻, not a category.
   const wholeSection = active === "archive" || active === "latest";
   const activeTab = wholeSection ? undefined : active;
@@ -112,7 +117,7 @@ export function NewsHeader({
         <a href="/news" style={tabStyle(isHome)}>
           新闻首页
         </a>
-        {NEWS_CATEGORIES.map((category) => (
+        {tabs.map((category) => (
           <a
             key={category.slug}
             href={`/news/${category.slug}`}

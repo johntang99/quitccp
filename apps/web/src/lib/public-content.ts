@@ -4,6 +4,8 @@ import {
   routeSeeds,
   type TemplateKind
 } from "@quitccp/content-schema";
+import { cache } from "react";
+
 import { firstImageInMarkdown } from "@/lib/markdown-image";
 import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
 import type { RenderablePage } from "./site-data";
@@ -1342,6 +1344,27 @@ export function isEchoOfBody(summary: string, firstParagraph: string): boolean {
  * every surface and does not shift when someone re-sorts the admin list. The
  * English labels are the design's small caps line, not translations.
  */
+/**
+ * The categories that have a public listing page.
+ *
+ * ## What this decides, and what it no longer decides
+ *
+ * The slug list is a whitelist: a category becomes public by appearing here,
+ * which is a code change. That stays deliberate -- `/news/<slug>` is an address
+ * the site commits to, and eighteen categories exist in the database while only
+ * these eight are meant to be sections of the news.
+ *
+ * `name` and the order used to be decided here too, which made two of the
+ * fields in `/admin/categories` lies: an editor renamed a category, the card
+ * kickers changed and the page's own title did not. Names and order now come
+ * from the database, through `getNewsCategoryTabs()`, so the admin means what
+ * it says.
+ *
+ * `name` survives as the fallback for a database that cannot be read -- showing
+ * yesterday's names beats showing an empty tab bar -- and as what migration
+ * `031` seeded the order from. `en` is the English eyebrow above a listing's
+ * title; nothing in the admin edits it, so it stays here.
+ */
 export const NEWS_CATEGORIES = [
   { slug: "announcement-claims", name: "公告与声明", en: "ANNOUNCEMENTS" },
   { slug: "red-regime-collapse", name: "红朝败相", en: "REGIME WATCH" },
@@ -1352,6 +1375,52 @@ export const NEWS_CATEGORIES = [
   { slug: "withdrawal-stories", name: "退党纪实故事", en: "STORIES" },
   { slug: "famous-quitccp", name: "名人退党", en: "NOTABLE" }
 ] as const;
+
+/** One tab: a public listing slug with the name an editor gave it. */
+export interface NewsCategoryTab {
+  slug: string;
+  name: string;
+}
+
+/**
+ * The eight category tabs, named and ordered by the editors.
+ *
+ * `cache()` so the header and the sidebar of one page share a single query
+ * rather than asking twice for the same eight rows.
+ *
+ * Ordered by `sort_order` then name, the same rule `/admin/categories` lists
+ * by, so the order an editor sees there is the order readers get. Slugs absent
+ * from the database, and database rows outside the whitelist, are both dropped:
+ * a tab must be a page that exists.
+ *
+ * A failed or empty read falls back to the constant. That is the one case where
+ * the old hardcoded names are still used, and it is the right answer there --
+ * an eight-tab bar with yesterday's names is a working page; an empty one is a
+ * reader with nowhere to go.
+ */
+export const getNewsCategoryTabs = cache(async (): Promise<NewsCategoryTab[]> => {
+  const fallback = NEWS_CATEGORIES.map((row) => ({ slug: row.slug, name: row.name }));
+  try {
+    const supabase = createSupabasePublicClient();
+    const { data } = await supabase
+      .from("cms_article_categories")
+      .select("slug, name, sort_order")
+      .in("slug", NEWS_CATEGORIES.map((row) => row.slug));
+    const rows = (data ?? [])
+      .map((row) => ({
+        slug: String(row.slug),
+        name: String(row.name ?? "").trim(),
+        order: Number(row.sort_order ?? 0)
+      }))
+      .filter((row) => row.slug && row.name);
+    if (rows.length === 0) return fallback;
+    rows.sort((a, b) => a.order - b.order || a.name.localeCompare(b.name, "zh-Hans-CN"));
+    return rows.map((row) => ({ slug: row.slug, name: row.name }));
+  } catch {
+    /* See the note above: yesterday's names beat no tabs at all. */
+    return fallback;
+  }
+});
 
 export interface NewsCard {
   slug: string;
@@ -1455,7 +1524,6 @@ export async function getNewsHome(): Promise<NewsHome> {
   try {
     const supabase = createSupabasePublicClient();
 
-    const nameBySlug = new Map(NEWS_CATEGORIES.map((row) => [row.slug, row.name]));
     const { data: categoryRows } = await supabase
       .from("cms_article_categories")
       .select("id, slug, name")
@@ -1525,18 +1593,25 @@ export async function getNewsHome(): Promise<NewsHome> {
       [...featuredRows, ...latestRows, ...archiveRows].map((row) => String(row.slug))
     );
 
+    /* Named and ordered by the editors; `en` is the one thing still from the
+       constant, since nothing in the admin edits it. A whitelisted slug the
+       database has no row for keeps its constant name and an empty band, which
+       is what it did before. */
+    const enBySlug = new Map<string, string>(NEWS_CATEGORIES.map((row) => [row.slug, row.en]));
+    const tabs = await getNewsCategoryTabs();
     const categories = await Promise.all(
-      NEWS_CATEGORIES.map(async (category) => {
+      tabs.map(async (category) => {
+        const en = enBySlug.get(category.slug) ?? "";
         const id = idBySlug.get(category.slug);
         if (!id) {
-          return { ...category, lead: null, rest: [], total: 0 } satisfies NewsCategoryBlock;
+          return { slug: category.slug, name: category.name, en, lead: null, rest: [], total: 0 } satisfies NewsCategoryBlock;
         }
         const { rows, total } = await newsByCategory(id, 5);
         const cards = rows.map((row) => toNewsCard(row, category.name));
         return {
           slug: category.slug,
           name: category.name,
-          en: category.en,
+          en,
           lead: cards[0] ?? null,
           rest: cards.slice(1),
           total
@@ -1663,11 +1738,30 @@ export async function getHomeNews(channelNames: string[]): Promise<HomeNewsLive>
     const items = itemRows.map((row) => toNewsCard(row, names.get(String(row.slug)) ?? ""));
 
     // One latest article per column the homepage asks for.
+    /** The editors' current names, for the match just below. */
+    const slugByCategoryName = new Map(
+      (await getNewsCategoryTabs()).map((tab) => [tab.name, tab.slug])
+    );
     const channelLeads = new Map<string, { card: NewsCard | null; slug: string }>();
     await Promise.all(
       channelNames.map(async (asked) => {
         const wanted = CHANNEL_NAME_ALIASES[asked] ?? asked;
-        const meta = NEWS_CATEGORIES.find((row) => row.name === wanted);
+        /*
+         * Matched against both the editors' names and the constant's.
+         *
+         * These column names come from the homepage settings, written when the
+         * category names were fixed in code. Now that an editor can rename a
+         * category, matching only the new name would empty a homepage column
+         * the moment somebody renamed something -- silently, since an empty
+         * column looks like a category with no articles. Accepting either name
+         * means a rename does not reach in and break the homepage, and a
+         * homepage setting updated to the new name works too.
+         */
+        const meta =
+          NEWS_CATEGORIES.find((row) => row.name === wanted) ??
+          NEWS_CATEGORIES.find(
+            (row) => (slugByCategoryName.get(wanted) ?? "") === row.slug
+          );
         if (!meta) return;
         // Two, so a column whose newest article is already the page lead can
         // show the next one instead of printing the same story twice.
@@ -1889,15 +1983,19 @@ export async function getNewsListing(
 
     let categoryId = "";
     let description = "";
+    let storedName = "";
     if (!virtual) {
       const { data } = await supabase
         .from("cms_article_categories")
-        .select("id, description")
+        .select("id, name, description")
         .eq("slug", slug)
         .maybeSingle();
       if (!data) return null;
       categoryId = String(data.id);
       description = String(data.description ?? "");
+      /* The editor's name, not the constant's. This line is the whole point of
+         making 名称 editable: the title of this page is what they typed. */
+      storedName = String(data.name ?? "").trim();
     }
 
     /** Every query on this page shares the same scope; only the columns differ. */
@@ -1938,7 +2036,7 @@ export async function getNewsListing(
             .limit(5)
     ]);
 
-    const name = virtual ? virtual.name : meta!.name;
+    const name = virtual ? virtual.name : storedName || meta!.name;
     const rows = (listResult.data ?? []) as unknown as Record<string, unknown>[];
     const pickRows = (picksResult.data ?? []) as unknown as Record<string, unknown>[];
     const total = listResult.count ?? 0;

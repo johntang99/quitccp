@@ -1230,17 +1230,31 @@ export async function upsertCategoryRecord(
 ): Promise<CategoryRecord> {
   const supabase = createSupabaseAdminClient();
   const normalizedName = input.name.trim();
-  const slug = resolveCategorySlug(normalizedName, input.slug);
+  const isUpdate = Boolean(input.id?.trim());
   const sortOrder = Number.isFinite(input.sortOrder) ? Math.trunc(Number(input.sortOrder)) : undefined;
 
-  const payload: Record<string, unknown> = { slug, name: normalizedName };
+  /*
+   * An existing category never gets a new slug.
+   *
+   * The slug is the category page's address. Changing it takes that page
+   * offline twice over: the new slug is not in `NEWS_CATEGORIES`, so
+   * `/news/<new>` 404s, and the old one no longer matches a database row, so
+   * `/news/<old>` 404s too -- along with every link and every search result
+   * pointing at it. The admin stopped offering the field; this is why the API
+   * refuses it as well, rather than trusting the form to be the only caller.
+   *
+   * Renaming is a different thing and is fully allowed: the name is what
+   * readers see, the slug is where they are.
+   */
+  const payload: Record<string, unknown> = { name: normalizedName };
+  if (!isUpdate) payload.slug = resolveCategorySlug(normalizedName, input.slug);
   /* `undefined` = the form did not carry the field, which must not be read as
      an editor clearing it: the create form has no description box. */
   if (input.description !== undefined) payload.description = input.description.trim() || null;
   const withOrder = sortOrder === undefined ? payload : { ...payload, sort_order: sortOrder };
 
   const write = async (values: Record<string, unknown>, columns: string) =>
-    input.id?.trim()
+    isUpdate
       ? supabase
           .from("cms_article_categories")
           .update(values)
@@ -1267,11 +1281,12 @@ export async function upsertCategoryRecord(
 
   await createAudit(
     actorEmail,
-    input.id?.trim() ? "category.update" : "category.upsert",
+    isUpdate ? "category.update" : "category.upsert",
     "category",
     String(row.id),
     "write",
-    { slug, name: normalizedName, sortOrder }
+    /* The stored slug, not a submitted one: an update never carries one. */
+    { slug: String(row.slug), name: normalizedName, sortOrder }
   );
   return {
     id: String(row.id),
