@@ -1050,6 +1050,8 @@ export interface PublicVideoCard {
 export interface PublicVideoCategory {
   slug: string;
   name: string;
+  /** Editable in 后台 → 视频分类. Empty is normal; see videoCategoryLede. */
+  description: string;
   total: number;
   page: number;
   pageCount: number;
@@ -1104,15 +1106,19 @@ export async function getVideoCategory(
 
     let categoryId = "";
     let name = virtual?.name ?? "";
+    /* `archive` and `featured` are not rows in the table, so they have no
+       description to read and fall back to the shared reuse line. */
+    let description = "";
     if (!virtual) {
       const { data: category } = await supabase
         .from("cms_video_categories")
-        .select("id, slug, name")
+        .select("id, slug, name, description")
         .eq("slug", slug)
         .maybeSingle();
       if (!category) return null;
       categoryId = String(category.id);
       name = String(category.name);
+      description = String(category.description ?? "");
     }
 
     const offset = (Math.max(page, 1) - 1) * pageSize;
@@ -1138,6 +1144,7 @@ export async function getVideoCategory(
     return {
       slug,
       name,
+      description,
       total,
       page: Math.max(page, 1),
       pageCount: Math.max(1, Math.ceil(total / pageSize)),
@@ -1240,6 +1247,9 @@ export async function getRelatedArticles(
 export interface VideoLibraryShelf {
   slug: string;
   name: string;
+  /** The same sentence the category page shows, from the same column, so the
+      two cannot drift apart. Editable in 后台 → 视频分类. */
+  description: string;
   total: number;
   videos: PublicVideoCard[];
 }
@@ -1259,6 +1269,7 @@ export async function getVideoLibrary(perShelf = 6): Promise<VideoLibraryShelf[]
       return {
         slug: category.slug,
         name: category.name,
+        description: page?.description ?? "",
         total: category.total,
         videos: page?.videos ?? []
       };

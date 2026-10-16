@@ -15,6 +15,8 @@ export interface VideoCategoryRecord {
   id: string;
   slug: string;
   name: string;
+  /** The sentence under the title on the category page. Empty is normal. */
+  description: string;
   sortOrder: number;
   videoCount: number;
 }
@@ -46,13 +48,19 @@ export async function listVideoCategories(): Promise<VideoCategoryRecord[]> {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("cms_video_categories")
-    .select("id, slug, name, sort_order")
+    .select("id, slug, name, description, sort_order")
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
   // Before 012 the tables do not exist; the admin should say so, not crash.
   if (error) return [];
 
-  const rows = (data ?? []) as { id: string; slug: string; name: string; sort_order: number }[];
+  const rows = (data ?? []) as {
+    id: string;
+    slug: string;
+    name: string;
+    description: string | null;
+    sort_order: number;
+  }[];
   const counts = await Promise.all(
     rows.map(async (row) => {
       const { count } = await supabase
@@ -67,13 +75,14 @@ export async function listVideoCategories(): Promise<VideoCategoryRecord[]> {
     id: String(row.id),
     slug: String(row.slug),
     name: String(row.name),
+    description: String(row.description ?? ""),
     sortOrder: Number(row.sort_order ?? 0),
     videoCount: counts[index]
   }));
 }
 
 export async function upsertVideoCategory(
-  input: { id?: string; name: string; slug?: string; sortOrder?: number }
+  input: { id?: string; name: string; slug?: string; description?: string; sortOrder?: number }
 ): Promise<void> {
   const supabase = createSupabaseAdminClient();
   const name = input.name.trim();
@@ -92,6 +101,10 @@ export async function upsertVideoCategory(
 
   const payload: Record<string, unknown> = { slug, name };
   if (Number.isFinite(input.sortOrder)) payload.sort_order = Math.trunc(Number(input.sortOrder));
+  /* `undefined` means the caller did not send the field, which must not be
+     confused with an editor clearing it: the create form has no description
+     box, and a blank there would wipe the sentence on every save. */
+  if (input.description !== undefined) payload.description = input.description.trim() || null;
 
   const { error } = input.id?.trim()
     ? await supabase.from("cms_video_categories").update(payload).eq("id", input.id)

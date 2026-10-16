@@ -20,6 +20,9 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
         <p>
           可新增、重命名、排序；删除前需先移走该分类下的视频。
           分类名称可用中文，slug 请用英文（它出现在网址里）。
+          <br />
+          「页面说明」是分类页标题下面那句话。留空也没关系 —— 页面会只显示
+          「全部节目可自由下载、转载与再制作。」那一句，所有分类通用，不需要你重复输入。
         </p>
         {params.error ? (
           <p style={{ margin: "8px 0 0", color: "#b42318", background: "#fef3f2", padding: "8px 10px" }}>
@@ -43,40 +46,59 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>排序</th>
-              <th>名称</th>
-              <th>slug</th>
-              <th>视频数</th>
-              <th>操作</th>
+              <th style={{ width: 60 }}>排序</th>
+              <th style={{ width: 140 }}>名称</th>
+              <th style={{ width: 150 }}>slug</th>
+              <th style={{ width: 70 }}>视频数</th>
+              <th>页面说明</th>
+              <th style={{ width: 110 }}>操作</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5}>暂无分类</td>
+                <td colSpan={6}>暂无分类</td>
               </tr>
             ) : (
               rows.map((row) => (
                 <tr key={row.id}>
                   <td>{row.sortOrder}</td>
                   <td>{row.name}</td>
-                  <td style={{ fontFamily: "ui-monospace, Menlo, monospace" }}>{row.slug}</td>
+                  <td style={{ fontFamily: "ui-monospace, Menlo, monospace", wordBreak: "break-all" }}>{row.slug}</td>
                   <td>{row.videoCount}</td>
                   <td>
-                    <form method="post" action="/api/admin/content/video-categories" className="admin-toolbar">
+                    {/* The inputs sit in their own cells but belong to one form,
+                        tied together by `form={formId}` -- a <form> cannot span
+                        table cells, and putting every field in the last column
+                        would hide the description behind a scrollbar. */}
+                    <textarea
+                      className="admin-input"
+                      form={`vc-${row.id}`}
+                      name="description"
+                      defaultValue={row.description}
+                      rows={2}
+                      placeholder="留空则只显示那句通用的转载说明"
+                      style={{ width: "100%", minWidth: 260, resize: "vertical" }}
+                      aria-label={`${row.name} 的页面说明`}
+                    />
+                  </td>
+                  <td>
+                    <form
+                      id={`vc-${row.id}`}
+                      method="post"
+                      action="/api/admin/content/video-categories"
+                      className="admin-toolbar"
+                      style={{ flexDirection: "column", alignItems: "stretch", gap: 6 }}
+                    >
                       <input type="hidden" name="id" value={row.id} />
-                      <label style={{ fontSize: 12, color: "#8a90a0" }}>
-                        排序
-                        <input
-                          className="admin-input"
-                          name="sortOrder"
-                          type="number"
-                          step={1}
-                          defaultValue={row.sortOrder}
-                          style={{ width: 72, marginLeft: 6 }}
-                          aria-label={`${row.name} 的排序`}
-                        />
-                      </label>
+                      <input
+                        className="admin-input"
+                        name="sortOrder"
+                        type="number"
+                        step={1}
+                        defaultValue={row.sortOrder}
+                        aria-label={`${row.name} 的排序`}
+                      />
                       <input className="admin-input" name="name" defaultValue={row.name} aria-label={`${row.name} 的名称`} required />
                       <input className="admin-input" name="slug" defaultValue={row.slug} aria-label={`${row.name} 的 slug`} required />
                       <button className="admin-btn" type="submit">
@@ -102,6 +124,12 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
         <form method="post" action="/api/admin/content/video-categories" className="admin-toolbar">
           <input className="admin-input" name="name" placeholder="分类名称（可用中文）" required />
           <input className="admin-input" name="slug" placeholder="slug（英文；中文名称必须填写）" />
+          <input
+            className="admin-input"
+            name="description"
+            placeholder="页面说明（可留空，之后再补）"
+            style={{ minWidth: 260 }}
+          />
           <input
             className="admin-input"
             name="sortOrder"

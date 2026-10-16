@@ -68,7 +68,7 @@ export function VideoCategoryPage({
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: 15, lineHeight: "var(--lh-body)", color: "var(--muted)", maxWidth: 760 }}>
-                {videoCategoryLede(category.slug)}
+                {videoCategoryLede(category.description)}
               </p>
             </div>
 

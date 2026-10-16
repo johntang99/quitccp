@@ -122,10 +122,14 @@ export default async function VideosPage({ params }: { params: Promise<{ slug?: 
         <hr className="vp-divider" />
       </div>
 
-      {find(FRONTLINE) ? <LeadAndGrid shelf={find(FRONTLINE)!} note="服务点现场、义工纪实与当事人访谈" /> : null}
+      {/* The note comes off the shelf, not out of this file. It used to be
+          written here as well as on the category page, which is how the same
+          shelf ends up described two ways; now both read the column an editor
+          edits. */}
+      {find(FRONTLINE) ? <LeadAndGrid shelf={find(FRONTLINE)!} note={find(FRONTLINE)!.description} /> : null}
       {find(JIUPING) ? <VideoSeriesBand shelf={find(JIUPING)!} /> : null}
       <PanelDuo shelves={pick(DUO)} />
-      {find(PARTY_CULTURE) ? <EpisodeRow shelf={find(PARTY_CULTURE)!} note="解析党文化如何进入语言、教育与日常生活" /> : null}
+      {find(PARTY_CULTURE) ? <EpisodeRow shelf={find(PARTY_CULTURE)!} note={find(PARTY_CULTURE)!.description} /> : null}
       <PanelPairs shelves={pick(PAIRS)} />
 
       <div className="vp-shell" style={{ paddingTop: 72, paddingBottom: 96 }}>

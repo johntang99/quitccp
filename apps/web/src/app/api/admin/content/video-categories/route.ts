@@ -22,6 +22,9 @@ export async function POST(request: Request) {
       id: String(formData.get("id") ?? "").trim() || undefined,
       slug: String(formData.get("slug") ?? "").trim() || undefined,
       name,
+      /* Only when the form actually carried the field. See upsertVideoCategory:
+         a missing box and an emptied box must not mean the same thing. */
+      description: formData.has("description") ? String(formData.get("description") ?? "") : undefined,
       sortOrder: sortRaw === "" ? undefined : Number(sortRaw)
     });
   } catch (error) {
