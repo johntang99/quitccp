@@ -36,47 +36,6 @@ const CHUNK_SIZE = 13;
 /** Shared with the listing page so the two agree on where scrolling stops. */
 const MAX_CHUNK = NEWS_MAX_CHUNK;
 
-/**
- * Every chunk there is, named at build time.
- *
- * ## Why this exists, and what it fixes
- *
- * Without it this route was dynamic. It still *looked* cached -- `age` climbed
- * and `x-vercel-cache` said HIT -- because the handler set its own
- * `cache-control: s-maxage=300`, which parks the response in the CDN's
- * plain time-based cache. That cache knows nothing about Next's tags, so
- * `revalidatePath` could not reach it: a measured save cleared the four pages
- * it was aimed at and left all four chunks on HIT. The first thirteen rows of
- * a listing went fresh while everything the reader scrolled to stayed up to
- * five minutes old -- the two halves of one list disagreeing, which shows as
- * an article missing from the scroll after a publish, or a row appearing twice
- * after an unpublish.
- *
- * Naming the params makes these prerendered routes instead, in the same ISR
- * layer as `/news/<slug>` (`x-nextjs-prerender: 1`), which is the layer
- * `revalidatePath` actually invalidates. The custom `cache-control` header is
- * gone with it: setting one is what opted the route out in the first place.
- *
- * ## The cost
- *
- * 11 listings x 14 chunks = 154 small JSON renders at build, one query each.
- * Listings with a single page get chunks that are correctly empty; generating
- * them is cheaper than reasoning about which slugs deserve how many.
- *
- * Params outside this set still reach the handler and are refused by the
- * bounds check below, so this is not the security boundary -- only the list of
- * addresses worth building ahead of time.
- */
-export function generateStaticParams() {
-  const params: { slug: string; n: string }[] = [];
-  for (const slug of NEWS_LISTING_SLUGS) {
-    for (let chunk = 2; chunk <= MAX_CHUNK; chunk++) {
-      params.push({ slug, n: String(chunk) });
-    }
-  }
-  return params;
-}
-
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ slug: string; n: string }> }
@@ -105,6 +64,13 @@ export async function GET(
       nextPage: chunk + 1,
       pageCount: listing.pageCount,
       total: listing.total
+    },
+    {
+      headers: {
+        /* Cached at the edge like the pages are. `stale-while-revalidate` so a
+           reader never waits on a rebuild mid-scroll. */
+        "cache-control": "public, s-maxage=300, stale-while-revalidate=86400"
+      }
     }
   );
 }
