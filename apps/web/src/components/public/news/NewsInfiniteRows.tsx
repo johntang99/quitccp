@@ -48,6 +48,8 @@ export function NewsInfiniteRows({
   const [failed, setFailed] = useState(false);
   const capped = next > Math.min(pageCount, maxChunk);
   const sentinel = useRef<HTMLDivElement>(null);
+  /** One silent retry per failure, then the pager takes over. */
+  const retried = useRef(false);
 
   /*
    * Tells the stylesheet that scrolling is actually running, so the pager can
@@ -78,6 +80,9 @@ export function NewsInfiniteRows({
       if (!response.ok) throw new Error(String(response.status));
       const data = (await response.json()) as { items: NewsCard[]; hasMore: boolean };
       setItems((current) => [...current, ...data.items]);
+      /* A good chunk restores the retry budget: one blip early in a long
+         scroll should not leave the rest of it without a second chance. */
+      retried.current = false;
       setNext((current) => current + 1);
       /* The address follows the reader; see the note above. Guarded because a
          sandboxed or cross-origin frame throws on history writes. */
@@ -87,8 +92,35 @@ export function NewsInfiniteRows({
         /* Not being able to update the address is not a reason to stop. */
       }
     } catch {
-      /* One failure must not spin: the reader gets a button and decides. */
+      /*
+       * Retried once, quietly, then handed back to the pager.
+       *
+       * The first version put「载入失败，点这里重试」on the page. It was
+       * honest -- the dev server really was down when it appeared -- but it
+       * asks the reader to deal with our problem, in the middle of what they
+       * were reading. They did not come here to retry a request.
+       *
+       * The pager is still in the DOM, only folded away by CSS. Dropping the
+       * marker brings it back, so a failed scroll lands the reader exactly
+       * where they would have been without any of this: a list and a 下一页
+       * link. No message, nothing to decide.
+       *
+       * One silent retry first, because on the connections most of these
+       * readers are on, the usual cause is a single request that did not make
+       * it rather than anything being wrong.
+       */
+      if (!retried.current) {
+        retried.current = true;
+        setLoading(false);
+        window.setTimeout(() => void load(), 1200);
+        return;
+      }
       setFailed(true);
+      try {
+        document.documentElement.removeAttribute("data-news-scroll");
+      } catch {
+        /* Nothing to do if the document is gone. */
+      }
     } finally {
       setLoading(false);
     }
@@ -126,27 +158,6 @@ export function NewsInfiniteRows({
       {!capped && !failed ? (
         <div ref={sentinel} style={{ padding: "18px 0", textAlign: "center", color: T.muted, fontSize: 14 }}>
           {loading ? "载入中…" : " "}
-        </div>
-      ) : null}
-
-      {failed ? (
-        <div style={{ padding: "18px 0", textAlign: "center" }}>
-          <button
-            type="button"
-            onClick={() => void load()}
-            style={{
-              font: "inherit",
-              fontSize: 14,
-              color: T.seal,
-              background: "transparent",
-              border: `1px solid ${T.rule}`,
-              borderRadius: 4,
-              padding: "8px 18px",
-              cursor: "pointer"
-            }}
-          >
-            载入失败，点这里重试
-          </button>
         </div>
       ) : null}
 
