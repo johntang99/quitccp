@@ -83,13 +83,16 @@ export async function GET(
          * and then fails Vercel's builder with
          * `ENOENT lstat .next/server/pages/500.js` -- a file no build writes,
          * orphan trace removed or not, on the previous commit too. So the
-         * window is bounded instead of closed: 60 seconds rather than 300.
+         * window is bounded instead of closed: 30 seconds rather than 300.
          *
          * `stale-while-revalidate` so nobody waits on a rebuild mid-scroll,
-         * and the cost of the shorter window is at most one indexed query per
-         * chunk per minute, only for chunks somebody is actually reading.
+         * and the cost of the shorter window is at most two indexed queries
+         * per chunk per minute, only for chunks somebody is actually reading.
+         * What the window still leaves visible is one article's position being
+         * off by one; the repeated row that used to come with it is handled in
+         * `NewsInfiniteRows`, which will not show a slug twice.
          */
-        "cache-control": "public, s-maxage=60, stale-while-revalidate=86400"
+        "cache-control": "public, s-maxage=30, stale-while-revalidate=86400"
       }
     }
   );

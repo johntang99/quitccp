@@ -48,7 +48,7 @@ export function revalidateNews(slugs: Iterable<string> = []) {
    * HIT to REVALIDATED and left all four chunks on HIT. Adding the chunk
    * paths to this function therefore does nothing -- it was tried, and it is
    * not worth re-adding. Their staleness is bounded by the `s-maxage` the
-   * route sets, which is why that number is 60 and not 300.
+   * route sets, which is why that number is 30 and not 300.
    *
    * `/news/<slug>/2` and beyond read `searchParams` for the sort toggle,
    * which makes that route dynamic, so Next serves it `no-store` and it is

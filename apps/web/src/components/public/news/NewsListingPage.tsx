@@ -135,6 +135,8 @@ export function NewsListingPage({ listing }: { listing: NewsListing }) {
               pageCount={listing.pageCount}
               total={listing.total}
               maxChunk={NEWS_MAX_CHUNK}
+              /* What is already on the page, so a chunk cannot repeat it. */
+              shownSlugs={listing.items.map((item) => item.slug)}
             />
           ) : null}
 

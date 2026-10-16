@@ -33,7 +33,8 @@ export function NewsInfiniteRows({
   startPage,
   pageCount,
   total,
-  maxChunk
+  maxChunk,
+  shownSlugs
 }: {
   slug: string;
   /** The last chunk already on the page -- 1, server-rendered. */
@@ -41,6 +42,8 @@ export function NewsInfiniteRows({
   pageCount: number;
   total: number;
   maxChunk: number;
+  /** The slugs the server already rendered; see `seen` below. */
+  shownSlugs: string[];
 }) {
   const [items, setItems] = useState<NewsCard[]>([]);
   const [next, setNext] = useState(startPage + 1);
@@ -50,6 +53,27 @@ export function NewsInfiniteRows({
   const sentinel = useRef<HTMLDivElement>(null);
   /** One silent retry per failure, then the pager takes over. */
   const retried = useRef(false);
+
+  /*
+   * Every slug the reader has already been shown, so no chunk can repeat one.
+   *
+   * The halves of a listing go stale at different moments: page one is cleared
+   * the instant an editor saves, while the chunks behind it age out on their
+   * own clock. Unpublish an article off page one and the article that moves up
+   * to take its place is both the last row the server rendered and the first
+   * row of the chunk that was cached before the change -- so it arrives twice,
+   * which is the one version of this a reader actually notices (React also
+   * warns about the repeated key).
+   *
+   * Seeded from the server's own rows rather than read back out of the DOM:
+   * the parent already has them, and a component that scrapes the page it was
+   * rendered into breaks the first time the markup around it changes.
+   *
+   * The mirror case -- an article published onto page one pushing the old last
+   * row into a chunk that has not been rebuilt yet, so it is briefly skipped --
+   * is not something this can fix, and is not something a reader can see.
+   */
+  const seen = useRef(new Set(shownSlugs));
 
   /*
    * Tells the stylesheet that scrolling is actually running, so the pager can
@@ -79,7 +103,9 @@ export function NewsInfiniteRows({
       const response = await fetch(`/news/${encodeURIComponent(slug)}/chunk/${next}`);
       if (!response.ok) throw new Error(String(response.status));
       const data = (await response.json()) as { items: NewsCard[]; hasMore: boolean };
-      setItems((current) => [...current, ...data.items]);
+      const fresh = data.items.filter((item) => !seen.current.has(item.slug));
+      for (const item of fresh) seen.current.add(item.slug);
+      setItems((current) => [...current, ...fresh]);
       /* A good chunk restores the retry budget: one blip early in a long
          scroll should not leave the rest of it without a second chance. */
       retried.current = false;
