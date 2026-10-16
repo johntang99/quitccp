@@ -1,6 +1,6 @@
 import { AdminShell } from "@/components/admin/AdminShell";
 import { VideoTabs } from "@/components/admin/VideoTabs";
-import { VideoCategoryRowActions } from "@/components/admin/VideoCategoryRowActions";
+import { CategoryRowActions } from "@/components/admin/CategoryRowActions";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { listVideoCategories } from "@/lib/admin/video-repository";
 
@@ -108,11 +108,13 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
                         own fields, and a form inside a form is illegal HTML.
                         The save button reaches back in via `form={…}`. */}
                     <div style={{ marginTop: 6 }}>
-                      <VideoCategoryRowActions
+                      <CategoryRowActions
                         formId={`vc-${row.id}`}
                         id={row.id}
                         name={row.name}
                         count={row.videoCount}
+                        unit="个视频"
+                        deleteAction="/api/admin/content/video-categories/delete"
                       />
                     </div>
                   </td>

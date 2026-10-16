@@ -1784,6 +1784,13 @@ export interface NewsListing {
   slug: string;
   name: string;
   en: string;
+  /**
+   * The editor's sentence for this category, from
+   * `cms_article_categories.description`. Empty for the virtual listings
+   * (全部新闻, 重要报导, 精彩保留), which are not rows and so have nowhere to
+   * edit -- they show the name and count alone, as every category did before.
+   */
+  description: string;
   items: NewsCard[];
   total: number;
   page: number;
@@ -1881,14 +1888,16 @@ export async function getNewsListing(
     const offset = (Math.max(page, 1) - 1) * pageSize;
 
     let categoryId = "";
+    let description = "";
     if (!virtual) {
       const { data } = await supabase
         .from("cms_article_categories")
-        .select("id")
+        .select("id, description")
         .eq("slug", slug)
         .maybeSingle();
       if (!data) return null;
       categoryId = String(data.id);
+      description = String(data.description ?? "");
     }
 
     /** Every query on this page shares the same scope; only the columns differ. */
@@ -1946,6 +1955,7 @@ export async function getNewsListing(
       slug,
       name,
       en: virtual ? virtual.en : meta!.en,
+      description,
       items: rows.map((row) => toNewsCard(row, kickerFor(row))),
       picks: pickRows.map((row) => toNewsCard(row, kickerFor(row))),
       total,

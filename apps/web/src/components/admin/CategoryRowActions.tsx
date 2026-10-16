@@ -4,11 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 /**
- * The 更新 and 删除 pair at the end of a video category row.
+ * The 更新 and 删除 pair at the end of a category row -- video, article, or
+ * whatever gets this treatment next.
  *
  * Modelled on MaterialCategoryDeleteButton, which already solved the delete
  * half for material categories; the difference is that this one also owns the
  * save button, so the two can share a row and the same width.
+ *
+ * Generalised the moment the second caller appeared. The two differ only in
+ * where the delete posts and what the category holds -- 视频 or 篇文章 -- so
+ * those are props rather than a second copy of the dialog, the focus handling
+ * and the pending state.
  *
  * ## Why 更新 lives here and not in the form
  *
@@ -24,16 +30,24 @@ import { createPortal } from "react-dom";
  * know about -- a click on a row with an empty name would otherwise leave the
  * button stuck on 保存中… forever.
  */
-export function VideoCategoryRowActions({
+export function CategoryRowActions({
   formId,
   id,
   name,
-  count
+  count,
+  deleteAction,
+  /** 「视频」/「篇文章」 -- what the blocking message counts. */
+  unit,
+  /** What disappears with the row, named in the confirmation. */
+  alsoLost = "分类页的说明文字会一并消失。"
 }: {
   formId: string;
   id: string;
   name: string;
   count: number;
+  deleteAction: string;
+  unit: string;
+  alsoLost?: string;
 }) {
   const [saving, setSaving] = useState(false);
   const [open, setOpen] = useState(false);
@@ -93,8 +107,8 @@ export function VideoCategoryRowActions({
         <p style={{ margin: "0 0 6px", lineHeight: 1.6, wordBreak: "break-word" }}>「{name}」</p>
         <p style={{ margin: "0 0 18px", color: "#8a90a0", fontSize: 13, lineHeight: 1.6 }}>
           {blocked
-            ? `下面还有 ${count} 个视频。请先把它们改到别的分类，再回来删。`
-            : "这个分类下面没有视频，删掉不影响任何页面。分类页的说明文字会一并消失。"}
+            ? `下面还有 ${count} ${unit}。请先把它们改到别的分类，再回来删。`
+            : `这个分类下面没有${unit.replace(/^篇/, "")}，删掉不影响任何页面。${alsoLost}`}
         </p>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button
@@ -113,7 +127,7 @@ export function VideoCategoryRowActions({
                one -- a form nested in a form is illegal HTML. */
             <form
               method="post"
-              action="/api/admin/content/video-categories/delete"
+              action={deleteAction}
               onSubmit={() => setDeleting(true)}
             >
               <input type="hidden" name="id" value={id} />
@@ -147,7 +161,7 @@ export function VideoCategoryRowActions({
           onClick={() => setOpen(true)}
           disabled={saving}
           style={{ flex: 1, justifyContent: "center" }}
-          title={blocked ? `还有 ${count} 个视频在这个分类下，不能删` : "删除这个分类"}
+          title={blocked ? `还有 ${count} ${unit}在这个分类下，不能删` : "删除这个分类"}
         >
           删除
         </button>

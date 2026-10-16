@@ -35,7 +35,7 @@ export function NewsListingPage({ listing }: { listing: NewsListing }) {
           one marked. */}
       <NewsHeader
         active={listing.slug}
-        listing={{ name: listing.name, en: listing.en, total: listing.total }}
+        listing={{ name: listing.name, en: listing.en, total: listing.total, description: listing.description }}
       />
 
       {showLead && lead ? (

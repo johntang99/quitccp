@@ -33,7 +33,15 @@ export async function POST(request: Request) {
 
   try {
     await upsertCategoryRecord(
-      { id: id || undefined, slug: slug || undefined, name, sortOrder },
+      {
+        id: id || undefined,
+        slug: slug || undefined,
+        name,
+        /* Only when the form carried it: a missing box and an emptied box are
+           different intents. See upsertCategoryRecord. */
+        description: formData.has("description") ? String(formData.get("description") ?? "") : undefined,
+        sortOrder
+      },
       user.email
     );
   } catch (error) {

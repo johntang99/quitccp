@@ -21,7 +21,13 @@ export function NewsHeader({
   active?: string;
   /** Only used by the section index, whose kicker is NEWSROOM · <date>. */
   today?: string;
-  listing?: { name: string; en: string; total: number };
+  /**
+   * `description` is the editor's sentence for this category, from
+   * `cms_article_categories.description`. `en` and the count stay above it --
+   * they say which listing this is and how big; the sentence says what is in
+   * it. Empty until somebody writes one, which is the state of all 18 today.
+   */
+  listing?: { name: string; en: string; total: number; description?: string };
 }) {
   // archive and latest are the whole section: they light 全部新闻, not a category.
   const wholeSection = active === "archive" || active === "latest";
@@ -78,6 +84,11 @@ export function NewsHeader({
                 {listing.en} · {listing.total.toLocaleString("zh-CN")} 篇
               </span>
             </div>
+            {listing.description ? (
+              <p style={{ margin: 0, fontSize: 15, lineHeight: "var(--lh-body)", color: T.onDark, maxWidth: 720 }}>
+                {listing.description}
+              </p>
+            ) : null}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

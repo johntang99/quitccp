@@ -87,6 +87,8 @@ export interface CategoryRecord {
   id: string;
   slug: string;
   name: string;
+  /** The sentence under the title on the category page. Empty is normal. */
+  description: string;
   articleCount: number;
   /** Display order; lower first, name as the tie-break. */
   sortOrder: number;

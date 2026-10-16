@@ -1167,6 +1167,7 @@ interface CategoryRow {
   id: string;
   slug: string;
   name: string;
+  description?: string | null;
   sort_order?: number;
 }
 
@@ -1180,7 +1181,7 @@ export async function listCategories(actorEmail: string): Promise<CategoryRecord
   let hasSortOrder = true;
   const ordered = await supabase
     .from("cms_article_categories")
-    .select("id, slug, name, sort_order")
+    .select("id, slug, name, description, sort_order")
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
   let categoryRows = ordered.data as CategoryRow[] | null;
@@ -1189,7 +1190,7 @@ export async function listCategories(actorEmail: string): Promise<CategoryRecord
     hasSortOrder = false;
     const fallback = await supabase
       .from("cms_article_categories")
-      .select("id, slug, name")
+      .select("id, slug, name, description")
       .order("name", { ascending: true });
     categoryRows = fallback.data as CategoryRow[] | null;
     categoryError = fallback.error;
@@ -1217,13 +1218,14 @@ export async function listCategories(actorEmail: string): Promise<CategoryRecord
     id: String(row.id),
     slug: String(row.slug),
     name: String(row.name),
+    description: String(row.description ?? ""),
     articleCount: counts.get(String(row.id)) ?? 0,
     sortOrder: hasSortOrder ? Number(row.sort_order ?? 0) : 0
   }));
 }
 
 export async function upsertCategoryRecord(
-  input: { id?: string; slug?: string; name: string; sortOrder?: number },
+  input: { id?: string; slug?: string; name: string; description?: string; sortOrder?: number },
   actorEmail: string
 ): Promise<CategoryRecord> {
   const supabase = createSupabaseAdminClient();
@@ -1232,6 +1234,9 @@ export async function upsertCategoryRecord(
   const sortOrder = Number.isFinite(input.sortOrder) ? Math.trunc(Number(input.sortOrder)) : undefined;
 
   const payload: Record<string, unknown> = { slug, name: normalizedName };
+  /* `undefined` = the form did not carry the field, which must not be read as
+     an editor clearing it: the create form has no description box. */
+  if (input.description !== undefined) payload.description = input.description.trim() || null;
   const withOrder = sortOrder === undefined ? payload : { ...payload, sort_order: sortOrder };
 
   const write = async (values: Record<string, unknown>, columns: string) =>
@@ -1248,12 +1253,12 @@ export async function upsertCategoryRecord(
           .select(columns)
           .single();
 
-  const first = await write(withOrder, "id, slug, name, sort_order");
+  const first = await write(withOrder, "id, slug, name, description, sort_order");
   let row = first.data as CategoryRow | null;
   let error: unknown = first.error;
   if (error && isMissingSortOrder(error)) {
     // Pre-migration: keep the rename working, drop the order silently.
-    const retry = await write(payload, "id, slug, name");
+    const retry = await write(payload, "id, slug, name, description");
     row = retry.data as CategoryRow | null;
     error = retry.error;
   }
@@ -1272,6 +1277,7 @@ export async function upsertCategoryRecord(
     id: String(row.id),
     slug: String(row.slug),
     name: String(row.name),
+    description: String(row.description ?? ""),
     articleCount: 0,
     sortOrder: Number(row.sort_order ?? sortOrder ?? 0)
   };
