@@ -356,7 +356,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
                     {asString(immigrationSection.lede, "以下为公开报导与政策梳理，供参考。本中心不提供法律意见，具体个案请咨询有执照的移民律师。")}
                   </p>
                 </div>
-                <a className="more" href={asString(immigrationSection.moreHref, "/news")}>
+                <a className="more" href={asString(immigrationSection.moreHref, "/news")} {...externalLinkProps(asString(immigrationSection.moreHref, "/news"))}>
                   {asString(immigrationSection.moreLabel, "全部相关报导 →")}
                 </a>
               </div>
@@ -587,7 +587,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
                   </h2>
                   <p className="lede">{asString(relatedSection.lede, "围绕上述著作的评论、学者分析与新闻关注汇编。")}</p>
                 </div>
-                <a className="more" href={asString(relatedSection.moreHref, "/news/commentary")}>
+                <a className="more" href={asString(relatedSection.moreHref, "/news/commentary")} {...externalLinkProps(asString(relatedSection.moreHref, "/news/commentary"))}>
                   {asString(relatedSection.moreLabel, "全部相关文章 →")}
                 </a>
               </div>
@@ -828,7 +828,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
               <div className="panel panel--seal">
                 <h4>{asString(assistPanel.title, "需要协助？")}</h4>
                 <p>{asString(assistPanel.body, "服务点可协助批量印制与配送，也可提供本地化建议。")}</p>
-                <a className="btn btn--seal btn--sm" href={asString(assistPanel.buttonHref, "/services/contact")}>
+                <a className="btn btn--seal btn--sm" href={asString(assistPanel.buttonHref, "/services/contact")} {...externalLinkProps(asString(assistPanel.buttonHref, "/services/contact"))}>
                   {asString(assistPanel.buttonLabel, "联系我们")}
                 </a>
               </div>
@@ -1100,7 +1100,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
               <div className="panel panel--seal">
                 <h4>{asString(requestPanel.title, "投稿与索取纸本")}</h4>
                 <p>{asString(requestPanel.body, "欢迎投稿，也可来信索取纸本用于服务点发放。")}</p>
-                <a className="btn btn--seal btn--sm" href={asString(requestPanel.buttonHref, "/services/contact")}>
+                <a className="btn btn--seal btn--sm" href={asString(requestPanel.buttonHref, "/services/contact")} {...externalLinkProps(asString(requestPanel.buttonHref, "/services/contact"))}>
                   {asString(requestPanel.buttonLabel, "联系编辑部")}
                 </a>
               </div>
@@ -1257,10 +1257,10 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
               <h2>{asString(ctaPanel.title, "采访、查证与数据合作")}</h2>
               <p>{asString(ctaPanel.body, "我们可提供高分辨率原图、历史归档、数据解释与受访联络协助。")}</p>
               <div className="actions">
-                <a className="btn btn--ink" href={asString(ctaPanel.primaryHref, "/services/contact")}>
+                <a className="btn btn--ink" href={asString(ctaPanel.primaryHref, "/services/contact")} {...externalLinkProps(asString(ctaPanel.primaryHref, "/services/contact"))}>
                   {asString(ctaPanel.primaryLabel, "联系编辑部")}
                 </a>
-                <a className="btn btn--line" href={asString(ctaPanel.secondaryHref, "/about/numbers")}>
+                <a className="btn btn--line" href={asString(ctaPanel.secondaryHref, "/about/numbers")} {...externalLinkProps(asString(ctaPanel.secondaryHref, "/about/numbers"))}>
                   {asString(ctaPanel.secondaryLabel, "查看统计方法")}
                 </a>
               </div>
@@ -1390,7 +1390,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
               <div className="panel panel--seal">
                 <h4>{asString(intro.downloadPanelTitle, "下载")}</h4>
                 <p>{asString(intro.downloadPanelBody, "年度工作报告与经审计财务报表，可自由下载与转载。")}</p>
-                <a className="btn btn--seal btn--sm" href={asString(intro.downloadPanelButtonHref, "#")}>
+                <a className="btn btn--seal btn--sm" href={asString(intro.downloadPanelButtonHref, "#")} {...externalLinkProps(asString(intro.downloadPanelButtonHref, "#"))}>
                   {asString(intro.downloadPanelButtonLabel, "2025 年度报告 PDF")}
                 </a>
               </div>
@@ -1575,7 +1575,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
               <div className="panel panel--seal">
                 <h4>{asString(ctaPanel.title, "找不到附近的服务点？")}</h4>
                 <p>{asString(ctaPanel.body, "你也可以在线声明，或通过电话与邮件提交。全部方式效力相同。")}</p>
-                <a className="btn btn--seal btn--sm" href={asString(ctaPanel.buttonHref, "/services/declare")}>
+                <a className="btn btn--seal btn--sm" href={asString(ctaPanel.buttonHref, "/services/declare")} {...externalLinkProps(asString(ctaPanel.buttonHref, "/services/declare"))}>
                   <span className="stamp">退</span>
                   {asString(ctaPanel.buttonLabel, "在线声明")}
                 </a>
@@ -1876,7 +1876,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
               <div className="panel panel--seal">
                 <h4>{asString(joinPanel.title, "加入我们")}</h4>
                 <p>{asString(joinPanel.body, "绝大部分工作由志愿者完成。时间多少不限。")}</p>
-                <a className="btn btn--seal btn--sm" href={asString(joinPanel.buttonHref, "/involve/volunteer")}>
+                <a className="btn btn--seal btn--sm" href={asString(joinPanel.buttonHref, "/involve/volunteer")} {...externalLinkProps(asString(joinPanel.buttonHref, "/involve/volunteer"))}>
                   {asString(joinPanel.buttonLabel, "成为义工")}
                 </a>
               </div>
@@ -2020,7 +2020,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
                 ) : null}
               </div>
               {asString(band.moreLabel) ? (
-                <a className="more" href={asString(band.moreHref, "/involve/volunteer")} style={{ color: "var(--gold-lt)" }}>
+                <a className="more" href={asString(band.moreHref, "/involve/volunteer")} {...externalLinkProps(asString(band.moreHref, "/involve/volunteer"))} style={{ color: "var(--gold-lt)" }}>
                   {asString(band.moreLabel)}
                 </a>
               ) : null}
@@ -2028,7 +2028,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
             <div className="cities cols-3" style={{ gap: "0 32px" }}>
               {bandLinks.map((row, index) => (
                 <div key={asString(row.label) || index}>
-                  <a href={asString(row.href, "/involve/volunteer")} style={{ color: "var(--lav-lt)" }}>
+                  <a href={asString(row.href, "/involve/volunteer")} {...externalLinkProps(asString(row.href, "/involve/volunteer"))} style={{ color: "var(--lav-lt)" }}>
                     {asString(row.label)} →
                   </a>
                 </div>
@@ -2051,7 +2051,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
                     <a
                       key={asString(row.label) || index}
                       className={index === 0 ? "btn btn--seal" : "btn btn--line"}
-                      href={asString(row.href, "/")}
+                      href={asString(row.href, "/")} {...externalLinkProps(asString(row.href, "/"))}
                     >
                       {asString(row.label)}
                     </a>
@@ -2082,7 +2082,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
                 <h2 className="h2">{asString(storiesHead.title)}</h2>
               </div>
               {asString(storiesHead.moreLabel) ? (
-                <a className="more" href={asString(storiesHead.moreHref, "/involve/stories")}>
+                <a className="more" href={asString(storiesHead.moreHref, "/involve/stories")} {...externalLinkProps(asString(storiesHead.moreHref, "/involve/stories"))}>
                   {asString(storiesHead.moreLabel)}
                 </a>
               ) : null}
