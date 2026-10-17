@@ -30,6 +30,8 @@ Working notes for the quitccp build. Grouped by what you came here to do.
 | [article-migration-plan.md](./article-migration-plan.md) | 文章迁移计划 — the plan for the 15k WordPress posts |
 | [phase4-migration-verification.md](./phase4-migration-verification.md) | the dry-run / apply loop and what was checked |
 | [wp-taxonomy-live.md](./wp-taxonomy-live.md) | the old site's real category tree, as scraped |
+| [attack-solution/攻击规模与手法（可对外）.md](./attack-solution/攻击规模与手法（可对外）.md) | 攻击的规模、手法与业内定位。**可对外** —— 不含任何防御信息 |
+| [attack-solution/tuidang.org DDoS 事件与防御.md](./attack-solution/tuidang.org%20DDoS%20%E4%BA%8B%E4%BB%B6%E4%B8%8E%E9%98%B2%E5%BE%A1.md) | 同一场攻击的完整记录，含防御手段。**内部，不要对外** |
 | [video-categories.md](./video-categories.md) | `/admin/video-categories`：名称、说明、排序归编辑；slug 只读 |
 | [video-categories-old-site.md](./video-categories-old-site.md) | 旧站视频 → 新站八个分类 |
 | [video-hosting-decision.md](./video-hosting-decision.md) | where the video files should live, with the bandwidth numbers. **Not Supabase** |
