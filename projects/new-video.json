@@ -1,6 +1,6 @@
 {
   "output": {
-    "name": "new-video",
+    "name": "new-video2",
     "width": 1920,
     "height": 1080,
     "fps": "source",
@@ -11,7 +11,7 @@
   "music": {
     "loop": true,
     "lufs": -16,
-    "from": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/home/music/1792273304874-music3.m4a?download=music3.m4a"
+    "from": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/home/music/1792276921870-music.m4a?download=music.m4a"
   },
   "clips": [
     {
@@ -29,7 +29,7 @@
     {
       "source": "https://www.ganjingworld.com/embed/1itrhn2aita7zcOPAse9NBPQq1gb1c",
       "from": 109,
-      "to": 111,
+      "to": 114,
       "note": "3_至8月底三退總數_2s"
     },
     {
