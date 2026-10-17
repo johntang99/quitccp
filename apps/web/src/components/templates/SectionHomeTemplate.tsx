@@ -11,11 +11,25 @@ import { InteriorHead, InteriorTabs } from "./InteriorScaffold";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString, asStringArray } from "./content-utils";
 import { resolveNewsArticleHref } from "@/lib/news-linking";
+import { formatEndccpCount, getEndccpSnapshot } from "@/lib/endccp";
 import { involveDefaults } from "@quitccp/content-schema";
 import { ActCards, CtaPanel, LinkPanel, blockRows } from "./section-panels";
 
 
-export function SectionHomeTemplate({ title, section, slug, content, query }: TemplatePageData) {
+export async function SectionHomeTemplate({ title, section, slug, content, query }: TemplatePageData) {
+  /*
+   * The End CCP signature count, fetched rather than typed.
+   *
+   * Async only for this: the component is a server component, so awaiting here
+   * costs nothing at the call sites -- `TemplateRenderer` stays synchronous.
+   *
+   * Empty when nothing has been fetched yet or the fetch is failing, and every
+   * use below falls back to the figure in the CMS. That figure had drifted to
+   * less than half the real one by 2026-10-17, which is the whole reason this
+   * exists, but a stale number still beats a blank.
+   */
+  const endccpSnapshot = await getEndccpSnapshot();
+  const endccpCount = endccpSnapshot ? formatEndccpCount(endccpSnapshot.count) : "";
   const payload = asRecord(content);
 
   if (section === "services" && slug === "index") {
@@ -2049,7 +2063,7 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
               <div className="panel">
                 <h4>{asString(petition.progressTitle)}</h4>
                 <p style={{ fontFamily: "var(--mono)", fontSize: 30, color: "var(--seal)", margin: "0 0 6px", letterSpacing: "-.01em" }}>
-                  {asString(petition.progressValue)}
+                  {endccpCount || asString(petition.progressValue)}
                 </p>
                 <p style={{ fontSize: 13.5, color: "var(--ink-soft)", margin: 0, lineHeight: "var(--lh-body)" }}>
                   {asString(petition.progressNote)}
@@ -2104,7 +2118,11 @@ export function SectionHomeTemplate({ title, section, slug, content, query }: Te
   if (section === "involve" && slug === "endccp") {
     const fallback = involveDefaults("involve", "endccp");
     const block = (key: string) => asRecord(payload[key] ?? fallback[key]);
-    const statCells = blockRows(payload.stats, fallback.stats);
+    /* 只替换讲签署人数的那一格，按标签认而不是按位置：四格的顺序是编辑
+       能改的，写死 index 0 迟早会把「发起时间」换成签署数。 */
+    const statCells = blockRows(payload.stats, fallback.stats).map((cell) =>
+      endccpCount && asString(cell.label).includes("签署") ? { ...cell, value: endccpCount } : cell
+    );
     const intro = block("intro");
     // `actionsTitle` + `items` were two loose top-level keys; they are one
     // block now, so the heading and the list it heads are edited together.

@@ -7,7 +7,8 @@ import { DawnBand } from "./DawnBand";
 import { BroadsheetBand } from "./BroadsheetBand";
 import { ScreeningBand } from "./ScreeningBand";
 import { VerifiedBand } from "./VerifiedBand";
-import { externalLinkProps } from "@/lib/external-services";
+import { EXTERNAL_LINK_PROPS, EXTERNAL_SERVICES, externalLinkProps } from "@/lib/external-services";
+import { formatEndccpCount, getEndccpSnapshot } from "@/lib/endccp";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString } from "./content-utils";
 import type { HomeContent } from "@quitccp/content-schema";
@@ -266,6 +267,8 @@ export async function HomeTemplate({ content }: TemplatePageData) {
   // The articles in the 主要新闻 band and the four 专题栏目 cards come from the
   // article table, not from what someone last typed into the homepage admin.
   // The editor still owns the headings, the labels and which four columns show.
+  const endccpSnapshot = await getEndccpSnapshot();
+  const endccpCount = endccpSnapshot ? formatEndccpCount(endccpSnapshot.count) : "";
   const [liveNews, liveVideo, santui] = await Promise.all([
     getHomeNews(home.channels.cards.map((card) => card.title)),
     getHomeVideo(),
@@ -349,9 +352,18 @@ export async function HomeTemplate({ content }: TemplatePageData) {
           <time dateTime={santui.fetchedAt}>{santui.fetchedAt.slice(0, 10)}</time>
         </p>
       ) : null}
-      <a className="count-note" href={registry.noteHref} {...externalLinkProps(registry.noteHref)}>
-        {registry.noteLabel}
-      </a>
+      {/* 两条小字并排。三退登记册是这个数字的来源，End CCP 联署是读者看完
+          这个数字之后能立刻做的下一件事 —— 同属「这个数字之后呢」，所以并列
+          而不是另起一块。包一层 flex：两个 .count-note 都是 inline-block，
+          直接并排会贴在一起，窄屏换行时第二条还会莫名缩进。 */}
+      <div className="count-notes">
+        <a className="count-note" href={registry.noteHref} {...externalLinkProps(registry.noteHref)}>
+          {registry.noteLabel}
+        </a>
+        <a className="count-note" href={EXTERNAL_SERVICES.endccp} {...EXTERNAL_LINK_PROPS}>
+          打倒中共恶魔连署 →
+        </a>
+      </div>
       <div className="substats">
         {registry.substats.map((stat) => (
           <div className="substat" key={`${stat.value}-${stat.label}`}>
@@ -466,6 +478,7 @@ export async function HomeTemplate({ content }: TemplatePageData) {
           feed={streamRows}
           updatedAt={santui?.fetchedAt ?? null}
           total={santui?.total ?? null}
+          endccpCount={endccpCount}
         />
       ) : null}
 

@@ -1,0 +1,594 @@
+{
+  "hero": {
+    "body": "2026年10月7日，美国国务卿卢比奥在希腊雅典普尼克斯遗址发表26分钟演讲，以古希腊历史和Thumos为核心，批评西方“向下建造”、主权流失和文明自我否定，主张美国与西方重建供应链、工业与国防，应对共产极权扩张，并点出中共在经济、地缘⋯⋯",
+    "image": "",
+    "title": "人类文明决战时刻：雅典山丘吹响号角",
+    "video": {
+      "src": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/home/1791996601831-rubio-r2-1.mp4",
+      "poster": "",
+      "caption": "",
+      "soundOn": true,
+      "hasAudio": true
+    },
+    "actions": [
+      {
+        "href": "https://www.tuidang.org/news/%E4%BA%BA%E7%B1%BB%E6%96%87%E6%98%8E%E5%86%B3%E6%88%98%E6%97%B6%E5%88%BB%EF%BC%9A%E9%9B%85%E5%85%B8%E5%B1%B1%E4%B8%98%E5%90%B9%E5%93%8D%E5%8F%B7%E8%A7%92",
+        "label": "阅读全文",
+        "stamp": "",
+        "variant": "seal"
+      },
+      {
+        "href": "/services",
+        "label": "退出中共",
+        "variant": "line-light"
+      }
+    ],
+    "enabled": true,
+    "eyebrow": "退党服务中心成立于 2005 · 全球 100+ 服务点",
+    "gallery": [
+      {
+        "alt": "Nina Shea",
+        "src": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/home/1790648808831-0926-nina-shea-id14856817-wsy9180-scaled.jpg"
+      },
+      {
+        "alt": "Pat Ryan",
+        "src": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/home/1790648821038-0926-pat-ryan-id14856835-wsy9121-scaled.jpg"
+      },
+      {
+        "alt": "Robert Destro",
+        "src": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/home/1790648831336-0926-robert-destro-id14856818-wsy9206-scaled.jpg"
+      },
+      {
+        "alt": "Wang Zhi Yuan",
+        "src": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/home/1790648858801-id14856852-wsy9416-scaled.jpg"
+      }
+    ],
+    "variant": "full-bleed-video",
+    "imageAlt": "美国国务卿卢比奥在希腊雅典普尼克斯遗址发表26分钟演讲"
+  },
+  "meta": {
+    "path": "pages/home.json",
+    "slug": "index",
+    "section": "root",
+    "template": "home"
+  },
+  "news": {
+    "lead": {
+      "tag": "头条",
+      "body": "",
+      "href": "/news/a/706011",
+      "meta": "2026-09-27",
+      "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/legacy/2026/09/id14856852-WSY9416-scaled.jpg",
+      "title": "全球退党中心：三退大潮宣告镇压破产 制止中共跨国迫害",
+      "kicker": "FEATURE"
+    },
+    "items": [
+      {
+        "date": "2026-09-26",
+        "href": "/news/a/705931",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/legacy/2026/09/news_0926-555.jpg",
+        "title": "一场泥石流 照出百万军人沉默抗命与中南海分裂"
+      },
+      {
+        "date": "2026-09-26",
+        "href": "/news/a/705923",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/legacy/2026/09/news_0926-333.jpg",
+        "title": "出入境新规——正在成形的数字柏林墙"
+      },
+      {
+        "date": "2026-09-23",
+        "href": "/news/a/705880",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/legacy/2026/09/news_0926-222.jpg",
+        "title": "8月115万人「三退」：从苦难与谎言中觉醒"
+      }
+    ],
+    "enabled": true,
+    "eyebrow": "新闻与报告",
+    "heading": "主要新闻与重点议题",
+    "variant": "broadsheet",
+    "moreHref": "/news",
+    "listTitle": "最新发布",
+    "moreLabel": "进入新闻中心",
+    "listTitleEn": "LATEST",
+    "listMoreHref": "/news",
+    "listMoreLabel": "浏览全部最新发布"
+  },
+  "about": {
+    "lede": "全球退党服务中心成立于二〇〇五年，是在美国注册的非营利组织，总部设于纽约。财务报表、治理结构与统计方法全部公开。",
+    "cells": [
+      {
+        "body": "反对我们所做之事的一方，正以每秒数万次请求攻击本站。防护、带宽与服务器都要花钱。如果你认同这件事该被做下去，请支持我们。",
+        "value": "正在被攻击",
+        "heading": "为什么需要你的支持"
+      },
+      {
+        "body": "在美国注册的非营利组织，捐款可依法抵税。年度 Form 990 公开可查。",
+        "value": "501(c)(3)",
+        "heading": "注册与法律地位"
+      },
+      {
+        "body": "声明数字的统计口径、去重规则与更新频率全部说明；针对本机构的威胁事件另设公开档案。",
+        "value": "公开方法",
+        "heading": "统计与安全"
+      }
+    ],
+    "enabled": true,
+    "eyebrow": "关于我们 · 参与我们",
+    "heading": "每一分钱、每一个数字，\n都可以被检验。",
+    "variant": "verified",
+    "moreHref": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/press/quitccp-org-profile.pdf?download=%E5%85%A8%E7%90%83%E9%80%80%E5%85%9A%E6%9C%8D%E5%8A%A1%E4%B8%AD%E5%BF%83-%E6%9C%BA%E6%9E%84%E7%AE%80%E4%BB%8B.pdf",
+    "moreLabel": "下载机构简介 PDF →"
+  },
+  "title": "首页",
+  "video": {
+    "lede": "",
+    "items": [
+      {
+        "href": "/news/a/705292",
+        "meta": "三退前线 · 现场纪录",
+        "badge": "NEW",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/legacy/2026/07/id14814223-LD109739-scaled.jpg",
+        "title": "纽约中领馆前烛光夜悼，十七名华人现场声明三退",
+        "duration": "4:12"
+      },
+      {
+        "href": "https://www.youtube.com/watch?v=TZhgjCsLsGU",
+        "meta": "三退前线 · 义工纪实",
+        "badge": "",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/legacy/2026/06/2026.06.10-J.jpg",
+        "title": "济州岛服务点的一天：义工在码头前轮班守候",
+        "duration": "11:05"
+      },
+      {
+        "href": "https://www.youtube.com/watch?v=wxYJYCAHuVY",
+        "meta": "破除党文化 · 系列专题",
+        "badge": "",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/legacy/2026/07/2026.07.23-P.png",
+        "title": "第三集：斗争哲学的日常痕迹",
+        "duration": "22:00"
+      },
+      {
+        "href": "/news/a/696470",
+        "meta": "觉醒之旅 · 纪录片",
+        "badge": "",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/legacy/2026/09/news_0926.jpg",
+        "title": "四万人的觉醒",
+        "duration": "38:00"
+      }
+    ],
+    "series": [
+      {
+        "href": "/videos",
+        "label": "全部",
+        "active": true
+      },
+      {
+        "href": "/videos/frontline",
+        "label": "三退前线"
+      },
+      {
+        "href": "/videos/party-culture",
+        "label": "破除党文化"
+      },
+      {
+        "href": "/videos/santui-wave",
+        "label": "三退大潮"
+      },
+      {
+        "href": "/videos/400m_quit_ccp",
+        "label": "四亿人的觉醒"
+      },
+      {
+        "href": "/videos/voices-of-tuidang",
+        "label": "三退洪声"
+      },
+      {
+        "href": "/videos/tuidang-wave",
+        "label": "退党洪流"
+      },
+      {
+        "href": "/videos/jiuping",
+        "label": "九评系列"
+      },
+      {
+        "href": "/videos/stop-organhavesting",
+        "label": "制止活摘器官"
+      },
+      {
+        "href": "/videos/ironclad",
+        "label": "铁证如山"
+      },
+      {
+        "href": "/videos/echoes_hope",
+        "label": "Echoes of Hope"
+      },
+      {
+        "href": "/videos/hope-road",
+        "label": "希望的路"
+      },
+      {
+        "href": "/videos/awakening",
+        "label": "觉醒之旅"
+      }
+    ],
+    "enabled": true,
+    "eyebrow": "视频资源",
+    "heading": "影音节目",
+    "variant": "screening",
+    "featured": {
+      "tag": "本期推荐",
+      "body": "追查迫害法轮功国际组织公布的系列调查，含录音取证、证人陈述与责任人名单。附完整文字版报告。",
+      "href": "https://www.zhuichaguoji.org/media_files/tzrs/tzrs_cn_trailer_revised.mp4",
+      "meta": [
+        "调查片",
+        "58 分",
+        "中英文字幕"
+      ],
+      "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/legacy/2026/07/id14813875-LD108599-1-scaled.jpg",
+      "title": "《铁证如山》：中共活体摘取法轮功学员器官罪恶追查",
+      "duration": "58:00",
+      "primaryHref": "https://www.zhuichaguoji.org/media_files/tzrs/tzrs_cn_trailer_revised.mp4",
+      "primaryLabel": "立即观看",
+      "secondaryHref": "/videos/ironclad",
+      "secondaryLabel": "查看全部调查影像"
+    },
+    "footMark": "",
+    "footNote": "",
+    "moreHref": "/videos",
+    "moreLabel": "进入视频库",
+    "latestLabel": "最新上线"
+  },
+  "voices": {
+    "lede": "",
+    "items": [
+      {
+        "name": "高智晟",
+        "role": "三获诺奖提名的良心律师",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/home/1792171652963-.001.png",
+        "quote": "“退出这个无仁、无义、无人性的邪党。这是我人生最自豪的一天⋯⋯我认为解决中国问题最根本的症结就是抛弃这个邪恶的制度。”"
+      },
+      {
+        "name": "关贵敏",
+        "role": "著名男高音歌唱家",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/home/1792170191479-home.jpeg",
+        "quote": "“只有它（中共）垮台，中国人才有好日子过！我们中华民族才有希望⋯⋯我希望大家都能认清这样的问题，退出共产党。”"
+      },
+      {
+        "name": "黄晓敏",
+        "role": "奥运泳坛名将",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/home/1792170666612-.jpg.001.png",
+        "quote": "“我深感自己曾经是共产党的一员感到耻辱⋯⋯还是应该严正声明一下，从自己内心彻底全面地肃清共产党的毒素，退出这个邪恶的政党。”"
+      },
+      {
+        "name": "陈用林",
+        "role": "中共前驻悉尼外交官",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/legacy/2020/08/cyl.png",
+        "quote": "作为外交官，按理应该为国家利益服务，但我在那里做的事大多不是为了国家利益，而是在迫害自己的人民。"
+      },
+      {
+        "name": "韩广生",
+        "role": "原沈阳市司法局局长",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/legacy/2020/08/HGS.png",
+        "quote": "我于 1980 年入党，曾经忠心耿耿地效力。但越来越多的事实使我痛苦地认识到，这样一个党已经与我的理想和信念水火不容。"
+      },
+      {
+        "name": "郝凤军",
+        "role": "原天津「六一〇」官员",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/legacy/2020/08/hfj.png",
+        "quote": "我 1991 年加入中国共产党，当时对它抱有很高的期望，但事实并不像我想像的那样。"
+      }
+    ],
+    "enabled": true,
+    "eyebrow": "见证者",
+    "heading": "他们为什么选择公开声明",
+    "variant": "grid3",
+    "moreHref": "/news/famous-quitccp",
+    "moreLabel": "更多见证→"
+  },
+  "involve": {
+    "lede": "选择任何一种，都是在帮助更多人。",
+    "items": [
+      {
+        "body": "可实名或匿名提交，几分钟完成，随后可申请证明。",
+        "href": "https://santui.tuidang.org",
+        "glyph": "退",
+        "title": "声明三退",
+        "primary": true,
+        "ctaLabel": "立即声明"
+      },
+      {
+        "body": "在你所在的城市协助服务点，或参与线上翻译与整理。",
+        "href": "/involve/volunteer",
+        "glyph": "义",
+        "title": "成为义工",
+        "ctaLabel": "报名义工"
+      },
+      {
+        "body": "加入 End CCP 公开联署，向各国政府表达立场。",
+        "href": "/involve/endccp",
+        "glyph": "署",
+        "title": "参与联署",
+        "ctaLabel": "参与联署"
+      },
+      {
+        "body": "展板、传单、手举牌与影音素材，可自由使用。",
+        "href": "/resources/downloads",
+        "glyph": "载",
+        "title": "下载资料",
+        "ctaLabel": "前往下载"
+      }
+    ],
+    "enabled": true,
+    "eyebrow": "参与我们",
+    "heading": "四种参与方式",
+    "variant": "grid4"
+  },
+  "network": {
+    "body": "服务点设在旅游景点、社区与交通枢纽附近。志愿者协助现场登记、解答证明与移民相关问题，并转交纸本声明。",
+    "cities": [
+      "纽约",
+      "洛杉矶",
+      "旧金山",
+      "多伦多",
+      "温哥华",
+      "华盛顿",
+      "伦敦",
+      "柏林",
+      "巴黎",
+      "台北",
+      "东京",
+      "首尔",
+      "香港",
+      "曼谷",
+      "济州岛",
+      "悉尼",
+      "墨尔本",
+      "奥克兰"
+    ],
+    "enabled": true,
+    "eyebrow": "全球网络",
+    "heading": "退党服务中心全球一百多个服务点，由志愿者维持运转",
+    "variant": "split",
+    "buttonHref": "/about/network",
+    "buttonLabel": "查找离你最近的服务点",
+    "citiesLabel": "代表性服务点"
+  },
+  "channels": {
+    "cards": [
+      {
+        "en": "INVESTIGATIONS",
+        "badge": "▶",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/legacy/2026/07/2026.07.23-P.png",
+        "title": "追查国际调查报告",
+        "footHref": "https://www.zhuichaguoji.org/taxonomy/term/495",
+        "leadHref": "/news/worldwide-investigation",
+        "footLabel": "全部调查报告 →",
+        "leadTitle": "《铁证如山》：中共活体摘取法轮功学员器官罪恶追查"
+      },
+      {
+        "en": "FEATURES & COMMENTARY",
+        "badge": "",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/legacy/2026/07/2026.07.29-P.png",
+        "title": "专题报导与时政评论",
+        "footHref": "",
+        "leadHref": "/news/commentary",
+        "footLabel": "全部专题与评论 →",
+        "leadTitle": "专题：被改写的七十年——从大饥荒到今天的官方叙事"
+      },
+      {
+        "en": "INTERNATIONAL SUPPORT",
+        "badge": "",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/legacy/2026/07/signal-2026-07-22-11-53-42-724.jpg",
+        "title": "国际声援行动",
+        "footHref": "",
+        "leadHref": "/news/worldwide-supports",
+        "footLabel": "全部声援行动 →",
+        "leadTitle": "美国国会议员联署声明，表彰退出中共运动并载入《国会议事录》"
+      },
+      {
+        "en": "TUIDANG NEWS",
+        "badge": "▶",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/legacy/2026/06/2026.06.10-J.jpg",
+        "title": "三退新闻",
+        "footHref": "",
+        "leadHref": "/news/stories",
+        "footLabel": "全部三退新闻 →",
+        "leadTitle": "济州岛服务点重启，义工在码头与免税店前轮班守候"
+      },
+      {
+        "en": "NINE COMMENTARIES",
+        "badge": "▶",
+        "image": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/articles/fa/faf09d88a1467a2d.gif",
+        "title": "九评共产党",
+        "footHref": "/videos/jiuping",
+        "leadHref": "/videos/九评之一：评共产党是什么",
+        "footLabel": "全部九评影片 →",
+        "leadTitle": "九评之一：评共产党是什么"
+      }
+    ],
+    "enabled": true,
+    "heading": "专题栏目",
+    "variant": "grid4"
+  },
+  "registry": {
+    "count": "4.64 亿",
+    "enabled": true,
+    "eyebrow": "实时登记册",
+    "variant": "dawn",
+    "noteHref": "/about/numbers",
+    "substats": [
+      {
+        "label": "在线提交流程",
+        "value": "24 / 7"
+      },
+      {
+        "label": "审计留痕覆盖",
+        "value": "100%"
+      },
+      {
+        "label": "历史内容可检索",
+        "value": "10k+"
+      }
+    ],
+    "asideHref": "/news/a/690040",
+    "feedCount": 10,
+    "liveLabel": "实时登记册 · 退党勇士，民族的希望",
+    "noteLabel": "这个数字是怎么统计的 →",
+    "asideImage": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/articles/f7/f725911b111ce6f2.jpeg",
+    "countLabel": "人已公开声明退出中共党、团、队组织",
+    "asideImageAlt": "法轮功创始人李洪志大师发表《为什么会有人类》",
+    "streamHeading": "Latest Updates"
+  },
+  "services": {
+    "cards": [
+      {
+        "tag": "登记",
+        "body": "声明可以實名、匿名提交，也可以申请一份中英文退党证明，并由第三方在线查验真伪。",
+        "links": [
+          {
+            "href": "https://santui.tuidang.org",
+            "label": "声明退出党、团、队"
+          },
+          {
+            "href": "https://service.tuidang.org/cert-apply/",
+            "label": "办理退党证明"
+          },
+          {
+            "href": "https://service.tuidang.org/cert-verify/",
+            "label": "查询与验证证明"
+          },
+          {
+            "href": "/services/faq/d/694467",
+            "label": "证明与移民申请问答"
+          }
+        ],
+        "title": "三退登记与证明",
+        "ctaHref": "https://santui.tuidang.org",
+        "ctaLabel": "我要三退 →"
+      },
+      {
+        "tag": "传播",
+        "body": "收集并核实侵害人权的案例，保存当事人的第一手陈述，向各国议会、机构与媒体提交。",
+        "links": [
+          {
+            "href": "/news/worldwide-investigation",
+            "label": "迫害案例档案"
+          },
+          {
+            "href": "/news/topics-commentary",
+            "label": "调查报告"
+          },
+          {
+            "href": "/news/withdrawal-stories",
+            "label": "当事人口述"
+          },
+          {
+            "href": "/news/worldwide-supports",
+            "label": "国际议会与机构关注"
+          }
+        ],
+        "title": "调查、存档与见证",
+        "ctaHref": "/news",
+        "ctaLabel": "进入新闻中心 →"
+      },
+      {
+        "tag": "支持",
+        "body": "出版与整理公开读物，制作影音节目，并提供可在受限网络环境下使用的访问工具。",
+        "links": [
+          {
+            "href": "/resources",
+            "label": "《九评共产党》"
+          },
+          {
+            "href": "/videos",
+            "label": "视频与音频节目"
+          },
+          {
+            "href": "/resources/downloads",
+            "label": "展板、传单与素材下载"
+          },
+          {
+            "href": "/resources/tools",
+            "label": "安全访问与免翻墙工具"
+          }
+        ],
+        "title": "出版、影音与工具",
+        "ctaHref": "/resources",
+        "ctaLabel": "前往资源馆 →"
+      },
+      {
+        "en": "End CCP",
+        "tag": "联署",
+        "body": "面向各国公众的公开联署，向政府与国际机构表达对中共侵害人权的立场。已有 248 万人签署。",
+        "links": [
+          {
+            "href": "https://endccp.com/",
+            "label": "联署书全文"
+          },
+          {
+            "href": "/involve/volunteer",
+            "label": "参与现场征签"
+          },
+          {
+            "href": "/resources/downloads",
+            "label": "征签物料下载"
+          },
+          {
+            "href": "/news/announcement-claims",
+            "label": "机构公告与声明"
+          }
+        ],
+        "title": "打倒中共恶魔",
+        "ctaHref": "https://endccp.com/",
+        "ctaLabel": "签署请愿书 →"
+      }
+    ],
+    "enabled": true,
+    "eyebrow": "三退登记与证明",
+    "heading": "退党服务、媒体报道、视频真相、其它相关服务",
+    "variant": "cards3",
+    "moreHref": "/services",
+    "moreLabel": "查看全部服务"
+  },
+  "subtitle": "成立于 2005 · 总部纽约 · 全球 100+ 服务点",
+  "resources": {
+    "items": [
+      {
+        "tag": "Guide",
+        "href": "/resources/tools",
+        "label": "安全访问工具"
+      },
+      {
+        "tag": "Manual",
+        "href": "/services/faq",
+        "label": "声明提交流程说明"
+      },
+      {
+        "tag": "Manual",
+        "href": "https://service.tuidang.org/cert-verify/",
+        "label": "证书核验操作手册"
+      },
+      {
+        "tag": "PDF",
+        "href": "/resources/downloads",
+        "label": "公开报告下载"
+      },
+      {
+        "tag": "Policy",
+        "href": "/resources/press",
+        "label": "媒体协作规范"
+      },
+      {
+        "tag": "Terms",
+        "href": "/legal/terms",
+        "label": "站点使用条款"
+      }
+    ],
+    "enabled": false,
+    "eyebrow": "资源馆",
+    "heading": "工具、指南与公开文档",
+    "variant": "grid",
+    "moreHref": "/resources",
+    "moreLabel": "浏览全部资源"
+  }
+}
