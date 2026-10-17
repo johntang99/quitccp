@@ -1,0 +1,13 @@
+{
+  "output": {
+    "name": "new-video",
+    "width": 1920,
+    "height": 1080,
+    "fps": "source",
+    "crf": 18,
+    "dir": "artifacts/hero",
+    "fade": false
+  },
+  "music": null,
+  "clips": []
+}
