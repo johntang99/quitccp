@@ -656,6 +656,55 @@ async function render(projectPath) {
    * index 图片视频库 reads -- writing only the file leaves editors unable to
    * see what was uploaded.
    */
+  /**
+   * 顺手把同一份字节写进 R2 镜像。
+   *
+   * ## 为什么这里要单独做一次
+   *
+   * 站上的媒体地址在渲染时会被改写到镜像域，所以「只在 Storage 里」的文件，
+   * 在页面上就是 404。后台那条上传路径（签名 + 登记）会自动镜像；这个脚本
+   * 不走那条路 —— 它拿 service role 直接写 Storage、直接插库，于是镜像这一步
+   * 整个被跳过了。
+   *
+   * 2026-10-17 就是这么出的事：拼接台产出的视频单独打开能放，设成首屏背景
+   * 什么都没有，因为镜像上没有它，而镜像前面那层 CDN 还把 404 缓存了四小时。
+   *
+   * 失败不抛错。片子已经剪好、已经在 Storage 里、也已经登记进图片视频库 ——
+   * 为了镜像没写成而让整条命令失败，是拿大的赔小的。返回原因，让它出现在
+   * 输出里，人能看见，也能事后用 scripts/push-media-mirror.mjs 补。
+   */
+  async function mirrorToR2(key, bytes) {
+    const accountId = process.env.R2_ACCOUNT_ID;
+    const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+    const r2Bucket = process.env.R2_BUCKET;
+    if (!accountId || !accessKeyId || !secretAccessKey || !r2Bucket) return "R2 未配置";
+    try {
+      const { AwsClient } = await import("aws4fetch");
+      const { createHash } = await import("node:crypto");
+      const base = process.env.R2_ENDPOINT
+        ? `${process.env.R2_ENDPOINT.replace(/\/$/, "")}/${r2Bucket}`
+        : `https://${accountId}.r2.cloudflarestorage.com/${r2Bucket}`;
+      const aws = new AwsClient({ accessKeyId, secretAccessKey, service: "s3", region: "auto" });
+      const response = await aws.fetch(`${base}/${key.split("/").map(encodeURIComponent).join("/")}`, {
+        method: "PUT",
+        body: bytes,
+        headers: {
+          "content-type": "video/mp4",
+          /* R2 拒绝未签名载荷的 PUT，这个哈希是必需的不是可选的。 */
+          "x-amz-content-sha256": createHash("sha256").update(bytes).digest("hex"),
+          /* 显式写长度：不写的话运行时会把它当成分块流发出去，R2 回 411。 */
+          "content-length": String(bytes.length),
+          "cache-control": "public, max-age=31536000, immutable"
+        }
+      });
+      if (!response.ok) return `HTTP ${response.status}`;
+      return true;
+    } catch (err) {
+      return err instanceof Error ? err.message : String(err);
+    }
+  }
+
   const { createClient } = await import("@supabase/supabase-js");
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const bucket = process.env.SUPABASE_STORAGE_BUCKET || "media";
@@ -688,8 +737,9 @@ async function render(projectPath) {
       metadata: { uploadedBy: "scripts/video-studio.mjs", project: path.basename(projectPath) }
     });
     if (rowErr) throw rowErr;
+    const mirrored = await mirrorToR2(key, bytes);
     urls[base] = url;
-    if (!JSONOUT) console.log(`  ${url}`);
+    if (!JSONOUT) console.log(`  ${url}${mirrored === true ? "" : `\n    ⚠️ 未进镜像：${mirrored}`}`);
   }
   fs.writeFileSync(path.join(outDir, `${name}-uploaded.json`), JSON.stringify(urls, null, 2));
   say(`\n  已登记进图片视频库。首页要换片，去后台「页面内容 → 首屏 Hero」把地址粘上。\n`,
