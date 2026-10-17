@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { mirrorRewrite } from "@/lib/media-mirror";
 
 export interface GalleryItem {
   src: string;
@@ -209,6 +210,27 @@ export function HeroBackgroundVideo({
      is rendered either way, so nothing is swapped out underneath the reader. */
   const [play, setPlay] = useState(false);
   const [failed, setFailed] = useState(false);
+  /**
+   * 镜像没有这个文件时，退回源站再试一次。
+   *
+   * 站上的媒体地址在渲染时会被改写到镜像域。新上传的文件有一小段时间还没
+   * 复制过去 —— 更糟的是，镜像前面那层 CDN 会把 404 缓存四小时，所以「等
+   * 一会儿自己就好」并不成立。
+   *
+   * 页面上本来就有一个全局兜底监听器，专门干这件事：听到媒体加载失败就把
+   * 地址换回源站重试。但它对这个组件无效 —— 下面的 onError 一触发就把
+   * <video> 从 DOM 里摘掉换成海报，监听器还没来得及重试，元素已经没了。
+   * 2026-10-17 首页视频放不出来就是这么来的：文件在源站好好的，镜像上
+   * 没有，而首屏直接放弃了。
+   *
+   * 所以这里自己先退一步：换回源站地址重试，那一次再失败才认输去放海报。
+   */
+  const [useOrigin, setUseOrigin] = useState(false);
+  const rule = mirrorRewrite();
+  /* from/to 是子串而不是前缀 —— rewriteMediaUrl 用的是 split/join，
+     形如 `//media.tdinfo.org/`，出现在 `https://media.tdinfo.org/...` 中间。 */
+  const originSrc = rule && src.includes(rule.to) ? src.split(rule.to).join(rule.from) : "";
+  const currentSrc = useOrigin && originSrc ? originSrc : src;
   /** True once a visitor has worked the button; their choice then outranks the setting. */
   const chosen = useRef(false);
 
@@ -333,6 +355,13 @@ export function HeroBackgroundVideo({
    * `preload` is raised to "auto" only once motion is wanted, so a reader on
    * 省流量模式 or 减少动态效果 never pays to download a film they will not see.
    */
+  /* 改 src 属性不保证浏览器重新取 —— 要显式 load()。 */
+  useEffect(() => {
+    if (!useOrigin) return;
+    const video = videoRef.current;
+    if (video) try { video.load(); } catch { /* 取不到就算了，海报还在 */ }
+  }, [useOrigin]);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !play) return;
@@ -378,7 +407,7 @@ export function HeroBackgroundVideo({
         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
         <video
           ref={videoRef}
-          src={src}
+          src={currentSrc}
           poster={poster}
           /* No `autoPlay` attribute: whether this reader gets motion is the
              effect's call, not the markup's. The element is here from the
@@ -388,7 +417,14 @@ export function HeroBackgroundVideo({
           playsInline
           preload="metadata"
           aria-label={alt}
-          onError={() => setFailed(true)}
+          onError={() => {
+            /* 第一次失败且确实有源站地址可退 —— 换地址重试，不要放弃。 */
+            if (!useOrigin && originSrc) {
+              setUseOrigin(true);
+              return;
+            }
+            setFailed(true);
+          }}
         />
       </div>
       {hasAudio ? (
