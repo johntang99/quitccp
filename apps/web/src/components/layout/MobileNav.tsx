@@ -25,11 +25,13 @@ export interface MobileNavItem {
 export function MobileNav({
   items,
   donationHref,
+  endccpHref,
   declareHref,
   externalProps
 }: {
   items: MobileNavItem[];
   donationHref: string;
+  endccpHref: string;
   declareHref: string;
   /** target/rel for the off-site buttons, from the server's shared constant. */
   externalProps: { target?: string; rel?: string };
@@ -135,7 +137,10 @@ export function MobileNav({
             </nav>
             <div className="navsheet-cta">
               <a className="btn btn--line btn--sm" href={donationHref} {...externalProps}>
-                捐助我们
+                捐助
+              </a>
+              <a className="btn btn--line btn--sm" href={endccpHref} {...externalProps}>
+                End CCP联署
               </a>
               <a className="btn btn--seal btn--sm" href={declareHref} {...externalProps}>
                 我要三退

@@ -42,6 +42,10 @@ export const mainNav = [
   { href: "/services", label: "我们的服务" },
   { href: "/about", label: "关于我们" },
   { href: "/involve", label: "参与支持" },
+  /* 指向本站自己的征签页，不是 endccp.com：主导航其余各项都是站内栏目，
+     而 /involve/endccp 本来就有联署说明、进度和「参与联署」按钮。顶栏那个
+     同名按钮才是直接送去签名站的那一个。 */
+  { href: "/involve/endccp", label: "End CCP联署" },
   { href: "/resources", label: "资源馆" }
 ];
 

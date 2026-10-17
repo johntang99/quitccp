@@ -54,7 +54,7 @@ export async function SiteFooter() {
               <span>全球退党服务中心</span>
             </div>
             <p style={{ margin: 0, maxWidth: "34ch", lineHeight: 1.9 }}>
-              Global Service Center for Quitting the CCP
+              Global Service Center for Quitting the Chinese Communist Party
               <br />
               40-46 Main Street, Flushing, NY 11354
             </p>

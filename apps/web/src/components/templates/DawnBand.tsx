@@ -1,5 +1,5 @@
 import type { HomeContent } from "@quitccp/content-schema";
-import { externalLinkProps } from "@/lib/external-services";
+import { EXTERNAL_LINK_PROPS, EXTERNAL_SERVICES, externalLinkProps } from "@/lib/external-services";
 import { WitnessCard } from "@/components/public/WitnessCard";
 import { RegistryCounter } from "@/components/public/RegistryCounter";
 
@@ -20,6 +20,8 @@ interface DawnBandProps {
   services: HomeContent["services"];
   /** 见证者; rendered as the band's fourth card. Omitted when hidden. */
   voices: HomeContent["voices"];
+  /** 实时的 End CCP 签署数，已格式化；取不到时为空字符串。 */
+  endccpCount: string;
   /** Declaration rows for the feed; only the first `feedCount` are shown. */
   feed: { region: string; name: string; text: string; at: string; kind?: string }[];
   /** ISO timestamp of the last santui sync, when one is available. */
@@ -38,7 +40,18 @@ interface DawnBandProps {
   total?: number | null;
 }
 
-export function DawnBand({ registry, services, voices, feed, updatedAt, total }: DawnBandProps) {
+export function DawnBand({ registry, services, voices, feed, updatedAt, total, endccpCount }: DawnBandProps) {
+  /*
+   * `{{endccp}}` 在卡片文案里就地换成实时签署数。
+   *
+   * 那段文案原来写着「已有 248 万人签署」，是某次手敲进去的，到 2026-10-17
+   * 真实数字已经是 548 万 —— 差了一倍多，而且没人会想起来去改。占位符让编辑
+   * 继续掌握整句话怎么写、数字摆在哪，只是不用再去维护数字本身。
+   *
+   * 取不到数字时连同前后的空格一起去掉，而不是留下一个空洞或者「{{endccp}}」。
+   */
+  const fillCount = (text: string) =>
+    endccpCount ? text.replace(/\{\{\s*endccp\s*\}\}/g, endccpCount) : text.replace(/\s*\{\{\s*endccp\s*\}\}\s*/g, "");
   // The 见证 card only appears when there is something to show in it; without
   // it the row stays the three cards it was.
   const showWitness = voices.enabled && voices.items.length > 0;
@@ -108,6 +121,15 @@ export function DawnBand({ registry, services, voices, feed, updatedAt, total }:
                 ) : null}
               </p>
             ) : null}
+            {/* 自己一行，不是续在来源那一句后面。上面一行是在交代这个数字从哪
+                来，这一行是请读者去做下一件事 —— 两件事，挤在同一句里读者会把
+                它当成第三个出处。它不跟着 updatedAt 走：取不到登记册时间不该让
+                联署入口一起消失。 */}
+            <p className="count-source">
+              <a href={EXTERNAL_SERVICES.endccp} {...EXTERNAL_LINK_PROPS}>
+                打倒中共恶魔连署 →
+              </a>
+            </p>
           </div>
 
           {/* A promoted banner takes the whole right column when one is set;
@@ -210,7 +232,7 @@ export function DawnBand({ registry, services, voices, feed, updatedAt, total }:
                   with 追查国际调查报告 -- only there the Latin line sits above
                   the Chinese one, and here it reads as the name beneath it. */}
               {card.en ? <span className="dawn-card-en">{card.en}</span> : null}
-              <p className="dawn-card-desc">{card.body}</p>
+              <p className="dawn-card-desc">{fillCount(card.body)}</p>
               <div className="dawn-card-links">
                 {card.links.map((link) => (
                   <a

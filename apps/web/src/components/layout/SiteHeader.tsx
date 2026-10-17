@@ -29,12 +29,21 @@ export async function SiteHeader() {
                 costs one click to open, but stops six foreign words competing
                 with the organisation's own name for the top of every page. */}
             <LanguagePicker />
+            {/* 「捐助我们」缩成「捐助」是为了给下面这个按钮腾地方 —— 四个
+                控件在窄屏上排不下，反馈里明确同意了这个取舍。 */}
             <a
               className="btn btn--line-light btn--sm"
               href={EXTERNAL_SERVICES.donation}
               {...EXTERNAL_LINK_PROPS}
             >
-              捐助我们
+              捐助
+            </a>
+            <a
+              className="btn btn--line-light btn--sm"
+              href={EXTERNAL_SERVICES.endccp}
+              {...EXTERNAL_LINK_PROPS}
+            >
+              End CCP联署
             </a>
             <a
               className="btn btn--seal btn--sm"
@@ -53,6 +62,7 @@ export async function SiteHeader() {
           <MobileNav
             items={navItems}
             donationHref={EXTERNAL_SERVICES.donation}
+            endccpHref={EXTERNAL_SERVICES.endccp}
             declareHref={EXTERNAL_SERVICES.declare}
             externalProps={EXTERNAL_LINK_PROPS}
           />

@@ -54,6 +54,10 @@ export const EXTERNAL_SERVICES = {
      the donation site stays on the old server while tuidang.org moves to the
      new site. Verified serving the donation page before the switch. */
   donation: "https://donation.tuidang.org",
+
+  /* 打倒中共恶魔（End CCP）的公开联署站。中文版地址，因为本站读者是中文读者；
+     英文版在同一个域名的根路径。首页的实时登记册、顶栏按钮和主导航都指向它。 */
+  endccp: "https://endccp.com/zh-hans/",
   aboutUs: "https://www.tuidang.org/about-us/",
   /* 服务条款 and 隐私政策 used to be listed here. Both were imported into the
      CMS on 2026-10-07 and are served from /legal/terms and /legal/privacy --

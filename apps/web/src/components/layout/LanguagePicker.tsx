@@ -47,7 +47,9 @@ export function LanguagePicker() {
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        选择语种
+        {/* 「选择语种」缩成「语种」：顶栏现在有四个控件，窄屏上原来的四个字
+            会把后面的按钮挤换行。反馈里明确同意了这个取舍。 */}
+        语种
         <svg viewBox="0 0 24 24" aria-hidden="true" className="langpick-caret">
           <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" />
         </svg>
