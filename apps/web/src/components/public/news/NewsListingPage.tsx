@@ -47,20 +47,25 @@ export async function NewsListingPage({ listing }: { listing: NewsListing }) {
 
       {showLead && lead ? (
         <div className="news-shell news-cat-lift">
-          <a className="news-cat-lead" href={articleHref(lead.slug)}>
-            <span style={{ position: "relative", display: "block", background: T.rule }}>
-              {lead.image ? (
+          {/* 无图时整张卡收成单列文字；见 NewsRow 里的那段说明。头条那块
+              空白比列表行里的更刺眼 —— 它占着 16:9、半张卡的宽度。 */}
+          <a
+            className="news-cat-lead"
+            data-noimage={lead.image ? undefined : ""}
+            href={articleHref(lead.slug)}
+          >
+            {lead.image ? (
+              <span style={{ position: "relative", display: "block", background: T.rule }}>
                 <img
                   src={lead.image}
                   alt=""
                   style={{ width: "100%", aspectRatio: "16 / 9", height: "auto", objectFit: "cover", display: "block" }}
                 />
-              ) : (
-                <span style={{ display: "block", width: "100%", aspectRatio: "16 / 9" }} />
-              )}
-              <span className="news-cat-flag">本栏头条</span>
-            </span>
+                <span className="news-cat-flag">本栏头条</span>
+              </span>
+            ) : null}
             <span className="news-cat-lead-body">
+              {lead.image ? null : <span className="news-cat-flag news-cat-flag--inline">本栏头条</span>}
               <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, flexWrap: "wrap" }}>
                 {lead.category ? (
                   <>

@@ -15,7 +15,18 @@ import { T, articleHref, day } from "./newsTokens";
  */
 export function NewsRow({ item }: { item: NewsCard }) {
   return (
-    <a className="news-cat-row" href={articleHref(item.slug)}>
+    <a className="news-cat-row" data-noimage={item.image ? undefined : ""} href={articleHref(item.slug)}>
+      {/*
+        没有图就整个不画这一格，而不是画一块灰色占位。
+        
+        全站 15,368 篇已发布文章里有 9,343 篇没有封面 —— 旧 WordPress 已经
+        不存在，2026-10-10 那轮 Wayback 存档恢复能找回的都找回了，剩下的
+        是真的没有了。一行一块空灰框，读者读到的是「这里本该有张图，坏了」；
+        不画，读者读到的是一条文字条目。后者是实话。
+        
+        `data-noimage` 让 CSS 把网格从「240px + 文字」收成单列，否则空出来的
+        那 240px 会变成一块无法解释的留白。
+      */}
       <span className="news-cat-row-thumb">
         {item.image ? (
           <img
@@ -23,9 +34,7 @@ export function NewsRow({ item }: { item: NewsCard }) {
             alt=""
             style={{ width: "100%", aspectRatio: "16 / 9", height: "auto", objectFit: "cover", display: "block" }}
           />
-        ) : (
-          <span style={{ display: "block", width: "100%", aspectRatio: "16 / 9", background: T.rule }} />
-        )}
+        ) : null}
       </span>
       <span style={{ display: "flex", flexDirection: "column", gap: 8, paddingRight: 8 }}>
         <span

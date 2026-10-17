@@ -5452,3 +5452,11 @@ body:has(.hero--full-bleed) > header .search {
 /* WitnessCard 的包裹层：它只是接住 hover/focus 来暂停自动轮替，不该在
    卡片的纵向 flex 里多占一层高度，所以把自己摊平成和原来一样的列。 */
 .dawn-wit-wrap { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+
+/* 没有封面图的条目：收掉图片那一列，文字占满。
+   见 NewsRow.tsx 里的说明 —— 九千多篇文章的图是真的找不回来了，
+   画一块灰色占位只会让每一条都显得坏掉。 */
+.news-cat-row[data-noimage] { grid-template-columns: minmax(0, 1fr); }
+.news-cat-row[data-noimage] .news-cat-row-thumb { display: none; }
+.news-cat-lead[data-noimage] { grid-template-columns: minmax(0, 1fr); }
+.news-cat-flag--inline { position: static; align-self: flex-start; }
