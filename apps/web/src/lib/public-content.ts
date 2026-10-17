@@ -1389,9 +1389,12 @@ export interface NewsCategoryTab {
  * rather than asking twice for the same eight rows.
  *
  * Ordered by `sort_order` then name, the same rule `/admin/categories` lists
- * by, so the order an editor sees there is the order readers get. Slugs absent
- * from the database, and database rows outside the whitelist, are both dropped:
- * a tab must be a page that exists.
+ * by, so the order an editor sees there is the order readers get.
+ *
+ * Which categories qualify is the `is_news_listing` column, ticked in the
+ * admin -- not a list in this file. It used to be one, and then opening a
+ * category to readers meant a code change and a deploy; migration `032` moved
+ * that decision to the people who make it.
  *
  * A failed or empty read falls back to the constant. That is the one case where
  * the old hardcoded names are still used, and it is the right answer there --
@@ -1405,7 +1408,7 @@ export const getNewsCategoryTabs = cache(async (): Promise<NewsCategoryTab[]> =>
     const { data } = await supabase
       .from("cms_article_categories")
       .select("slug, name, sort_order")
-      .in("slug", NEWS_CATEGORIES.map((row) => row.slug));
+      .eq("is_news_listing", true);
     const rows = (data ?? [])
       .map((row) => ({
         slug: String(row.slug),
@@ -1941,23 +1944,31 @@ const NEWS_VIRTUAL_LISTINGS: Record<string, { name: string; en: string; filter?:
  * those are cached now, so all of them have to be told. Enumerated here so the
  * admin routes cannot drift from the twelve this module actually serves.
  */
-export const NEWS_LISTING_SLUGS: readonly string[] = [
-  ...Object.keys(NEWS_VIRTUAL_LISTINGS),
-  ...NEWS_CATEGORIES.map((row) => row.slug)
-];
+/**
+ * Every listing slug: the virtual ones from this file, the category ones from
+ * the database.
+ *
+ * Async because the second half is a query now. Request-cached through
+ * `getNewsCategoryTabs`, so asking twice in one render costs one round trip.
+ */
+export async function getNewsListingSlugs(): Promise<string[]> {
+  const tabs = await getNewsCategoryTabs();
+  return [...Object.keys(NEWS_VIRTUAL_LISTINGS), ...tabs.map((tab) => tab.slug)];
+}
 
-export function isNewsListingSlug(slug: string): boolean {
+export async function isNewsListingSlug(slug: string): Promise<boolean> {
   const decoded = (() => {
     try {
       return decodeURIComponent(slug);
     } catch {
-      /* A lone % makes decodeURIComponent throw. Such a slug is not one of the
-         twelve either way. */
+      /* A lone % makes decodeURIComponent throw. Such a slug is not a listing
+         either way. */
       return slug;
     }
   })();
   if (decoded in NEWS_VIRTUAL_LISTINGS) return true;
-  return NEWS_CATEGORIES.some((row) => row.slug === decoded);
+  const tabs = await getNewsCategoryTabs();
+  return tabs.some((tab) => tab.slug === decoded);
 }
 
 /**
@@ -1974,8 +1985,8 @@ export async function getNewsListing(
   pageSize = 13
 ): Promise<NewsListing | null> {
   const virtual = NEWS_VIRTUAL_LISTINGS[slug];
+  /* 英文眉题后台没有字段，仍从常量取；取不到就按 slug 生成一个。 */
   const meta = NEWS_CATEGORIES.find((row) => row.slug === slug);
-  if (!virtual && !meta) return null;
 
   try {
     const supabase = createSupabasePublicClient();
@@ -1987,10 +1998,12 @@ export async function getNewsListing(
     if (!virtual) {
       const { data } = await supabase
         .from("cms_article_categories")
-        .select("id, name, description")
+        .select("id, name, description, is_news_listing")
         .eq("slug", slug)
         .maybeSingle();
-      if (!data) return null;
+      /* 没有这一行，或者编辑没把它开出来 —— 两种情况都是 404。这是公开页
+         存在与否的唯一判定，所以它必须在任何查询文章之前。 */
+      if (!data || data.is_news_listing !== true) return null;
       categoryId = String(data.id);
       description = String(data.description ?? "");
       /* The editor's name, not the constant's. This line is the whole point of
@@ -2036,7 +2049,7 @@ export async function getNewsListing(
             .limit(5)
     ]);
 
-    const name = virtual ? virtual.name : storedName || meta!.name;
+    const name = virtual ? virtual.name : storedName || meta?.name || slug;
     const rows = (listResult.data ?? []) as unknown as Record<string, unknown>[];
     const pickRows = (picksResult.data ?? []) as unknown as Record<string, unknown>[];
     const total = listResult.count ?? 0;
@@ -2052,7 +2065,7 @@ export async function getNewsListing(
     return {
       slug,
       name,
-      en: virtual ? virtual.en : meta!.en,
+      en: virtual ? virtual.en : meta?.en || slug.replace(/[-_]+/g, " ").toUpperCase(),
       description,
       items: rows.map((row) => toNewsCard(row, kickerFor(row))),
       picks: pickRows.map((row) => toNewsCard(row, kickerFor(row))),

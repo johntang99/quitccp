@@ -152,7 +152,7 @@ export async function POST(request: Request) {
      The old slug goes too: after a rename its address is still a cached 200
      page, so readers would keep getting the old article instead of the
      redirect the save just recorded. */
-  revalidateNews(
+  await revalidateNews(
     record?.previousSlug && record.previousSlug !== slug ? [slug, record.previousSlug] : [slug]
   );
 

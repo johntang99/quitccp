@@ -1,5 +1,5 @@
 import { revalidatePath } from "next/cache";
-import { NEWS_LISTING_SLUGS } from "@/lib/public-content";
+import { getNewsListingSlugs } from "@/lib/public-content";
 
 /**
  * Drops the cached copy of every page an article change can alter.
@@ -22,7 +22,7 @@ import { NEWS_LISTING_SLUGS } from "@/lib/public-content";
  * @param slugs the articles touched -- their own pages. A rename passes both
  *   the old and the new, since the old address must stop answering.
  */
-export function revalidateNews(slugs: Iterable<string> = []) {
+export async function revalidateNews(slugs: Iterable<string> = []) {
   for (const slug of slugs) {
     if (slug) revalidatePath(`/news/${slug}`);
   }
@@ -35,7 +35,10 @@ export function revalidateNews(slugs: Iterable<string> = []) {
      obvious one, but 最新发布 and 全部文章 change for any article at all, and a
      category move changes two of them. Telling all twelve is cheaper than
      working out which. */
-  for (const slug of NEWS_LISTING_SLUGS) {
+  /* 异步了，因为「哪些分类有公开页」现在是数据库里的一列而不是本文件里的
+     一张表。每个调用点都必须 await —— 漏掉一个不会报错，只会悄悄不清缓存，
+     所以这件事靠 grep 核对过，不靠记性。 */
+  for (const slug of await getNewsListingSlugs()) {
     revalidatePath(`/news/${slug}`);
   }
 

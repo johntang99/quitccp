@@ -27,7 +27,7 @@ import { getNewsListing, isNewsListingSlug } from "@/lib/public-content";
 export const maxDuration = 15;
 
 async function listingFor(slugRaw: string, pageRaw: string, sortRaw?: string) {
-  if (!isNewsListingSlug(slugRaw)) return null;
+  if (!(await isNewsListingSlug(slugRaw))) return null;
   const page = Number(pageRaw);
   /* `/news/<slug>/0` and `/news/<slug>/abc` are not addresses we mint. */
   if (!Number.isInteger(page) || page < 1) return null;

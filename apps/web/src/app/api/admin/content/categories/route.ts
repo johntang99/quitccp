@@ -40,6 +40,11 @@ export async function POST(request: Request) {
         /* Only when the form carried it: a missing box and an emptied box are
            different intents. See upsertCategoryRecord. */
         description: formData.has("description") ? String(formData.get("description") ?? "") : undefined,
+        /* 复选框不勾就什么都不发，所以行表单另带一个隐藏字段表明「这张表单
+           管这个开关」—— 没有它就分不清「没勾」和「这张表单不碰它」。 */
+        isNewsListing: formData.has("hasListingFlag")
+          ? String(formData.get("isNewsListing") ?? "") === "1"
+          : undefined,
         sortOrder
       },
       user.email
@@ -55,6 +60,6 @@ export async function POST(request: Request) {
   }
   /* So the editor sees their change now instead of up to five minutes
      later -- and with stale-while-revalidate, possibly much later. */
-  revalidateNews();
+  await revalidateNews();
   return NextResponse.redirect(new URL("/admin/categories", request.url), 303);
 }

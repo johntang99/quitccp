@@ -23,6 +23,6 @@ export async function POST(request: Request) {
   await upsertArticleRecord({ ...article, status: nextStatus }, user.email);
   /* Approving publishes it and rejecting hides it; either way the public pages
      are now wrong until told. */
-  revalidateNews(article.slug ? [article.slug] : []);
+  await revalidateNews(article.slug ? [article.slug] : []);
   return NextResponse.redirect(new URL("/admin/articles", request.url), 303);
 }

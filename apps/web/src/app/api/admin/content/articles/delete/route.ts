@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   const slug = (await getArticleById(id))?.slug ?? "";
 
   await deleteArticleById(id, user.email);
-  revalidateNews(slug ? [slug] : []);
+  await revalidateNews(slug ? [slug] : []);
 
   /* The article's own page is gone, so there is nothing to warm there -- but
      the listings it vanished from are about to be read. */

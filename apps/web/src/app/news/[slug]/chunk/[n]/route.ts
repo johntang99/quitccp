@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getNewsListing, NEWS_LISTING_SLUGS } from "@/lib/public-content";
+import { getNewsListing, getNewsListingSlugs } from "@/lib/public-content";
 import { NEWS_MAX_CHUNK } from "@/components/public/news/newsChunks";
 
 /**
@@ -48,7 +48,7 @@ export async function GET(
   if (!Number.isInteger(chunk) || chunk < 2 || chunk > MAX_CHUNK) {
     return NextResponse.json({ error: "out of range" }, { status: 404 });
   }
-  if (!NEWS_LISTING_SLUGS.includes(slug)) {
+  if (!(await getNewsListingSlugs()).includes(slug)) {
     return NextResponse.json({ error: "no such listing" }, { status: 404 });
   }
 

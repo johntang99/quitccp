@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     await deleteCategoryById(id, user.email);
   /* So the editor sees their change now instead of up to five minutes
      later -- and with stale-while-revalidate, possibly much later. */
-    revalidateNews();
+    await revalidateNews();
     return NextResponse.redirect(new URL("/admin/categories", request.url), 303);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to delete category";

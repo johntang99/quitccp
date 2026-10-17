@@ -92,6 +92,8 @@ export interface CategoryRecord {
   articleCount: number;
   /** Display order; lower first, name as the tie-break. */
   sortOrder: number;
+  /** Ticked: the category has a public /news/<slug> page and a tab. */
+  isNewsListing: boolean;
 }
 
 export interface VideoRecord {

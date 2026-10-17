@@ -49,7 +49,7 @@ export async function POST(request: Request) {
          in one place keeps both branches alike. */
       const touched = await slugsFor(ids);
       const moved = await bulkSetPrimaryCategory(ids, target, user.email);
-      revalidateNews(touched);
+      await revalidateNews(touched);
       const msg = `已把 ${moved} 篇的主分类改为「${target}」。`;
       return NextResponse.redirect(
         new URL(`${back}${back.includes("?") ? "&" : "?"}msg=${encodeURIComponent(msg)}`, request.url),
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       action === "publish" ? "published" : action === "archive" ? "archived" : "draft";
     const touched = await slugsFor(ids);
     await bulkUpdateArticleStatus(ids, nextStatus, user.email);
-    revalidateNews(touched);
+    await revalidateNews(touched);
     const label = action === "publish" ? "发布" : action === "archive" ? "归档" : "退回草稿";
     const msg = `已把 ${ids.length} 篇${label}。`;
     return NextResponse.redirect(

@@ -1169,6 +1169,7 @@ interface CategoryRow {
   name: string;
   description?: string | null;
   sort_order?: number;
+  is_news_listing?: boolean | null;
 }
 
 function isMissingSortOrder(error: unknown): boolean {
@@ -1181,7 +1182,7 @@ export async function listCategories(actorEmail: string): Promise<CategoryRecord
   let hasSortOrder = true;
   const ordered = await supabase
     .from("cms_article_categories")
-    .select("id, slug, name, description, sort_order")
+    .select("id, slug, name, description, sort_order, is_news_listing")
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
   let categoryRows = ordered.data as CategoryRow[] | null;
@@ -1220,12 +1221,13 @@ export async function listCategories(actorEmail: string): Promise<CategoryRecord
     name: String(row.name),
     description: String(row.description ?? ""),
     articleCount: counts.get(String(row.id)) ?? 0,
-    sortOrder: hasSortOrder ? Number(row.sort_order ?? 0) : 0
+    sortOrder: hasSortOrder ? Number(row.sort_order ?? 0) : 0,
+    isNewsListing: row.is_news_listing === true
   }));
 }
 
 export async function upsertCategoryRecord(
-  input: { id?: string; slug?: string; name: string; description?: string; sortOrder?: number },
+  input: { id?: string; slug?: string; name: string; description?: string; sortOrder?: number; isNewsListing?: boolean },
   actorEmail: string
 ): Promise<CategoryRecord> {
   const supabase = createSupabaseAdminClient();
@@ -1251,6 +1253,9 @@ export async function upsertCategoryRecord(
   /* `undefined` = the form did not carry the field, which must not be read as
      an editor clearing it: the create form has no description box. */
   if (input.description !== undefined) payload.description = input.description.trim() || null;
+  /* 同样的「没发来 = 不改」规则：新建表单没有这个勾选框，不能把缺字段当成
+     取消勾选。行表单总是发（未勾选时发 ""），所以那边永远是明确的意图。 */
+  if (input.isNewsListing !== undefined) payload.is_news_listing = input.isNewsListing;
   const withOrder = sortOrder === undefined ? payload : { ...payload, sort_order: sortOrder };
 
   const write = async (values: Record<string, unknown>, columns: string) =>
@@ -1267,7 +1272,7 @@ export async function upsertCategoryRecord(
           .select(columns)
           .single();
 
-  const first = await write(withOrder, "id, slug, name, description, sort_order");
+  const first = await write(withOrder, "id, slug, name, description, sort_order, is_news_listing");
   let row = first.data as CategoryRow | null;
   let error: unknown = first.error;
   if (error && isMissingSortOrder(error)) {
@@ -1294,7 +1299,8 @@ export async function upsertCategoryRecord(
     name: String(row.name),
     description: String(row.description ?? ""),
     articleCount: 0,
-    sortOrder: Number(row.sort_order ?? sortOrder ?? 0)
+    sortOrder: Number(row.sort_order ?? sortOrder ?? 0),
+    isNewsListing: row.is_news_listing === true
   };
 }
 

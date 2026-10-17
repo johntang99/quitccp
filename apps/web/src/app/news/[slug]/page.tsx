@@ -117,7 +117,7 @@ export default async function NewsSlugPage({ params }: { params: Promise<{ slug:
      be dynamic, because nobody floods page seven. This one serves the first
      page of a listing and all 15,374 articles, which is what has to be
      cacheable. */
-  if (isNewsListingSlug(slug)) {
+  if (await isNewsListingSlug(slug)) {
     const listing = await getNewsListing(slug, 1, "latest");
     if (listing) return <NewsListingPage listing={listing} />;
   }

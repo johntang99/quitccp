@@ -27,6 +27,10 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
           <br />
           「页面说明」是分类页标题下面那句话。留空的话，那里会沿用原来的
           「SLUG · N 篇」—— 那是网址和篇数，不是一句介绍。
+          <br />
+          勾上「公开页面」，这个分类才会有 /news/&lt;slug&gt; 列表页，并出现在
+          新闻页顶部的分类 tab 里；取消勾选，那个地址就不再对外。tab 的顺序就是
+          上面的「排序」。
 
         </p>
         {params.error ? (
@@ -44,6 +48,7 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
               <th style={{ width: 150 }}>名称</th>
               <th style={{ width: 170 }}>slug</th>
               <th style={{ width: 70 }}>文章数</th>
+              <th style={{ width: 86 }}>公开页面</th>
               <th>页面说明</th>
               <th style={{ width: 110 }}>操作</th>
             </tr>
@@ -51,7 +56,7 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6}>暂无分类</td>
+                <td colSpan={7}>暂无分类</td>
               </tr>
             ) : (
               rows.map((row) => (
@@ -60,6 +65,24 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
                   <td>{row.name}</td>
                   <td>{row.slug}</td>
                   <td>{row.articleCount}</td>
+                  <td>
+                    {/* 勾上才有 /news/<slug> 页面和新闻页顶部那个 tab。
+                        隐藏字段表明「这张表单管这个开关」：复选框不勾时浏览器
+                        什么都不发，没有它就分不清「取消勾选」和「这张表单不碰
+                        它」—— 新建分类那张表单正是后者。 */}
+                    <input type="hidden" name="hasListingFlag" value="1" form={`ac-${row.id}`} />
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                      <input
+                        type="checkbox"
+                        name="isNewsListing"
+                        value="1"
+                        form={`ac-${row.id}`}
+                        defaultChecked={row.isNewsListing}
+                        aria-label={`${row.name} 是否有公开列表页`}
+                      />
+                      <span>{row.isNewsListing ? "公开" : "不公开"}</span>
+                    </label>
+                  </td>
                   <td>
                     {/* In its own cell but part of the row's form, tied by
                         `form={…}`: a <form> cannot span table cells, and
