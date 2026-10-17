@@ -24,6 +24,10 @@
     {
       "path": "/api/cron/endccp",
       "schedule": "33 */4 * * *"
+    },
+    {
+      "path": "/api/cron/zhuichaguoji",
+      "schedule": "47 5 * * *"
     }
   ],
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ':/' ':(exclude,top)projects'"
