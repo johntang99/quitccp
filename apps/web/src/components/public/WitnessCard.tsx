@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface Witness {
   quote: string;
@@ -18,6 +18,19 @@ export interface Witness {
  * real buttons with the speaker's name as their label, so the switcher works
  * from the keyboard and reads correctly to a screen reader -- a portrait alone
  * says nothing about who it selects.
+ *
+ * ## It turns by itself, until the reader takes over
+ *
+ * Six portraits sat under one statement with nothing saying the others could
+ * be opened, so five of the six were never read. It now advances on its own.
+ *
+ * Three things stop it, all for the same reason -- the reader is reading:
+ * a pointer over the card, keyboard focus inside it, and a click on any
+ * portrait. The click stops it for good rather than for a moment: somebody who
+ * chose a speaker does not want the card moving on while they are mid-sentence.
+ *
+ * `prefers-reduced-motion` turns it off entirely. The portraits still work, so
+ * nothing is lost -- only the movement.
  */
 export function WitnessCard({
   items,
@@ -29,11 +42,47 @@ export function WitnessCard({
   moreHref: string;
 }) {
   const [active, setActive] = useState(0);
+  /* Set once the reader clicks a portrait, and never cleared. */
+  const [tookOver, setTookOver] = useState(false);
+  const [paused, setPaused] = useState(false);
+
+  /** Seconds a statement holds before the next one. Long enough to read 50-odd
+      characters without hurrying, short enough that a reader who glances away
+      and back sees a different face rather than the same one. */
+  const HOLD_MS = 7000;
+
+  const count = items.length;
+  const stopped = tookOver || paused || count < 2;
+  const stoppedRef = useRef(stopped);
+  stoppedRef.current = stopped;
+
+  useEffect(() => {
+    if (count < 2) return;
+    const motion = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    if (motion?.matches) return;
+    const timer = window.setInterval(() => {
+      /* Read through a ref so pausing does not tear the timer down and start
+         a fresh full interval every time the pointer crosses the card. */
+      if (stoppedRef.current) return;
+      setActive((current) => (current + 1) % count);
+    }, HOLD_MS);
+    return () => window.clearInterval(timer);
+  }, [count]);
+
   const shown = items[active] ?? items[0];
   if (!shown) return null;
 
   return (
-    <>
+    /* The pause handlers sit on a wrapper rather than on the figure: the
+       portraits are outside the figure, and a reader reaching for one should
+       not be racing a timer that is still running. */
+    <div
+      className="dawn-wit-wrap"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={() => setPaused(false)}
+    >
       {/* No oversized opening quote mark. It cost 36px of height inside an
           already crowded card and said nothing the <blockquote> and the
           attribution beneath it did not already say. */}
@@ -62,7 +111,10 @@ export function WitnessCard({
                 aria-label={item.name}
                 aria-pressed={index === active}
                 className={index === active ? "is-active" : undefined}
-                onClick={() => setActive(index)}
+                onClick={() => {
+                  setActive(index);
+                  setTookOver(true);
+                }}
               >
                 {item.image ? <img src={item.image} alt="" /> : <span />}
               </button>
@@ -75,6 +127,6 @@ export function WitnessCard({
           {moreLabel}
         </a>
       </div>
-    </>
+    </div>
   );
 }

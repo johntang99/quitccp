@@ -2732,8 +2732,27 @@ body:has(.hero--full-bleed) > header .search {
   line-height: 1.65;
   color: var(--ink-band);
   flex-grow: 1;
+  /*
+   * 封顶八行。
+   *
+   * 这一栏只有 141px 宽，一行放得下九个汉字；原来最长的一条引文排了 13 行，
+   * 最短的 5 行，于是换一个见证者，整排卡片的高度就跟着跳一次。引文长度
+   * 是编辑填的，不该由编辑去数字数来迁就版面 —— 封顶让任何长度都不会把
+   * 这张卡撑开。配套把六条引文裁到相近长度，正常情况下根本到不了这个上限，
+   * 它只是兜底。
+   */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 7;
+  line-clamp: 7;
+  overflow: hidden;
+  /* 上下限同为七行，所以这一块永远是同一个高度。只封上限不够：实测六条
+     引文排 5/6/7 行，整排卡片会跟着在 531 和 614 之间跳。 */
+  min-height: calc(7 * 1.65em);
 }
-.dawn-wit figcaption { display: flex; align-items: center; gap: 12px; }
+/* 署名块也要定高，而且它比引文更能把高度顶上去：头衔一行还是两行，实测
+   差 48px 到 127px。两行是这里的基准 —— 一行的头衔下面留白，长的裁短。 */
+.dawn-wit figcaption { display: flex; align-items: center; gap: 12px; min-height: 68px; }
 .dawn-wit figcaption img,
 .dawn-wit-blank {
   width: 44px;
@@ -2751,11 +2770,20 @@ body:has(.hero--full-bleed) > header .search {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  /*
+   * 允许换行，否则「更多见证」会被挤到卡片外面去。
+   *
+   * 实测：这一栏只有 173px 可用，而六个 34px 的头像光自己就要 244px，
+   * 加上「更多见证」一共 328px —— 链接被推到卡片右边界之外 135px，正是
+   * 反馈里圈出来的那个「出格」。头像数量由编辑决定，所以不能靠调一个
+   * 固定尺寸糊弄过去：换行让它在任何栏宽、任何人数下都待在卡片里。
+   */
+  flex-wrap: wrap;
   gap: 12px;
   padding-top: 14px;
   border-top: 1px solid var(--rule);
 }
-.dawn-wit-picks { display: flex; gap: 8px; }
+.dawn-wit-picks { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
 .dawn-wit-picks button {
   width: 34px;
   height: 34px;
@@ -5415,3 +5443,12 @@ body:has(.hero--full-bleed) > header .search {
    JavaScript never arrived -- leaving them thirteen articles and no way on,
    which is the one case the pager is kept for. */
 [data-news-scroll="on"] [data-news-pager="scrolls"] { display: none; }
+
+/* 实时登记册下面的两条小字：来源说明和 End CCP 联署。
+   .count-note 自带 margin-top，在容器里要让位给容器的 gap。 */
+.count-notes { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 20px; }
+.count-notes .count-note { margin-top: 0; }
+
+/* WitnessCard 的包裹层：它只是接住 hover/focus 来暂停自动轮替，不该在
+   卡片的纵向 flex 里多占一层高度，所以把自己摊平成和原来一样的列。 */
+.dawn-wit-wrap { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
