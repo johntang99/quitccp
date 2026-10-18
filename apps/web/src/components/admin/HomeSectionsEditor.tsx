@@ -2,6 +2,7 @@
 
 import { HOME_SECTION_VARIANTS } from "@quitccp/content-schema";
 import { VideoUploadField } from "@/components/admin/VideoUploadField";
+import { HERO_MOBILE_RATIO, HERO_RATIO, VideoRatioHint } from "@/components/admin/VideoRatioHint";
 import {
   asRow,
   asRows,
@@ -598,6 +599,47 @@ export function HomeSectionsEditor({
           folder="home"
           onUploaded={(url) => updateField([sectionKey, "video", "src"], url)}
         />
+        {/* 只有满幅背景讲究比例 —— 别的版式把视频放进一个固定的框里，裁不裁
+            由那个框说了算，和首屏不是一回事。 */}
+        {backdrop && hasSrc && !needsFile ? (
+          <VideoRatioHint src={src} target={HERO_RATIO} targetLabel="2.35:1（1920×816）" />
+        ) : null}
+        {backdrop ? (
+          <div style={{ display: "grid", gap: 8 }}>
+            <label style={{ display: "block" }}>
+              手机版视频地址（选填）
+              <input
+                className="admin-input"
+                style={{
+                  fontFamily: "ui-monospace, Menlo, monospace",
+                  fontSize: 12,
+                  display: "block",
+                  width: "100%",
+                  marginTop: 4
+                }}
+                value={String(video.srcMobile ?? "")}
+                placeholder="留空＝手机也用上面那支（左右会被裁掉很多）"
+                onChange={(event) => updateField([sectionKey, "video", "srcMobile"], event.target.value)}
+              />
+            </label>
+            <VideoUploadField
+              folder="home"
+              onUploaded={(url) => updateField([sectionKey, "video", "srcMobile"], url)}
+            />
+            <p style={{ margin: 0, color: "#777", fontSize: 12, lineHeight: 1.7 }}>
+              手机是竖屏，横着的视频放进去必然被裁掉左右两边——2.35:1 的片子在手机上
+              只剩中间 <strong>35%</strong>。填一支<strong>方形（1:1）</strong>的就几乎不裁。
+              影片拼接台可以在出片时一次出两个比例，不用重剪。
+            </p>
+            {String(video.srcMobile ?? "").trim() ? (
+              <VideoRatioHint
+                src={String(video.srcMobile ?? "")}
+                target={HERO_MOBILE_RATIO}
+                targetLabel="1:1（方形）"
+              />
+            ) : null}
+          </div>
+        ) : null}
         <div>
           <span style={fieldCaption}>封面图（Poster）</span>
           {imageField([sectionKey, "video", "poster"], `${label} · 视频封面`, String(video.poster ?? ""))}

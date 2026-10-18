@@ -32,6 +32,21 @@
  *
  * A source is a local path, an https .mp4, an .m3u8, or a 干净世界 embed URL --
  * the last is resolved automatically wherever a source is accepted.
+ *
+ * ## 首屏要的那两支
+ *
+ * 首页首屏在桌面按 **2.35:1** 排版，手机单独一支 **1:1 方形**（2.35 的片子
+ * 塞进竖屏只剩中间 35%）。项目文件这样写，一次出两支：
+ *
+ *   "output": {
+ *     "width": 1920, "height": 816,        ← 桌面版 2.35:1
+ *     "cropY": 0.5,                        ← 上下各切多少：0 贴上 / 1 贴下
+ *     "also": [ { "width": 1080, "height": 1080 } ]   ← 手机版方形
+ *   }
+ *
+ * `cropY` 也可以写在单独某一段 clip 上，盖掉项目的默认值。它要紧是因为
+ * 出 2.35 要切掉素材上下各 12%，而字幕、台标、人名条恰恰贴着上下边 ——
+ * 居中裁会把字幕切成半截。拿不准就先 `--preview` 看一眼。
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -275,8 +290,26 @@ async function cmdLook(src, times) {
  * differ, so each one is conformed first -- scaled to cover, cropped to fill,
  * resampled, square pixels, 8-bit 4:2:0.
  */
-const conform = (w, h, fps) =>
-  `scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h},fps=${fps},setsar=1,format=yuv420p`;
+/**
+ * 裁哪一块：0 = 贴上/贴左，0.5 = 居中（默认），1 = 贴下/贴右。
+ *
+ * 以前永远居中裁，出 16:9 的时候无所谓 —— 素材本来就是 16:9，裁不掉东西。
+ * 改成出 2.35:1 之后就要紧了：上下各切掉 12%，而新闻画面的字幕、台标、
+ * 人名条恰恰都贴着上下边。居中裁会把字幕切成半截，比完整切掉还难看。
+ *
+ * 写成比例而不是像素：同一个项目可能同时出 2.35 和 1:1，裁掉多少不一样，
+ * 但「保住下边那条字幕」这个意图是一样的。
+ */
+const anchor = (v, fallback = 0.5) => (typeof v === "number" && v >= 0 && v <= 1 ? v : fallback);
+
+/*
+ * crop 的 x/y 支持表达式，而且 in_w/in_h 是 scale 之后的尺寸 —— 所以偏移量
+ * 可以在这里算，不需要先知道素材原始尺寸。
+ */
+const conform = (w, h, fps, ax = 0.5, ay = 0.5) =>
+  `scale=${w}:${h}:force_original_aspect_ratio=increase,` +
+  `crop=${w}:${h}:(in_w-out_w)*${ax}:(in_h-out_h)*${ay},` +
+  `fps=${fps},setsar=1,format=yuv420p`;
 
 /**
  * The frame rate to cut at.
@@ -455,7 +488,8 @@ async function render(projectPath) {
     for (let attempt = 1; attempt <= 3; attempt += 1) {
       ff(
         ["-ss", String(coarse), "-i", src, "-ss", String(fine), "-t", String(len), "-an",
-         "-vf", conform(width, height, fps),
+         /* 这一段裁哪一块：片段自己说了算，没说就跟项目的默认，再没有就居中。 */
+         "-vf", conform(width, height, fps, anchor(clip.cropX, anchor(out.cropX)), anchor(clip.cropY, anchor(out.cropY))),
          "-c:v", "libx264", "-preset", preview ? "veryfast" : "veryslow",
          "-crf", String(preview ? 30 : crf), "-pix_fmt", "yuv420p",
          "-profile:v", "high", "-level", "4.0",
@@ -638,6 +672,41 @@ async function render(projectPath) {
     );
     made.push(small);
     if (!JSONOUT) console.log(`  ${small}   ${(fs.statSync(small).size / 1048576).toFixed(1)} MB`);
+  }
+
+  /*
+   * 另外出几个比例。
+   *
+   * `alsoWidth` 出的是同比例的小尺寸版；这里出的是不同形状的版本，为的是
+   * 手机 —— 首屏在桌面按 2.35:1 排，那个比例塞进竖屏手机只剩中间 35%，
+   * 而一支方形的几乎不裁。
+   *
+   * ## 从成片裁，不是重剪一遍
+   *
+   * 每个额外版本都是拿上面那支成片再裁一次，不会重新去拉素材、重新剪。
+   * 好处是快、而且保证几个版本内容一致（同样的镜头、同样的时间点、同样
+   * 的配乐）。代价是它继承了成片已经做过的裁切：2.35 的成片已经切掉了
+   * 原素材上下各 12%，从它裁出来的方形版也就少了那 12%。
+   *
+   * 要几个版本各自从原素材裁，把项目的 width/height 设成素材的原始尺寸
+   * （通常 1920×1080），再在 also 里列出全部要发布的比例 —— 代价是会多
+   * 出一支 16:9 的成片，用不上但也会被上传。
+   */
+  for (const extra of !preview && Array.isArray(out.also) ? out.also : []) {
+    const w2 = Math.round(Number(extra.width) / 2) * 2;
+    const h2 = Math.round(Number(extra.height) / 2) * 2;
+    if (!(w2 > 0 && h2 > 0)) throw new Error(`output.also 里有一项的 width/height 不对：${JSON.stringify(extra)}`);
+    const alt = path.join(outDir, `${name}-${extra.name ?? `${w2}x${h2}`}.mp4`);
+    ff(
+      ["-i", final,
+       "-vf", conform(w2, h2, fps, anchor(extra.cropX, anchor(out.cropX)), anchor(extra.cropY, anchor(out.cropY))),
+       "-c:v", "libx264", "-preset", "veryslow", "-crf", String(crf),
+       "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+       ...(bed ? ["-c:a", "copy"] : ["-an"]), alt, "-y"],
+      `${w2}×${h2} 版`
+    );
+    made.push(alt);
+    if (!JSONOUT) console.log(`  ${alt}   ${(fs.statSync(alt).size / 1048576).toFixed(1)} MB`);
   }
 
   if (preview) {

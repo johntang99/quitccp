@@ -184,12 +184,27 @@ const SOUND_CHOICE_KEY = "quitccp.heroSound";
 
 export function HeroBackgroundVideo({
   src,
+  srcMobile,
   poster,
   alt,
   hasAudio,
   soundOn
 }: {
   src: string;
+  /**
+   * 手机专用的那一支，选填。
+   *
+   * 首屏按 2.35:1 排版，那个比例放进竖屏手机只剩中间 35%。给一支方形的，
+   * 手机上就几乎不裁。留空则手机沿用 `src`。
+   *
+   * 选片源交给 `<source media>`，不交给 JS：服务端渲出来就是对的，浏览器
+   * 在解析 HTML 时就挑好，手机不会先去下那支桌面版再换掉。2026-10-18 在
+   * Chrome 上两个方向都实测过 —— 窄屏选中手机版、宽屏跳过手机版。
+   *
+   * 代价是它只在加载时判断一次，不随窗口拖动重判。对真实读者无所谓（手机
+   * 不会变成桌面），只有改窗口宽度的人会看到旧的那支，刷新即可。
+   */
+  srcMobile?: string;
   poster: string;
   alt: string;
   /** Only then is the speaker button worth showing. */
@@ -229,8 +244,24 @@ export function HeroBackgroundVideo({
   const rule = mirrorRewrite();
   /* from/to 是子串而不是前缀 —— rewriteMediaUrl 用的是 split/join，
      形如 `//media.tdinfo.org/`，出现在 `https://media.tdinfo.org/...` 中间。 */
-  const originSrc = rule && src.includes(rule.to) ? src.split(rule.to).join(rule.from) : "";
+  const toOrigin = (url: string) => (rule && url.includes(rule.to) ? url.split(rule.to).join(rule.from) : "");
+  const originSrc = toOrigin(src);
   const currentSrc = useOrigin && originSrc ? originSrc : src;
+
+  /*
+   * 候选片源，手机那支排在前面。
+   *
+   * `<source>` 是自上而下挑的，第一个 media 条件成立且能播的胜出，所以窄屏
+   * 专用的必须在前。没有手机版时整个列表为空，下面照旧用 <video src>，那条
+   * 路一个字都没改 —— 多一支片子不该让原来那条路承担任何新风险。
+   */
+  const mobileSrc = (srcMobile ?? "").trim();
+  const sources = mobileSrc
+    ? [
+        { src: useOrigin && toOrigin(mobileSrc) ? toOrigin(mobileSrc) : mobileSrc, media: "(max-width: 900px)" },
+        { src: currentSrc, media: undefined as string | undefined }
+      ]
+    : [];
   /** True once a visitor has worked the button; their choice then outranks the setting. */
   const chosen = useRef(false);
 
@@ -371,12 +402,16 @@ export function HeroBackgroundVideo({
   const adopted = useRef(false);
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !originSrc) return;
-    if (video.getAttribute("src") === originSrc) {
+    if (!video || !rule || !originSrc) return;
+    /* 看 currentSrc 而不是 src 属性：有手机版时地址在 <source> 上，src 属性
+       是空的。currentSrc 是浏览器最终选中的那一个，两种写法都准。
+       `originSrc` 非空保证我们渲出去的本来就是镜像地址 —— 编辑要是贴了个
+       外站地址，它本来就不含镜像域，不该被当成「已经退避过了」。 */
+    if (video.currentSrc && !video.currentSrc.includes(rule.to)) {
       adopted.current = true;
       setUseOrigin(true);
     }
-  }, [originSrc]);
+  }, [originSrc, rule]);
 
   /*
    * 自己换地址时，要显式 load() —— 改 src 属性不保证浏览器重新取。
@@ -453,7 +488,10 @@ export function HeroBackgroundVideo({
         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
         <video
           ref={videoRef}
-          src={currentSrc}
+          /* 有手机版时地址放在 <source> 上 —— src 属性一旦存在就会压过所有
+             <source>，媒体查询就白写了。 */
+          src={sources.length ? undefined : currentSrc}
+          key={sources.length ? "sources" : "src"}
           poster={poster}
           /* 水合之前，<head> 里的兜底脚本可能已经把 src 换成源站地址了。那是
              对的，不是要修的不一致 —— 上面的 adopt effect 负责把它收进 state。 */
@@ -466,7 +504,25 @@ export function HeroBackgroundVideo({
           playsInline
           preload="metadata"
           aria-label={alt}
-          onError={() => {
+          onError={(event) => {
+            /*
+             * 只认 <video> 自己报的错，不认 <source> 报的。
+             *
+             * 这是 2026-10-18 加手机版片源时踩到的：规范里资源选择算法逐个
+             * 看 <source>，凡是被 media 条件排除掉的，都要「fire an event
+             * named error at the candidate」—— 也就是说，手机那支在桌面上
+             * 被跳过，是正常流程，但它会触发一个 error 事件。
+             *
+             * error 不冒泡，可是它走捕获阶段，而 React 在根节点上监听，于是
+             * 这个事件照样被派发到祖先 <video> 的 onError 上。结果是：桌面
+             * 上一打开首页，手机那支被跳过 → 报错 → 首屏判定失败 → 整个
+             * <video> 被摘掉换成海报。视频在，地址对，就是不显示。
+             *
+             * target 和 currentTarget 不同就说明错在某个 <source> 身上，那
+             * 不是失败，是选片源的正常过程。真的所有候选都用不了时，浏览器
+             * 会在 <video> 自己身上再报一次，那一次 target === currentTarget。
+             */
+            if (event.target !== event.currentTarget) return;
             /* 第一次失败且确实有源站地址可退 —— 换地址重试，不要放弃。 */
             if (!useOrigin && originSrc) {
               setUseOrigin(true);
@@ -474,7 +530,11 @@ export function HeroBackgroundVideo({
             }
             setFailed(true);
           }}
-        />
+        >
+          {sources.map((s) => (
+            <source key={s.src} src={s.src} media={s.media} type="video/mp4" />
+          ))}
+        </video>
       </div>
       {hasAudio ? (
         <button

@@ -419,6 +419,8 @@ export async function HomeTemplate({ content }: TemplatePageData) {
               // has to sit outside that layer to be clickable at all.
               <HeroBackgroundVideo
                 src={hero.video.src}
+                // 手机那支，没填就留空，组件会让手机沿用桌面版。
+                srcMobile={hero.video.srcMobile}
                 // The admin has its own 封面图 field; the hero photograph is
                 // the fallback, so leaving that field blank still gives the
                 // video a first frame and still gives the readers who never

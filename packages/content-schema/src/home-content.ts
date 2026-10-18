@@ -127,7 +127,23 @@ export interface HomeContent {
      * for readers behind the GFW, where a blocked embed would otherwise stall
      * the homepage.
      */
-    video: { src: string; poster: string; caption: string; hasAudio: boolean; soundOn: boolean };
+    video: {
+      src: string;
+      /**
+       * 手机专用的那一支，选填。
+       *
+       * 首屏在桌面按 2.35:1 排版，那个比例放进竖屏手机里只剩中间 35%。填一支
+       * 方形（1:1）的，手机上就几乎不裁。留空则手机沿用 `src`，继续裁左右。
+       *
+       * 只有「卡片叠加·视频」这个满幅背景用得上；别的版式把视频放进固定的框
+       * 里，和屏幕形状无关。
+       */
+      srcMobile?: string;
+      poster: string;
+      caption: string;
+      hasAudio: boolean;
+      soundOn: boolean;
+    };
   };
   registry: HomeSectionMeta & {
     eyebrow: string;

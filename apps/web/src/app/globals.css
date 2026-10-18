@@ -2000,10 +2000,37 @@ body:has(.hero--full-bleed) > header .search {
    photo's bottom edge onto the page background. So the card straddles that
    edge rather than sitting inside the image. */
 .hero--full-bleed {
-  /* Split in two so the overlay rule below can add the menu row's height
-     without hardcoding this number -- it did, and the 900px breakpoint's 420px
-     lost to it, leaving phones with an 835px hero. */
-  --hero-photo-base: 780px;
+  /*
+   * 首屏高度：既不让视频上下被裁，也不让它超出一屏。
+   *
+   * 这里曾经写死 780px，于是屏幕越宽、这条带子越扁，16:9 的视频上下被裁得
+   * 越狠 —— 2026-10-18 实测：1920 屏裁 23%，2560 屏裁 42%。反过来在矮屏上
+   * 它又太高：1365×630 的笔记本上首屏底边落在 919px，超出屏幕 289px。两头
+   * 都不对，因为一个写死的高度管不了两件随屏幕变化的事。
+   *
+   * 三段夹出来的：
+   *
+   *   max( 420px , min( 100vw/2.35 , 100svh − 139px ) )
+   *        └ 手机下限     └ 不裁上下       └ 不超出一屏
+   *
+   * 中间那段按 2.35 算，是因为首屏视频的规格就定在 2.35:1（1920×816）——
+   * 框和片子同比例，cover 才裁不到东西。右边那段封顶，只有带鱼屏和矮窗口
+   * 会触发，触发时宁可裁一点也不让首屏溢出屏幕。
+   *
+   * 139px = 首屏上方那条头部（实测 84px）加菜单栏（--menubar-h，55px）。
+   * 它跟着头部走：哪天头部改高了，这个数要跟着改，否则首屏底边会错位。
+   *
+   * 左边的 420px 下限是把手机挡在公式外面 —— 390px 宽的屏按 2.35 算只有
+   * 166px 高，首屏会变成一条细缝。竖屏上横向视频必然裁左右，这是几何决定
+   * 的，调高度解决不了，只能靠手机单独一支方形视频（见 video.srcMobile）。
+   * 900px 以下还有一条显式的 420px，和这个下限同值，留着是因为它说的是
+   * 「手机就该是这个高度」，而下限说的是「任何情况都不许比这更矮」。
+   *
+   * Split in two so the overlay rule below can add the menu row's height
+   * without hardcoding this number -- it did, and the 900px breakpoint's 420px
+   * lost to it, leaving phones with an 835px hero.
+   */
+  --hero-photo-base: max(420px, min(calc(100vw / 2.35), calc(100svh - 139px)));
   --hero-photo-h: var(--hero-photo-base);
   /* Below the photo the page background shows through, not the hero gradient. */
   background: var(--paper);

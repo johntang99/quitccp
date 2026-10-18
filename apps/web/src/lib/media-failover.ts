@@ -73,10 +73,18 @@ export function mediaFailoverScript(): string | null {
    * This listener is in <head> precisely because it is the only thing early
    * enough. A component that also wants to know adopts what the rescue did on
    * mount; see HeroBackgroundVideo. It does not ask this to stand down.
+   *
+   * ## 被 media 排除掉的 <source> 不算失败
+   *
+   * 资源选择算法逐个看 <source>，凡是被 `media` 条件排除掉的，规范要求在它
+   * 身上触发一个 error 事件。那是正常流程 —— 首屏给手机准备的那支在桌面上
+   * 本来就该被跳过。把它当成失败去改地址，等于在一个根本没人要加载的候选上
+   * 做手脚，还会顺带触发一次 load() 把正在进行的选择打断。所以这类先放过。
    */
   return `(function(){var f=${JSON.stringify(from)},t=${JSON.stringify(to)};
 addEventListener("error",function(e){var n=e.target;if(!n||!n.tagName)return;
 var g=n.tagName;if(g!=="IMG"&&g!=="VIDEO"&&g!=="AUDIO"&&g!=="SOURCE")return;
+if(g==="SOURCE"&&n.media){try{if(!matchMedia(n.media).matches)return}catch(x){}}
 var s=n.getAttribute("src")||"";if(s.indexOf(f)<0)return;
 n.setAttribute("src",s.replace(f,t));
 var m=g==="SOURCE"?n.parentNode:n;if(m&&m.load)try{m.load()}catch(x){}},true)})();`;
