@@ -110,6 +110,16 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_STORAGE_BUCKET: ${{ secrets.SUPABASE_STORAGE_BUCKET }}
+          # 没有这四个，片子只会进 Supabase，不会进 R2 镜像 —— 而页面上的
+          # 地址在渲染时就被改写到镜像域了，所以首屏会是一片黑。
+          #
+          # 2026-10-17 就是这么出的事：编辑在后台按「出片」，片子单独打开能
+          # 放，设成首屏背景什么都没有。本机跑脚本不会遇到，因为 .env.local
+          # 里有这几个；这台机器上没有，于是镜像那步静静地跳过了。
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: |
           args=("projects/$PROJECT" --upload --json)
           if [ "$PREVIEW" = "true" ]; then
@@ -147,6 +157,14 @@ jobs:
                   console.log(`- [${name}](${url})`);
                 }
                 if (!r.uploaded) console.log("（没有上传）");
+                // 进了 Storage 但没进镜像的片子，设成首屏会是一片黑。这一步
+                // 以前只写在 stdout 里，没人会去翻，所以搬到这里来。
+                const missed = Object.entries(r.notMirrored ?? {});
+                if (missed.length) {
+                  console.log("\n> ⚠️ **下面这些没进 R2 镜像，先别拿去当首屏背景。**\n>");
+                  for (const [name, why] of missed) console.log(`> - ${name}：${why}`);
+                  console.log(">\n> 补救：`node --env-file=.env.local scripts/mirror-one.mjs <地址>`");
+                }
               '
               echo
               echo "片子还不会自己上首页——要换，去「页面内容 → 首屏 Hero → 视频地址」把地址粘上。"

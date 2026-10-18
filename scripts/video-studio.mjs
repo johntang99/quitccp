@@ -711,6 +711,9 @@ async function render(projectPath) {
   const stamp = Date.now();
   if (!JSONOUT) console.log("\n=== 上传 ===");
   const urls = {};
+  /* 镜像没写成的，键留在这里。--json 会带出去，出片工作流据此在结果页上报警
+     —— 2026-10-17 的教训是：这个失败如果只出现在 stdout，就等于没人知道。 */
+  const notMirrored = {};
   for (const file of made) {
     const base = path.basename(file);
     const key = `home/${stamp}-${base}`;
@@ -739,11 +742,12 @@ async function render(projectPath) {
     if (rowErr) throw rowErr;
     const mirrored = await mirrorToR2(key, bytes);
     urls[base] = url;
+    if (mirrored !== true) notMirrored[base] = String(mirrored);
     if (!JSONOUT) console.log(`  ${url}${mirrored === true ? "" : `\n    ⚠️ 未进镜像：${mirrored}`}`);
   }
   fs.writeFileSync(path.join(outDir, `${name}-uploaded.json`), JSON.stringify(urls, null, 2));
   say(`\n  已登记进图片视频库。首页要换片，去后台「页面内容 → 首屏 Hero」把地址粘上。\n`,
-      { files: made, duration: total, preview: false, uploaded: urls });
+      { files: made, duration: total, preview: false, uploaded: urls, notMirrored });
 }
 
 /* ---------- dispatch ---------- */

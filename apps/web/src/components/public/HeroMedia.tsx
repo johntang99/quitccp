@@ -355,12 +355,58 @@ export function HeroBackgroundVideo({
    * `preload` is raised to "auto" only once motion is wanted, so a reader on
    * 省流量模式 or 减少动态效果 never pays to download a film they will not see.
    */
-  /* 改 src 属性不保证浏览器重新取 —— 要显式 load()。 */
+  /*
+   * 接管 <head> 里那个兜底脚本已经做掉的退避。
+   *
+   * 镜像的 404 多半在 HTML 还在解析时就回来了，那时 React 根本没水合，下面
+   * 那个 onError 听不到 —— 真正救回来的是 media-failover.ts 那个监听器，它
+   * 直接改了 DOM 上的 src。问题是 React 水合时拿自己渲染的地址去对 DOM，
+   * 对不上就报一条「hydrated but some attributes didn't match」。
+   *
+   * 所以这里在挂载时看一眼 DOM 上现在是什么：已经被换成源站地址了，就把这个
+   * 事实收进 state。这样 React 和 DOM 说的是同一件事，后面任何一次重渲染也
+   * 不会把镜像地址再写回去。<video> 上的 suppressHydrationWarning 配套：
+   * 这个属性确实允许和服务端不一致，而且那正是我们要的结果。
+   */
+  const adopted = useRef(false);
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !originSrc) return;
+    if (video.getAttribute("src") === originSrc) {
+      adopted.current = true;
+      setUseOrigin(true);
+    }
+  }, [originSrc]);
+
+  /*
+   * 自己换地址时，要显式 load() —— 改 src 属性不保证浏览器重新取。
+   *
+   * load() 会把播放位置清零并且停下来，所以紧接着要再起一次：按 play 跑的那个
+   * effect 只在 play 变化时触发，退回源站的时候它早就跑完了。少了这一步，退回
+   * 来的片子能加载、能显示第一帧，但一直停在那儿不动。
+   *
+   * 上面那条路（兜底脚本已经换好了）不走这里：它已经在取了，再 load() 一次是
+   * 白扔一次请求，而起播由 play 那个 effect 负责。
+   */
   useEffect(() => {
     if (!useOrigin) return;
     const video = videoRef.current;
-    if (video) try { video.load(); } catch { /* 取不到就算了，海报还在 */ }
-  }, [useOrigin]);
+    if (!video) return;
+    if (adopted.current) {
+      adopted.current = false;
+      return;
+    }
+    try {
+      video.load();
+    } catch {
+      /* 取不到就算了，海报还在 */
+      return;
+    }
+    if (play) {
+      video.preload = "auto";
+      void video.play().catch(() => {});
+    }
+  }, [useOrigin, play]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -409,6 +455,9 @@ export function HeroBackgroundVideo({
           ref={videoRef}
           src={currentSrc}
           poster={poster}
+          /* 水合之前，<head> 里的兜底脚本可能已经把 src 换成源站地址了。那是
+             对的，不是要修的不一致 —— 上面的 adopt effect 负责把它收进 state。 */
+          suppressHydrationWarning
           /* No `autoPlay` attribute: whether this reader gets motion is the
              effect's call, not the markup's. The element is here from the
              first byte of HTML all the same, which is the point. */

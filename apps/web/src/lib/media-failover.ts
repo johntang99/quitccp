@@ -60,6 +60,20 @@ export function mediaFailoverScript(): string | null {
    * names the mirror is self-limiting in the same way and survives a
    * re-render: a URL can only be rewritten in one direction, once.
    */
+  /*
+   * A note for anyone tempted to let a component opt out of this.
+   *
+   * It was tried on 2026-10-17, for the hero video: that component had grown
+   * its own fallback in React state, and this listener writing a different
+   * `src` into the DOM was making hydration report a mismatch. Exempting it
+   * looked tidy and broke the rescue outright -- the mirror's 404 usually
+   * comes back while the HTML is still being parsed, so React's own onError
+   * is not attached yet and never hears it. The element simply stayed dead.
+   *
+   * This listener is in <head> precisely because it is the only thing early
+   * enough. A component that also wants to know adopts what the rescue did on
+   * mount; see HeroBackgroundVideo. It does not ask this to stand down.
+   */
   return `(function(){var f=${JSON.stringify(from)},t=${JSON.stringify(to)};
 addEventListener("error",function(e){var n=e.target;if(!n||!n.tagName)return;
 var g=n.tagName;if(g!=="IMG"&&g!=="VIDEO"&&g!=="AUDIO"&&g!=="SOURCE")return;
