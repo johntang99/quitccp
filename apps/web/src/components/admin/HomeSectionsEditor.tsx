@@ -629,7 +629,13 @@ export function HomeSectionsEditor({
             <p style={{ margin: 0, color: "#777", fontSize: 12, lineHeight: 1.7 }}>
               手机是竖屏，横着的视频放进去必然被裁掉左右两边——2.35:1 的片子在手机上
               只剩中间 <strong>35%</strong>。填一支<strong>方形（1:1）</strong>的就几乎不裁。
-              影片拼接台可以在出片时一次出两个比例，不用重剪。
+              这支从哪儿来都行：影片拼接台出片时可以一次出两个比例，手机上剪的、
+              找人另做的，上传上来一样用。
+              <span style={{ display: "block", marginTop: 6 }}>
+                <strong>画面里有烧死的字幕就先别填。</strong>字幕通常横铺大半个画幅，
+                方形只保得住中间约 56%，两头都会被切掉，变成半截话——那比画面窄一点更难看。
+                留空的话手机就沿用上面那支，和现在一样。
+              </span>
             </p>
             {String(video.srcMobile ?? "").trim() ? (
               <VideoRatioHint
