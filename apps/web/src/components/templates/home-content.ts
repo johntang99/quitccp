@@ -169,6 +169,15 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
         // `src` falls back to "" rather than the default, so clearing it in the
         // CMS genuinely removes the video instead of resurrecting a default.
         src: asString(heroVideo.src),
+        /*
+         * 手机专用的那一支，没填就是空字符串，组件会让手机沿用桌面版。
+         *
+         * 2026-10-19 漏掉过一次：类型上加了、后台能填能存、组件也认，唯独这里
+         * 没加，于是编辑填完保存、库里也有，页面就是不认。这个函数是逐字段重建
+         * 的，不是把原对象摊开 —— 少写一行的后果不是报错，是那个字段安静地消失。
+         * 加字段时三处都要动：schema 的类型、后台的输入、还有这里。
+         */
+        srcMobile: asString(heroVideo.srcMobile),
         poster: asString(heroVideo.poster, d.hero.video.poster),
         caption: asString(heroVideo.caption, d.hero.video.caption),
         // Off unless the file really carries sound: a speaker button that
