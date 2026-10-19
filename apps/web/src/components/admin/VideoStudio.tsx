@@ -28,7 +28,20 @@ interface Clip {
 }
 
 interface Project {
-  output: { name: string; width: number; height: number; fps: number | string; crf: number; alsoWidth?: number; dir?: string; fade?: boolean };
+  output: {
+    name: string;
+    width: number;
+    height: number;
+    fps: number | string;
+    crf: number;
+    alsoWidth?: number;
+    /** 裁哪一块：0 贴上 / 0.5 居中 / 1 贴下。见下面 CROPS 的说明。 */
+    cropY?: number;
+    /** 额外出的别的比例，目前只用来出手机方形版。 */
+    also?: { width: number; height: number; name?: string }[];
+    dir?: string;
+    fade?: boolean;
+  };
   music?: { from: string; loop?: boolean; bpm?: number; lufs?: number; start?: number } | null;
   clips: Clip[];
   _?: unknown;
@@ -49,10 +62,78 @@ interface Shot {
  * the clips are encoded at, so the join does not re-compress them.
  */
 const EMPTY: Project = {
-  output: { name: "new-video", width: 1920, height: 1080, fps: "source", crf: 18, dir: "artifacts/hero", fade: false },
+  /* 新项目默认就按首屏的规格来 —— 这个台子十有八九是为首屏开的。 */
+  output: { name: "new-video", width: 1920, height: 816, cropY: 0.85, fps: "source", crf: 18, dir: "artifacts/hero", fade: false },
   music: null,
   clips: []
 };
+
+/**
+ * 出片比例的几个预设。
+ *
+ * 以前这里是两个空白的宽高输入框，填什么都行、填错了也没人说。问题不在于
+ * 编辑会填错数字，而在于那两个框**什么也没告诉他** —— 1920×1080 和
+ * 1920×816 的区别不是两个数，是「谁来决定画面哪一块被砍掉」。
+ *
+ * 两条路最终被砍掉的像素一样多，因为首屏的框是按 2.35 排的：
+ *
+ * - 出 2.35：出片时切掉上下 24%，**编辑挑哪 24%**，而且出完就能看见。
+ * - 出 16:9：出片时一个像素不少，但贴到首屏上浏览器照样切掉 24%，
+ *   永远从正中间切，编辑在这个页面上看不出来 —— 而字幕恰恰在正中间往下。
+ *
+ * 所以 2.35 是推荐项，理由不是「画质好」，是「裁哪儿由你说了算」。
+ */
+const RATIOS = [
+  {
+    key: "235",
+    label: "2.35:1",
+    dims: "1920×816",
+    width: 1920,
+    height: 816,
+    note: "首屏推荐 · 在首页上不会被裁"
+  },
+  {
+    key: "169",
+    label: "16:9",
+    dims: "1920×1080",
+    width: 1920,
+    height: 1080,
+    note: "贴到首屏上，浏览器会从正中间切掉上下 24%"
+  }
+] as const;
+
+/**
+ * 裁切位置。
+ *
+ * 只有出 2.35 时才用得上 —— 出 16:9 时不裁，没什么可挑的。
+ *
+ * 默认「偏下」不是随便定的：2026-10-18 把现有素材抽帧量过，字幕压在
+ * 距下边约 80px 的地方，而居中裁的下刀位置正好落在字上，会把
+ * 「退出中共党 团 队声明的人数为115万4744人」从字的中间切断。偏下只切掉
+ * 下边 40px、上边 224px，而上边那 224px 在六个采样帧里全是空天。
+ */
+const CROPS = [
+  { key: "top", label: "偏上", value: 0.15, note: "保住画面上部" },
+  { key: "center", label: "居中", value: 0.5, note: "上下均分 —— 字幕多半会被切断" },
+  { key: "bottom", label: "偏下", value: 0.85, note: "保住下边的字幕（推荐）" }
+] as const;
+
+/** 手机版的规格：方形。首屏在手机上的框接近 1:1，方形放进去几乎不裁。 */
+const MOBILE = { width: 1080, height: 1080 };
+
+/** 预设按钮：选中的描金边，没选中的是普通边框。 */
+const ratioBtn = (on: boolean): React.CSSProperties => ({
+  textAlign: "left",
+  padding: "8px 11px",
+  borderRadius: 5,
+  cursor: "pointer",
+  minWidth: 168,
+  font: "inherit",
+  fontSize: 13,
+  border: `1px solid ${on ? "#b8912f" : "var(--rule, #ddd)"}`,
+  background: on ? "#fdf7e8" : "#fff",
+  color: on ? "#6b5312" : "inherit"
+});
 
 const fileUrl = (p: string) => `/api/admin/studio/file?path=${encodeURIComponent(p)}`;
 const secs = (n: number) => `${n.toFixed(2)}s`;
@@ -77,6 +158,9 @@ export function VideoStudio({
   const [project, setProject] = useState<Project>(EMPTY);
   const [busy, setBusy] = useState("");
   const [problem, setProblem] = useState("");
+  /* 手动展开宽高输入框。尺寸本来就不是预设里那两档时，下面会自己展开，
+     不需要这个开关 —— 它只管「尺寸是预设、但我就是想改」那种情况。 */
+  const [custom, setCustom] = useState(false);
 
   /* The source being looked through, and whatever we last learned about it. */
   const [source, setSource] = useState("");
@@ -311,6 +395,11 @@ export function VideoStudio({
 
   const patchOutput = (patch: Partial<Project["output"]>) =>
     setProject((p) => ({ ...p, output: { ...p.output, ...patch } }));
+
+  /* 当前尺寸是不是正好等于某个预设。不是的话，宽高框一直开着 —— 老项目是
+     手填的数字，把它们藏起来等于让人看不见自己的片子要出多大。 */
+  const presetMatched = RATIOS.some((r) => r.width === project.output.width && r.height === project.output.height);
+  const mobileOn = (project.output.also ?? []).length > 0;
 
   const addClip = (clip: Clip) => setProject((p) => ({ ...p, clips: [...p.clips, clip] }));
   const patchClip = (i: number, patch: Partial<Clip>) => {
@@ -1047,8 +1136,21 @@ export function VideoStudio({
             <p className="muted" style={{ fontSize: 12, margin: "6px 0 0", lineHeight: 1.7 }}>
               <strong>1920 就是上限</strong>——干净世界的素材本身就是 1920×1080，再往上渲是凭空造像素。
               首屏是满幅的，在 1920 的屏幕上实际显示到 2400px 宽，所以 1280 的片子会被放大近两倍，
-              横幅上的字会糊。30 秒的片子：1920 + 画质 18 约 19MB，1280 + 画质 23 约 10MB。
-              每个访客一进站都要下载它——画质和流量之间自己权衡，画质数字越小越好、文件越大。
+              横幅上的字会糊。每个访客一进站都要下载它——画质数字越小越好、文件越大。
+            </p>
+            {/*
+              文件大小只能给实测值，不能给公式。
+
+              这里原来写「1920 + 画质 18 约 19MB」，是拿某一支片子量出来的，然后
+              被当成了通则。2026-10-18 实测的两支 31 秒成片：16:9 那支 11MB，
+              2.35 那支 9MB —— 差得远。同样的分辨率和画质，画面动得厉害的片子
+              可以是静片的好几倍。给一个范围并说清楚它取决于什么，比给一个看着
+              精确的假数字有用。
+            */}
+            <p className="muted" style={{ fontSize: 12, margin: "6px 0 0", lineHeight: 1.7 }}>
+              <strong>文件多大，主要看画面动得厉不厉害</strong>，不是算出来的。30 秒、1920、画质 18
+              的片子实测在 <strong>9–19MB</strong> 之间：镜头稳、变化少的接近 9，快切和大幅运镜的接近 19。
+              出完看一眼实际大小，觉得大就把画质数字调高一两档再出一次。
             </p>
           </div>
           <div>
@@ -1069,6 +1171,9 @@ export function VideoStudio({
             >
               → {project.output.name || "（没填）"}-{project.output.width}.mp4
               {project.output.alsoWidth ? `　${project.output.name}-${project.output.alsoWidth}.mp4` : ""}
+              {mobileOn
+                ? `　${project.output.name}-${MOBILE.width}x${MOBILE.height}.mp4`
+                : ""}
             </p>
             {project.output.name && project.output.name !== name.replace(/\.json$/, "") ? (
               <p style={{ margin: "6px 0 0", fontSize: 12, lineHeight: 1.7, color: "#6b5312", background: "#fffbe9", padding: "7px 9px", borderRadius: 4 }}>
@@ -1084,18 +1189,117 @@ export function VideoStudio({
                 </button>
               </p>
             ) : null}
-            <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-              {([["宽", "width"], ["高", "height"], ["帧率", "fps"]] as const).map(([label, key]) => (
-                <label key={key} style={{ fontSize: 13 }}>
-                  {label}
-                  <input
-                    className="admin-input"
-                    style={{ width: 84, display: "block" }}
-                    value={project.output[key]}
-                    onChange={(e) => patchOutput({ [key]: Number(e.target.value) } as Partial<Project["output"]>)}
-                  />
-                </label>
-              ))}
+            <div style={{ marginTop: 12 }}>
+              <span style={{ display: "block", fontSize: 13, marginBottom: 5 }}>出片比例</span>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {RATIOS.map((r) => {
+                  const on = project.output.width === r.width && project.output.height === r.height;
+                  return (
+                    <button
+                      key={r.key}
+                      type="button"
+                      onClick={() =>
+                        patchOutput({
+                          width: r.width,
+                          height: r.height,
+                          /* 切到要裁的比例、而这个项目还没选过裁哪儿时，直接落在
+                             推荐值上。不这么做的话 cropY 是空的，下面会显示成
+                             「居中」—— 偏偏那个值会把字幕从中间切断。推荐项应该
+                             是你什么都不做就踩到的那个，不是要再点一下才有的。 */
+                          ...(r.height < r.width / 1.9 && project.output.cropY === undefined
+                            ? { cropY: 0.85 }
+                            : {})
+                        })
+                      }
+                      style={ratioBtn(on)}
+                    >
+                      <span style={{ fontWeight: 600 }}>
+                        {r.label}
+                        <span style={{ fontWeight: 400, opacity: 0.6, marginLeft: 6, fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12 }}>
+                          {r.dims}
+                        </span>
+                      </span>
+                      <span style={{ display: "block", fontSize: 11.5, opacity: 0.75, marginTop: 3, lineHeight: 1.5 }}>{r.note}</span>
+                    </button>
+                  );
+                })}
+                <button type="button" onClick={() => setCustom((v) => !v)} style={ratioBtn(custom || !presetMatched)}>
+                  <span style={{ fontWeight: 600 }}>自定义</span>
+                  <span style={{ display: "block", fontSize: 11.5, opacity: 0.75, marginTop: 3, lineHeight: 1.5 }}>
+                    首屏以外的用途
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {custom || !presetMatched ? (
+              <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                {([["宽", "width"], ["高", "height"]] as const).map(([label, key]) => (
+                  <label key={key} style={{ fontSize: 13 }}>
+                    {label}
+                    <input
+                      className="admin-input"
+                      style={{ width: 84, display: "block" }}
+                      value={project.output[key]}
+                      onChange={(e) => patchOutput({ [key]: Number(e.target.value) } as Partial<Project["output"]>)}
+                    />
+                  </label>
+                ))}
+              </div>
+            ) : null}
+
+            {/* 出 16:9 时不裁，没什么可挑的；只有裁了才问裁哪儿。 */}
+            {project.output.height < project.output.width / 1.9 ? (
+              <div style={{ marginTop: 12 }}>
+                <span style={{ display: "block", fontSize: 13, marginBottom: 5 }}>
+                  裁切位置
+                  <span style={{ color: "#777", fontSize: 12, marginLeft: 6 }}>素材上下各切掉一条，这是在选切哪条</span>
+                </span>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {CROPS.map((c) => {
+                    const on = (project.output.cropY ?? 0.5) === c.value;
+                    return (
+                      <button key={c.key} type="button" onClick={() => patchOutput({ cropY: c.value })} style={ratioBtn(on)}>
+                        <span style={{ fontWeight: 600 }}>{c.label}</span>
+                        <span style={{ display: "block", fontSize: 11.5, opacity: 0.75, marginTop: 3, lineHeight: 1.5 }}>{c.note}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="muted" style={{ fontSize: 12, margin: "6px 0 0", lineHeight: 1.7 }}>
+                  拿不准就先按「出小样」看一眼——小样是按同样的位置裁的。
+                </p>
+              </div>
+            ) : null}
+
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 12, fontSize: 13, lineHeight: 1.7 }}>
+              <input
+                type="checkbox"
+                checked={(project.output.also ?? []).length > 0}
+                onChange={(e) => patchOutput({ also: e.target.checked ? [{ ...MOBILE }] : [] })}
+                style={{ marginTop: 3 }}
+              />
+              <span>
+                同时出一支手机方形版（1:1，{MOBILE.width}×{MOBILE.height}）
+                <span style={{ display: "block", color: "#777", fontSize: 12 }}>
+                  手机是竖屏，横片放进去只剩中间一条。方形几乎不裁。
+                  <strong>但画面里有烧死的字幕就别勾</strong>——方形只保得住中间约 56% 的宽度，
+                  字幕两头会被切掉，变成半截话。那种情况下首屏的「手机版视频」留空就行，
+                  手机沿用桌面那支，和现在一样。
+                </span>
+              </span>
+            </label>
+
+            <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+              <label style={{ fontSize: 13 }}>
+                帧率
+                <input
+                  className="admin-input"
+                  style={{ width: 84, display: "block" }}
+                  value={project.output.fps}
+                  onChange={(e) => patchOutput({ fps: e.target.value })}
+                />
+              </label>
             </div>
             <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 10, fontSize: 13, lineHeight: 1.7 }}>
               <input
