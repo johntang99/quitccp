@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AspectRatioHelp } from "./AspectRatioHelp";
 import { ClipPlayer } from "./ClipPlayer";
 
 /**
@@ -1190,7 +1191,10 @@ export function VideoStudio({
               </p>
             ) : null}
             <div style={{ marginTop: 12 }}>
-              <span style={{ display: "block", fontSize: 13, marginBottom: 5 }}>出片比例</span>
+              <span style={{ display: "block", fontSize: 13, marginBottom: 5 }}>
+                出片比例
+                <AspectRatioHelp />
+              </span>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {RATIOS.map((r) => {
                   /* 三个按钮是单选关系。`自定义` 一旦选中，哪怕尺寸正好还等于某个
