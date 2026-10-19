@@ -1193,12 +1193,16 @@ export function VideoStudio({
               <span style={{ display: "block", fontSize: 13, marginBottom: 5 }}>出片比例</span>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {RATIOS.map((r) => {
-                  const on = project.output.width === r.width && project.output.height === r.height;
+                  /* 三个按钮是单选关系。`自定义` 一旦选中，哪怕尺寸正好还等于某个
+                     预设，那个预设也不该亮着 —— 不然两个一起高亮，看不出当前到底
+                     是哪一种。 */
+                  const on = !custom && project.output.width === r.width && project.output.height === r.height;
                   return (
                     <button
                       key={r.key}
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
+                        setCustom(false);
                         patchOutput({
                           width: r.width,
                           height: r.height,
@@ -1209,8 +1213,8 @@ export function VideoStudio({
                           ...(r.height < r.width / 1.9 && project.output.cropY === undefined
                             ? { cropY: 0.85 }
                             : {})
-                        })
-                      }
+                        });
+                      }}
                       style={ratioBtn(on)}
                     >
                       <span style={{ fontWeight: 600 }}>
@@ -1223,7 +1227,9 @@ export function VideoStudio({
                     </button>
                   );
                 })}
-                <button type="button" onClick={() => setCustom((v) => !v)} style={ratioBtn(custom || !presetMatched)}>
+                {/* 只负责选中，不做开关 —— 单选组里点第二下把自己关掉，会落到
+                    「一个都没选」那种没有意义的状态。要离开自定义，点某个预设。 */}
+                <button type="button" onClick={() => setCustom(true)} style={ratioBtn(custom || !presetMatched)}>
                   <span style={{ fontWeight: 600 }}>自定义</span>
                   <span style={{ display: "block", fontSize: 11.5, opacity: 0.75, marginTop: 3, lineHeight: 1.5 }}>
                     首屏以外的用途
