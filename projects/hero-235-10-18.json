@@ -1,0 +1,43 @@
+{
+  "output": {
+    "name": "hero-235-10-18",
+    "width": 1920,
+    "height": 816,
+    "cropY": 0.85,
+    "fps": "source",
+    "crf": 18,
+    "dir": "artifacts/hero",
+    "fade": false
+  },
+  "music": {
+    "loop": true,
+    "lufs": -16,
+    "from": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/home/music/1792276921870-music.m4a?download=music.m4a"
+  },
+  "clips": [
+    {
+      "source": "https://www.ganjingworld.com/embed/1itrhn2aita7zcOPAse9NBPQq1gb1c",
+      "from": 86,
+      "to": 90,
+      "note": "1_8月退黨數字_4s"
+    },
+    {
+      "source": "https://www.ganjingworld.com/embed/1itrhn2aita7zcOPAse9NBPQq1gb1c",
+      "from": 94,
+      "to": 97,
+      "note": "2_8月平均_3s"
+    },
+    {
+      "source": "https://www.ganjingworld.com/embed/1itrhn2aita7zcOPAse9NBPQq1gb1c",
+      "from": 109,
+      "to": 114,
+      "note": "3_至8月底三退總數_2s"
+    },
+    {
+      "source": "https://www.ganjingworld.com/embed/1itrhn2aita7zcOPAse9NBPQq1gb1c",
+      "from": 139,
+      "to": 158,
+      "note": "4_最後_10s/9s"
+    }
+  ]
+}

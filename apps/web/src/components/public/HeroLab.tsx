@@ -20,7 +20,11 @@ const CLIPS = {
   },
   "2.35:1": {
     src: "https://media.tdinfo.org/home/lab-235-1920x816.mp4",
-    label: "2.35:1　1920×816　（上下各裁 132px）"
+    label: "2.35:1　1920×816　（从成片居中裁，字幕被切断）"
+  },
+  正式: {
+    src: "https://media.tdinfo.org/home/lab-hero-235-10-18.mp4",
+    label: "2.35:1　1920×816　拼接台出片，cropY=0.85"
   }
 } as const;
 
@@ -98,7 +102,7 @@ const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
 const ratio = (w: number, h: number) => (h > 0 ? (w / h).toFixed(2) : "–");
 
 export function HeroLab() {
-  const [clip, setClip] = useState<ClipKey>("2.35:1");
+  const [clip, setClip] = useState<ClipKey>("正式");
   const [layout, setLayout] = useState<LayoutKey>("aspect");
   const [fit, setFit] = useState<"cover" | "contain">("cover");
   const [mobile, setMobile] = useState(false);
