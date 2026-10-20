@@ -535,7 +535,10 @@ export const homeContentDefaults: HomeContent = {
         title: "九评共产党",
         en: "NINE COMMENTARIES",
         leadTitle: "九评之一：评共产党是什么",
-        leadHref: "/videos/九评之一：评共产党是什么",
+        /* 短链，不是 /videos/<slug>。全站 16,218 条地址在 2026-10 改成了拼音，
+           这里原来写死的是那支片子当时的中文 slug，改完就断了。短码认的是数据行
+           不是地址，以后谁再改名它都不会断 —— 种子文件里写死一个地址，就该写这种。 */
+        leadHref: "/v/T2ZEYmJ",
         image:
           "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/articles/fa/faf09d88a1467a2d.gif",
         badge: "▶",
