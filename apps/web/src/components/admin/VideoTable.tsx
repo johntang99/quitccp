@@ -149,10 +149,7 @@ export async function VideoTable({
                   >
                     预览 ↗
                   </a>{" "}
-                  <form method="post" action="/api/admin/content/videos/delete" style={{ display: "inline" }}>
-                    <input type="hidden" name="id" value={row.id} />
-                    <DeleteVideoButton title={row.title} />
-                  </form>
+                  <DeleteVideoButton id={row.id} title={row.title} />
                 </td>
               </tr>
             );

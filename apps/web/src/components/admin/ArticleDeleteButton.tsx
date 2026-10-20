@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { DeleteImpact } from "./DeleteImpact";
 
 /**
  * Delete one article, behind a confirmation that names it.
@@ -61,8 +62,10 @@ export function ArticleDeleteButton({ id, title }: { id: string; title: string }
             style={{
               background: "#fff",
               borderRadius: 6,
-              width: "min(440px, 100%)",
+              width: "min(520px, 100%)",
               padding: "20px 22px 18px",
+              maxHeight: "min(86vh, 720px)",
+              overflowY: "auto",
               boxShadow: "0 18px 48px rgba(18,13,45,.28)"
             }}
           >
@@ -72,9 +75,12 @@ export function ArticleDeleteButton({ id, title }: { id: string; title: string }
             <p style={{ margin: "0 0 6px", lineHeight: 1.6, wordBreak: "break-word" }}>
               《{title}》
             </p>
-            <p style={{ margin: "0 0 18px", color: "#8a90a0", fontSize: 13, lineHeight: 1.6 }}>
+            <p style={{ margin: "0 0 12px", color: "#8a90a0", fontSize: 13, lineHeight: 1.6 }}>
               删除后文章将从网站上消失，原链接变成 404。此操作无法在后台撤销。
             </p>
+            {/* 对话框一打开就查，不等第二次点击 —— 这正是「铁证如山」32 集被删时
+                没人看见的那句话。 */}
+            <DeleteImpact kind="article" id={id} />
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button
                 className="admin-btn"
