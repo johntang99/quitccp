@@ -413,7 +413,10 @@ export interface VideoInput {
   editorArchive: boolean;
 }
 
-export async function saveVideo(input: VideoInput, actorEmail: string): Promise<string> {
+export async function saveVideo(
+  input: VideoInput,
+  actorEmail: string
+): Promise<{ id: string; previousSlug: string | null }> {
   const supabase = createSupabaseAdminClient();
   const payload = {
     slug: input.slug,
@@ -498,7 +501,10 @@ export async function saveVideo(input: VideoInput, actorEmail: string): Promise<
 
   // Searchable at once; not awaited, so a search outage cannot fail a save.
   void indexContentById("video", id);
-  return id;
+  /* 把旧地址一起交出去：改名之后调用方要让旧地址那一页也失效，否则它会继续
+     用缓存里的 200 服务最多 5 分钟，而不是 308 跳到新地址。文章那边一直是这么
+     做的（articles/route.ts 同时传新旧两个 slug），视频这边漏了。 */
+  return { id, previousSlug };
 }
 
 export async function deleteVideo(id: string): Promise<void> {

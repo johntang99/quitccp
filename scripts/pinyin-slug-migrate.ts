@@ -201,6 +201,30 @@ async function rollback(client: pg.Client) {
           /* 被我们改成指向新地址的，改回去 */
           await client.query(`update cms_redirects set destination_url = $1 where destination_url = $2`, [was, now]);
           await client.query(`update ${table} set slug = slug_legacy, slug_legacy = null where id = $1`, [row.id]);
+          /*
+           * 反方向补一条「新拼音地址 → 旧地址」。这一条不是多余的 ——
+           * 没有它，回退会在生产上造成真实的 404，这是实测出来的。
+           *
+           * 中间件处理老 WP 地址用的是自己的缓存：一个没有 TTL 的进程内 Map，
+           * 外加 `next: { revalidate: 3600 }`。那里的注释写着「跳转目的地只有
+           * 重跑迁移时才会变」—— 这次改名正是那个情况。于是回退之后最长一小时
+           * 里，中间件仍然认为「老 WP 地址 → 拼音地址」，而拼音地址已经不存在：
+           *
+           *     /2002/09/21/14179/  →（陈旧缓存）→  /news/2002-09-21-wu-...  →  404
+           *
+           * 有了这一条，那条陈旧的链接得以接上：
+           *
+           *     ...  →  /news/2002-09-21-wu-...  →  /news/吴弘达：改造班禅喇嘛  ✓
+           *
+           * 往前改名的方向不需要对称的处理 —— 那个方向上陈旧缓存指向的是旧地址，
+           * 而旧地址这时已经有「旧 → 新」的跳转，自己就接上了。只有回退这一侧
+           * 的链条会断。
+           */
+          await client.query(
+            `insert into cms_redirects (legacy_url, destination_url, status_code) values ($1, $2, 308)
+             on conflict (legacy_url) do update set destination_url = excluded.destination_url`,
+            [now, was]
+          );
           total += 1;
         }
         await client.query("commit");

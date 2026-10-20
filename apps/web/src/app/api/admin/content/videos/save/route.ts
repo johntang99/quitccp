@@ -76,8 +76,9 @@ export async function POST(request: Request) {
   const published = publishedRaw ? new Date(publishedRaw) : null;
 
   let savedId = id;
+  let saved: { id: string; previousSlug: string | null } | null = null;
   try {
-    savedId = await saveVideo({
+    saved = await saveVideo({
       id: id || undefined,
       slug,
       title,
@@ -96,12 +97,16 @@ export async function POST(request: Request) {
       featured: flag("featured"),
       editorArchive: flag("editorArchive")
     }, user.email);
+    savedId = saved.id;
   } catch (error) {
     return reject(explainSaveFailure(error));
   }
 
   /* The public pages are cached now, so a save has to say so. */
-  await revalidateVideos(slug ? [slug] : []);
+  /* 改名时新旧两个地址都要失效，否则旧地址继续用缓存里的 200 服务到期为止。 */
+  await revalidateVideos(
+    saved?.previousSlug && saved.previousSlug !== slug ? [slug, saved.previousSlug] : slug ? [slug] : []
+  );
 
   if (wantsJson) {
     return NextResponse.json({

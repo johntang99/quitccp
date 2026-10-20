@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { MarkdownEditor, type MarkdownEditorHandle } from "./MarkdownEditor";
 import { warmPages } from "@/lib/admin/warm-pages";
+import { requestSlug, useAutoSlug } from "./use-auto-slug";
 
 /**
  * The single article form, used for both creating and editing.
@@ -119,30 +120,28 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
     }
   }, []);
 
-  /**
-   * The slug for a title.
+  /*
+   * 地址从标题生成，中文转拼音：2026-09-29-biao-ti。
    *
-   * With the prefix on: 2026-09-29-标题. It uses the publication date, which is
-   * today for a new article, so two pieces with the same title on different days
-   * no longer collide -- 46 of the 74 duplicate titles in the existing 15,515
-   * are on different days.
+   * 原来这里是本地一行 `title.replace(/\s+/g, "-")`，中文原样留在地址里。
+   * 2026-10 读者反映那种地址显示出来是一堵百分号，于是全站 16,218 条改成了
+   * 拼音 —— 新建的这一边必须同时改，否则编辑第二天发的文章又是中文地址，
+   * 站上立刻变回两种形状。
+   *
+   * 拼音词典有一兆多，只能放在服务端，所以这里是一次网络往返；请求失败时
+   * `useAutoSlug` 用本地规则兜底。
+   *
+   * 日期前缀用这一篇自己的发布时间，不是今天 —— 编辑回填旧日期是常事，而
+   * 前缀存在的意义就是区分同名文章。
+   *
+   * 地址只跟到生成出来为止。之后再改标题不会动它：改一个错字不该悄悄换掉
+   * 一个已经发出去的地址。
    */
-  const buildSlug = (title: string) => {
-    const base = title.trim().replace(/\s+/g, "-");
-    if (!base || !datePrefix) return base;
-    const when = v.publishedAt ? new Date(v.publishedAt) : new Date();
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const stamp = `${when.getFullYear()}-${pad(when.getMonth() + 1)}-${pad(when.getDate())}`;
-    return `${stamp}-${base}`;
-  };
-
-  // The slug follows the title only until it has been generated once. After
-  // that a typo fix in the title must not silently change a live URL.
-  useEffect(() => {
-    if (slugTouched || mode === "edit") return;
-    set("slug", buildSlug(v.title));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [v.title, datePrefix, v.publishedAt]);
+  useAutoSlug(
+    v.title,
+    { enabled: !slugTouched && mode !== "edit", withDate: datePrefix, at: v.publishedAt || null },
+    (slug) => set("slug", slug)
+  );
 
   // Ask whether the slug is free while the editor is still typing, so a clash
   // shows up here rather than as a refusal after they press 保存.
@@ -307,9 +306,13 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
                 <button
                   type="button"
                   className="admin-btn"
-                  onClick={() => {
+                  onClick={async () => {
                     setSlugTouched(true);
-                    set("slug", buildSlug(v.title));
+                    try {
+                      set("slug", await requestSlug(v.title, { withDate: datePrefix, at: v.publishedAt || null }));
+                    } catch {
+                      /* 取不到就不动 —— 把地址清空比保留旧的更糟。 */
+                    }
                   }}
                 >
                   由标题重新生成
@@ -346,7 +349,7 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
                 ) : null}
               </div>
               <span className="hint">
-                站内现有文章的网址都是中文，这里沿用同一种写法，不需要英文。
+                标题会自动转成拼音，例如「三退大潮」→ santui-dachao。中文地址编码后是一长串百分号，所以全站都用拼音。
                 {v.slug ? <> 最终网址：<code>/news/{v.slug}</code></> : null}
                 {mode === "edit" ? " 发布后修改会让旧链接失效。" : ""}
               </span>

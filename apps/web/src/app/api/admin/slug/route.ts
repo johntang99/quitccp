@@ -26,6 +26,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Title too long" }, { status: 400 });
   }
 
-  const slug = slugifyTitle(title, { withDate: params.get("date") === "1" });
+  /* 日期前缀用这一篇自己的发布时间，不是今天。编辑回填旧日期是常事，而前缀
+     存在的意义就是区分同名文章 —— 全都盖上今天，它就什么也没区分。 */
+  const slug = slugifyTitle(title, {
+    withDate: params.get("date") === "1",
+    date: params.get("at") || null
+  });
   return NextResponse.json({ slug });
 }

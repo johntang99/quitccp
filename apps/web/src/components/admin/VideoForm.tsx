@@ -6,6 +6,7 @@ import { GanjingEmbedNotice } from "./GanjingEmbedNotice";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { MarkdownEditor, type MarkdownEditorHandle } from "./MarkdownEditor";
 import { warmPages } from "@/lib/admin/warm-pages";
+import { requestSlug, useAutoSlug } from "./use-auto-slug";
 
 /**
  * The single video form, used for both creating and editing.
@@ -170,19 +171,13 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
     }
   }, []);
 
-  const buildSlug = (title: string) => {
-    const base = title.trim().replace(/\s+/g, "-");
-    if (!base || !datePrefix) return base;
-    const when = value.publishedAt ? new Date(value.publishedAt) : new Date();
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${when.getFullYear()}-${pad(when.getMonth() + 1)}-${pad(when.getDate())}-${base}`;
-  };
-
-  useEffect(() => {
-    if (slugTouched || mode === "edit") return;
-    set("slug", buildSlug(value.title));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value.title, datePrefix, value.publishedAt]);
+  /* 和文章页同一套：标题转拼音、日期前缀用这一支自己的发布时间、地址生成
+     一次之后不再跟着标题走。理由写在 ArticleForm 里那一段。 */
+  useAutoSlug(
+    value.title,
+    { enabled: !slugTouched && mode !== "edit", withDate: datePrefix, at: value.publishedAt || null },
+    (slug) => set("slug", slug)
+  );
 
   useEffect(() => {
     const slug = value.slug.trim();
@@ -425,9 +420,13 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                 <button
                   className="admin-btn admin-btn-sm"
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     setSlugTouched(true);
-                    set("slug", buildSlug(value.title));
+                    try {
+                      set("slug", await requestSlug(value.title, { withDate: datePrefix, at: value.publishedAt || null }));
+                    } catch {
+                      /* 取不到就不动 —— 把地址清空比保留旧的更糟。 */
+                    }
                   }}
                 >
                   由标题生成
