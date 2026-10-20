@@ -17,8 +17,8 @@ import { randomInt } from "node:crypto";
  * 字母表里没有 0/O/o 和 1/l/I。
  *
  * 这些链接会被印在传单和展板上、被人用眼睛抄、被念出来 —— 现场征签的志愿者
- * 递出去一张纸，上面的 l 和 1 分不清就等于递了个死链。去掉之后还剩 56 个字符，
- * 7 位是 1.7 万亿种组合，对一万多条内容绰绰有余。
+ * 递出去一张纸，上面的 l 和 1 分不清就等于递了个死链。去掉之后还剩 57 个字符，
+ * 7 位是 1.95 万亿种组合，对一万多条内容绰绰有余。
  */
 const ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 const LENGTH = 7;

@@ -25,11 +25,105 @@ import { pinyin } from "pinyin-pro";
  * conversion stays here and the admin form asks for it over the network.
  */
 
-/** The admin's own date prefix, `2026-10-12-`, in the site's timezone. */
-function datePrefix(): string {
-  const now = new Date();
+/**
+ * `2026-10-12-`, from the piece's own publish date.
+ *
+ * It used to read the clock. That is right for a new piece being typed now and
+ * wrong for everything else: 把 16,218 条旧内容改成拼音地址时，它会给 2017 年
+ * 的文章盖上今天的日期。日期前缀是用来区分同名文章的，而同名的两篇几乎总是
+ * 发在不同的日子 —— 全部盖成同一天，前缀就什么也没区分。
+ *
+ * `when` 读不出日期就退回今天：新建表单没填发布时间时就是这种情况。
+ *
+ * ## 为什么按 UTC 取年月日
+ *
+ * 站上已经带日期前缀的 slug，拿它们自己的 `published_at` 比对过：前缀和 UTC
+ * 日期 5/5 吻合，和纽约时间只有 4/5。本来就该如此 —— 线上跑在 Vercel，服务器
+ * 时区就是 UTC，原来那版读本地时钟的代码在那里等同于 UTC。写明 UTC 是为了让
+ * 本地跑批出来的结果和线上一致：用本地时钟，在纽约跑这个迁移会把
+ * `2024-10-15T00:00Z` 算成 10-14，16,218 条里有一批日期会整体偏一天。
+ */
+function datePrefix(when?: Date | string | null): string {
+  const at = when ? new Date(when) : new Date();
+  const day = Number.isNaN(at.getTime()) ? new Date() : at;
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-`;
+  return `${day.getUTCFullYear()}-${pad(day.getUTCMonth() + 1)}-${pad(day.getUTCDate())}-`;
+}
+
+/**
+ * 标题里的集数，抽成一个短记号。
+ *
+ * 这个站的系列片很多，而集数往往在标题最末尾：
+ *
+ *     【人物专访】整个社会被共产党掌握着 老百姓完全被胁迫——维权斗士陈祥卫的抗争之路（四）
+ *
+ * 这一条拼出来远超 80 字符，按长度一截，「（四）」正好是被切掉的那一节 ——
+ * 于是（一）到（四）四集拿到同一个地址，四取其一，另外三条进了撞名处理。
+ * 集数不是标题的装饰，它是这四条内容之间唯一的区别。
+ *
+ * 认这几种写法：（三）（上）（下）、第 65 集、第十六期、EP21、(2)。
+ * 汉字数字转成阿拉伯数字 —— `-3` 比 `-san` 一眼就懂，而且地址里本来就有数字。
+ */
+const CN_NUM: Record<string, number> = {
+  一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10
+};
+
+function cnNumber(text: string): number | null {
+  if (/^\d+$/.test(text)) return Number(text);
+  /* 十一到九十九：十=10、十二=12、二十=20、二十三=23 */
+  const m = text.match(/^([一二两三四五六七八九])?十([一二三四五六七八九])?$/);
+  if (m) return (m[1] ? CN_NUM[m[1]] : 1) * 10 + (m[2] ? CN_NUM[m[2]] : 0);
+  const single = CN_NUM[text];
+  return single ?? null;
+}
+
+/** 集数在标题里的原文和它的短记号。跑批时要用原文去验「它到底保住了没有」。 */
+export function episodeMatch(title: string): { text: string; token: string } | null {
+  /* 第 N 集／期／部／季 */
+  const di = title.match(/第\s*([0-9]+|[一二两三四五六七八九十]+)\s*[集期部季]/);
+  if (di) {
+    const n = cnNumber(di[1]);
+    if (n !== null) return { text: di[0], token: String(n) };
+  }
+  /* EP21 / ep 21 */
+  const ep = title.match(/\bEP\s*([0-9]+)/i);
+  if (ep) return { text: ep[0], token: `ep${Number(ep[1])}` };
+  /* （三）（上）（下）（上集）（下篇）(2) —— 括号里只许是一个数字或方位词，
+     后面最多再跟一个 集篇部季期。所以（图文）（视频）（音频）这类不会误判：
+     图、视、音 都不在允许的字集里。实测 16,218 条标题，这条规则把 219 条
+     「长得像集数」的里面真正是集数的挑了出来，而「第一人」「第一次」「原因
+     之一」这些留在了外面。 */
+  const paren = title.match(
+    /[（(]\s*(?:之\s*)?([0-9]{1,3}|[一二两三四五六七八九十]{1,3}|上|中|下|前|后)\s*[集篇部季期]?\s*[）)]/
+  );
+  if (paren) {
+    const raw = paren[1];
+    const named: Record<string, string> = { 上: "shang", 中: "zhong", 下: "xia", 前: "qian", 后: "hou" };
+    if (named[raw]) return { text: paren[0], token: named[raw] };
+    const n = cnNumber(raw);
+    if (n !== null) return { text: paren[0], token: String(n) };
+  }
+
+  /* 「……之三」：系列片常用的写法，站上有九十多条。只认结尾处的，因为句中的
+     「之一」多半是「原因之一」那种意思，不是第几集。 */
+  const zhi = title.match(/之\s*([一二两三四五六七八九十]{1,3}|[0-9]{1,3})\s*$/);
+  if (zhi) {
+    const n = cnNumber(zhi[1]);
+    if (n !== null) return { text: zhi[0], token: String(n) };
+  }
+
+  /* 上集／下篇 这类不带括号的 */
+  const bare = title.match(/(上|中|下)\s*[集篇部]\s*$/);
+  if (bare) {
+    const named: Record<string, string> = { 上: "shang", 中: "zhong", 下: "xia" };
+    return { text: bare[0], token: named[bare[1]] };
+  }
+
+  return null;
+}
+
+export function episodeToken(title: string): string {
+  return episodeMatch(title)?.token ?? "";
 }
 
 /**
@@ -43,6 +137,10 @@ function stripDiacritics(value: string): string {
 export interface SlugOptions {
   /** Prepend `YYYY-MM-DD-`. The 资料 form offers this as a checkbox. */
   withDate?: boolean;
+  /** 用哪一天。留空就是今天 —— 旧内容改名时必须传它自己的发布日。 */
+  date?: Date | string | null;
+  /** 长度上限，默认 80。传 Infinity 可以拿到没截断的样子，跑批时用来统计。 */
+  limit?: number;
 }
 
 /**
@@ -75,7 +173,8 @@ export function slugifyTitle(title: string, options: SlugOptions = {}): string {
     .replace(/^-+|-+$/g, "");
 
   if (!base) return "";
-  return options.withDate ? `${datePrefix()}${trim(base)}` : trim(base);
+  const body = trim(base, options.limit ?? 80, episodeToken(title));
+  return options.withDate ? `${datePrefix(options.date)}${body}` : body;
 }
 
 /**
@@ -89,9 +188,19 @@ export function slugifyTitle(title: string, options: SlugOptions = {}): string {
  * Cut at a hyphen so the slug never ends mid-syllable: `…-zhong-guo` rather
  * than `…-zhong-gu`.
  */
-function trim(base: string, limit = 80): string {
+function trim(base: string, limit = 80, episode = ""): string {
   if (base.length <= limit) return base;
-  const cut = base.slice(0, limit);
+
+  /* 要留给集数的位置。没有集数，或者它已经落在要保留的那一段里，就不用留。 */
+  const keep = episode ? `-${episode}` : "";
+  const room = keep ? limit - keep.length : limit;
+
+  const cut = base.slice(0, room);
   const lastBreak = cut.lastIndexOf("-");
-  return (lastBreak > limit / 2 ? cut.slice(0, lastBreak) : cut).replace(/-+$/, "");
+  const head = (lastBreak > room / 2 ? cut.slice(0, lastBreak) : cut).replace(/-+$/, "");
+  if (!keep) return head;
+
+  /* 按「整节」比对，不是按子串 —— 否则标题里随便一个 3 都会让我们以为集数还在。 */
+  const already = head.split("-").includes(episode);
+  return already ? head : `${head}${keep}`;
 }
