@@ -5241,7 +5241,8 @@ body:has(.hero--full-bleed) > header .search {
 
 @media (max-width: 600px) {
   .sharebox-in { flex-direction: column; gap: 12px; padding: 16px; }
-  .sharefield { width: 100%; height: 44px; }
+  /* 46 而不是 44：边框吃掉 2px 后，里面「复制」那颗才正好够 44 的触控高。 */
+  .sharefield { width: 100%; height: 46px; }
   .sharefield-url { flex-grow: 1; }
   .sharefield-copy { padding: 0 13px; }
   .shareacts { gap: 8px; }
