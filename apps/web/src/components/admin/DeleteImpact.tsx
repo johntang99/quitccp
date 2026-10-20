@@ -67,7 +67,6 @@ export function DeleteImpact({ kind, id }: { kind: "article" | "video"; id: stri
 
   const { external, hasOwnOld, redirectSample, inbound, inboundTotal } = data;
   const thing = kind === "video" ? "这支视频" : "这篇文章";
-  const listPage = kind === "video" ? "/admin/videos" : "/admin/articles";
 
   if (external === 0 && inboundTotal === 0) {
     return (
@@ -106,17 +105,29 @@ export function DeleteImpact({ kind, id }: { kind: "article" | "video"; id: stri
         <p style={{ margin: "6px 0 0" }}>
           · 站内有 <b>{inboundTotal}</b> 处内容链接到{thing}，删掉后那里会出现死链：
           <br />
-          {inbound.map((row) => (
-            <span key={`${row.kind}-${row.id}`} style={{ color: tone.hint }}>
-              {KIND_NAME[row.kind] ?? row.kind}《{row.label}》
-              <br />
-            </span>
-          ))}
+          {inbound.map((row) => {
+            /* 每一条直接链到它自己的编辑页。牵连的往往不是文章 —— 问答在
+               /admin/faq，视频在 /admin/videos，写死一个入口就是指错地方。 */
+            const href = EDIT_PATH[row.kind]?.(row.id);
+            const name = `${KIND_NAME[row.kind] ?? row.kind}《${row.label}》`;
+            return (
+              <span key={`${row.kind}-${row.id}`} style={{ color: tone.hint }}>
+                {href ? (
+                  <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: tone.color }}>
+                    {name} ↗
+                  </a>
+                ) : (
+                  name
+                )}
+                <br />
+              </span>
+            );
+          })}
           {inboundTotal > inbound.length ? (
             <span style={{ color: tone.hint }}>…另外 {inboundTotal - inbound.length} 处<br /></span>
           ) : null}
           <span style={{ color: tone.hint }}>
-            这些要手工改 —— 链接指向一篇即将不存在的内容，没有哪种自动改法是对的。在 {listPage} 里逐个编辑。
+            这些要手工改 —— 链接指向一篇即将不存在的内容，没有哪种自动改法是对的。
           </span>
         </p>
       ) : null}
@@ -129,4 +140,12 @@ const KIND_NAME: Record<string, string> = {
   video: "视频",
   faq: "问答",
   page: "页面"
+};
+
+/* 页面内容没有按 id 的编辑页，落到列表页；其余三类都能直接点进去。 */
+const EDIT_PATH: Record<string, (id: string) => string> = {
+  article: (id) => `/admin/articles/${id}`,
+  video: (id) => `/admin/videos/${id}`,
+  faq: (id) => `/admin/faq/${id}`,
+  page: () => "/admin/content"
 };
