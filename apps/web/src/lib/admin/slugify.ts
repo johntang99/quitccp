@@ -141,6 +141,20 @@ export interface SlugOptions {
   date?: Date | string | null;
   /** 长度上限，默认 80。传 Infinity 可以拿到没截断的样子，跑批时用来统计。 */
   limit?: number;
+  /**
+   * 截断时保住标题末尾那一段。
+   *
+   * 平时不用。它是给撞名准备的第二次尝试：两条标题前 80 个字符一样、区别在
+   * 最末尾时，按长度一截就成了同一个地址。站上真有这种 —— 同一场集会的五篇
+   * 报导，区别只在结尾的发言人名字：
+   *
+   *   8千多法轮功学员…退出中共(吴文昕发言）
+   *   8千多法轮功学员…退出中共(张锦华发言）
+   *
+   * 退而求其次给它们 `-2`、`-3` 是合规的，但那样的地址等于没信息，正是我们
+   * 做这次改名要消灭的东西。打开这个开关，头部让出位置，把末尾接回来。
+   */
+  keepTail?: boolean;
 }
 
 /**
@@ -173,7 +187,7 @@ export function slugifyTitle(title: string, options: SlugOptions = {}): string {
     .replace(/^-+|-+$/g, "");
 
   if (!base) return "";
-  const body = trim(base, options.limit ?? 80, episodeToken(title));
+  const body = trim(base, options.limit ?? 80, episodeToken(title), options.keepTail ?? false);
   return options.withDate ? `${datePrefix(options.date)}${body}` : body;
 }
 
@@ -188,19 +202,45 @@ export function slugifyTitle(title: string, options: SlugOptions = {}): string {
  * Cut at a hyphen so the slug never ends mid-syllable: `…-zhong-guo` rather
  * than `…-zhong-gu`.
  */
-function trim(base: string, limit = 80, episode = ""): string {
-  if (base.length <= limit) return base;
-
-  /* 要留给集数的位置。没有集数，或者它已经落在要保留的那一段里，就不用留。 */
-  const keep = episode ? `-${episode}` : "";
-  const room = keep ? limit - keep.length : limit;
-
+function cutAtHyphen(base: string, room: number): string {
+  if (base.length <= room) return base.replace(/-+$/, "");
   const cut = base.slice(0, room);
   const lastBreak = cut.lastIndexOf("-");
-  const head = (lastBreak > room / 2 ? cut.slice(0, lastBreak) : cut).replace(/-+$/, "");
-  if (!keep) return head;
+  return (lastBreak > room / 2 ? cut.slice(0, lastBreak) : cut).replace(/-+$/, "");
+}
 
-  /* 按「整节」比对，不是按子串 —— 否则标题里随便一个 3 都会让我们以为集数还在。 */
-  const already = head.split("-").includes(episode);
-  return already ? head : `${head}${keep}`;
+/** 末尾的几节，凑够能区分开就停 —— 整节整节地取，不切断音节。 */
+function lastSegments(base: string, budget: number): string {
+  const seg = base.split("-");
+  let tail = "";
+  for (let i = seg.length - 1; i >= 0; i -= 1) {
+    const next = tail ? `${seg[i]}-${tail}` : seg[i];
+    if (next.length > budget) break;
+    tail = next;
+    /* 够长到能区分就停。12 太短，人名会被切成半个（吴文昕只剩 wen-xin）；
+       16 够装下「wu-wen-xin-fa-yan」这种整段。头部让出的那几节本来就是两条
+       标题共有的部分，缩短它不损失任何信息。 */
+    if (tail.length >= 16) break;
+  }
+  return tail;
+}
+
+function trim(base: string, limit = 80, episode = "", keepTail = false): string {
+  if (base.length <= limit) return base;
+
+  /*
+   * 末尾必须保住的那一段：要么是用来区分的尾巴（撞名时的第二次尝试），要么
+   * 是集数。两者都落在标题末尾，而末尾正是按长度一截最先被切掉的地方。
+   */
+  const suffix = keepTail ? lastSegments(base, 26) : episode;
+  if (!suffix) return cutAtHyphen(base, limit);
+
+  const head = cutAtHyphen(base, limit - suffix.length - 1);
+
+  /* 按「整节」比对，不是按子串 —— 否则标题里随便一个 3 都会让我们以为集数
+     还在。尾巴是多节的，就看 head 是不是已经以它结尾。 */
+  const already = suffix.includes("-")
+    ? head.endsWith(suffix)
+    : head.split("-").includes(suffix);
+  return already ? head : `${head}-${suffix}`;
 }

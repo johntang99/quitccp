@@ -71,6 +71,25 @@ async function main() {
   const mapped: Mapped[] = [];
   const empty: Row[] = [];
 
+  /*
+   * 两遍扫描，不是一遍。
+   *
+   * 一遍扫描是「谁先来谁拿干净地址，后来的让位」，结果取决于查询顺序 —— 迁移
+   * 脚本中途失败重跑一次，顺序一变，两条内容的地址就可能对调。已经发出去的
+   * 地址不能这样随机。
+   *
+   * 所以先算一遍默认地址，把会挤在一起的找出来；这些组里的每一条都走「保住
+   * 标题末尾」，谁也不占那个笼统的地址。剩下真分不开的（标题本来就一模一样）
+   * 才按 id 排序依次加 -2、-3，这个顺序是稳定的。
+   */
+  const firstPass = new Map<string, number>();
+  for (const row of rows) {
+    const s = slugifyTitle(row.title, { withDate: true, date: row.published_at });
+    if (!s) continue;
+    const key = `${row.kind}:${s}`;
+    firstPass.set(key, (firstPass.get(key) ?? 0) + 1);
+  }
+
   for (const row of rows) {
     const match = episodeMatch(row.title);
     const ep = match?.token ?? "";
@@ -87,11 +106,23 @@ async function main() {
     const untrimmed = slugifyTitle(row.title, { withDate: false, limit: Infinity });
     const truncated = base.slice(11) !== untrimmed;
 
+    /* 这一条的默认地址被别人也算到了，就整组改用「保住标题末尾」。同一场
+       集会的几篇报导，区别只在结尾的发言人名字，把末尾接回来就自己分开了，
+       而且地址还看得懂。 */
     let next = base;
     let bump = 0;
+    if ((firstPass.get(`${row.kind}:${base}`) ?? 0) > 1) {
+      const withTail = slugifyTitle(row.title, {
+        withDate: true,
+        date: row.published_at,
+        keepTail: true
+      });
+      if (withTail) next = withTail;
+    }
+    const stem = next;
     while (taken[row.kind].has(next)) {
       bump += 1;
-      next = `${base}-${bump + 1}`; // 第二条是 -2，第三条是 -3
+      next = `${stem}-${bump + 1}`; // 第二条是 -2，第三条是 -3
     }
     taken[row.kind].add(next);
     mapped.push({ ...row, next, bump, truncated, episode: ep, episodeText: match?.text ?? "" });
