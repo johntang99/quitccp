@@ -779,14 +779,82 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
 /* ------------------------------------------------------------------ */
 
 /** Every check, run together. Never throws: a failed probe is a check result. */
+/**
+ * 有多少条旧链接跳到了不存在的地址。
+ *
+ * 这件事 2026-10-20 咬过两回，两回都不是当天发现的：「铁证如山」32 集改成视频
+ * 重发之后文章版被删，旧 WP 地址开始 308 跳 404；拼音迁移改了全站 slug，而旧站
+ * 「中华传统文化」「资料下载」两栏那 379 篇的重定向目标写的是 /resources/<中文>，
+ * 段前缀对不上，迁移脚本没认出来，整批断了四天。
+ *
+ * 为什么非得有个东西定时问这一句：站内爬虫撞不到它们。没有任何页面链接到这些
+ * 地址，sitemap 里也没有，唯一的入口是读者手里的旧链接 —— 而读者不会报告 404。
+ * 原来的 validate-redirects.ts 只验形状（不重复、以 / 开头、301、前缀在白名单
+ * 里），/resources/乐曲-听儿说 每一项都合格。
+ *
+ * 阈值是 0，不是「少于几条」。2026-10-20 清掉了那 157 条内容确实已经没了的
+ * （见 docs/implementation/retired-redirects.csv），所以现在 0 是真实的基线。
+ * 一条跳到 404 的重定向不比直接 404 好，它只是多一跳 —— 既然如此，让这个数字
+ * 维持在 0 就既便宜又让报警有意义。往后它一变大，就是真的有东西刚断。
+ */
+async function checkDeadRedirects(): Promise<DefenseCheck> {
+  const key = "dead_redirects";
+  const label = "旧链接去向";
+
+  try {
+    const supabase = createSupabaseAdminClient();
+    const [{ data: count, error }, { count: total }] = await Promise.all([
+      supabase.rpc("count_dead_redirects"),
+      supabase.from("cms_redirects").select("id", { count: "exact", head: true })
+    ]);
+    if (error) throw new Error(error.message);
+
+    const dead = Number(count ?? 0);
+    if (dead === 0) {
+      return { key, label, state: "ok", value: `${total ?? "?"} 条全部指向现有内容` };
+    }
+
+    /* 看到数字之后第一个问题一定是「哪几条」，所以直接把前几条列进去。 */
+    const { data: sample } = await supabase.rpc("list_dead_redirects", { p_limit: 5 });
+    const listed = Array.isArray(sample)
+      ? (sample as { legacy_url: string; destination_url: string }[])
+          .map((r) => `${r.legacy_url} → ${r.destination_url}`)
+          .join("；")
+      : "";
+
+    return {
+      key,
+      label,
+      state: "bad",
+      value: `${dead} 条跳到不存在的地址`,
+      remedy:
+        `有 ${dead} 条重定向的目标已经不存在，读者点旧链接会先跳一次再看到 404。` +
+        (listed ? `例如：${listed}。` : "") +
+        "先分清是「内容搬了」还是「内容没了」：" +
+        "搬了的跑 npx tsx scripts/repoint-stale-destinations.ts（按 slug_legacy 配，改名的都能自动接上）；" +
+        "改成了别的形态、比如文章改视频的，跑 npx tsx scripts/repoint-series-redirects.ts；" +
+        "确实没了的跑 npx tsx scripts/retire-dead-redirects.ts，它会先把清单写进 " +
+        "docs/implementation/retired-redirects.csv 再删。三个脚本都默认预演，加 --apply 才动库。"
+    };
+  } catch (error) {
+    return {
+      key,
+      label,
+      state: "unknown",
+      value: error instanceof Error ? error.message.slice(0, 60) : "查不到"
+    };
+  }
+}
+
 export async function getDefenseStatus(): Promise<DefenseReport> {
-  const [recent, search, archive, rendered] = await Promise.all([
+  const [recent, search, archive, rendered, redirects] = await Promise.all([
     checkMirrorComplete(),
     checkSearchBound(),
     checkLogArchive(),
-    checkRenderedPage()
+    checkRenderedPage(),
+    checkDeadRedirects()
   ]);
-  const checks = [checkMirrorSwitch(), recent, search, ...rendered, archive];
+  const checks = [checkMirrorSwitch(), recent, search, ...rendered, archive, redirects];
   return { checks, worst: worstOf(checks), checkedAt: new Date().toISOString() };
 }
 

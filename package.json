@@ -27,6 +27,7 @@
     "content:seed:prototype": "tsx scripts/seed-prototype-content.ts",
     "redirects:build": "tsx scripts/build-redirect-map.ts",
     "redirects:validate": "tsx scripts/validate-redirects.ts",
+    "redirects:check": "tsx scripts/check-redirect-targets.ts",
     "redirects:load": "tsx scripts/load-redirects.ts",
     "content:seed:home": "tsx scripts/seed-home-content.ts",
     "build:check": "node scripts/build-check.mjs",
