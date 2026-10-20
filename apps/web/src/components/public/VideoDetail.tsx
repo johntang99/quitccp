@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
+import { ShortLink } from "@/components/public/ShortLink";
 import { MarkdownBody } from "@/components/public/MarkdownBody";
 import { markdownToBodyRows } from "@/lib/public-content";
 import type { PublicVideoRecord, PublicVideoCard } from "@/lib/public-content";
@@ -176,6 +177,10 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
                   改看干净世界版本 ↗
                 </a>
               ) : null}
+              {/* 短地址放播放器正下方，不放页尾：视频是看几秒就想转发的东西，
+                  等读者翻到底部人已经走了。文章可以留在末尾，那是约定俗成的
+                  位置，而且文章要读完才会想分享。 */}
+              <ShortLink code={video.shortCode ?? ""} kind="v" className="vghost" />
             </div>
           </div>
         </div>

@@ -661,7 +661,7 @@ async function loadRenderableArticle(
       .from("cms_articles")
       .select(
         "id, slug, title, summary, body_markdown, body_plain, status, updated_at, published_at, " +
-          "author, hero_image, hero_image_alt, hero_credit"
+          "author, hero_image, hero_image_alt, hero_credit, short_code"
       )
       .eq("slug", normalizedSlug)
       .eq("locale", "zh")
@@ -792,6 +792,9 @@ async function loadRenderableArticle(
       content: {
         ...fallbackContent,
         title: String(row.title),
+        /* 可分享的短地址，没有就是空串。模板据此决定要不要把那一行显示出来 ——
+           回填之前、以及通过「新闻列表条目」虚拟出来的文章，都是没有的。 */
+        shortCode: row.short_code ? String(row.short_code) : "",
         // The importer set summary to the first 240 characters of the body, so
         // showing it as the standfirst reprints the opening paragraph directly
         // above itself. Only show a standfirst that says something the body
@@ -888,6 +891,8 @@ export interface PublicVideoRecord {
   sourceCredit: string;
   publishedAt: string | null;
   durationSeconds: number | null;
+  /** 可分享的短地址 `/v/<code>`，回填之前是空串。 */
+  shortCode: string;
   category: string;
   /** Slug of the same category, for the breadcrumb and the 继续观看 band. */
   categorySlug: string;
@@ -917,7 +922,7 @@ export async function getRenderableVideo(slug: string): Promise<PublicVideoRecor
       .from("cms_videos")
       .select(
         "id, slug, title, episode, description, body_markdown, source_url, backup_url, cover_image, " +
-          "cover_image_alt, speaker, source_credit, published_at, duration_seconds, status"
+          "cover_image_alt, speaker, source_credit, published_at, duration_seconds, status, short_code"
       )
       .eq("slug", normalized)
       .eq("status", "published")
@@ -957,6 +962,8 @@ export async function getRenderableVideo(slug: string): Promise<PublicVideoRecor
       sourceCredit: String(row.source_credit ?? ""),
       publishedAt: row.published_at ? String(row.published_at) : null,
       durationSeconds: row.duration_seconds ? Number(row.duration_seconds) : null,
+      /* 可分享的短地址，回填之前是空的。页面据此决定要不要显示那一行。 */
+      shortCode: row.short_code ? String(row.short_code) : "",
       category,
       categorySlug,
       siblings
@@ -2621,6 +2628,39 @@ export async function getPublicFaqSlugByLegacyId(legacyId: number): Promise<stri
  * retitling one in the new admin would otherwise break every card and episode
  * row pointing at it. See [[getPublicFaqSlugByLegacyId]].
  */
+/**
+ * 短码 → 现在的 slug。
+ *
+ * 短码指向的是那一行数据，不是地址，所以文章改名之后它照样解析得到 —— 这正是
+ * 它存在的理由：发出去的链接不会因为日后换地址而失效。
+ *
+ * 和 `getArticleSlugByLegacyId` 一样，数据库出错时抛而不是返回 null：调用方把
+ * null 变成 `notFound()`，而那个 404 会被缓存，于是一次查询失败会让一篇真实
+ * 存在的文章 404 一个小时。
+ */
+export async function getArticleSlugByShortCode(code: string): Promise<string | null> {
+  const supabase = createSupabasePublicClient();
+  const { data, error } = await supabase
+    .from("cms_articles")
+    .select("slug")
+    .eq("short_code", code)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? String(data.slug) : null;
+}
+
+/** 视频的同一件事。 */
+export async function getVideoSlugByShortCode(code: string): Promise<string | null> {
+  const supabase = createSupabasePublicClient();
+  const { data, error } = await supabase
+    .from("cms_videos")
+    .select("slug")
+    .eq("short_code", code)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? String(data.slug) : null;
+}
+
 export async function getArticleSlugByLegacyId(legacyId: number): Promise<string | null> {
   const supabase = createSupabasePublicClient();
   const { data, error } = await supabase

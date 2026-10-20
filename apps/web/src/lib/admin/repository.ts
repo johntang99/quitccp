@@ -3,6 +3,7 @@ import { routeSeeds } from "@quitccp/content-schema";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { indexContentById, indexContentByIds } from "@/lib/search-index";
 import { publicPath, recordSlugRedirect } from "@/lib/slug-redirects";
+import { newShortCode } from "@/lib/short-code";
 import type {
   ArticleRecord,
   AuditRecord,
@@ -834,12 +835,25 @@ export async function upsertArticleRecord(
     ? { updated_by: actorEmail }
     : { created_by: actorEmail, updated_by: actorEmail };
 
+  /*
+   * 新建时给一个短码，改的时候一个字都不碰。
+   *
+   * 短码一旦发出去就不能变 —— 外面可能已经有人在用它。所以这里只在 insert
+   * 的 payload 里出现：`id` 存在就是编辑，编辑路径上连这个键都不该有，
+   * 免得哪天有人把它当成可更新字段。
+   *
+   * 不查库确认是否撞码：1.7 万亿分之一，而唯一索引会把真撞上的那一次变成
+   * 一个保存失败，编辑重试一次就过去了。拿一次必然的查询去换一次永远不会
+   * 发生的失败，不划算。
+   */
+  const shortCode = id ? {} : { short_code: newShortCode() };
+
   let result = await retryTransient(() =>
-    write({ ...base, ...editorial, ...authorship }, `${baseSelect}, ${ARTICLE_EDITORIAL_COLUMNS}`)
+    write({ ...base, ...editorial, ...authorship, ...shortCode }, `${baseSelect}, ${ARTICLE_EDITORIAL_COLUMNS}`)
   );
   if (result.error && isMissingEditorialColumn(result.error)) {
     // Pre-migration: save what the table can hold rather than failing the edit.
-    result = await retryTransient(() => write(base, baseSelect));
+    result = await retryTransient(() => write({ ...base, ...shortCode }, baseSelect));
   }
   if (result.error) throw result.error;
   const data = result.data as unknown as ArticleRow;

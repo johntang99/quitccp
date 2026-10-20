@@ -303,7 +303,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
                 related-report grid below is a separate block and keeps the
                 sheet's full width. */}
             <div className="article-tools" style={{ marginTop: 44, paddingTop: 26, borderTop: "1px solid var(--rule)", display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <ArticleTools />
+              <ArticleTools shortCode={asString(payload.shortCode)} />
               {actionPills.map((action) => (
                 <a key={action.label} className="pill" href={action.href}>
                   {action.label}

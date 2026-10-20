@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { indexContentById, indexContentByIds } from "@/lib/search-index";
 import { publicPath, recordSlugRedirect } from "@/lib/slug-redirects";
+import { newShortCode } from "@/lib/short-code";
 
 /**
  * Videos and their categories.
@@ -460,9 +461,12 @@ export async function saveVideo(input: VideoInput, actorEmail: string): Promise<
     }
     if (error) throw error;
   } else {
-    let { data, error } = await supabase.from("cms_videos").insert(withFlags).select("id").single();
+    /* 新建才给短码，编辑不碰 —— 发出去的短码不能变，外面可能已经有人在用。
+       撞码的概率是 1.7 万亿分之一，交给唯一索引兜底，不值得先查一次库。 */
+    const fresh = { short_code: newShortCode() };
+    let { data, error } = await supabase.from("cms_videos").insert({ ...withFlags, ...fresh }).select("id").single();
     if (error && isMissingFlagColumn(error)) {
-      ({ data, error } = await supabase.from("cms_videos").insert(payload).select("id").single());
+      ({ data, error } = await supabase.from("cms_videos").insert({ ...payload, ...fresh }).select("id").single());
     }
     if (error) throw error;
     if (!data) throw new Error("保存失败：数据库没有返回新建视频的 id。");
