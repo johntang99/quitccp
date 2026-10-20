@@ -205,6 +205,13 @@ export function ShareBlock({
         ) : null}
       </div>
 
+      {/* 只在打印时出现。屏幕上转载条款在侧栏里，而侧栏不上纸 —— 一张印出来
+          准备再传出去的纸，恰恰最需要这一句和来源。 */}
+      <p className="share-printnote">
+        {kind === "v" ? "本片" : "本文"}可自由转载、翻译与再制作，无需事先取得授权，注明来源即可。
+        来源：全球退党服务中心 {shown}
+      </p>
+
       {/* 弹层挂到 body 上：这一块外面任何一层有 transform 都会让 position:fixed
           改认那一层当参照，弹层就会卡在版心里。 */}
       {mounted && qrOpen && qr

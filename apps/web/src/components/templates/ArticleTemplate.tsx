@@ -333,7 +333,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
               </div>
             ) : null}
             {relatedItems.length > 0 ? (
-              <div style={{ marginTop: 56 }}>
+              <div className="article-related" style={{ marginTop: 56 }}>
                 <p className="eyebrow">{asString(relatedSection.eyebrow, "相关报导")}</p>
                 <div className="arch">
                   {relatedItems.map((item, index) => (

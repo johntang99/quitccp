@@ -5274,16 +5274,133 @@ body:has(.hero--full-bleed) > header .search {
   .sharebox[data-native="1"] .shareicons { display: none; }
 }
 
-/* 打印时只留能带走的东西：二维码和那条地址。按钮印在纸上没有意义。 */
+.share-printnote { display: none; }
+
+/* ---------- 打印 ---------- */
+/*
+ * 这个站的文章是拿来传的：打印出来贴在公告栏、夹在传单里、递给不上网的人。
+ * 在这之前全站一条打印样式都没有，按「打印」会把导航、搜索框、侧栏的捐助
+ * 按钮和整个页脚一起印上纸，正文被挤成窄窄一条。
+ *
+ * 规则只有一条：纸上留下的东西，要让拿到这张纸的人能读完、并且知道它从哪
+ * 来、怎么回到网上。所以留标题、正文、配图、二维码和来源；去掉屏幕上用来
+ * 点的一切。
+ */
 @media print {
-  .sharebox-in { background: none; border-color: #999; }
+  /* 四边留白按 A4／Letter 都站得住的尺寸给。 */
+  @page { margin: 18mm 16mm; }
+
+  html, body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+  body { font-size: 12pt; }
+
+  /* 站点框架、导航、推广、评论、同类推荐：都是屏幕上的东西 */
+  body > header,
+  body > footer,
+  .side,
+  .vrail,
+  .article-related,
+  .vmore,
+  .vplayer,
+  .vghost,
+  .shareqr-veil { display: none !important; }
+
+  /* 两栏变一栏，白纸去掉圆角、阴影和多余内边距 */
+  .wrap, .cols, .article-cols, .vgrid {
+    display: block !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .sec, .article-page, .article-surface, .vsheet, .vstage {
+    background: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .article-surface .prose,
+  .article-surface .article-tools,
+  .article-surface .sharebox,
+  .vsheet .prose {
+    max-width: none !important;
+    margin-inline: 0 !important;
+  }
+
+  /*
+   * 影片页的片头带本来是深紫底，上面的字是杏色和淡紫。底一没，这些字就是
+   * 白纸上的白字 —— 实测「约 357 字」的数字整个看不见。全部压回黑灰。
+   */
+  .vseries, .vseries *, .vmeta b, .vnum, .vhost { color: #000000 !important; }
+  .vhost { border-color: #999999 !important; }
+  .vhost i { background: #000000 !important; }
+
+  /* 正文：12pt 起步，段落不留孤行 */
+  .prose p, .vlede, .dek, .byline, .vmeta {
+    color: #000000 !important;
+    orphans: 2;
+    widows: 2;
+  }
+  .prose p { font-size: 12pt; line-height: 1.7; }
+  .dek { font-size: 12pt; }
+  .byline, .vmeta, .crumb, .vcrumb { font-size: 10pt; color: #444444 !important; }
+
+  /* 标题不许单独留在一页的最后一行 */
+  h1, h2, h3, h4 {
+    color: #000000 !important;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  .article-title, .vtitle { font-size: 20pt; line-height: 1.35; }
+  .prose h2 { font-size: 14pt; }
+  .prose h3 { font-size: 12.5pt; }
+
+  /* 图连着它的说明一起翻页 */
+  figure, img, table, blockquote {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  img { max-width: 100% !important; height: auto !important; }
+  figcaption { font-size: 9.5pt; color: #444444 !important; }
+
+  /*
+   * 正文里的链接不展开成网址。通常的打印样式会把 href 印在链接后面，但这个
+   * 站的地址是中文标题，编码后一条就是上百个百分号 —— 印出来的是一堵乱码，
+   * 比不印更糟。读者要回到网上，走底下那个二维码。
+   */
+  a { color: #000000 !important; text-decoration: underline; }
+  a[href]::after { content: none !important; }
+  /* 面包屑印在纸上是栏目名，不是可以点的东西 */
+  .crumb a, .vcrumb a { text-decoration: none; }
+
+  /* 分享区：留二维码和地址，点的东西都去掉 */
+  .sharebox { break-inside: avoid; page-break-inside: avoid; margin-top: 24px; padding-top: 14px; }
+  .sharebox-in {
+    background: none !important;
+    border-color: #999999 !important;
+    padding: 12px 0 !important;
+    gap: 16px;
+  }
+  .sharebox-h { color: #000000 !important; }
   .sharefield-copy,
   .shareicons,
   .sharesep,
   .sharebtn,
   .sharenative { display: none !important; }
-  .sharefield { border-color: #999; }
+  .sharefield { border-color: #999999 !important; height: auto !important; }
+  .sharefield-url { color: #000000 !important; font-size: 10pt; padding: 4px 8px; }
   .shareqr { display: flex !important; }
+  .shareqr-tile { border-color: #999999 !important; }
+  .share-printnote {
+    display: block;
+    margin: 10px 0 0;
+    font-size: 9.5pt;
+    line-height: 1.6;
+    color: #444444 !important;
+  }
 }
 
 .article-page .side { top: calc(var(--menubar-h, 55px) + 44px); }
