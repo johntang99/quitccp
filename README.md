@@ -22,11 +22,11 @@ git pull --rebase
 git push
 ```
 
-admin123
+
 admin@quitccp.org
 
 This repository contains the full implementation for the QuitCCP dynamic platform:
-
+Chengcheng830
 - `apps/web` - Unified Next.js app:
   - Public site routes
   - Admin CMS routes under `/admin/*`

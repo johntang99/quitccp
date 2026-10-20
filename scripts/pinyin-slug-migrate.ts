@@ -131,37 +131,92 @@ async function migrate(client: pg.Client, changes: Change[]) {
  *
  * 要同时认两种写法：库里存的可能是原样的中文，也可能是 %E4%B8 这种编码过的。
  */
-async function fixLinks(client: pg.Client, changes: Change[], undo = false) {
+/**
+ * 只替换「完整的一段路径」，不是裸子串。
+ *
+ * 第一版是 `text.split(from).join(to)`。站上有一篇文章的旧 slug 就是单个字符
+ * `2`，于是 `/news/2` 这个替换键命中了正文里每一条外部链接：
+ *
+ *   http://www.bloomberg.com/news/2011-11-01/china-says-no-talking-tibet
+ *                               ↑ 这里的 /news/2 被换成了整条拼音地址
+ *
+ * 实际改坏了 13 行，而且因为新地址本身以 `2` 开头、又被下一轮再次命中，嵌套了
+ * 四层。已经逐行还原。
+ *
+ * 所以：命中之后还要看紧跟着的那个字符。地址在文本里总是以边界收尾 —— 引号、
+ * 空白、右括号、标点、或者就是结尾。后面若是字母、数字、连字符，说明这只是
+ * 另一条更长地址的前缀，不能动。
+ */
+function replacePath(text: string, from: string, to: string): string {
+  let out = "";
+  let i = 0;
+  for (;;) {
+    const at = text.indexOf(from, i);
+    if (at === -1) return out + text.slice(i);
+    const after = text[at + from.length];
+    const isBoundary = after === undefined || !/[A-Za-z0-9\-_%.]/.test(after);
+    out += text.slice(i, at) + (isBoundary ? to : from);
+    i = at + from.length;
+  }
+}
+
+async function fixLinks(client: pg.Client, _changes: Change[], undo = false) {
+  /* 列名写错过一次：FAQ 的正文列叫 answer_markdown，不是 answer。下面那个
+     `catch { continue }` 把「列不存在」当成「这张表没这一列，跳过」静静吞掉，
+     于是那张表整个没被处理，而输出上看不出任何异常。所以现在先验列名存在，
+     不存在就报出来。 */
   const targets: [string, string][] = [
     ["cms_articles", "body_markdown"],
     ["cms_videos", "body_markdown"],
     ["cms_content_entries", "data"],
-    ["cms_faqs", "answer"]
+    ["cms_faqs", "answer_markdown"]
   ];
 
-  const pairs = changes.map((c) => {
-    const from = publicPath(c.kind, c.slug);
-    const to = publicPath(c.kind, c.next);
-    return undo ? ([to, from] as const) : ([from, to] as const);
-  });
+  for (const [table, column] of targets) {
+    const r = await client.query(
+      `select count(*)::int n from information_schema.columns where table_name = $1 and column_name = $2`,
+      [table, column]
+    );
+    if (r.rows[0].n === 0) throw new Error(`${table} 没有 ${column} 这一列 —— 列名写错了，不是「这张表不需要处理」`);
+  }
+
+  /*
+   * 替换对来自库里的 slug_legacy → slug，不是来自重算的计划。
+   *
+   * 第一版拿计划里的 `slug → next` 构造，结果是「将改 0 行」：改名跑完之后，
+   * 库里读出来的 slug 已经是新地址，重算的 next 还是它自己，from 和 to 相等，
+   * 什么都匹配不上 —— 一个只会安静地什么都不做的 bug。真跑一遍才看出来。
+   *
+   * slug_legacy 记录的是真实发生过的事，比任何重算都可靠。
+   */
+  const pairs: (readonly [string, string])[] = [];
+  for (const kind of ["article", "video"] as const) {
+    const r = await client.query(
+      `select slug, slug_legacy from ${TABLE[kind]} where slug_legacy is not null and slug <> slug_legacy`
+    );
+    for (const row of r.rows as { slug: string; slug_legacy: string }[]) {
+      const from = publicPath(kind, row.slug_legacy);
+      const to = publicPath(kind, row.slug);
+      pairs.push(undo ? ([to, from] as const) : ([from, to] as const));
+    }
+  }
+  if (!APPLY) console.log(`  （共 ${pairs.length} 组替换对）`);
 
   let touched = 0;
   for (const [table, column] of targets) {
-    let rows: { id: string; text: string }[];
-    try {
-      const r = await client.query(
+    const rows = (
+      await client.query(
         `select id::text, ${column}::text as text from ${table} where ${column}::text ~ '/(news|videos)/'`
-      );
-      rows = r.rows;
-    } catch {
-      continue; // 这张表没有这一列，跳过
-    }
+      )
+    ).rows as { id: string; text: string }[];
 
     for (const row of rows) {
       let next = row.text;
       for (const [from, to] of pairs) {
         if (!next.includes(from) && !next.includes(encodeURI(from))) continue;
-        next = next.split(from).join(to).split(encodeURI(from)).join(encodeURI(to));
+        next = replacePath(next, from, to);
+        const enc = encodeURI(from);
+        if (enc !== from) next = replacePath(next, enc, encodeURI(to));
       }
       if (next === row.text) continue;
       touched += 1;
