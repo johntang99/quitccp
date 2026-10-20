@@ -5160,12 +5160,19 @@ body:has(.hero--full-bleed) > header .search {
   padding: 3px 9px;
 }
 .vhost i { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+/* 这个类原本只给 <a> 用，所以从来不必关心按钮的默认外观。短地址那一颗是
+   <button>，拿到的是浏览器自带的 buttonface 灰底（#efefef）——杏色的字落在
+   灰底上就是看不见。下面四行是把按钮打回到「一段带框的文字」。 */
 .vghost {
   margin-left: auto;
   border: 1px solid rgba(255, 255, 255, .28);
   border-radius: 2px;
   padding: 6px 13px;
   color: var(--paper);
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  font-size: inherit;
 }
 .vghost:hover { border-color: var(--gold); color: var(--gold-lt); }
 
