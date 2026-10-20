@@ -1,5 +1,7 @@
 import { NoWrapTitles } from "@/components/public/NoWrapTitles";
 import { ArticleTools } from "@/components/public/ArticleTools";
+import { ShareBlock } from "@/components/public/ShareBlock";
+import { toQrCode } from "@/lib/qr";
 import { ArticleAudio } from "@/components/public/ArticleAudio";
 import { ArticleVideo } from "@/components/public/ArticleVideo";
 import { renderInline } from "@/components/public/MarkdownBody";
@@ -84,6 +86,12 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
           : []
       }));
   const displayTitle = title;
+  /* 二维码在服务端就算好：短码渲染这一刻已经在手上，算出来是一条 path，
+     页面上不跑任何脚本，也不必把读者送去第三方的二维码接口。 */
+  const shortCode = asString(payload.shortCode);
+  const shareQr = shortCode
+    ? toQrCode(`${(process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "")}/a/${shortCode}`)
+    : null;
   const breadcrumb = asRecord(payload.breadcrumb);
   const currentLabel = asString(breadcrumb.current, asString(payload.tag, "新闻与报告"));
   const currentHref = asString(breadcrumb.currentHref);
@@ -302,14 +310,28 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
                 article, so it belongs to the body rather than to the page. The
                 related-report grid below is a separate block and keeps the
                 sheet's full width. */}
-            <div className="article-tools" style={{ marginTop: 44, paddingTop: 26, borderTop: "1px solid var(--rule)", display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <ArticleTools shortCode={asString(payload.shortCode)} />
-              {actionPills.map((action) => (
-                <a key={action.label} className="pill" href={action.href}>
-                  {action.label}
-                </a>
-              ))}
-            </div>
+            {shortCode ? <ShareBlock code={shortCode} kind="a" title={displayTitle} qr={shareQr} /> : null}
+            {!shortCode || actionPills.length > 0 ? (
+              <div
+                className="article-tools"
+                style={{
+                  marginTop: shortCode ? 20 : 44,
+                  paddingTop: shortCode ? 0 : 26,
+                  borderTop: shortCode ? undefined : "1px solid var(--rule)",
+                  display: "flex",
+                  gap: 10,
+                  flexWrap: "wrap"
+                }}
+              >
+                {/* 没有短码的只剩「新闻列表条目」虚拟出来的那种，退回老的两颗。 */}
+                {shortCode ? null : <ArticleTools />}
+                {actionPills.map((action) => (
+                  <a key={action.label} className="pill" href={action.href}>
+                    {action.label}
+                  </a>
+                ))}
+              </div>
+            ) : null}
             {relatedItems.length > 0 ? (
               <div style={{ marginTop: 56 }}>
                 <p className="eyebrow">{asString(relatedSection.eyebrow, "相关报导")}</p>

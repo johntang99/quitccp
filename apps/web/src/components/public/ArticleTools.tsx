@@ -1,25 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { ShortLink } from "@/components/public/ShortLink";
 
 /**
- * The row of actions under an article.
+ * 没有短码的文章结尾那两颗。
  *
- * These were four `href="#"` links: clicking any of them jumped to the top of
- * the page and did nothing else. Each one now does what its label says, and the
- * ones we cannot honour are not shown rather than shown broken -- 下载 PDF,
- * for which nothing in the codebase generates a PDF, and 转载说明, which only
- * scrolled to the 转载条款 panel already visible in the sidebar beside it.
+ * 这里原来是四个 `href="#"` 的链接：点哪一个都只是跳回页首。后来剩下能真正
+ * 做事的两颗 —— 下载 PDF（全站没有任何东西生成 PDF）和转载说明（只是滚到
+ * 侧栏里已经看得见的那一块）宁可不显示，也不显示成坏的。
  *
- * 短地址那一颗是 `ShortLink`，和视频页用的是同一个 —— 复制的退路写一份就够，
- * 两份迟早会有一份没修到。
+ * 有短码的文章现在走 `<ShareBlock>`，那一块才是文末的正主。回填之后只剩
+ * 「新闻列表条目」虚拟出来的文章还没有码，走到这里来。
  */
-export function ArticleTools({ shortCode }: { shortCode?: string }) {
+export function ArticleTools() {
   const [copied, setCopied] = useState(false);
 
-  /* 没有短码时才会走到这里：复制当前地址，也就是那条长的。回填之后只剩
-     「新闻列表条目」虚拟出来的文章还没有码。 */
+  /** 复制当前地址，也就是那条长的 —— 没有短码时只能如此。 */
   const copyCurrent = async () => {
     const url = window.location.href;
     try {
@@ -45,13 +41,9 @@ export function ArticleTools({ shortCode }: { shortCode?: string }) {
 
   return (
     <>
-      {shortCode ? (
-        <ShortLink code={shortCode} kind="a" />
-      ) : (
-        <button type="button" className="pill" onClick={copyCurrent}>
-          {copied ? "已复制 ✓" : "复制链接"}
-        </button>
-      )}
+      <button type="button" className="pill" onClick={copyCurrent}>
+        {copied ? "已复制 ✓" : "复制链接"}
+      </button>
       <button type="button" className="pill" onClick={() => window.print()}>
         打印
       </button>

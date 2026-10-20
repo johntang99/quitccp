@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { ShortLink } from "@/components/public/ShortLink";
+import { ShareBlock } from "@/components/public/ShareBlock";
+import { toQrCode } from "@/lib/qr";
 import { MarkdownBody } from "@/components/public/MarkdownBody";
 import { markdownToBodyRows } from "@/lib/public-content";
 import type { PublicVideoRecord, PublicVideoCard } from "@/lib/public-content";
@@ -108,6 +110,10 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
   const railVideos = video.siblings.slice(0, 3);
   const bandVideos = video.siblings.slice(3, 7);
   const categoryHref = video.categorySlug ? (`/videos/${video.categorySlug}` as Route) : ("/videos" as Route);
+  /* 二维码在服务端算好，页面上不跑脚本，也不必把读者送去第三方的二维码接口。 */
+  const shareQr = video.shortCode
+    ? toQrCode(`${(process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "")}/v/${video.shortCode}`)
+    : null;
 
   return (
     <>
@@ -198,6 +204,12 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
             ) : null}
 
             {video.sourceCredit ? <p className="vcredit">{video.sourceCredit}</p> : null}
+
+            {/* 和文章页同一块。播放器下面那颗短地址留着 —— 它服务的是「看了几秒
+                就想转发」的人，这一块服务的是看完了的人，两个时刻不一样。 */}
+            {video.shortCode ? (
+              <ShareBlock code={video.shortCode} kind="v" title={video.title} qr={shareQr} />
+            ) : null}
           </article>
 
           {showToc || railVideos.length > 0 ? (
