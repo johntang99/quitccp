@@ -141,6 +141,19 @@ export default async function ResourcesPage({ params }: ResourcesPageProps) {
   }
 
   const article = await getRenderableArticle(slug);
-  if (!article) notFound();
+  /*
+   * 查不到就再按 /news/ 的形式查一次改名记录，而不是直接 404。
+   *
+   * 这 379 篇的地址在拼音迁移里改了，指向它们的重定向却仍写着旧的中文 slug，
+   * 于是 /resources/<中文> 在这里查不到文章 —— 和 /news/[slug] 是同一个坑，
+   * 那边 10-12 已经补上（见 0e97f3e），这条分支当时漏了，迁移之后才暴露。
+   */
+  if (!article) {
+    const moved = await findSlugRedirect(publicPath.article(decodeURIComponent(slug)));
+    /* Location 头是 latin1，中文地址不先 encodeURI 就交给 permanentRedirect，
+       会在 setHeader 里抛 TypeError，读者拿到的是 500 而不是跳转。 */
+    if (moved) permanentRedirect(encodeURI(moved));
+    notFound();
+  }
   return <TemplateRenderer {...article} />;
 }
