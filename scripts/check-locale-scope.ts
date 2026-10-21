@@ -84,6 +84,31 @@ function statementAt(lines: string[], start: number): string {
   return parts.join("\n");
 }
 
+/**
+ * 写入的 payload 里带没带 locale。
+ *
+ * `.insert(row)` 这种写法，locale 不在这条语句里，而在上面构造 `row` 的地方。
+ * 只看语句本身会把一堆其实正确的写入报成问题，而一个总在误报的检查器，很快就会
+ * 被人用出口注释一个个按掉 —— 那时它就只剩形式了。
+ *
+ * 所以顺着变量名回查它的声明，在声明体里找 locale。只跟一层：再深就要写一个
+ * 真正的解析器，而这是个几十行的检查脚本，不是编译器。跟不动的少数情况用
+ * `locale-ok` 注明，那本来就是留给需要人解释的场合。
+ */
+function payloadHasLocale(lines: string[], stmt: string): boolean {
+  const m = /\.(insert|upsert)\(\s*([A-Za-z_$][\w$]*)\s*[,)]/.exec(stmt);
+  if (!m) return false;
+  const name = m[2];
+  const decl = new RegExp(`(const|let|var)\\s+${name}\\b`);
+  for (let i = 0; i < lines.length; i += 1) {
+    if (!decl.test(lines[i])) continue;
+    /* 声明体往下 30 行 —— 这些 payload 对象通常十几到二十几行。 */
+    const body = lines.slice(i, i + 30).join("\n");
+    if (/locale/.test(body)) return true;
+  }
+  return false;
+}
+
 function check(): Finding[] {
   const findings: Finding[] = [];
   for (const root of ROOTS) {
@@ -108,6 +133,7 @@ function check(): Finding[] {
         if (/locale-ok\s*:/.test(near)) continue;
 
         if (/locale/.test(stmt)) continue;
+        if (payloadHasLocale(lines, stmt)) continue;
         /* 按 id 查：id 是 uuid，全局唯一，跨站不会撞。 */
         if (/\.eq\(\s*["'`]id["'`]/.test(stmt)) continue;
         /* 关联表的外键同理。 */

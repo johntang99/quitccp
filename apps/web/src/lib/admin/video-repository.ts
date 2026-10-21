@@ -2,6 +2,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { indexContentById, indexContentByIds } from "@/lib/search-index";
 import { publicPath, recordSlugRedirect } from "@/lib/slug-redirects";
 import { newShortCode } from "@/lib/short-code";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * Videos and their categories.
@@ -50,6 +51,7 @@ export async function listVideoCategories(): Promise<VideoCategoryRecord[]> {
   const { data, error } = await supabase
     .from("cms_video_categories")
     .select("id, slug, name, description, sort_order")
+    .eq("locale", SITE_LOCALE)
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
   // Before 012 the tables do not exist; the admin should say so, not crash.
@@ -122,8 +124,12 @@ export async function upsertVideoCategory(
   if (input.description !== undefined) payload.description = input.description.trim() || null;
 
   const { error } = isUpdate
-    ? await supabase.from("cms_video_categories").update(payload).eq("id", input.id)
-    : await supabase.from("cms_video_categories").insert(payload);
+    ? await supabase
+        .from("cms_video_categories")
+        .update(payload)
+        .eq("id", input.id)
+        .eq("locale", SITE_LOCALE)
+    : await supabase.from("cms_video_categories").insert({ ...payload, locale: SITE_LOCALE });
   if (error) throw error;
 }
 
@@ -197,7 +203,9 @@ export async function searchVideos(filters: VideoSearchFilters): Promise<{
             count: "exact"
           })
           .eq("cms_video_category_map.cms_video_categories.slug", filters.category)
-      : supabase.from("cms_videos").select(select, { count: "exact" });
+      : /* locale-ok: 下一行统一限定。 */
+        supabase.from("cms_videos").select(select, { count: "exact" });
+    query = query.eq("locale", SITE_LOCALE);
     if (filters.q?.trim()) {
       const term = filters.q.trim().replace(/[%,()]/g, " ");
       query = query.or(`title.ilike.%${term}%,slug.ilike.%${term}%`);
@@ -467,9 +475,17 @@ export async function saveVideo(
     /* 新建才给短码，编辑不碰 —— 发出去的短码不能变，外面可能已经有人在用。
        撞码的概率是 1.7 万亿分之一，交给唯一索引兜底，不值得先查一次库。 */
     const fresh = { short_code: newShortCode() };
-    let { data, error } = await supabase.from("cms_videos").insert({ ...withFlags, ...fresh }).select("id").single();
+    let { data, error } = await supabase
+      .from("cms_videos")
+      .insert({ ...withFlags, ...fresh, locale: SITE_LOCALE })
+      .select("id")
+      .single();
     if (error && isMissingFlagColumn(error)) {
-      ({ data, error } = await supabase.from("cms_videos").insert({ ...payload, ...fresh }).select("id").single());
+      ({ data, error } = await supabase
+        .from("cms_videos")
+        .insert({ ...payload, ...fresh, locale: SITE_LOCALE })
+        .select("id")
+        .single());
     }
     if (error) throw error;
     if (!data) throw new Error("保存失败：数据库没有返回新建视频的 id。");
@@ -484,6 +500,7 @@ export async function saveVideo(
     const { data: category } = await supabase
       .from("cms_video_categories")
       .select("id")
+      .eq("locale", SITE_LOCALE)
       .eq("name", input.category)
       .maybeSingle();
     if (category) {
@@ -528,6 +545,7 @@ export async function bulkSetVideoCategory(ids: string[], categoryName: string):
   const { data: category } = await supabase
     .from("cms_video_categories")
     .select("id")
+    .eq("locale", SITE_LOCALE)
     .eq("name", categoryName)
     .maybeSingle();
   if (!category) throw new Error(`分类「${categoryName}」不存在。`);
@@ -556,7 +574,8 @@ export async function bulkSetVideoStatus(ids: string[], status: string): Promise
   const { error } = await supabase
     .from("cms_videos")
     .update({ status, updated_at: new Date().toISOString() })
-    .in("id", ids);
+    .in("id", ids)
+    .eq("locale", SITE_LOCALE);
   if (error) throw error;
   void indexContentByIds("video", ids);
   return ids.length;
@@ -568,7 +587,13 @@ export async function findVideoBySlug(
   exceptId?: string
 ): Promise<{ id: string; title: string } | null> {
   const supabase = createSupabaseAdminClient();
-  let query = supabase.from("cms_videos").select("id, title").eq("slug", slug);
+  /* slug 的唯一性现在是 (slug, locale) —— 查重名也必须带上，否则英文站一个
+     同名的视频会让中文站拒绝保存。 */
+  let query = supabase
+    .from("cms_videos")
+    .select("id, title")
+    .eq("locale", SITE_LOCALE)
+    .eq("slug", slug);
   if (exceptId) query = query.neq("id", exceptId);
   const { data } = await query.maybeSingle();
   return data ? { id: String(data.id), title: String(data.title) } : null;

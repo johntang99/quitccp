@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { indexContentById } from "@/lib/search-index";
 import { publicPath, recordSlugRedirect } from "@/lib/slug-redirects";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * 真相点资料 — the downloadable materials.
@@ -88,6 +89,7 @@ export async function listMaterialCategories(): Promise<{ ready: boolean; rows: 
   const { data, error } = await supabase
     .from("cms_material_categories")
     .select("id, slug, name, summary, sort_order")
+    .eq("locale", SITE_LOCALE)
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
   if (error) {
@@ -148,7 +150,10 @@ export async function searchMaterials(filters: MaterialSearchFilters): Promise<{
   const WITH_AUTHORSHIP = `${BASE_COLUMNS}, created_by, updated_by`;
 
   const run = async (columns: string) => {
-    let query = supabase.from("cms_materials").select(columns, { count: "exact" });
+    let query = supabase
+      .from("cms_materials")
+      .select(columns, { count: "exact" })
+      .eq("locale", SITE_LOCALE);
     if (filters.q?.trim()) {
       const term = `%${filters.q.trim()}%`;
       query = query.or(`title.ilike.${term},summary.ilike.${term},slug.ilike.${term}`);
@@ -261,6 +266,8 @@ export async function saveMaterial(input: MaterialInput, actorEmail: string): Pr
   const supabase = createSupabaseAdminClient();
 
   const row: Record<string, unknown> = {
+    /* 新建时决定它属于哪个站；更新时等于重申同一个值，无害。 */
+    locale: SITE_LOCALE,
     slug: input.slug,
     title: input.title,
     summary: input.summary,
@@ -309,14 +316,26 @@ export async function saveMaterial(input: MaterialInput, actorEmail: string): Pr
     : null;
 
   if (id) {
-    let { error } = await supabase.from("cms_materials").update(row).eq("id", id);
+    let { error } = await supabase
+      .from("cms_materials")
+      .update(row)
+      .eq("id", id)
+      /* 按 id 更新本来就不会撞，但加上这一句，跨站的写入会变成影响 0 行
+         而不是改掉别人的内容 —— 代价为零的第三重防线。 */
+      .eq("locale", SITE_LOCALE);
     if (error && missingAuthorship(error)) {
-      ({ error } = await supabase.from("cms_materials").update(withoutAuthorship()).eq("id", id));
+      ({ error } = await supabase
+        .from("cms_materials")
+        .update(withoutAuthorship())
+        .eq("id", id)
+        .eq("locale", SITE_LOCALE));
     }
     if (error) throw error;
   } else {
     let { data, error } = await supabase.from("cms_materials").insert(row).select("id").single();
     if (error && missingAuthorship(error)) {
+      /* locale-ok: withoutAuthorship() 是 row 的副本（只去掉两个作者字段），
+         locale 跟着 row 一起带过来了。 */
       ({ data, error } = await supabase
         .from("cms_materials")
         .insert(withoutAuthorship())
@@ -384,7 +403,11 @@ export async function saveMaterial(input: MaterialInput, actorEmail: string): Pr
 
 export async function deleteMaterial(id: string): Promise<void> {
   const supabase = createSupabaseAdminClient();
-  const { error } = await supabase.from("cms_materials").delete().eq("id", id);
+  const { error } = await supabase
+    .from("cms_materials")
+    .delete()
+    .eq("id", id)
+    .eq("locale", SITE_LOCALE);
   if (error) throw error;
   void indexContentById("material", id);
 }
@@ -397,9 +420,19 @@ export async function upsertMaterialCategory(input: {
   sortOrder: number;
 }): Promise<void> {
   const supabase = createSupabaseAdminClient();
-  const row = { slug: input.slug, name: input.name, summary: input.summary, sort_order: input.sortOrder };
+  const row = {
+    slug: input.slug,
+    name: input.name,
+    summary: input.summary,
+    sort_order: input.sortOrder,
+    locale: SITE_LOCALE
+  };
   if (input.id) {
-    const { error } = await supabase.from("cms_material_categories").update(row).eq("id", input.id);
+    const { error } = await supabase
+      .from("cms_material_categories")
+      .update(row)
+      .eq("id", input.id)
+      .eq("locale", SITE_LOCALE);
     if (error) throw error;
   } else {
     const { error } = await supabase.from("cms_material_categories").insert(row);

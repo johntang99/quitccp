@@ -164,11 +164,98 @@ async function checkSelfcheck() {
   }
 }
 
+/**
+ * 后台能不能用。
+ *
+ * 多语言收口改的大部分是后台的查询 —— 文章列表、视频列表、分类、资料、统计。
+ * 公开页面全绿不代表后台没坏：它们走的是完全不同的代码路径，而编辑每天都在用。
+ *
+ * 用编辑账号登录，而不是管理员：编辑权限最小，能过就说明没有把什么东西卡在
+ * 权限之外；而且这是真实使用中最常见的那种会话。
+ */
+async function checkAdmin() {
+  console.log("\n【后台】");
+  const email = process.env.VERIFY_ADMIN_EMAIL;
+  const password = process.env.VERIFY_ADMIN_PASSWORD;
+  if (!email || !password) {
+    console.log("  － 没有 VERIFY_ADMIN_EMAIL / VERIFY_ADMIN_PASSWORD，跳过");
+    return;
+  }
+
+  const jar: string[] = [];
+  const cookie = () => jar.join("; ");
+  const take = (res: Response) => {
+    const raw = res.headers.getSetCookie?.() ?? [];
+    for (const c of raw) {
+      const pair = c.split(";")[0];
+      const name = pair.split("=")[0];
+      const i = jar.findIndex((x) => x.startsWith(`${name}=`));
+      if (i >= 0) jar[i] = pair;
+      else jar.push(pair);
+    }
+  };
+
+  try {
+    take(await fetch(`${BASE}/admin/login`, { headers: PROBE && !LOCAL ? { "x-quitccp-probe": PROBE } : {} }));
+    const body = new URLSearchParams({ email, password });
+    const login = await fetch(`${BASE}/api/admin/auth/login`, {
+      method: "POST",
+      body,
+      headers: {
+        cookie: cookie(),
+        "content-type": "application/x-www-form-urlencoded",
+        ...(PROBE && !LOCAL ? { "x-quitccp-probe": PROBE } : {})
+      },
+      redirect: "manual"
+    });
+    take(login);
+    if (login.status !== 303 && login.status !== 302) {
+      fail(`登录失败：${login.status}`);
+      return;
+    }
+    ok("登录");
+  } catch (error) {
+    fail(`登录出错：${error instanceof Error ? error.message : ""}`);
+    return;
+  }
+
+  const pages = [
+    ["/admin/dashboard", "总览"],
+    ["/admin/articles", "文章列表"],
+    ["/admin/articles/stats", "文章统计"],
+    ["/admin/videos", "视频列表"],
+    ["/admin/videos/stats", "视频统计"],
+    ["/admin/categories", "文章分类"],
+    ["/admin/materials", "资料"],
+    ["/admin/faq", "常见问答"],
+    ["/admin/content", "页面内容"],
+    ["/admin/media", "图片视频库"],
+    ["/admin/logs", "日志"],
+    ["/admin/settings", "设置"]
+  ];
+  for (const [path, label] of pages) {
+    try {
+      const res = await fetch(BASE + path, {
+        headers: { cookie: cookie(), ...(PROBE && !LOCAL ? { "x-quitccp-probe": PROBE } : {}) },
+        redirect: "manual"
+      });
+      const html = res.status === 200 ? await res.text() : "";
+      /* 200 还不够 —— 被踢回登录页也是 200。认登录表单的特征。 */
+      if (res.status !== 200) fail(`${label} → ${res.status}`);
+      else if (/name="password"/.test(html)) fail(`${label}：被踢回登录页`);
+      else ok(`${label}`);
+    } catch (error) {
+      fail(`${label}：${error instanceof Error ? error.message : ""}`);
+    }
+  }
+}
+
 async function main() {
   console.log(`\n========== 检查 ${BASE}（locale=${LOCALE}）==========`);
   await checkPages();
   await checkRedirects();
   await checkDatabase();
+  await checkAdmin();
   await checkSelfcheck();
 
   console.log("");

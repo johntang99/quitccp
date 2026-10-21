@@ -144,14 +144,17 @@ export async function seedPagesIfEmpty(actorEmail = "system@quitccp.local") {
   const supabase = createSupabaseAdminClient();
   const { count, error: countError } = await supabase
     .from("cms_pages")
-    .select("id", { count: "exact", head: true });
+    .select("id", { count: "exact", head: true })
+    /* 按站数。不限定的话，新开的英文站会因为中文站已有页面而永远播不了种 ——
+       它会一直是空的，而且不报错。 */
+    .eq("locale", SITE_LOCALE);
   if (countError) throw countError;
   if ((count ?? 0) > 0) return;
 
   const rows = routeSeeds.map((seed) => ({
     section: seed.section,
     slug: seed.slug,
-    locale: "zh",
+    locale: SITE_LOCALE,
     title: seed.title,
     template_kind: seed.template,
     status: "draft",
@@ -392,6 +395,7 @@ export async function listArticles(
     const { data: categories } = await supabase
       .from("cms_article_categories")
       .select("id")
+      .eq("locale", SITE_LOCALE)
       .or(`name.eq.${categoryName},slug.eq.${categorySlug}`)
       .limit(1);
     if (!categories || categories.length === 0) {
@@ -461,6 +465,7 @@ export async function listArticles(
       let built = supabase
         .from("cms_articles")
         .select(select, { count: "exact" })
+        .eq("locale", SITE_LOCALE)
         .order("updated_at", { ascending: false })
         .order("id", { ascending: false });
       if (filters.status) built = built.eq("status", filters.status);
@@ -582,6 +587,7 @@ async function setArticleTaxonomy(
     const { data: found } = await supabase
       .from("cms_article_categories")
       .select("id")
+      .eq("locale", SITE_LOCALE)
       .or(`name.eq.${name},slug.eq.${slug}`)
       .limit(1);
     if (found && found.length > 0) {
@@ -590,7 +596,7 @@ async function setArticleTaxonomy(
     }
     const { data: made, error: makeError } = await supabase
       .from("cms_article_categories")
-      .insert({ slug, name })
+      .insert({ slug, name, locale: SITE_LOCALE })
       .select("id")
       .single();
     if (makeError) throw makeError;
@@ -900,7 +906,8 @@ export async function bulkUpdateArticleStatus(ids: string[], status: PageStatus,
   const { error } = await supabase
     .from("cms_articles")
     .update({ status, editorial_status: status })
-    .in("id", ids);
+    .in("id", ids)
+    .eq("locale", SITE_LOCALE);
   if (error) throw error;
   // Publishing or archiving in bulk changes what belongs in the index as surely
   // as a single save does.
@@ -932,6 +939,7 @@ export async function bulkSetPrimaryCategory(
   const { data: found } = await supabase
     .from("cms_article_categories")
     .select("id")
+    .eq("locale", SITE_LOCALE)
     .or(`name.eq.${name},slug.eq.${slug}`)
     .limit(1);
   if (!found || found.length === 0) throw new Error(`分类不存在：${name}`);
@@ -1198,6 +1206,7 @@ export async function listCategories(actorEmail: string): Promise<CategoryRecord
   const ordered = await supabase
     .from("cms_article_categories")
     .select("id, slug, name, description, sort_order, is_news_listing")
+    .eq("locale", SITE_LOCALE)
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
   let categoryRows = ordered.data as CategoryRow[] | null;
@@ -1207,6 +1216,7 @@ export async function listCategories(actorEmail: string): Promise<CategoryRecord
     const fallback = await supabase
       .from("cms_article_categories")
       .select("id, slug, name, description")
+      .eq("locale", SITE_LOCALE)
       .order("name", { ascending: true });
     categoryRows = fallback.data as CategoryRow[] | null;
     categoryError = fallback.error;
@@ -1353,6 +1363,7 @@ export async function listVideos(actorEmail: string): Promise<VideoRecord[]> {
     .select(
       "id, slug, title, description, duration_seconds, cover_asset_id, download_asset_id, platform_ids, status, updated_at"
     )
+    .eq("locale", SITE_LOCALE)
     .order("updated_at", { ascending: false });
   if (error) throw error;
   await createAudit(actorEmail, "video.list", "video", "all", "read");
