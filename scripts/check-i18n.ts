@@ -26,9 +26,12 @@ const HAN = /[一-鿿]/g;
 
 /** 这些地方的中文不算「界面文案」。 */
 const SKIP = [
-  "lib/i18n/",          // 文案表本身
-  "lib/zh-variants",    // 繁简字符表
-  "lib/zhuichaguoji",   // 外部数据源的字段名
+  "lib/i18n/",            // 文案表本身
+  "lib/zh-variants",      // 繁简字符表：中文专属数据，不是文案
+  "lib/search-synonyms",  // 同义词表：同上，已按语言门控
+  "lib/zhuichaguoji",     // 外部数据源的字段名
+  "components/public/HeroLab",  // 首屏比例试验台：hero-lab 路由在生产环境直接 404
+  "app/hero-lab/",
   ".test.ts"
 ];
 
@@ -152,7 +155,11 @@ const isDead = (f: string) => DEAD.includes(f);
  * entries，这些兜底一句都不会出现在页面上。所以它们不是「待翻译的界面文案」，
  * 单列一栏比硬塞进任何一边都诚实。
  */
-const isTemplate = (f: string) => f.startsWith("components/templates/");
+const CMS_BACKED = [
+  "lib/section-nav.ts",   // 栏目标签：真正的来源是 nav/section-tabs.json，这里只是那一行缺失时的兜底
+  "lib/site-data.ts"      // 导航与首页标题：同上，来源是 pages/home.json 与 navigation.json
+];
+const isTemplate = (f: string) => f.startsWith("components/templates/") || CMS_BACKED.includes(f);
 const templateRows = all.filter((r) => isTemplate(r.file));
 const opsRows = all.filter((r) => isOps(r.file));
 const deadRows = all.filter((r) => isDead(r.file));
@@ -163,12 +170,12 @@ const sum = (rows: Row[]) => rows.reduce((n, r) => n + r.chars, 0);
 console.log("\n========== 界面文案 ==========\n");
 console.log(`  公开站界面   还有 ${sum(publicRows)} 个汉字写死在 ${publicRows.length} 个文件里  ← 要翻`);
 console.log(`  后台界面     还有 ${sum(adminRows)} 个汉字写死在 ${adminRows.length} 个文件里  ← 要翻（中英两版）`);
-console.log(`  模板兜底     ${sum(templateRows)} 个汉字在 ${templateRows.length} 个文件里  ← 不用翻，内容走 CMS`);
+console.log(`  CMS 兜底     ${sum(templateRows)} 个汉字在 ${templateRows.length} 个文件里  ← 不用翻，内容走 CMS`);
 console.log(`  运维与报警   ${sum(opsRows)} 个汉字在 ${opsRows.length} 个文件里  ← 不用翻，只进日志和邮件`);
 console.log(`  死代码       ${sum(deadRows)} 个汉字在 ${deadRows.length} 个文件里  ← 不用翻，没有任何地方引用`);
 
 if (SHOW_FILES) {
-  for (const [label, rows] of [["公开站界面", publicRows], ["后台界面", adminRows], ["模板兜底", templateRows]] as [string, Row[]][]) {
+  for (const [label, rows] of [["公开站界面", publicRows], ["后台界面", adminRows], ["CMS 兜底", templateRows]] as [string, Row[]][]) {
     console.log(`\n--- ${label} ---`);
     for (const r of rows.slice(0, 25)) console.log(`  ${String(r.chars).padStart(5)}  ${r.file}`);
     if (rows.length > 25) console.log(`  …另外 ${rows.length - 25} 个文件`);

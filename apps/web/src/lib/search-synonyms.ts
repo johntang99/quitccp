@@ -1,3 +1,6 @@
+/* 相对路径不是 @/ 别名：这个文件有单元测试，而 `tsx --test` 从仓库根跑，
+   解析不到 apps/web/tsconfig.json 里的 paths。 */
+import { SITE_LOCALE } from "./site-config";
 /**
  * Words this archive uses interchangeably.
  *
@@ -60,5 +63,14 @@ const SYNONYM_INDEX: Map<string, string[]> = (() => {
  * meant.
  */
 export function synonymsOf(term: string): string[] {
+  /*
+   * 只在中文站展开。
+   *
+   * 这张表里的词是中文的 —— 三退、活摘、九评。英文站上没有一个词会命中它，
+   * 查表只是白跑；真正的问题是将来英文、德文站各有各的同义词
+   * （withdrawal / quit / resign，Austritt / Parteiaustritt），那是另外几张表，
+   * 不是把这一张硬套上去。按语言分支，和繁简变体表同一个道理。
+   */
+  if (SITE_LOCALE !== "zh") return [term];
   return SYNONYM_INDEX.get(term.trim().toLowerCase()) ?? [term];
 }
