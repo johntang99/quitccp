@@ -846,15 +846,64 @@ async function checkDeadRedirects(): Promise<DefenseCheck> {
   }
 }
 
+/**
+ * 有没有跨语言的错误关联。
+ *
+ * 分类和标签的关联表（cms_article_category_map 等）不带 locale —— 它们靠两端的行
+ * 继承。这意味着一条「中文文章 → 德文分类」的关联在数据库层面是合法的，写得进去，
+ * 而且不会报错：那篇文章只是从此出现在一个它不该出现的栏目下。
+ *
+ * 收口层会在写入时挡住，但代码层的校验挡不住**已经写进去的**脏数据 —— 一次手工
+ * SQL、一个绕过收口层的脚本、一次导入，都能留下这种行。所以除了写入时拦，还要有
+ * 东西定时回头查一遍。
+ *
+ * 阈值是 0。现在确实是 0（037 迁移时核对过），所以这是一条真实的基线，不是摆设。
+ */
+async function checkCrossLocaleLinks(): Promise<DefenseCheck> {
+  const key = "cross_locale_links";
+  const label = "跨语言错误关联";
+
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data, error } = await supabase.rpc("count_cross_locale_links");
+    if (error) throw new Error(error.message);
+
+    const bad = Number(data ?? 0);
+    if (bad === 0) return { key, label, state: "ok", value: "0 条" };
+
+    return {
+      key,
+      label,
+      state: "bad",
+      value: `${bad} 条`,
+      remedy:
+        `有 ${bad} 条分类或标签关联把一种语言的内容挂到了另一种语言的栏目下。` +
+        "那篇内容会出现在它不该出现的栏目里，而前台不会报错。" +
+        "跑 select * from cms_article_category_map m join cms_articles a on a.id=m.article_id " +
+        "join cms_article_categories c on c.id=m.category_id where a.locale is distinct from c.locale " +
+        "找出具体是哪些（视频、资料、标签三张关联表同理），再决定是改分类还是改内容的语言。" +
+        "顺便查一下是谁写进去的 —— 能绕过收口层写入，说明还有一条没收住的路径。"
+    };
+  } catch (error) {
+    return {
+      key,
+      label,
+      state: "unknown",
+      value: error instanceof Error ? error.message.slice(0, 60) : "查不到"
+    };
+  }
+}
+
 export async function getDefenseStatus(): Promise<DefenseReport> {
-  const [recent, search, archive, rendered, redirects] = await Promise.all([
+  const [recent, search, archive, rendered, redirects, crossLocale] = await Promise.all([
     checkMirrorComplete(),
     checkSearchBound(),
     checkLogArchive(),
     checkRenderedPage(),
-    checkDeadRedirects()
+    checkDeadRedirects(),
+    checkCrossLocaleLinks()
   ]);
-  const checks = [checkMirrorSwitch(), recent, search, ...rendered, archive, redirects];
+  const checks = [checkMirrorSwitch(), recent, search, ...rendered, archive, redirects, crossLocale];
   return { checks, worst: worstOf(checks), checkedAt: new Date().toISOString() };
 }
 
