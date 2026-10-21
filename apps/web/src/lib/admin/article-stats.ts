@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { listCategories } from "@/lib/admin/repository";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * Counts for the 文章统计 screen.
@@ -26,7 +27,8 @@ async function count(build: (q: ReturnType<typeof base>) => ReturnType<typeof ba
 function base() {
   return createSupabaseAdminClient()
     .from("cms_articles")
-    .select("id", { count: "exact", head: true });
+    .select("id", { count: "exact", head: true })
+    .eq("locale", SITE_LOCALE);
 }
 
 export async function getArticleStats(actorEmail: string): Promise<ArticleStats> {

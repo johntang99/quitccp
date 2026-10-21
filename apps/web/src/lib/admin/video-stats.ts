@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { listVideoCategories } from "@/lib/admin/video-repository";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * Counts for the 视频统计 screen.
@@ -19,7 +20,10 @@ export interface VideoStats {
 }
 
 function base() {
-  return createSupabaseAdminClient().from("cms_videos").select("id", { count: "exact", head: true });
+  return createSupabaseAdminClient()
+    .from("cms_videos")
+    .select("id", { count: "exact", head: true })
+    .eq("locale", SITE_LOCALE);
 }
 
 async function count(build: (q: ReturnType<typeof base>) => ReturnType<typeof base>): Promise<number> {
@@ -63,6 +67,7 @@ export async function getVideoStats(): Promise<VideoStats> {
   const { data: durations } = await supabase
     .from("cms_videos")
     .select("duration_seconds")
+    .eq("locale", SITE_LOCALE)
     .not("duration_seconds", "is", null)
     .limit(1000);
   const totalSeconds = (durations ?? []).reduce(

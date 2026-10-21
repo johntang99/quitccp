@@ -97,8 +97,14 @@ function check(): Finding[] {
 
         const stmt = statementAt(lines, i);
 
-        /* 出口：写在这一行、上一行或下一行都算 —— 不同的格式化会把它推到不同位置。 */
-        const near = [lines[i - 1] ?? "", lines[i], lines[i + 1] ?? ""].join("\n");
+        /*
+         * 出口：往上找四行，往下找一行。
+         *
+         * 四行而不是一行，是因为跨多行的三元表达式 —— 注释自然写在整个表达式上方，
+         * 而 `.from(` 可能在它下面好几行。只看紧挨着的一行，等于逼人把解释写到
+         * 一个读起来不通顺的位置上。
+         */
+        const near = [lines[i - 4] ?? "", lines[i - 3] ?? "", lines[i - 2] ?? "", lines[i - 1] ?? "", lines[i], lines[i + 1] ?? ""].join("\n");
         if (/locale-ok\s*:/.test(near)) continue;
 
         if (/locale/.test(stmt)) continue;

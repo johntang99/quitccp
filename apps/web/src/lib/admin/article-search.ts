@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import type { ArticleRecord } from "@/lib/admin/types";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * Search and filtering for the article admin.
@@ -76,6 +77,8 @@ async function runSearch(
   // The category filter joins through the map table with an inner join, so the
   // database does the narrowing. Fetching the matching article ids first would
   // hit PostgREST's 1000-row response cap -- 红朝败相 alone holds 8,631.
+  /* locale-ok: 两支合并之后统一加 .eq("locale", SITE_LOCALE)，见下面那一行。
+     写在这里而不是各写一遍，免得将来改其中一支时漏掉另一支。 */
   let query = filters.category
     ? supabase
         .from("cms_articles")
@@ -83,7 +86,11 @@ async function runSearch(
           count: "exact"
         })
         .eq("cms_article_category_map.cms_article_categories.slug", filters.category)
-    : supabase.from("cms_articles").select(select, { count: "exact" });
+    : /* locale-ok: 同上，下一行统一限定。 */
+      supabase.from("cms_articles").select(select, { count: "exact" });
+
+  /* 三元的两支都要限定，所以写在合并之后而不是各写一遍。 */
+  query = query.eq("locale", SITE_LOCALE);
 
   if (filters.q?.trim()) {
     const term = filters.q.trim().replace(/[%,()]/g, " ");
@@ -188,6 +195,7 @@ export async function listArticleAuthors(): Promise<string[]> {
   const { data } = await supabase
     .from("cms_articles")
     .select("author")
+    .eq("locale", SITE_LOCALE)
     .neq("author", "")
     .limit(1000);
   return Array.from(new Set((data ?? []).map((row) => String(row.author)))).sort();

@@ -8,6 +8,7 @@ import {
   ZCGJ_SOURCE_TITLE,
   zcgjSlug
 } from "@/lib/zhuichaguoji";
+import { skipUnlessLocale } from "@/lib/cron-locale";
 
 const LOCALE = "zh";
 
@@ -43,6 +44,11 @@ async function authorise(request: Request): Promise<string | null> {
 }
 
 export async function GET(request: Request) {
+  /* 抓的是中文数据源。四个站都跑的话，对方收到的是四倍请求，
+     而写进数据库的是同一份数据。 */
+  const skip = skipUnlessLocale(["zh"]);
+  if (skip) return skip;
+
   const denied = await authorise(request);
   if (denied) return NextResponse.json({ error: denied }, { status: 401 });
 
@@ -64,6 +70,7 @@ export async function GET(request: Request) {
   const { data: categoryRow, error: categoryError } = await supabase
     .from("cms_article_categories")
     .select("id")
+    .eq("locale", LOCALE)
     .eq("slug", ZCGJ_CATEGORY_SLUG)
     .maybeSingle();
   if (categoryError || !categoryRow) {
@@ -73,6 +80,7 @@ export async function GET(request: Request) {
   const { data: existing } = await supabase
     .from("cms_articles")
     .select("id, slug, source_url")
+    .eq("locale", LOCALE)
     .in("source_url", items.map((item) => item.link));
   const bySource = new Map((existing ?? []).map((row) => [String(row.source_url), row]));
 

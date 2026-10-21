@@ -3,6 +3,7 @@ import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } f
 import { bulkSetPrimaryCategory, bulkUpdateArticleStatus } from "@/lib/admin/repository";
 import { revalidateNews } from "@/lib/admin/revalidate-news";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * The slugs behind a batch of ids, so their own pages can be dropped too.
@@ -17,6 +18,7 @@ async function slugsFor(ids: string[]): Promise<string[]> {
     const { data } = await createSupabaseAdminClient()
       .from("cms_articles")
       .select("slug")
+      .eq("locale", SITE_LOCALE)
       .in("id", ids);
     return (data ?? []).map((row) => String((row as { slug?: unknown }).slug ?? "")).filter(Boolean);
   } catch {
