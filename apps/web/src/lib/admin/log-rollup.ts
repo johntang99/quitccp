@@ -1,5 +1,6 @@
 import { AwsClient } from "aws4fetch";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * Turns an hour of raw drain output in R2 into one row of counts.
@@ -193,7 +194,11 @@ export async function rollupHour(hourStart: Date): Promise<RollupResult | null> 
   };
 
   const supabase = createSupabaseAdminClient();
-  const { error } = await supabase.from("cms_log_hourly").upsert(row, { onConflict: "hour" });
+  /* 四个站各跑各的 log-rollup，不带 locale 的话写的是同一行，互相覆盖，
+     而且不报错 —— 面板上的数字只是忽大忽小。 */
+  const { error } = await supabase
+    .from("cms_log_hourly")
+    .upsert({ ...row, locale: SITE_LOCALE }, { onConflict: "hour,locale" });
   if (error) throw new Error(`写入 cms_log_hourly 失败：${error.message}`);
 
   return { hour, batches: row.batches, bytes: row.bytes, lines: counts.lines, requests: counts.requests };
@@ -224,6 +229,7 @@ export async function recentLogHours(limit = 48): Promise<LogHourRow[]> {
     const { data, error } = await supabase
       .from("cms_log_hourly")
       .select("*")
+      .eq("locale", SITE_LOCALE)
       .order("hour", { ascending: false })
       .limit(limit);
     if (error) throw new Error(error.message);

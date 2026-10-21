@@ -14,6 +14,7 @@ import type {
   SettingRecord,
   VideoRecord
 } from "./types";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 type PageStatus = "draft" | "review" | "published" | "archived";
 
@@ -648,8 +649,8 @@ async function setArticleTaxonomy(
       supabase
         .from("cms_article_tags")
         .upsert(
-          [...bySlug].map(([slug, name]) => ({ slug, name })),
-          { onConflict: "slug" }
+          [...bySlug].map(([slug, name]) => ({ slug, name, locale: SITE_LOCALE })),
+          { onConflict: "slug,locale" }
         )
         .select("id")
     );
@@ -1282,7 +1283,7 @@ export async function upsertCategoryRecord(
           .single()
       : supabase
           .from("cms_article_categories")
-          .upsert(values, { onConflict: "slug" })
+          .upsert({ ...values, locale: SITE_LOCALE }, { onConflict: "slug,locale" })
           .select(columns)
           .single();
 
@@ -1398,7 +1399,7 @@ export async function upsertVideoRecord(
   };
   const { data, error } = await supabase
     .from("cms_videos")
-    .upsert(payload, { onConflict: "slug" })
+    .upsert({ ...payload, locale: SITE_LOCALE }, { onConflict: "slug,locale" })
     .select(
       "id, slug, title, description, duration_seconds, cover_asset_id, download_asset_id, platform_ids, status, updated_at"
     )
@@ -1452,6 +1453,7 @@ export async function listSettings(actorEmail: string): Promise<SettingRecord[]>
   const { data, error } = await supabase
     .from("cms_site_settings")
     .select("id, setting_key, value_json, updated_at")
+    .eq("locale", SITE_LOCALE)
     .order("setting_key", { ascending: true });
   if (error) throw error;
   await createAudit(actorEmail, "settings.list", "settings", "all", "read");
@@ -1475,9 +1477,10 @@ export async function upsertSettingRecord(
       {
         id,
         setting_key: input.settingKey,
-        value_json: parseJsonObject(input.valueJson)
+        value_json: parseJsonObject(input.valueJson),
+        locale: SITE_LOCALE
       },
-      { onConflict: "setting_key" }
+      { onConflict: "setting_key,locale" }
     )
     .select("id, setting_key, value_json, updated_at")
     .single();

@@ -2,6 +2,7 @@ import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
 import { type Theme, themeDefaults } from "@/lib/theme-css";
 import { unstable_cache } from "next/cache";
 import { SITE_CHROME_TAG, SITE_CHROME_TTL_SECONDS } from "@/lib/site-chrome-cache";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 export { themeToCss, FONT_ROLES, themeDefaults } from "@/lib/theme-css";
 export type { Theme } from "@/lib/theme-css";
@@ -47,6 +48,8 @@ const loadThemeUncached = unstable_cache(
       .from("cms_site_settings")
       .select("value_json")
       .eq("setting_key", THEME_SETTING_KEY)
+      /* 四个站共用一张设置表，各站有各站的主题。 */
+      .eq("locale", SITE_LOCALE)
       .maybeSingle();
     if (error) throw error;
     return mergeTheme(data?.value_json);

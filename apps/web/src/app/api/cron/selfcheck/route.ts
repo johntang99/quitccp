@@ -8,6 +8,7 @@ import {
   type DefenseCheck
 } from "@/lib/admin/defense-status";
 import { alertRecipient, sendAlertEmail } from "@/lib/notify";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * Runs the defence checks on a schedule and mails when something breaks.
@@ -81,6 +82,7 @@ async function readState(): Promise<AlertState> {
       .from("cms_site_settings")
       .select("value_json")
       .eq("setting_key", STATE_KEY)
+      .eq("locale", SITE_LOCALE)
       .maybeSingle();
     const value = data?.value_json as (Partial<AlertState> & { badKeys?: string[] }) | undefined;
     /* `badKeys` is the shape this key had before the two-runs rule existed.
@@ -105,8 +107,8 @@ async function writeState(state: AlertState): Promise<void> {
     await supabase
       .from("cms_site_settings")
       .upsert(
-        { setting_key: STATE_KEY, value_json: state, updated_at: new Date().toISOString() },
-        { onConflict: "setting_key" }
+        { setting_key: STATE_KEY, value_json: state, locale: SITE_LOCALE, updated_at: new Date().toISOString() },
+        { onConflict: "setting_key,locale" }
       );
   } catch (error) {
     console.warn(`[selfcheck] 状态写入失败：${error instanceof Error ? error.message : "未知"}`);

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
+import { scriptLocale } from "./lib/locale";
 
 interface RedirectRow {
   legacy_url: string;
@@ -49,7 +50,10 @@ async function main() {
     const chunk = redirects.slice(i, i + batchSize);
     const { error } = await supabase
       .from("cms_redirects")
-      .upsert(chunk, { onConflict: "legacy_url" });
+      .upsert(
+        chunk.map((row) => ({ ...row, locale: scriptLocale() })),
+        { onConflict: "legacy_url,locale" }
+      );
     if (error) throw error;
   }
 

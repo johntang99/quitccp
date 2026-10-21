@@ -3,6 +3,7 @@ import { getHomepageHero, mainNav } from "@/lib/site-data";
 import { SITE_CHROME_TAG, SITE_CHROME_TTL_SECONDS } from "@/lib/site-chrome-cache";
 import { SECTION_CONFIG, loadSectionNavOverrides, mergeSectionNav } from "@/lib/section-nav";
 import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 export interface PublicNavItem {
   href: string;
@@ -57,7 +58,8 @@ const listPublicSettingsUncached = unstable_cache(
     const { data, error } = await supabase
       .from("cms_site_settings")
       .select("setting_key, value_json")
-      .in("setting_key", keys);
+      .in("setting_key", keys)
+      .eq("locale", SITE_LOCALE);
     if (error) throw error;
     /* An array rather than a Map: the cache serialises what it stores. */
     return ((data ?? []) as SiteSettingRow[]).map((row) => [String(row.setting_key), row.value_json]);

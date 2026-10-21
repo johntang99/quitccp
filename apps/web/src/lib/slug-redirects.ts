@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * Keeps an address working after its slug changes.
@@ -87,6 +88,9 @@ export async function findSlugRedirect(path: string): Promise<string | null> {
       .from("cms_redirects")
       .select("destination_url")
       .in("legacy_url", [path, withSlash])
+      /* 四个站共用一张表，而 /news/about-us 这种地址每个站都会有。不限定的话，
+         英文站的读者点一条英文旧链接，会被送到中文页面上去。 */
+      .eq("locale", SITE_LOCALE)
       .limit(1)
       .maybeSingle();
     if (error) return null;
@@ -126,8 +130,23 @@ export async function recordSlugRedirect(from: string, to: string): Promise<void
   try {
     const supabase = createSupabaseAdminClient();
 
-    await supabase.from("cms_redirects").delete().eq("legacy_url", to);
-    await supabase.from("cms_redirects").update({ destination_url: to }).eq("destination_url", from);
+    /*
+     * 三句都要限定 locale，不只是最后那一句 upsert。
+     *
+     * 四个语言站共用一张 cms_redirects，而 /news/about-us 这样的地址每个站都会有。
+     * 不限定的话，中文站改一次 slug 就会顺手删掉英文站同名地址的跳转，或者把英文
+     * 站的跳转目标改到中文页面上 —— 而且不报错，只是某个站的旧链接悄悄坏掉。
+     */
+    await supabase
+      .from("cms_redirects")
+      .delete()
+      .eq("legacy_url", to)
+      .eq("locale", SITE_LOCALE);
+    await supabase
+      .from("cms_redirects")
+      .update({ destination_url: to })
+      .eq("destination_url", from)
+      .eq("locale", SITE_LOCALE);
     await supabase
       .from("cms_redirects")
       .upsert(
@@ -135,8 +154,8 @@ export async function recordSlugRedirect(from: string, to: string): Promise<void
            actually served: `permanentRedirect` emits 308 and the App Router
            gives no way to choose. Both are permanent and search engines treat
            them alike; recording 301 here would simply be untrue. */
-        { legacy_url: from, destination_url: to, status_code: 308 },
-        { onConflict: "legacy_url" }
+        { legacy_url: from, destination_url: to, status_code: 308, locale: SITE_LOCALE },
+        { onConflict: "legacy_url,locale" }
       );
   } catch {
     /* A save must not fail because the redirect could not be written. The

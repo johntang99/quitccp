@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isKnownLegacyId } from "@/lib/legacy-redirect-ids";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * Serves the 301s for the old WordPress URLs.
@@ -45,8 +46,12 @@ async function lookup(path: string): Promise<string | null> {
   // Both spellings are stored across the corpus, so ask for either.
   const withSlash = path.endsWith("/") ? path : `${path}/`;
   const withoutSlash = withSlash.slice(0, -1);
+  /* locale 也要带上：四个语言站共用一张 cms_redirects，而旧的 /YYYY/MM/DD/<id>/
+     地址各站各有一套。不限定的话，英文站收到一条英文旧链接，会命中中文站那一行，
+     把读者送到中文文章上 —— 而且是 308，浏览器会记住。 */
   const url =
     `${base}/rest/v1/cms_redirects?select=destination_url&limit=1` +
+    `&locale=eq.${encodeURIComponent(SITE_LOCALE)}` +
     `&legacy_url=in.(${encodeURIComponent(`"${withSlash}","${withoutSlash}"`)})`;
 
   try {

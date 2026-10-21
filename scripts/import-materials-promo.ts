@@ -26,6 +26,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { scriptLocale } from "./lib/locale";
 
 function loadEnvFileIfPresent(filePath: string) {
   try {
@@ -207,7 +208,7 @@ async function main() {
 
     const { data: saved, error } = await supabase
       .from("cms_materials")
-      .upsert(row, { onConflict: "slug" })
+      .upsert({ ...row, locale: scriptLocale() }, { onConflict: "slug,locale" })
       .select("id")
       .single();
     if (error) throw error;

@@ -6,6 +6,7 @@ import { upsertSettingRecord } from "@/lib/admin/repository";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { THEME_SETTING_KEY, loadTheme, mergeTheme } from "@/lib/public-theme";
 import { SITE_CHROME_TAG } from "@/lib/site-chrome-cache";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 export async function GET() {
   const user = await getAdminSessionUser();
@@ -54,7 +55,8 @@ export async function DELETE() {
   const { error } = await supabase
     .from("cms_site_settings")
     .delete()
-    .eq("setting_key", THEME_SETTING_KEY);
+    .eq("setting_key", THEME_SETTING_KEY)
+    .eq("locale", SITE_LOCALE);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   revalidateTag(SITE_CHROME_TAG);
   revalidatePath("/", "layout");

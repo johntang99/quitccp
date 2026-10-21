@@ -45,6 +45,7 @@
 import pg from "pg";
 import { writeFileSync } from "node:fs";
 import { buildPlan, fetchRows, publicPath, TABLE, type Change, type Kind } from "./lib/pinyin-slug-plan";
+import { scriptLocale } from "./lib/locale";
 
 const BATCH = 200;
 
@@ -89,14 +90,14 @@ async function migrate(client: pg.Client, changes: Change[]) {
             [c.next, c.slug, c.id]
           ],
           /* 2 —— 有人用新地址做过跳转的话，先让开 */
-          [`delete from cms_redirects where legacy_url = $1`, [to]],
+          [`delete from cms_redirects where legacy_url = $1 and locale = $2`, [to, scriptLocale()]],
           /* 3 —— 把指向旧地址的跳转一起带过去，不留跳转链 */
-          [`update cms_redirects set destination_url = $1 where destination_url = $2`, [to, from]],
+          [`update cms_redirects set destination_url = $1 where destination_url = $2 and locale = $3`, [to, from, scriptLocale()]],
           /* 4 —— 老地址继续可用 */
           [
-            `insert into cms_redirects (legacy_url, destination_url, status_code) values ($1, $2, 308)
-             on conflict (legacy_url) do update set destination_url = excluded.destination_url, status_code = 308`,
-            [from, to]
+            `insert into cms_redirects (legacy_url, destination_url, status_code, locale) values ($1, $2, 308, $3)
+             on conflict (legacy_url, locale) do update set destination_url = excluded.destination_url, status_code = 308`,
+            [from, to, scriptLocale()]
           ]
         ];
 
@@ -252,9 +253,15 @@ async function rollback(client: pg.Client) {
           const now = publicPath(kind, row.slug);
           const was = publicPath(kind, row.slug_legacy);
           /* 我们插的那条「旧 → 新」，删掉 */
-          await client.query(`delete from cms_redirects where legacy_url = $1 and destination_url = $2`, [was, now]);
+          await client.query(
+            `delete from cms_redirects where legacy_url = $1 and destination_url = $2 and locale = $3`,
+            [was, now, scriptLocale()]
+          );
           /* 被我们改成指向新地址的，改回去 */
-          await client.query(`update cms_redirects set destination_url = $1 where destination_url = $2`, [was, now]);
+          await client.query(
+            `update cms_redirects set destination_url = $1 where destination_url = $2 and locale = $3`,
+            [was, now, scriptLocale()]
+          );
           await client.query(`update ${table} set slug = slug_legacy, slug_legacy = null where id = $1`, [row.id]);
           /*
            * 反方向补一条「新拼音地址 → 旧地址」。这一条不是多余的 ——
@@ -276,9 +283,9 @@ async function rollback(client: pg.Client) {
            * 的链条会断。
            */
           await client.query(
-            `insert into cms_redirects (legacy_url, destination_url, status_code) values ($1, $2, 308)
-             on conflict (legacy_url) do update set destination_url = excluded.destination_url`,
-            [now, was]
+            `insert into cms_redirects (legacy_url, destination_url, status_code, locale) values ($1, $2, 308, $3)
+             on conflict (legacy_url, locale) do update set destination_url = excluded.destination_url`,
+            [now, was, scriptLocale()]
           );
           total += 1;
         }

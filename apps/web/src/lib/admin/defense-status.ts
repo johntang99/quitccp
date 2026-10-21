@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { SITE_LOCALE } from "@/lib/site-config";
 import { mirrorRewrite, rewriteMediaUrl } from "@/lib/media-mirror";
 import { AwsClient } from "aws4fetch";
 
@@ -804,8 +805,8 @@ async function checkDeadRedirects(): Promise<DefenseCheck> {
   try {
     const supabase = createSupabaseAdminClient();
     const [{ data: count, error }, { count: total }] = await Promise.all([
-      supabase.rpc("count_dead_redirects"),
-      supabase.from("cms_redirects").select("id", { count: "exact", head: true })
+      supabase.rpc("count_dead_redirects", { p_locale: SITE_LOCALE }),
+      supabase.from("cms_redirects").select("id", { count: "exact", head: true }).eq("locale", SITE_LOCALE)
     ]);
     if (error) throw new Error(error.message);
 
@@ -815,7 +816,10 @@ async function checkDeadRedirects(): Promise<DefenseCheck> {
     }
 
     /* 看到数字之后第一个问题一定是「哪几条」，所以直接把前几条列进去。 */
-    const { data: sample } = await supabase.rpc("list_dead_redirects", { p_limit: 5 });
+    const { data: sample } = await supabase.rpc("list_dead_redirects", {
+      p_limit: 5,
+      p_locale: SITE_LOCALE
+    });
     const listed = Array.isArray(sample)
       ? (sample as { legacy_url: string; destination_url: string }[])
           .map((r) => `${r.legacy_url} → ${r.destination_url}`)
@@ -931,8 +935,8 @@ export async function saveDefenseReport(report: DefenseReport): Promise<void> {
     await supabase
       .from("cms_site_settings")
       .upsert(
-        { setting_key: REPORT_KEY, value_json: report, updated_at: new Date().toISOString() },
-        { onConflict: "setting_key" }
+        { setting_key: REPORT_KEY, value_json: report, locale: SITE_LOCALE, updated_at: new Date().toISOString() },
+        { onConflict: "setting_key,locale" }
       );
   } catch (error) {
     console.warn(`[selfcheck] 报告写入失败：${error instanceof Error ? error.message : "未知"}`);
@@ -947,6 +951,7 @@ export async function readDefenseReport(): Promise<DefenseReport | null> {
       .from("cms_site_settings")
       .select("value_json")
       .eq("setting_key", REPORT_KEY)
+      .eq("locale", SITE_LOCALE)
       .maybeSingle();
     const value = data?.value_json as Partial<DefenseReport> | undefined;
     if (!value || !Array.isArray(value.checks) || typeof value.checkedAt !== "string") return null;
@@ -999,14 +1004,15 @@ export async function appendDefenseEvent(event: DefenseEvent): Promise<void> {
       .from("cms_site_settings")
       .select("value_json")
       .eq("setting_key", HISTORY_KEY)
+      .eq("locale", SITE_LOCALE)
       .maybeSingle();
     const previous = Array.isArray(data?.value_json) ? (data.value_json as DefenseEvent[]) : [];
     const next = [event, ...previous].slice(0, HISTORY_MAX);
     await supabase
       .from("cms_site_settings")
       .upsert(
-        { setting_key: HISTORY_KEY, value_json: next, updated_at: new Date().toISOString() },
-        { onConflict: "setting_key" }
+        { setting_key: HISTORY_KEY, value_json: next, locale: SITE_LOCALE, updated_at: new Date().toISOString() },
+        { onConflict: "setting_key,locale" }
       );
   } catch (error) {
     /* A lost history line must never cost the alert it describes. */
@@ -1022,6 +1028,7 @@ export async function readDefenseEvents(): Promise<DefenseEvent[]> {
       .from("cms_site_settings")
       .select("value_json")
       .eq("setting_key", HISTORY_KEY)
+      .eq("locale", SITE_LOCALE)
       .maybeSingle();
     return Array.isArray(data?.value_json) ? (data.value_json as DefenseEvent[]) : [];
   } catch {

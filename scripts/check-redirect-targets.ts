@@ -17,6 +17,7 @@
  */
 
 import pg from "pg";
+import { scriptLocale } from "./lib/locale";
 
 async function main() {
   const client = new pg.Client({
@@ -25,19 +26,24 @@ async function main() {
   });
   await client.connect();
 
+  /* 不传 --locale 就查全表 —— 跨站盘点时要的是总数。自检那边传的是本站的 locale。 */
+  const onlyLocale = process.argv.includes("--locale") ? scriptLocale() : null;
+
   const { rows: counted } = await client.query<{ dead: number; total: number }>(
-    `select count_dead_redirects() as dead, (select count(*)::integer from cms_redirects) as total`
+    `select count_dead_redirects($1) as dead,
+            (select count(*)::integer from cms_redirects where $1 is null or locale = $1) as total`,
+    [onlyLocale]
   );
   const { dead, total } = counted[0];
 
   if (dead === 0) {
-    console.log(`\n✓ ${total} 条重定向，目标全部指向现有内容。\n`);
+    console.log(`\n✓ ${total} 条重定向${onlyLocale ? `（${onlyLocale}）` : ""}，目标全部指向现有内容。\n`);
     await client.end();
     return;
   }
 
   const { rows: listed } = await client.query<{ legacy_url: string; destination_url: string }>(
-    `select * from list_dead_redirects(40)`
+    `select * from list_dead_redirects(40, $1)`, [onlyLocale]
   );
   console.log(`\n✗ ${total} 条重定向里有 ${dead} 条指向不存在的地址：\n`);
   for (const row of listed) console.log(`  ${row.legacy_url}\n      → ${row.destination_url}`);

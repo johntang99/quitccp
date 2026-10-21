@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * Searches that found nothing.
@@ -50,7 +51,10 @@ export async function recordSearchMiss(query: string): Promise<void> {
   if (!normalized) return;
   try {
     const supabase = createSupabaseAdminClient();
-    const { error } = await supabase.rpc("record_search_miss", { p_query: normalized });
+    const { error } = await supabase.rpc("record_search_miss", {
+      p_query: normalized,
+      p_locale: SITE_LOCALE
+    });
     // A missing function means migration 022 has not been run. That is a
     // perfectly fine state to be in and not worth an error in the logs.
     if (error && !isMissingObject(error)) throw error;
@@ -68,6 +72,8 @@ export async function listSearchMisses(limit = 20): Promise<SearchMiss[]> {
     const { data, error } = await supabase
       .from("cms_search_misses")
       .select("query, hits, first_seen, last_seen")
+      /* 各站各算。不限定的话，德文读者搜的词会出现在中文站的面板上。 */
+      .eq("locale", SITE_LOCALE)
       .order("hits", { ascending: false })
       .order("last_seen", { ascending: false })
       .limit(limit);
@@ -94,6 +100,8 @@ export async function pruneSearchMisses(): Promise<number> {
       .from("cms_search_misses")
       .delete()
       .lt("last_seen", cutoff)
+      /* 各站只清自己的，否则返回的条数是四个站加起来的，对不上这个站的面板。 */
+      .eq("locale", SITE_LOCALE)
       .select("query");
     if (error) throw error;
     return (data ?? []).length;
