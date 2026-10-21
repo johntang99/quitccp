@@ -7,6 +7,7 @@ import { MarkdownBody } from "@/components/public/MarkdownBody";
 import { markdownToBodyRows } from "@/lib/public-content";
 import type { PublicVideoRecord, PublicVideoCard } from "@/lib/public-content";
 import { hostOf, isFileUrl, toEmbedUrl } from "@/lib/video-host";
+import { formatNumber } from "@/lib/format";
 
 type PublicVideo = PublicVideoRecord;
 
@@ -169,7 +170,7 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
               {minutes(video.durationSeconds) ? <span>片长 {minutes(video.durationSeconds)}</span> : null}
               {chars > 0 ? (
                 <span>
-                  约 <b className="vnum">{chars.toLocaleString("zh-CN")}</b> 字
+                  约 <b className="vnum">{formatNumber(chars)}</b> 字
                   {chars >= 1200 ? (
                     <>
                       {" · 阅读约 "}

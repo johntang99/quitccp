@@ -3,6 +3,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { ArticleTabs } from "@/components/admin/ArticleTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { getArticleStats } from "@/lib/admin/article-stats";
+import { formatNumber } from "@/lib/format";
 
 export default async function ArticleStatsPage() {
   const user = await requireAdminSessionUser();
@@ -18,18 +19,18 @@ export default async function ArticleStatsPage() {
         <h3 style={{ marginTop: 0 }}>总览</h3>
         <div className="stat-grid">
           <div className="stat">
-            <div className="n">{stats.total.toLocaleString()}</div>
+            <div className="n">{formatNumber(stats.total)}</div>
             <div className="k">文章总数</div>
           </div>
           {stats.byStatus.map((row) => (
             <div className="stat" key={row.key}>
-              <div className="n">{row.count.toLocaleString()}</div>
+              <div className="n">{formatNumber(row.count)}</div>
               <div className="k">{row.label}</div>
             </div>
           ))}
           {stats.bySection.map((row) => (
             <div className="stat" key={row.key}>
-              <div className="n">{row.count.toLocaleString()}</div>
+              <div className="n">{formatNumber(row.count)}</div>
               <div className="k">{row.label}区</div>
             </div>
           ))}
@@ -64,7 +65,7 @@ export default async function ArticleStatsPage() {
                     </div>
                   </td>
                   <td style={{ textAlign: "right" }}>
-                    <b>{row.count.toLocaleString()}</b>
+                    <b>{formatNumber(row.count)}</b>
                     <div className="muted" style={{ fontSize: 12 }}>{pct}%</div>
                   </td>
                   <td>
@@ -83,7 +84,7 @@ export default async function ArticleStatsPage() {
               </td>
               <td />
               <td style={{ textAlign: "right" }}>
-                <b>{mapped.toLocaleString()}</b>
+                <b>{formatNumber(mapped)}</b>
               </td>
               <td />
             </tr>
@@ -126,7 +127,7 @@ export default async function ArticleStatsPage() {
                   <b>{gap.label}</b>
                 </td>
                 <td style={{ textAlign: "right" }}>
-                  <b>{gap.count.toLocaleString()}</b>
+                  <b>{formatNumber(gap.count)}</b>
                 </td>
                 <td style={{ width: 1 }}>
                   <Link className="admin-btn admin-btn-sm" href={gap.href}>

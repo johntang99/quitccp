@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { NewsCard } from "@/lib/public-content";
 import { NewsRow } from "./NewsRow";
 import { T } from "./newsTokens";
+import { formatNumber } from "@/lib/format";
 
 /**
  * Appends further chunks of a listing as the reader approaches the end.
@@ -191,14 +192,14 @@ export function NewsInfiniteRows({
         <div style={{ padding: "22px 0 4px", textAlign: "center", fontSize: 14, color: T.muted }}>
           {pageCount > maxChunk ? (
             <>
-              已显示 {shown} 篇，本栏共 {total.toLocaleString("zh-CN")} 篇。
+              已显示 {shown} 篇，本栏共 {formatNumber(total)} 篇。
               {" "}
               <a href={`/news/${encodeURIComponent(slug)}/${maxChunk + 1}`} style={{ color: T.seal }}>
                 继续浏览 →
               </a>
             </>
           ) : (
-            <>本栏文章已全部显示（共 {total.toLocaleString("zh-CN")} 篇）。</>
+            <>本栏文章已全部显示（共 {formatNumber(total)} 篇）。</>
           )}
         </div>
       ) : null}

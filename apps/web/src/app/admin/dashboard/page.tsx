@@ -14,6 +14,7 @@ import {
   getSearchStatus,
   getSyncStatus
 } from "@/lib/admin/dashboard";
+import { formatDateTime, formatNumber } from "@/lib/format";
 
 const SEARCH_LABEL: Record<string, { text: string; tone: string }> = {
   normal: { text: "正常", tone: "#157347" },
@@ -75,7 +76,7 @@ function ago(hours: number | null) {
   return `${Math.round(hours / 24)} 天前`;
 }
 
-const num = (n: number) => (n < 0 ? "未知" : n.toLocaleString("zh-CN"));
+const num = (n: number) => (n < 0 ? "未知" : formatNumber(n));
 
 export default async function AdminDashboardPage() {
   const user = await requireAdminSessionUser();
@@ -171,7 +172,7 @@ export default async function AdminDashboardPage() {
               </div>
               <p className="dash-note">
                 检查于 {ago((Date.now() - new Date(defense.checkedAt).getTime()) / 3_600_000)}
-                　（{new Date(defense.checkedAt).toLocaleString("zh-CN")}）
+                　（{formatDateTime(defense.checkedAt)}）
               </p>
               {(Date.now() - new Date(defense.checkedAt).getTime()) / 3_600_000 > SELFCHECK_STALE_HOURS ? (
                 <p className="dash-alert">
@@ -219,7 +220,7 @@ export default async function AdminDashboardPage() {
                     const badge = EVENT_LABEL[e.kind] ?? { text: e.kind, tone: "#667085" };
                     return (
                       <tr key={`${e.at}-${e.kind}-${i}`}>
-                        <td>{new Date(e.at).toLocaleString("zh-CN")}</td>
+                        <td>{formatDateTime(e.at)}</td>
                         <td style={{ color: badge.tone }}>{badge.text}</td>
                         <td>{e.labels.join("、") || "—"}</td>
                       </tr>
@@ -319,7 +320,7 @@ export default async function AdminDashboardPage() {
               必须用真实浏览器。平时不需要做任何事，它会一直自己跑。
             </p>
             <p className="dash-note">
-              上次同步：{sync.fetchedAt ? new Date(sync.fetchedAt).toLocaleString("zh-CN") : "—"}
+              上次同步：{sync.fetchedAt ? formatDateTime(sync.fetchedAt) : "—"}
               {sync.sourceUpdatedAt ? `　来源站更新于：${sync.sourceUpdatedAt}` : ""}
               {sync.newest ? `　最新一条声明：${sync.newest}` : ""}
             </p>
@@ -463,7 +464,7 @@ export default async function AdminDashboardPage() {
                   <td><Link href={`/admin/articles/${a.id}`}>{a.title}</Link></td>
                   <td>{a.category || "—"}</td>
                   <td>{a.status === "published" ? "已发布" : a.status === "draft" ? "草稿" : a.status}</td>
-                  <td>{new Date(a.updatedAt).toLocaleString("zh-CN")}</td>
+                  <td>{formatDateTime(a.updatedAt)}</td>
                 </tr>
               ))}
             </tbody>

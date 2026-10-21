@@ -49,3 +49,18 @@ test("转写器产出为空也走短记号，不会返回空串", () => {
 test("没登记的语言不报错", () => {
   assert.match(transliterate("Some title", "th"), /^[0-9A-Za-z]{7}$/);
 });
+
+test("NFD 拆不开的拉丁字母有兜底，不会被当成标点丢掉", () => {
+  /* ß、ø、æ、ł 都不是「基本字母 + 附标」，NFD 拆不动它们。
+     英文站上 ü 走通用的去附标（→u），ß 走兜底表（→ss）。 */
+  assert.equal(transliterate("Grüße aus Köln", "en"), "grusse-aus-koln");
+  assert.equal(transliterate("Smørrebrød", "en"), "smorrebrod");
+  assert.equal(transliterate("Encyclopædia", "en"), "encyclopaedia");
+  assert.equal(transliterate("Łódź", "en"), "lodz");
+});
+
+test("德文站仍然用德语的约定拼法，不是通用兜底", () => {
+  /* 通用兜底给 ü→u，德语约定给 ü→ue。德文站要后者。 */
+  assert.equal(transliterate("Grüße aus Köln", "de"), "gruesse-aus-koeln");
+  assert.equal(transliterate("Grüße aus Köln", "en"), "grusse-aus-koln");
+});

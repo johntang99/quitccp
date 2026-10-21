@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { formatNumber } from "@/lib/format";
 
 const FROM = 400_000_000;
 const DURATION_MS = 3000;
@@ -8,7 +9,11 @@ const DURATION_MS = 3000;
 const SAMPLE = "467,293,946";
 
 function format(value: number): string {
-  return Math.round(value).toLocaleString("en-US");
+  /* 本站的千分位写法：中文和英文是 467,645,280，德文是 467.645.280。
+     以前写死 en-US —— 对中英两种语言恰好一样，德文站上就不地道了。
+     必须显式传 locale，不能省略参数：不传时读运行环境的区域设置，
+     服务端和浏览器算出来不一样，水合会报 mismatch 而且数字会跳一下。 */
+  return formatNumber(Math.round(value));
 }
 
 /**

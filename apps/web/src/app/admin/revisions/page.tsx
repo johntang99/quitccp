@@ -2,6 +2,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { can } from "@/lib/admin/permissions";
 import { listRevisions } from "@/lib/admin/repository";
+import { formatDateTime } from "@/lib/format";
 
 export default async function AdminRevisionsPage() {
   const user = await requireAdminSessionUser();
@@ -41,7 +42,7 @@ export default async function AdminRevisionsPage() {
             ) : (
               rows.map((row) => (
                 <tr key={row.id}>
-                  <td>{new Date(row.createdAt).toLocaleString()}</td>
+                  <td>{formatDateTime(row.createdAt)}</td>
                   <td>{row.entityType}</td>
                   <td>{row.entityId}</td>
                   <td>{row.createdBy}</td>

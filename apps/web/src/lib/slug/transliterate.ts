@@ -54,9 +54,28 @@ function fold(text: string, locale: string): string {
   return out;
 }
 
-/** NFD 之后去掉组合附标 —— 折叠表没覆盖到的欧洲语言字母靠这一层。 */
+/**
+ * NFD 分解不了的拉丁字母。
+ *
+ * normalize("NFD") 把 ü 拆成 u 加一个组合变音符，去掉附标就得到 u。但有一批
+ * 字母不是「基本字母 + 附标」，而是独立的字符 —— ß、æ、ø、đ、ł 都没有可拆的
+ * 部分，于是被后面的 [^a-z0-9] 当成标点丢掉：Grüße 会变成 gru-e。
+ *
+ * 这张表给它们各自公认的拉丁写法。它和 FOLD 不同：FOLD 是**按语言**的约定
+ * （德语的 ü→ue），这里是**跨语言**都成立的兜底，所以无条件应用。
+ */
+const LATIN_FALLBACK: Record<string, string> = {
+  ß: "ss", æ: "ae", Æ: "Ae", œ: "oe", Œ: "Oe",
+  ø: "o", Ø: "O", đ: "d", Đ: "D", ð: "d", Ð: "D",
+  ł: "l", Ł: "L", þ: "th", Þ: "Th", ŋ: "ng", ı: "i"
+};
+
+/** NFD 之后去掉组合附标，再补上 NFD 拆不开的那些。 */
 function stripDiacritics(value: string): string {
-  return value.normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const base = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  let out = "";
+  for (const ch of base) out += LATIN_FALLBACK[ch] ?? ch;
+  return out;
 }
 
 /** 小写、非字母数字一律变连字符、首尾和连续的连字符收掉。 */

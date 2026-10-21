@@ -4,6 +4,7 @@ import { VideoTabs } from "@/components/admin/VideoTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { listVideoCategories, searchVideos, type VideoSearchFilters } from "@/lib/admin/video-repository";
 import { WarmPages } from "@/components/admin/WarmPages";
+import { formatNumber } from "@/lib/format";
 
 interface PageProps {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -154,7 +155,7 @@ export default async function AdminVideosPage({ searchParams }: PageProps) {
         </div>
 
         <p className="muted" style={{ margin: 0 }}>
-          符合条件 <b>{result.total.toLocaleString()}</b> 个 · 第 {result.page}／{result.pageCount} 页
+          符合条件 <b>{formatNumber(result.total)}</b> 个 · 第 {result.page}／{result.pageCount} 页
         </p>
       </section>
 

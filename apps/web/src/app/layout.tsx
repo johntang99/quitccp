@@ -5,6 +5,7 @@ import { mediaFailoverScript } from "@/lib/media-failover";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import "./globals.css";
+import { siteHtmlLang } from "@/lib/format";
 
 const SITE_ORIGIN = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.tuidang.org").replace(/\/$/, "");
 
@@ -45,7 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     // background onto <html> before first paint, so the served markup and the
     // hydrating markup legitimately differ by that one attribute.
     <html
-      lang="zh-CN"
+      lang={siteHtmlLang}
       className={`${notoSerifSC.variable} ${barlowCondensed.variable}`}
       suppressHydrationWarning
     >

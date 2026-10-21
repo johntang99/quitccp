@@ -9,6 +9,7 @@ import { LEGAL_BLOCKS } from "./legal-blocks";
 import { HomeSectionsEditor } from "@/components/admin/HomeSectionsEditor";
 import { BooksEditor } from "@/components/admin/BooksEditor";
 import { ImagePickerModal } from "@/components/admin/ImagePickerModal";
+import { formatDateTime } from "@/lib/format";
 
 interface ContentFileItem {
   path: string;
@@ -1302,7 +1303,7 @@ const UNEDITABLE_PATHS = new Set([
                 <tbody>
                   {revisions.map((revision) => (
                     <tr key={revision.id}>
-                      <td>{new Date(revision.createdAt).toLocaleString()}</td>
+                      <td>{formatDateTime(revision.createdAt)}</td>
                       <td>{revision.createdBy}</td>
                       <td>{revision.note ?? "-"}</td>
                       <td>

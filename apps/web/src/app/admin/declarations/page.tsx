@@ -1,6 +1,7 @@
 import { AdminShell } from "@/components/admin/AdminShell";
 import { canAccessDeclarations, requireAdminSessionUser } from "@/lib/admin/auth";
 import { listDeclarationsForAdmin } from "@/lib/admin/declarations-repository";
+import { formatDateTime } from "@/lib/format";
 
 interface DeclarationsPageProps {
   searchParams: Promise<{
@@ -163,7 +164,7 @@ export default async function AdminDeclarationsPage({ searchParams }: Declaratio
                   <td style={{ whiteSpace: "nowrap" }}>
                     {formatSequence(row.sequenceNumber)}
                     <br />
-                    <span className="muted">{new Date(row.createdAt).toLocaleString()}</span>
+                    <span className="muted">{formatDateTime(row.createdAt)}</span>
                     <br />
                     <span className="muted">{row.source}</span>
                   </td>

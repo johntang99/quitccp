@@ -4,6 +4,7 @@ import { T, articleHref, day } from "./newsTokens";
 import { NewsRow } from "./NewsRow";
 import { NewsInfiniteRows } from "./NewsInfiniteRows";
 import { NEWS_MAX_CHUNK } from "./newsChunks";
+import { formatNumber } from "@/lib/format";
 
 /**
  * A listing page: one category, or one of the section-wide scopes
@@ -248,7 +249,7 @@ function Pager({
   return (
     <nav aria-label="分页" className="news-cat-pager">
       <span style={{ fontSize: 13, color: T.muted }}>
-        第 {page} / {pageCount} 页 · 共 {total.toLocaleString("zh-CN")} 篇
+        第 {page} / {pageCount} 页 · 共 {formatNumber(total)} 篇
       </span>
       <span style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
         {page > 1 ? (

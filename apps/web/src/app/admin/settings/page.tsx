@@ -3,6 +3,7 @@ import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { can } from "@/lib/admin/permissions";
 import { listSettings } from "@/lib/admin/repository";
 import { SITE_LOCALE } from "@/lib/site-config";
+import { formatDateTime } from "@/lib/format";
 
 interface AdminSettingsPageProps {
   searchParams: Promise<{ searchSync?: string; indexed?: string; index?: string; message?: string }>;
@@ -63,7 +64,7 @@ export default async function AdminSettingsPage({ searchParams }: AdminSettingsP
                   <td>
                     <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>{row.valueJson}</pre>
                   </td>
-                  <td>{new Date(row.updatedAt).toLocaleString()}</td>
+                  <td>{formatDateTime(row.updatedAt)}</td>
                 </tr>
               ))
             )}

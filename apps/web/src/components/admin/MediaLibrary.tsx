@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { MediaRecord } from "@/lib/admin/types";
+import { formatDateTime } from "@/lib/format";
 
 /**
  * The picture and video library.
@@ -420,7 +421,7 @@ function MediaModal({
             ) : null}
             {status ? <span style={{ fontSize: 12, color: "#555" }}>{status}</span> : null}
             <span style={{ fontSize: 11.5, color: "#888", marginLeft: "auto" }}>
-              {[row.mimeType, formatBytes(row.byteSize ?? 0), new Date(row.updatedAt).toLocaleString()]
+              {[row.mimeType, formatBytes(row.byteSize ?? 0), formatDateTime(row.updatedAt)]
                 .filter(Boolean)
                 .join(" · ")}
             </span>

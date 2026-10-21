@@ -4,6 +4,7 @@ import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from "reac
 import { formatBytes, uploadFile } from "@/lib/admin/upload-client";
 import { toEmbedUrl } from "@/lib/video-host";
 import { VideoEmbedModal } from "./VideoEmbedModal";
+import { formatNumber } from "@/lib/format";
 
 /**
  * Markdown editor for article bodies.
@@ -392,7 +393,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
       </div>
 
       <div className="md-foot">
-        <span>{stats.chars.toLocaleString()} 字</span>
+        <span>{formatNumber(stats.chars)} 字</span>
         <span>约 {stats.minutes} 分钟</span>
         <span>
           图片 {stats.images} · 视频 {stats.videos} · 链接 {stats.links}

@@ -9,6 +9,7 @@ import {
   canModifyAccountOfRole
 } from "@/lib/admin/permissions";
 import { MIN_PASSWORD_LENGTH, listManagedUsers } from "@/lib/admin/user-admin-repository";
+import { formatDateTime, formatNumber } from "@/lib/format";
 
 interface PageProps {
   searchParams: Promise<{ ok?: string; error?: string }>;
@@ -126,7 +127,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                     )}
                   </td>
                   <td>{row.isActive ? "正常" : "已停用"}</td>
-                  <td>{row.lastLoginAt ? new Date(row.lastLoginAt).toLocaleString("zh-CN") : "从未"}</td>
+                  <td>{row.lastLoginAt ? formatDateTime(row.lastLoginAt) : "从未"}</td>
                   <td>
                     {mayManage && !isSelf ? (
                       <div className="users-actions">

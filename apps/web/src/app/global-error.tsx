@@ -1,4 +1,5 @@
 "use client";
+import { siteHtmlLang } from "@/lib/format";
 
 /**
  * The last word when a page cannot be rendered at all.
@@ -14,7 +15,7 @@
  */
 export default function GlobalError() {
   return (
-    <html lang="zh-Hans">
+    <html lang={siteHtmlLang}>
       <body
         style={{
           margin: 0,

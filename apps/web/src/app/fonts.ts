@@ -1,4 +1,5 @@
-import { Barlow_Condensed, Noto_Serif_SC } from "next/font/google";
+import { Barlow_Condensed, Noto_Serif, Noto_Serif_SC } from "next/font/google";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 // Headings only. The CSS has always *asked* for Noto Serif SC, but nothing ever
 // shipped it, so headings fell back to Songti SC on a Mac and SimSun on Windows,
@@ -12,7 +13,7 @@ import { Barlow_Condensed, Noto_Serif_SC } from "next/font/google";
 //
 // preload:false for the same reason: let the browser fetch only the slices whose
 // glyphs are actually on screen.
-export const notoSerifSC = Noto_Serif_SC({
+const serifSC = Noto_Serif_SC({
   weight: ["700"],
   subsets: ["latin"],
   display: "swap",
@@ -20,6 +21,38 @@ export const notoSerifSC = Noto_Serif_SC({
   variable: "--font-serif-sc",
   fallback: ["Songti SC", "serif"],
 });
+
+/**
+ * 拉丁文字的站用这一款。
+ *
+ * 英文、德文、罗马尼亚文的标题里没有汉字，用 Noto Serif SC 等于背着一套中日韩
+ * 字形去排拉丁字母。Noto Serif 是同一个家族的拉丁版，字形风格接轨，但没有那
+ * 上百个 unicode-range 分片 —— 对这些站是净收益，可以放心 preload。
+ *
+ * 用的是同一个 CSS 变量 --font-serif-sc：主题系统（theme-css.ts 和各个预设）
+ * 按这个名字取值，换个名字就要同步改四五个 JSON。变量名对非中文站略有误导，
+ * 但那是注释能解决的问题，而改名要动的是数据。
+ */
+const serifLatin = Noto_Serif({
+  weight: ["700"],
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
+  variable: "--font-serif-sc",
+  fallback: ["Georgia", "serif"],
+});
+
+/**
+ * 本站标题用的衬线体。
+ *
+ * next/font/google 要求在模块顶层用字面量参数调用，不能按运行时的值去选字体，
+ * 所以两款都声明、在这里挑一款。没被选中的那款不会有任何文字去用它，浏览器
+ * 也就不会下载它的字体文件。
+ *
+ * 日文和韩文站将来需要 Noto_Serif_JP / Noto_Serif_KR。现在不加 —— 那两个站还
+ * 不存在，加进来既没法验证，又让每一次构建多拉两套 CJK 字体。等站开起来，
+ * 在这里多两行即可。
+ */
+export const notoSerifSC = SITE_LOCALE === "zh" ? serifSC : serifLatin;
 
 /**
  * The registry figure on the homepage, and nothing else.

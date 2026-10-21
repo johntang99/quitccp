@@ -1,4 +1,5 @@
 import type { VideoLibraryShelf } from "@/lib/public-content";
+import { formatNumber } from "@/lib/format";
 
 function duration(seconds: number | null): string {
   if (!seconds) return "";
@@ -29,7 +30,7 @@ export function VideoLibraryIndex({ shelves }: { shelves: VideoLibraryShelf[] })
         影音库
       </h1>
       <p style={{ fontFamily: "var(--mono)", fontSize: 13, color: "var(--muted)", margin: "0 0 34px" }}>
-        共 {total.toLocaleString("zh-CN")} 个节目 · {shelves.length} 个系列
+        共 {formatNumber(total)} 个节目 · {shelves.length} 个系列
       </p>
 
       {shelves.map((shelf) => (

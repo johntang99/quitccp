@@ -5,6 +5,7 @@ import { ArticleTabs } from "@/components/admin/ArticleTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { searchArticles } from "@/lib/admin/article-search";
 import { listCategories } from "@/lib/admin/repository";
+import { formatNumber } from "@/lib/format";
 
 interface PageProps {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -126,7 +127,7 @@ export default async function LatestArticlesPage({ searchParams }: PageProps) {
         </form>
         <ArticleTable rows={result.rows} numbered dateColumn={byUpdated ? "updated" : "published"} />
         <p className="muted" style={{ margin: "12px 0 0" }}>
-          显示 {result.rows.length} 篇，全站共 {result.total.toLocaleString()} 篇
+          显示 {result.rows.length} 篇，全站共 {formatNumber(result.total)} 篇
         </p>
       </section>
     </AdminShell>

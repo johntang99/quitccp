@@ -11,6 +11,7 @@ import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
 import type { RenderablePage } from "./site-data";
 import { extractNewsSlugFromHref, toNewsArticleSlug } from "./news-linking";
 import { SITE_LOCALE } from "@/lib/site-config";
+import { formatNumber } from "@/lib/format";
 
 const fallbackCatalog: RenderablePage[] = routeSeeds.map((seed) => {
   const contentPath = pageRouteToContentPath(seed.section, seed.slug);
@@ -780,7 +781,7 @@ async function loadRenderableArticle(
     const resolvedByline = [
       toDateLabel(articleDate),
       asString(row.author) || "本站资料库",
-      `约 ${plainBody.length.toLocaleString("zh-CN")} 字`
+      `约 ${formatNumber(plainBody.length)} 字`
     ];
     return {
       section: "news",

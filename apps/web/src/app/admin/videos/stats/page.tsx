@@ -2,6 +2,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { VideoTabs } from "@/components/admin/VideoTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { getVideoStats } from "@/lib/admin/video-stats";
+import { formatNumber } from "@/lib/format";
 
 /** 视频统计 — the counts, and the two numbers worth acting on. */
 export default async function VideoStatsPage() {
@@ -23,17 +24,17 @@ export default async function VideoStatsPage() {
         <div className="stat-grid">
           <div className="stat">
             <div className="muted" style={{ fontSize: 12 }}>视频总数</div>
-            <div className="n">{stats.total.toLocaleString()}</div>
+            <div className="n">{formatNumber(stats.total)}</div>
           </div>
           {stats.byStatus.map((row) => (
             <div className="stat" key={row.key}>
               <div className="muted" style={{ fontSize: 12 }}>{row.label}</div>
-              <div className="n">{row.count.toLocaleString()}</div>
+              <div className="n">{formatNumber(row.count)}</div>
             </div>
           ))}
           <div className="stat">
             <div className="muted" style={{ fontSize: 12 }}>已知时长</div>
-            <div className="n">{hours.toLocaleString()} 小时</div>
+            <div className="n">{formatNumber(hours)} 小时</div>
           </div>
         </div>
         <p className="muted" style={{ margin: "10px 0 0", fontSize: 13 }}>
@@ -48,7 +49,7 @@ export default async function VideoStatsPage() {
             <a className="stat" key={gap.key} href={gap.href} style={{ textDecoration: "none", color: "inherit" }}>
               <div className="muted" style={{ fontSize: 12 }}>{gap.label}</div>
               <div className="n" style={{ color: gap.count > 0 ? "#b42318" : undefined }}>
-                {gap.count.toLocaleString()}
+                {formatNumber(gap.count)}
               </div>
             </a>
           ))}
@@ -72,7 +73,7 @@ export default async function VideoStatsPage() {
                   <td>
                     <a href={`/admin/videos?host=${row.key}`}>{row.label}</a>
                   </td>
-                  <td style={{ textAlign: "right" }}>{row.count.toLocaleString()}</td>
+                  <td style={{ textAlign: "right" }}>{formatNumber(row.count)}</td>
                   <td className="muted">{row.key === "none" ? "—" : row.reachable ? "可以" : "需翻墙"}</td>
                 </tr>
               ))}
@@ -80,7 +81,7 @@ export default async function VideoStatsPage() {
           </table>
         </div>
         <p className="muted" style={{ margin: "10px 0 0", fontSize: 13 }}>
-          <b>{unreachable.toLocaleString()} 个视频大陆读者看不到。</b>
+          <b>{formatNumber(unreachable)} 个视频大陆读者看不到。</b>
           给它们补上干净世界的备用地址是编辑部的活，不是技术问题。
         </p>
       </section>
@@ -102,7 +103,7 @@ export default async function VideoStatsPage() {
                   <td>
                     <a href={`/admin/videos?category=${row.slug}`}>{row.name}</a>
                   </td>
-                  <td style={{ textAlign: "right" }}>{row.count.toLocaleString()}</td>
+                  <td style={{ textAlign: "right" }}>{formatNumber(row.count)}</td>
                   <td>
                     <div className="bar">
                       <i style={{ width: `${Math.round((row.count / maxCategory) * 100)}%` }} />
@@ -130,7 +131,7 @@ export default async function VideoStatsPage() {
               {stats.byYear.map((row) => (
                 <tr key={row.year}>
                   <td>{row.year}</td>
-                  <td style={{ textAlign: "right" }}>{row.count.toLocaleString()}</td>
+                  <td style={{ textAlign: "right" }}>{formatNumber(row.count)}</td>
                   <td>
                     <div className="bar">
                       <i style={{ width: `${Math.round((row.count / maxYear) * 100)}%` }} />

@@ -2,6 +2,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { can } from "@/lib/admin/permissions";
 import { recentLogHours, type LogHourRow } from "@/lib/admin/log-rollup";
+import { formatNumber } from "@/lib/format";
 
 /**
  * What the public site actually served, hour by hour.
@@ -18,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 const HOURS = 48;
 
-const num = (n: number) => n.toLocaleString("zh-CN");
+const num = (n: number) => formatNumber(n);
 
 function bytes(n: number) {
   if (n >= 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;

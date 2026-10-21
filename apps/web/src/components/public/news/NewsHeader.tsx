@@ -1,5 +1,6 @@
 import { getNewsCategoryTabs } from "@/lib/public-content";
 import { T } from "./newsTokens";
+import { formatNumber } from "@/lib/format";
 
 /**
  * The masthead, with the category row sitting inside it on the gradient.
@@ -86,7 +87,7 @@ export async function NewsHeader({
                 {listing.name}
               </h1>
               <span style={{ fontFamily: T.sans, fontWeight: 500, fontSize: 13, letterSpacing: "0.08em", color: T.gold }}>
-                {listing.en} · {listing.total.toLocaleString("zh-CN")} 篇
+                {listing.en} · {formatNumber(listing.total)} 篇
               </span>
             </div>
             {listing.description ? (
