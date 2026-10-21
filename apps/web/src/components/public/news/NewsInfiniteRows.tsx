@@ -5,6 +5,7 @@ import type { NewsCard } from "@/lib/public-content";
 import { NewsRow } from "./NewsRow";
 import { T } from "./newsTokens";
 import { formatNumber } from "@/lib/format";
+import { t } from "@/lib/i18n";
 
 /**
  * Appends further chunks of a listing as the reader approaches the end.
@@ -179,12 +180,12 @@ export function NewsInfiniteRows({
       {/* Announced politely so a screen reader is told the list grew rather
           than silently finding more rows under it. */}
       <div aria-live="polite" className="sr-only">
-        {loading ? "正在载入更多文章" : items.length > 0 ? `已显示 ${shown} 篇` : ""}
+        {loading ? t("news.loadingMore") : items.length > 0 ? t("news.shown", { n: shown }) : ""}
       </div>
 
       {!capped && !failed ? (
         <div ref={sentinel} style={{ padding: "18px 0", textAlign: "center", color: T.muted, fontSize: 14 }}>
-          {loading ? "载入中…" : " "}
+          {loading ? t("news.loading") : " "}
         </div>
       ) : null}
 
@@ -192,14 +193,14 @@ export function NewsInfiniteRows({
         <div style={{ padding: "22px 0 4px", textAlign: "center", fontSize: 14, color: T.muted }}>
           {pageCount > maxChunk ? (
             <>
-              已显示 {shown} 篇，本栏共 {formatNumber(total)} 篇。
+              {t("news.shownOfTotal", { n: shown, total: formatNumber(total) })}
               {" "}
               <a href={`/news/${encodeURIComponent(slug)}/${maxChunk + 1}`} style={{ color: T.seal }}>
-                继续浏览 →
+                {t("news.keepBrowsing")}
               </a>
             </>
           ) : (
-            <>本栏文章已全部显示（共 {formatNumber(total)} 篇）。</>
+            <>{t("news.allShown", { total: formatNumber(total) })}</>
           )}
         </div>
       ) : null}

@@ -42,3 +42,25 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   ko: "한국어",
   ro: "Română"
 };
+
+/**
+ * 页头那张横幅 logo。
+ *
+ * 它是整套标识 —— 印章加字标，而字标上印着组织名。中文站那张写的是
+ * 「全球退黨服務中心」，放在英文站的页头上就成了一句读者看不懂的话，而且它是
+ * 整页最显眼的东西。
+ *
+ * 所以按语言选图。素材还没有的语言先用中文那张 —— 一张外文 logo 不好看，
+ * 但比一个破图标好：破图标会让人以为整个站坏了。
+ *
+ * 新站上线清单里有一条就是「把这一语言的 logo 放进 public/logo/」。
+ */
+const LOGO_BY_LOCALE: Partial<Record<Locale, string>> = {
+  zh: "/logo/banner-2022-1.webp"
+  // en / de / ja / ko / ro：素材到位后在这里加一行
+};
+
+export const SITE_LOGO: string = LOGO_BY_LOCALE[SITE_LOCALE] ?? "/logo/banner-2022-1.webp";
+
+/** 这个站有没有自己的 logo。没有的话值得在上线清单上提醒一次。 */
+export const HAS_OWN_LOGO: boolean = Boolean(LOGO_BY_LOCALE[SITE_LOCALE]);

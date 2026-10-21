@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import type { PublicFaqGroup } from "@/lib/public-content";
+import { t } from "@/lib/i18n";
 
 /** How many questions a card shows before it offers 了解更多. */
 const PER_CARD = 6;
@@ -31,8 +32,8 @@ export function FaqSearch({ q, action }: { q: string; action: string }) {
         <circle cx="11" cy="11" r="7" />
         <path d="m16.5 16.5 4 4" />
       </svg>
-      <input type="search" name="q" defaultValue={q} placeholder="请输入关键字…" aria-label="搜索问答" />
-      <button type="submit">搜 索</button>
+      <input type="search" name="q" defaultValue={q} placeholder={t("faq.searchPlaceholder")} aria-label={t("faq.aria.search")} />
+      <button type="submit">{t("faq.searchButton")}</button>
     </form>
   );
 }
@@ -41,7 +42,7 @@ export function FaqIndex({ groups, q }: { groups: PublicFaqGroup[]; q: string })
   if (groups.length === 0) {
     return (
       <p className="muted" style={{ textAlign: "center", padding: "40px 0" }}>
-        {q ? `没有找到包含「${q}」的问题。` : "暂时没有问答。"}
+        {q ? t("faq.noMatch", { q }) : t("faq.empty")}
       </p>
     );
   }
@@ -74,7 +75,7 @@ export function FaqIndex({ groups, q }: { groups: PublicFaqGroup[]; q: string })
             </ul>
             {hidden > 0 ? (
               <Link className="faq-more" href={`/services/faq/c/${encodeURIComponent(group.slug)}` as Route}>
-                了解更多
+                {t("faq.learnMore")}
               </Link>
             ) : null}
           </section>

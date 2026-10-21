@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { externalLinkProps } from "@/lib/external-services";
+import { t } from "@/lib/i18n";
 
 /**
  * The player for a 歌曲 or 乐曲 recording.
@@ -110,7 +111,7 @@ export function ArticleAudio({ src, label }: { src: string; label: string }) {
           type="button"
           className="aplayer-play"
           onClick={toggle}
-          aria-label={playing ? "暂停" : "播放"}
+          aria-label={playing ? t("audio.pause") : t("audio.play")}
         >
           {/* Drawn rather than typed: a glyph would inherit the serif face and
               sit off-centre inside a circle. */}
@@ -139,13 +140,13 @@ export function ArticleAudio({ src, label }: { src: string; label: string }) {
           value={current}
           onChange={(event) => seek(Number(event.target.value))}
           disabled={!Number.isFinite(duration)}
-          aria-label="播放进度"
+          aria-label={t("audio.aria.progress")}
           style={{ ["--played" as string]: `${progress}%` }}
         />
         <span className="aplayer-time">{clock(duration)}</span>
 
         <div className="aplayer-vol">
-          <button type="button" onClick={toggleMute} aria-label={muted ? "取消静音" : "静音"}>
+          <button type="button" onClick={toggleMute} aria-label={muted ? t("audio.unmute") : t("audio.mute")}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M4 9.5v5h3.5L12 18.8V5.2L7.5 9.5H4z" />
               {muted ? (
@@ -169,7 +170,7 @@ export function ArticleAudio({ src, label }: { src: string; label: string }) {
             step={0.05}
             value={muted ? 0 : volume}
             onChange={(event) => changeVolume(Number(event.target.value))}
-            aria-label="音量"
+            aria-label={t("audio.aria.volume")}
             style={{ ["--played" as string]: `${(muted ? 0 : volume) * 100}%` }}
           />
         </div>
@@ -182,7 +183,7 @@ export function ArticleAudio({ src, label }: { src: string; label: string }) {
         {/* The format, read off the address: it costs no request and tells the
             reader what they would be saving before they commit to it. */}
         {failed ? (
-          <span className="aplayer-error">无法播放，请改用下载链接。</span>
+          <span className="aplayer-error">{t("audio.error")}</span>
         ) : (
           <span className="aplayer-kind">{format}</span>
         )}

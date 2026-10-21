@@ -6,15 +6,16 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import "./globals.css";
 import { siteHtmlLang } from "@/lib/format";
+import { t } from "@/lib/i18n";
 
 const SITE_ORIGIN = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.tuidang.org").replace(/\/$/, "");
 
 export const metadata: Metadata = {
   /* A page that sets no title of its own gets the centre's name; one that does
      gets "<its title> — 全球退党服务中心". */
-  title: { default: "全球退党服务中心", template: "%s — 全球退党服务中心" },
+  title: { default: t("site.name"), template: t("site.titleTemplate") },
   description:
-    "全球退党服务中心：三退声明登记与证书、新闻与调查报告、影片与可自由取用的真相资料。",
+    t("site.description"),
   metadataBase: new URL(SITE_ORIGIN),
   /*
    * No canonical here.
@@ -33,7 +34,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "全球退党服务中心",
+    name: t("site.name"),
     url: SITE_ORIGIN,
     email: "service@tuidang.org",
     sameAs: [

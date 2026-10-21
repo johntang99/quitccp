@@ -6,6 +6,7 @@ import { getPublicNav } from "@/lib/public-settings";
 import { EXTERNAL_LINK_PROPS, EXTERNAL_SERVICES } from "@/lib/external-services";
 import { LanguagePicker } from "@/components/layout/LanguagePicker";
 import { t } from "@/lib/i18n";
+import { SITE_LOGO } from "@/lib/site-config";
 
 export async function SiteHeader() {
   const navItems = await getPublicNav();
@@ -19,7 +20,7 @@ export async function SiteHeader() {
                 organisation's name lives in the alt text rather than beside it. */}
             <img
               className="brand-logo"
-              src="/logo/banner-2022-1.webp"
+              src={SITE_LOGO}
               width={1020}
               height={156}
               alt={t("header.aria.logo")}
