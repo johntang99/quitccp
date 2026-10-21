@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { SITE_LOCALE } from "@/lib/site-config";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 
 /**
@@ -60,6 +61,8 @@ async function readAll(
   const out: Array<Record<string, unknown>> = [];
   const PAGE = 1000;
   for (let from = 0; ; from += PAGE) {
+    /* locale-ok: 限定由调用方的 refine 加 —— 六处调用都写了
+       .eq("locale", SITE_LOCALE)，就在下面不远处。 */
     const { data, error } = await refine(supabase.from(table).select(columns)).range(from, from + PAGE - 1);
     if (error) throw error;
     const rows = (data ?? []) as Array<Record<string, unknown>>;
@@ -95,12 +98,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const [articles, videos, faqs, articleCategories, videoCategories, faqCategories] = await Promise.all([
-      readAll("cms_articles", "slug, updated_at, published_at", (q) => q.eq("status", "published")),
-      readAll("cms_videos", "slug, updated_at", (q) => q.eq("status", "published")),
-      readAll("cms_faqs", "slug, updated_at", (q) => q.eq("status", "published")),
-      readAll("cms_article_categories", "slug", (q) => q),
-      readAll("cms_video_categories", "slug", (q) => q),
-      readAll("cms_faq_categories", "slug", (q) => q)
+      /*
+       * 每一张都按站限定。
+       *
+       * 这里原来一处都没有限定 —— 六张表全表读出来。中文站只有中文内容，所以
+       * 看不出问题；英文站上线那一刻，它的 sitemap 会把一万五千篇中文文章和
+       * 全部中文分类列进去，然后提交给搜索引擎。那是对外的东西，发现得晚就
+       * 已经被抓走了。
+       */
+      readAll("cms_articles", "slug, updated_at, published_at", (q) =>
+        q.eq("status", "published").eq("locale", SITE_LOCALE)),
+      readAll("cms_videos", "slug, updated_at", (q) =>
+        q.eq("status", "published").eq("locale", SITE_LOCALE)),
+      readAll("cms_faqs", "slug, updated_at", (q) =>
+        q.eq("status", "published").eq("locale", SITE_LOCALE)),
+      readAll("cms_article_categories", "slug", (q) => q.eq("locale", SITE_LOCALE)),
+      readAll("cms_video_categories", "slug", (q) => q.eq("locale", SITE_LOCALE)),
+      readAll("cms_faq_categories", "slug", (q) => q.eq("locale", SITE_LOCALE))
     ]);
 
     const slugOf = (row: Record<string, unknown>) =>

@@ -5,6 +5,7 @@ import {
   type PageContentContractSeed
 } from "@quitccp/content-schema";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 export interface ContentFileItem {
   path: string;
@@ -119,7 +120,8 @@ async function createAudit(
     target_type: targetType,
     target_id: targetId,
     access_mode: accessMode,
-    detail
+    detail,
+    locale: SITE_LOCALE
   });
 }
 

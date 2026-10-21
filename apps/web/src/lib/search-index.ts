@@ -170,7 +170,16 @@ interface TypeSource {
   type: SearchDocType;
   table: string;
   select: string;
-  /** Materials and articles are per-locale; videos are not. */
+  /**
+   * 这张表的行是否按语言区分。
+   *
+   * 037 之前 cms_videos 没有 locale 列，所以视频是 false —— 而那意味着每个站
+   * 都会把全部 861 个视频索引一遍，并且因为 select 里没取 locale，
+   * toSearchDocument 的兜底会把它们标成**当前站**的语言。两个站的文档 id 相同，
+   * 于是来回覆盖：中文站写成 zh，英文站再写成 en。
+   *
+   * 那一列现在有了（861 行全是 zh，无空值），所以三张表都是 true。
+   */
   localeFiltered: boolean;
 }
 
@@ -184,8 +193,8 @@ const SOURCES: TypeSource[] = [
   {
     type: "video",
     table: "cms_videos",
-    select: "id, slug, title, description, body_markdown, status, published_at",
-    localeFiltered: false
+    select: "id, slug, title, description, body_markdown, locale, status, published_at",
+    localeFiltered: true
   },
   {
     type: "material",
@@ -212,6 +221,37 @@ export interface SyncResult {
   /** Documents dropped because their row no longer exists. Full passes only. */
   removed: number;
   index: string;
+}
+
+/**
+ * 全量同步末尾那一扫要删掉哪些文档。
+ *
+ * ## 为什么必须限定语言
+ *
+ * 四个站共用一个索引（索引名来自 MEILI_INDEX_ARTICLES，默认 "articles"）。
+ * 原来的条件是「synced_at 比本次运行早，或者没有 synced_at」—— 英文站跑一次
+ * 每周全量，只写入英文文档，然后把「比本次运行早」的全删掉，**那就是中文站
+ * 那一万六千条**。中文站的搜索会被清空，直到一周后它自己的全量同步跑完。
+ *
+ * 加上语言限定之后，每个站只扫自己的那一份。
+ *
+ * ## 为什么还要 NOT EXISTS
+ *
+ * 只按 synced_at 判断会静默跳过这个字段出现之前写进去的文档 —— 有一条孤儿
+ * 就是这样活过了一次「报告删除了 0 条」的全量同步的。
+ *
+ * ## 为什么不用 IN
+ *
+ * 展开成 OR 链，而不是 `locale IN [...]`：OR 在所有版本的 Meilisearch 上都
+ * 认，而一个过滤语法上的意外在这里的后果是删错东西。
+ */
+export function staleSweepFilter(locales: readonly string[], runStartedAt: number): string {
+  /* 空列表会展开成 `() AND (...)`，那是个语法错误；但万一哪天 Meilisearch
+     把它当成「全部匹配」，这一扫就会删光整个索引。在这里拦住。 */
+  if (locales.length === 0) throw new Error("staleSweepFilter：没有给语言，拒绝生成清理条件");
+  const mine = locales.map((l) => `locale = "${l}"`).join(" OR ");
+  const stale = `synced_at < ${runStartedAt} OR synced_at NOT EXISTS`;
+  return `(${mine}) AND (${stale})`;
 }
 
 /**
@@ -246,6 +286,8 @@ export async function syncSearchIndex(options: SyncOptions): Promise<SyncResult>
   for (const source of SOURCES) {
     let cursor: string | null = null;
     while (true) {
+      /* locale-ok: 下面按 source.localeFiltered 加 .in("locale", options.locales)，
+         三张表现在都是 true。 */
       let query = supabase
         .from(source.table)
         .select(source.select)
@@ -298,12 +340,7 @@ export async function syncSearchIndex(options: SyncOptions): Promise<SyncResult>
     const sweep = await meiliRequest<{ taskUid: number }>(
       "POST",
       `/indexes/${encodeURIComponent(index)}/documents/delete`,
-      {
-        // `NOT EXISTS` as well as the age check: a filter on synced_at alone
-        // silently skips documents written before the field existed, which is
-        // how one orphan survived a full sync that reported removing nothing.
-        filter: `synced_at < ${runStartedAt} OR synced_at NOT EXISTS`
-      }
+      { filter: staleSweepFilter(options.locales, runStartedAt) }
     );
     await waitForTask(sweep.taskUid);
     const task = await meiliRequest<{ details?: { deletedDocuments?: number } }>(
@@ -386,6 +423,7 @@ export async function indexContentById(type: SearchDocType, id: string): Promise
       requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
       { auth: { persistSession: false } }
     );
+    /* locale-ok: 按 id 查（uuid 全局唯一）—— 单条内容保存时立即进索引那条路。 */
     const { data, error } = await supabase
       .from(source.table)
       .select(source.select)

@@ -43,6 +43,7 @@ export async function GET(request: Request) {
 
   try {
     const supabase = createSupabaseAdminClient();
+    /* locale-ok: 按 id 查（uuid 全局唯一），表名由 kind 决定。 */
     const { data: row, error: rowError } = await supabase
       .from(table)
       .select("slug, slug_legacy, short_code")

@@ -242,7 +242,7 @@ const TYPES: TypeConfig[] = [
     table: "cms_videos",
     select: "id, slug, title, description, published_at, cover_image",
     tiers: [["title"], ["description", "speaker"], ["body_markdown"]],
-    localeFiltered: false
+    localeFiltered: true
   },
   {
     type: "material",
@@ -328,6 +328,8 @@ async function searchOneType(
     );
 
   const base = () => {
+    /* locale-ok: 下面按 config.localeFiltered 加 .eq("locale", locale)，
+       三张表现在都是 true。 */
     let q = supabase
       .from(config.table)
       .select(config.select)

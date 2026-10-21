@@ -147,6 +147,23 @@ const DEAD = [
   "components/public/VideoLibraryIndex.tsx"
 ];
 const isDead = (f: string) => DEAD.includes(f);
+
+/*
+ * 只在中文站渲染的后台面板。
+ *
+ * 不是「还没翻」，是**不该翻**。防火墙放行规则每个 Vercel 项目各一份，那里
+ * 记的是中文站那个项目的三条 —— 其中「免翻 reverse proxy」是给墙内读者用的
+ * 反代，别的站根本没有这条。登记册抓取的 cron 也只在中文站跑，面板属于去抓
+ * 的那个站。把它们显示在英文站的后台，给的信息是错的，不只是没翻译。
+ *
+ * 判断依据写在各组件的文件头上。放进待翻译的数字里会让「英文站还差多少」
+ * 一直差着一笔永远不会动的账。
+ */
+const ZH_ONLY = [
+  "components/admin/FirewallNotesPanel.tsx",
+  "components/admin/SantuiSyncPanel.tsx"
+];
+const isZhOnly = (f: string) => ZH_ONLY.includes(f);
 /*
  * 模板单独一栏。
  *
@@ -166,8 +183,9 @@ const isTemplate = (f: string) => f.startsWith("components/templates/") || CMS_B
 const templateRows = all.filter((r) => isTemplate(r.file));
 const opsRows = all.filter((r) => isOps(r.file));
 const deadRows = all.filter((r) => isDead(r.file));
+const zhOnlyRows = all.filter((r) => isZhOnly(r.file));
 const publicRows = all.filter((r) => !isAdmin(r.file) && !isTemplate(r.file) && !isOps(r.file) && !isDead(r.file));
-const adminRows = all.filter((r) => isAdmin(r.file));
+const adminRows = all.filter((r) => isAdmin(r.file) && !isZhOnly(r.file));
 const sum = (rows: Row[]) => rows.reduce((n, r) => n + r.chars, 0);
 
 console.log("\n========== 界面文案 ==========\n");
@@ -175,6 +193,7 @@ console.log(`  公开站界面   还有 ${sum(publicRows)} 个汉字写死在 ${
 console.log(`  后台界面     还有 ${sum(adminRows)} 个汉字写死在 ${adminRows.length} 个文件里  ← 要翻（中英两版）`);
 console.log(`  CMS 兜底     ${sum(templateRows)} 个汉字在 ${templateRows.length} 个文件里  ← 不用翻，内容走 CMS`);
 console.log(`  运维与报警   ${sum(opsRows)} 个汉字在 ${opsRows.length} 个文件里  ← 不用翻，只进日志和邮件`);
+console.log(`  中文站专属   ${sum(zhOnlyRows)} 个汉字在 ${zhOnlyRows.length} 个文件里  ← 不用翻，只在中文站渲染`);
 console.log(`  死代码       ${sum(deadRows)} 个汉字在 ${deadRows.length} 个文件里  ← 不用翻，没有任何地方引用`);
 
 if (SHOW_FILES) {

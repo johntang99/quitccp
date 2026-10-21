@@ -20,6 +20,7 @@
     "migrate": "tsx scripts/migrate.ts",
     "verify": "tsx scripts/verify-site.ts",
     "locale:check": "tsx scripts/check-locale-scope.ts",
+    "zh:unchanged": "tsx scripts/check-zh-unchanged.ts",
     "admin:snapshot": "tsx scripts/snapshot-admin.ts",
     "i18n:check": "tsx scripts/check-i18n.ts",
     "benchmark:search": "tsx scripts/benchmark-search.ts",

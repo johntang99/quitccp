@@ -24,6 +24,14 @@ import { SITE_LOCALE, type Locale } from "@/lib/site-config";
  * Vercel 的 cron 面板按状态码判断成败。跳过是正常状态，不是失败；返回非 200
  * 会让德文站的面板上永远挂着三条红色的定时任务，而那正是「报警变噪音」的开头。
  */
+/**
+ * 抓登记册的任务在哪些站跑。
+ *
+ * 导出是为了让后台那块「登记册同步」面板跟着它走 —— 面板属于去抓的那个站。
+ * 两处各写一个 'zh'，哪天任务挪了地方，面板会悄悄对不上。
+ */
+export const SANTUI_LOCALES = ["zh"] as const satisfies readonly Locale[];
+
 export function skipUnlessLocale(allowed: readonly Locale[]): NextResponse | null {
   if (allowed.includes(SITE_LOCALE)) return null;
   return NextResponse.json({

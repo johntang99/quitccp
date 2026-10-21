@@ -11,6 +11,7 @@
  * stack trace.
  */
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 export interface FaqCategoryRecord {
   id: string;
@@ -60,13 +61,23 @@ async function audit(actorEmail: string, action: string, targetId: string) {
       target_type: "faq",
       target_id: targetId,
       access_mode: "write",
-      detail: {}
+      detail: {},
+      locale: SITE_LOCALE
     });
   } catch {
     /* audit is a record, not a gate */
   }
 }
 
+/*
+ * 常见问答按站分。
+ *
+ * cms_faqs 和 cms_faq_categories 都有 locale 列（037 加的，现有 45 条问答和
+ * 6 个分类都是 zh），但这个文件原来一处都没有用它 —— 英文站的后台会列出全部
+ * 中文问答，新建的问答也不会标上是哪个站的。
+ *
+ * 按 id 的查询不加限定：id 是 uuid，全局唯一，跨站不会撞。
+ */
 const TABLE = "cms_faqs";
 const CATEGORY_TABLE = "cms_faq_categories";
 
@@ -81,6 +92,7 @@ export async function listFaqCategories(): Promise<{ ready: boolean; rows: FaqCa
   const { data, error } = await supabase
     .from(CATEGORY_TABLE)
     .select("id, slug, name, summary, sort_order")
+    .eq("locale", SITE_LOCALE)
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
   if (error) {
@@ -93,6 +105,7 @@ export async function listFaqCategories(): Promise<{ ready: boolean; rows: FaqCa
   const { data: counted, error: countError } = await supabase
     .from(TABLE)
     .select("category_id, status")
+    .eq("locale", SITE_LOCALE)
     .eq("status", "published");
   if (countError && !missingTable(countError)) throw countError;
 
@@ -129,7 +142,8 @@ export async function searchFaqs(
     .from(TABLE)
     .select("id, slug, question, answer_markdown, category_id, position, status, updated_at, updated_by", {
       count: "exact"
-    });
+    })
+    .eq("locale", SITE_LOCALE);
 
   if (filters.q) query = query.ilike("question", `%${filters.q}%`);
   if (filters.status) query = query.eq("status", filters.status);
@@ -216,6 +230,7 @@ export async function saveFaq(input: FaqInput, actorEmail: string): Promise<stri
     const { data } = await supabase
       .from(TABLE)
       .select("position")
+      .eq("locale", SITE_LOCALE)
       .eq("category_id", input.categoryId)
       .order("position", { ascending: false })
       .limit(1);
@@ -232,7 +247,8 @@ export async function saveFaq(input: FaqInput, actorEmail: string): Promise<stri
     category_id: input.categoryId || null,
     position,
     status: input.status,
-    updated_by: actorEmail
+    updated_by: actorEmail,
+    locale: SITE_LOCALE
   };
 
   if (input.id) {
@@ -277,6 +293,9 @@ export async function moveFaq(id: string, direction: "up" | "down", actorEmail: 
   const { data: neighbours } = await supabase
     .from(TABLE)
     .select("id, position")
+    /* 邻居得是同一个站的。分类本身已经按站分，所以这条多半是多余的 ——
+       但「多半」不是理由：一次漏限定换来的是两个站的问答互相换位置。 */
+    .eq("locale", SITE_LOCALE)
     .eq("category_id", current.category_id)
     [comparison]("position", current.position)
     .order("position", { ascending: direction === "down" })
@@ -294,7 +313,13 @@ export async function upsertFaqCategory(
   actorEmail: string
 ): Promise<void> {
   const supabase = createSupabaseAdminClient();
-  const row = { slug: input.slug, name: input.name, summary: input.summary, sort_order: input.sortOrder };
+  const row = {
+    slug: input.slug,
+    name: input.name,
+    summary: input.summary,
+    sort_order: input.sortOrder,
+    locale: SITE_LOCALE
+  };
   const { error } = input.id
     ? await supabase.from(CATEGORY_TABLE).update(row).eq("id", input.id)
     : await supabase.from(CATEGORY_TABLE).insert(row);

@@ -29,9 +29,21 @@
 
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
+import pg from "pg";
 
-/** 带 locale 列、因而必须按站限定的表。加表时要在这里登记 —— 这道摩擦是有意的。 */
-const LOCALE_TABLES = new Set([
+/**
+ * 带 locale 列、因而必须按站限定的表。
+ *
+ * 这张表现在**问数据库**，不靠这份清单。原来的注释写的是「加表时要在这里登记
+ * —— 这道摩擦是有意的」，而那道摩擦没拦住任何事：037 给 cms_audit_logs 加了
+ * locale 列，清单没人更新，于是检查器从来没看过审计日志那五处调用，报的却是
+ * 「全部已限定」。手写的清单必然落后于 schema，而落后的那一刻它就开始骗人。
+ *
+ * 下面这份留作两个用途：
+ *   1. 连不上数据库时（比如 CI 没有密钥）的兜底，会明说自己在兜底
+ *   2. 和数据库对一遍 —— 不一致本身就是一条要报出来的事
+ */
+const KNOWN_LOCALE_TABLES = new Set([
   "cms_articles",
   "cms_videos",
   "cms_materials",
@@ -46,11 +58,95 @@ const LOCALE_TABLES = new Set([
   "cms_article_tags",
   "cms_site_settings",
   "cms_log_hourly",
-  "cms_search_misses"
+  "cms_search_misses",
+  /* 037 加的，当时没补进这份清单 —— 于是审计日志那五处调用从来没被看过。
+     现在清单问数据库，这几行只是兜底用。 */
+  "cms_audit_logs",
+  "cms_content_revisions"
 ]);
+
+/** 实际用哪张清单，由 main() 决定 —— 能连上数据库就用数据库的。 */
+let LOCALE_TABLES = new Set(KNOWN_LOCALE_TABLES);
+
+/**
+ * 数据库里哪些 cms_ 表有 locale 列。
+ *
+ * 连不上就返回 null，由调用方决定怎么说。宁可明说「这次是按清单查的」，
+ * 也不要让人以为查的是真的 schema。
+ */
+async function tablesWithLocaleColumn(): Promise<Set<string> | null> {
+  if (!process.env.DATABASE_URL) return null;
+  const client = new pg.Client({
+    connectionString: process.env.DATABASE_URL,
+    /* Supabase 的连接串走 TLS，但证书链在本地不一定装着。 */
+    ssl: { rejectUnauthorized: false }
+  });
+  try {
+    await client.connect();
+    const { rows } = await client.query<{ table_name: string }>(
+      `select table_name
+         from information_schema.columns
+        where table_schema = 'public'
+          and table_name like 'cms_%'
+          /* 只认 locale。cms_media_assets 的 uploaded_locale 是「谁上传的」
+             这条元信息，不是分区键 —— 媒体库按设计是四个站共享的（一个 R2
+             桶），把它算进来会凭空报出六处假问题。 */
+          and column_name = 'locale'
+        order by table_name`
+    );
+    return new Set(rows.map((r) => r.table_name));
+  } catch {
+    return null;
+  } finally {
+    await client.end().catch(() => {});
+  }
+}
 
 const ROOTS = ["apps/web/src"];
 const FROM = /\.from\(\s*["'`](cms_[a-z_]+)["'`]\s*\)/;
+
+/**
+ * `.from(someVariable)` —— 表名不是字面量，这个检查器看不出查的是哪张表。
+ *
+ * 不是假想的情况：搜索索引的同步就是 `.from(source.table)` 在三张表上循环，
+ * 其中视频那一张**没有**按语言限定，而这里报的是「全都限定了」。一个说
+ * 「全绿」却根本没看见那行代码的检查器，比没有检查器更坏 —— 它让人不再去看。
+ *
+ * 所以看不见的就说看不见，单列一栏让人自己过一遍。确认过的用
+ * `locale-ok: 原因` 标掉，和其他出口一样。
+ */
+const DYNAMIC_FROM = /\.from\(\s*([A-Za-z_$][\w.$]*)\s*\)/;
+
+/**
+ * 文件里 `const TABLE = "cms_faqs"` 这样的常量。
+ *
+ * `.from(TABLE)` 本来落进「看不见」那一栏，而常量的值就在同一个文件里写着 ——
+ * 解析它只要一行正则。不解析的代价是实打实的：常见问答那个文件有十四处
+ * `.from(TABLE)` / `.from(CATEGORY_TABLE)`，一处 locale 都没加，而检查器
+ * 一条也没报。
+ *
+ * 只认同文件里的字面量常量。再往下（跨文件、对象属性、运行时拼出来的表名）
+ * 就要写一个真正的解析器了，那些继续留在「看不见」那一栏里由人过。
+ */
+function constantTables(src: string): Map<string, string> {
+  const out = new Map<string, string>();
+  const re = /(?:const|let|var)\s+([A-Z_][A-Z0-9_]*)\s*=\s*["'`](cms_[a-z_]+)["'`]/g;
+  for (let m = re.exec(src); m; m = re.exec(src)) out.set(m[1], m[2]);
+  return out;
+}
+
+/* 「这条语句里有查询动作」—— 光看 .from( 分不出 Buffer.from。 */
+const QUERY_VERB = /\.(select|insert|upsert|update|delete)\(/;
+
+/*
+ * JS 内置对象的 .from()。
+ *
+ * 只靠 QUERY_VERB 还不够：`createHmac("sha1", Buffer.from(secret)).update(...)`
+ * 里有 .update(，于是 Buffer.from 被当成了一条查询。这里是一张黑名单，但是
+ * **封闭的**那种 —— 内置对象的集合不会因为我们加了一张表就变长，和表名清单
+ * 不是一回事。
+ */
+const BUILTIN_FROM = /\b(?:Buffer|Array|Object|Set|Map|String|Number|Promise|Uint8Array|Int8Array|Float32Array|Float64Array)\.from\(/;
 
 interface Finding {
   file: string;
@@ -58,6 +154,15 @@ interface Finding {
   table: string;
   snippet: string;
 }
+
+interface Unseen {
+  file: string;
+  line: number;
+  expression: string;
+  snippet: string;
+}
+
+const unseen: Unseen[] = [];
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -113,11 +218,31 @@ function check(): Finding[] {
   const findings: Finding[] = [];
   for (const root of ROOTS) {
     for (const file of walk(root)) {
-      const lines = readFileSync(file, "utf8").split("\n");
+      const src = readFileSync(file, "utf8");
+      const lines = src.split("\n");
+      const constants = constantTables(src);
       for (let i = 0; i < lines.length; i += 1) {
         const m = FROM.exec(lines[i]);
-        if (!m) continue;
-        const table = m[1];
+        let table: string | null = m ? m[1] : null;
+        if (!m) {
+          const dyn = DYNAMIC_FROM.exec(lines[i]);
+          /* 先看能不能解析成同文件里的常量。 */
+          const resolved = dyn ? constants.get(dyn[1]) : undefined;
+          if (resolved) table = resolved;
+          else if (dyn && !BUILTIN_FROM.test(lines[i]) && QUERY_VERB.test(statementAt(lines, i))) {
+            const near = [lines[i - 4] ?? "", lines[i - 3] ?? "", lines[i - 2] ?? "",
+                          lines[i - 1] ?? "", lines[i], lines[i + 1] ?? ""].join("\n");
+            if (!/locale-ok\s*:/.test(near)) {
+              unseen.push({
+                file: file.replace(/^apps\/web\/src\//, ""),
+                line: i + 1,
+                expression: dyn[1],
+                snippet: lines[i].trim()
+              });
+            }
+          }
+          if (!table) continue;
+        }
         if (!LOCALE_TABLES.has(table)) continue;
 
         const stmt = statementAt(lines, i);
@@ -151,26 +276,61 @@ function check(): Finding[] {
   return findings;
 }
 
-const findings = check();
-if (findings.length === 0) {
-  console.log("\n✓ 所有针对带 locale 的表的查询都已按站限定。\n");
-  process.exit(0);
+/** 看不见的那些，单独报 —— 它们不算失败，但不能不说。 */
+function reportUnseen() {
+  if (unseen.length === 0) return;
+  console.log(`\n？ 另有 ${unseen.length} 处 .from() 的表名不是字面量，这个检查器看不出查的是哪张表：\n`);
+  for (const u of unseen) {
+    console.log(`  ${u.file}:${u.line}  .from(${u.expression})`);
+    console.log(`      ${u.snippet.slice(0, 120)}`);
+  }
+  console.log(`\n  自己过一遍。确认没问题的加一行 /* locale-ok: 原因 */ 标掉。\n`);
 }
 
-const byFile = new Map<string, Finding[]>();
-for (const f of findings) {
-  if (!byFile.has(f.file)) byFile.set(f.file, []);
-  byFile.get(f.file)!.push(f);
+async function main() {
+  const fromDb = await tablesWithLocaleColumn();
+  if (fromDb) {
+    LOCALE_TABLES = fromDb;
+    const added = [...fromDb].filter((t) => !KNOWN_LOCALE_TABLES.has(t));
+    const gone = [...KNOWN_LOCALE_TABLES].filter((t) => !fromDb.has(t));
+    if (added.length > 0 || gone.length > 0) {
+      console.log(`\n！ 代码里那份清单和数据库对不上 —— 这次按数据库查：`);
+      if (added.length > 0) console.log(`    数据库里有、清单里没有：${added.join("、")}`);
+      if (gone.length > 0) console.log(`    清单里有、数据库里没有：${gone.join("、")}`);
+      console.log(`    把 KNOWN_LOCALE_TABLES 补齐，它是连不上数据库时的兜底。`);
+    }
+  } else {
+    console.log(`\n！ 连不上数据库（没有 DATABASE_URL 或连接失败），这次按代码里那份清单查。`);
+    console.log(`    清单可能比 schema 旧 —— 真要确认请带上 DATABASE_URL 再跑一次。`);
+  }
+
+  const findings = check();
+
+  if (findings.length === 0) {
+    console.log(`\n✓ 针对 ${LOCALE_TABLES.size} 张带 locale 的表的查询，按字面量表名能看到的都已限定。`);
+    reportUnseen();
+    if (unseen.length === 0) console.log("");
+    return 0;
+  }
+
+  const byFile = new Map<string, Finding[]>();
+  for (const f of findings) {
+    if (!byFile.has(f.file)) byFile.set(f.file, []);
+    byFile.get(f.file)!.push(f);
+  }
+
+  reportUnseen();
+  console.log(`\n✗ 有 ${findings.length} 处查询没有按语言限定：\n`);
+  for (const [file, items] of [...byFile].sort((a, b) => b[1].length - a[1].length)) {
+    console.log(`  ${file}  （${items.length} 处）`);
+    for (const f of items) console.log(`      ${String(f.line).padStart(5)}  ${f.table.padEnd(24)} ${f.snippet}`);
+    console.log("");
+  }
+  console.log(
+    "每一处要么加上 .eq(\"locale\", SITE_LOCALE)，要么在旁边写 /* locale-ok: 理由 */ 说明\n" +
+      "它为什么该跨语言。后者是给媒体库、跨语言对账这类确实要看所有语言的查询留的。\n"
+  );
+  return 1;
 }
 
-console.log(`\n✗ 有 ${findings.length} 处查询没有按语言限定：\n`);
-for (const [file, items] of [...byFile].sort((a, b) => b[1].length - a[1].length)) {
-  console.log(`  ${file}  （${items.length} 处）`);
-  for (const f of items) console.log(`      ${String(f.line).padStart(5)}  ${f.table.padEnd(24)} ${f.snippet}`);
-  console.log("");
-}
-console.log(
-  "每一处要么加上 .eq(\"locale\", SITE_LOCALE)，要么在旁边写 /* locale-ok: 理由 */ 说明\n" +
-    "它为什么该跨语言。后者是给媒体库、跨语言对账这类确实要看所有语言的查询留的。\n"
-);
-process.exit(1);
+main().then((code) => process.exit(code));

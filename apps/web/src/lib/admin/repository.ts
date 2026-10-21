@@ -96,7 +96,10 @@ async function createAudit(
       target_type: targetType,
       target_id: targetId,
       access_mode: accessMode,
-      detail
+      detail,
+      /* 这个动作发生在哪个站。037 加了这一列，但没有任何地方写它 ——
+         一万多行全是 null，于是「审计页按站筛选」从来没能实现。 */
+      locale: SITE_LOCALE
     })
   );
   if (error) {
@@ -1512,6 +1515,18 @@ export async function listAudits(actorEmail: string): Promise<AuditRecord[]> {
   const { data, error } = await supabase
     .from("cms_audit_logs")
     .select("id, actor_email, action, target_type, target_id, detail, created_at")
+    /*
+     * 只看这个站的。
+     *
+     * 不限定的话，四个站的操作混在一张 500 行的列表里，而审计日志的用处正是
+     * 「谁在这个站上动了什么」—— 混起来之后反而查不出东西。
+     *
+     * 历史行由 043 回填成 zh（037 加了这一列但没人写，一万多行都是 null）。
+     *
+     * 留着的一件事：想一眼看出跨语言的误操作，这里需要一个「看全部语言」的
+     * 开关。现在先按站，和后台其他列表一致。
+     */
+    .eq("locale", SITE_LOCALE)
     .order("created_at", { ascending: false })
     .limit(500);
   if (error) throw error;

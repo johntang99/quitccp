@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * Media library backed by Supabase Storage, indexed in `cms_media_assets`.
@@ -40,7 +41,8 @@ async function audit(
       target_type: "media",
       target_id: targetId,
       access_mode: accessMode,
-      detail
+      detail,
+      locale: SITE_LOCALE
     });
   } catch {
     // Auditing must never break an upload.

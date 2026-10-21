@@ -24,10 +24,25 @@ export interface DashboardStats {
   audits: number;
 }
 
-async function countOf(table: string, where?: { column: string; value: string }): Promise<number> {
+/**
+ * 数一张表有多少行。
+ *
+ * `byLocale` 默认开着：后台这几个数字是「这个站有多少内容」，不是「数据库里
+ * 一共有多少」。原来一处都没有限定，英文站的后台显示的是中文站的 15,372 篇
+ * 文章和 861 个视频 —— 看着像内容都在，其实一篇都不是它的。
+ *
+ * 声明和审计记录不按站算，它们有各自的理由，见调用处。
+ */
+async function countOf(
+  table: string,
+  where?: { column: string; value: string },
+  byLocale = true
+): Promise<number> {
   try {
     const supabase = createSupabaseAdminClient();
+    /* locale-ok: byLocale 默认开着，见上面的说明；只有全球登记册传 false。 */
     let query = supabase.from(table).select("id", { count: "exact", head: true });
+    if (byLocale) query = query.eq("locale", SITE_LOCALE);
     if (where) query = query.eq(where.column, where.value);
     const { count, error } = await query;
     if (error) throw error;
@@ -45,8 +60,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       countOf("cms_videos"),
       countOf("cms_materials"),
       countOf("cms_content_entries"),
-      countOf("declarations"),
-      countOf("declarations", { column: "status", value: "pending" }),
+      /* 声明不按站算：那是全球登记册，表里根本没有 locale 列，
+         四个站的首页显示的是同一个总数。 */
+      countOf("declarations", undefined, false),
+      countOf("declarations", { column: "status", value: "pending" }, false),
       countOf("cms_audit_logs")
     ]);
   return { articles, videos, materials, pages, declarations, declarationsPending, audits };
@@ -179,7 +196,9 @@ const SEARCH_PROBE_TERMS: Record<string, string> = {
   ko: "중국공산당",
   ro: "PCC"
 };
-const PROBE_TERM = SEARCH_PROBE_TERMS[SITE_LOCALE] ?? "CCP";
+/* 导出：总览页那一栏写的是「试搜『三退』」，词写死在页面上的话，英文站会
+   显示一个它根本没搜过的词。 */
+export const PROBE_TERM = SEARCH_PROBE_TERMS[SITE_LOCALE] ?? "CCP";
 
 export async function getSearchStatus(): Promise<SearchStatus> {
   const configured = ((process.env.SEARCH_PRIMARY_BACKEND ?? "substring")
@@ -246,12 +265,17 @@ async function countSearchableRows(): Promise<number> {
   const counts = await Promise.all(
     (
       [
+        /* 三张表都按站算。视频这一张曾经是 false（037 之前没有 locale 列），
+           于是「数据库条目」在英文站上算进了 861 个中文视频，和索引里的数字
+           永远对不上 —— 搜索状态那一栏会长期亮黄灯。一个长期报假故障的
+           指示灯，和没有指示灯是一样的。 */
         ["cms_articles", true],
-        ["cms_videos", false],
+        ["cms_videos", true],
         ["cms_materials", true]
       ] as const
     ).map(async ([table, localeFiltered]) => {
       try {
+        /* locale-ok: 三张表的 localeFiltered 现在都是 true，见上面那张表。 */
         let q = supabase.from(table).select("id", { count: "exact", head: true });
         if (localeFiltered) q = q.eq("locale", SITE_LOCALE);
         const { count } = await q;

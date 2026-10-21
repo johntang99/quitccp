@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminSessionUser } from "@/lib/admin/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { SANTUI_USER_AGENT, type ScrapePage, scrapeSantui } from "@/lib/santui-scrape";
-import { skipUnlessLocale } from "@/lib/cron-locale";
+import { SANTUI_LOCALES, skipUnlessLocale } from "@/lib/cron-locale";
 
 const FEED_PATH = "feeds/santui.json";
 const LOCALE = "zh";
@@ -38,7 +38,7 @@ async function authorise(request: Request): Promise<string | null> {
 export async function GET(request: Request) {
   /* 抓的是中文数据源。四个站都跑的话，对方收到的是四倍请求，
      而写进数据库的是同一份数据。 */
-  const skip = skipUnlessLocale(["zh"]);
+  const skip = skipUnlessLocale(SANTUI_LOCALES);
   if (skip) return skip;
 
   const denied = await authorise(request);

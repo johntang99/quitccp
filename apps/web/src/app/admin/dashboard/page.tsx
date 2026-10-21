@@ -8,34 +8,34 @@ import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { readDefenseEvents, readDefenseReport, type CheckState } from "@/lib/admin/defense-status";
 import { can } from "@/lib/admin/permissions";
 import {
-  SYNC_INTERVAL_HOURS,
+  PROBE_TERM,
   getDashboardStats,
   getRecentArticles,
   getSearchStatus,
   getSyncStatus
 } from "@/lib/admin/dashboard";
 import { formatDateTime, formatNumber } from "@/lib/format";
+import { ago } from "@/lib/admin/relative-time";
+import { FirewallNotesPanel } from "@/components/admin/FirewallNotesPanel";
+import { SantuiSyncPanel } from "@/components/admin/SantuiSyncPanel";
+import { SANTUI_LOCALES } from "@/lib/cron-locale";
+import { SITE_LOCALE } from "@/lib/site-config";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 
 const SEARCH_LABEL: Record<string, { text: string; tone: string }> = {
-  normal: { text: "正常", tone: "#157347" },
-  nomeili: { text: "正常（数据库直查）", tone: "#157347" },
-  drifted: { text: "索引与数据库不一致", tone: "#B54708" },
-  fallback: { text: "已降级到备用后端", tone: "#B54708" },
-  down: { text: "搜不到结果", tone: "#B42318" }
+  normal: { text: t("admin.dash.search.state.normal"), tone: "#157347" },
+  nomeili: { text: t("admin.dash.search.state.nomeili"), tone: "#157347" },
+  drifted: { text: t("admin.dash.search.state.drifted"), tone: "#B54708" },
+  fallback: { text: t("admin.dash.search.state.fallback"), tone: "#B54708" },
+  down: { text: t("admin.dash.search.state.down"), tone: "#B42318" }
 };
 
 const BACKEND_LABEL: Record<string, string> = {
-  meilisearch: "Meilisearch 索引",
-  substring: "数据库直查（子串）",
-  pg_trgm: "pg_trgm（已弃用）",
-  fallback_ilike: "仅标题（最后兜底）"
-};
-
-const SYNC_LABEL: Record<string, { text: string; tone: string }> = {
-  fresh: { text: "正常运行", tone: "#157347" },
-  late: { text: "有延迟", tone: "#B54708" },
-  stale: { text: "疑似停止", tone: "#B42318" },
-  never: { text: "从未运行", tone: "#B42318" }
+  meilisearch: t("admin.dash.search.backend.meilisearch"),
+  substring: t("admin.dash.search.backend.substring"),
+  pg_trgm: t("admin.dash.search.backend.pg_trgm"),
+  fallback_ilike: t("admin.dash.search.backend.fallback_ilike")
 };
 
 /**
@@ -44,39 +44,32 @@ const SYNC_LABEL: Record<string, { text: string; tone: string }> = {
  * challenge, which is the firewall working, not a fault.
  */
 const CHECK_LABEL: Record<CheckState, { text: string; tone: string }> = {
-  ok: { text: "正常", tone: "#157347" },
-  warn: { text: "注意", tone: "#B54708" },
-  bad: { text: "出问题", tone: "#B42318" },
-  unknown: { text: "测不到", tone: "#667085" }
+  ok: { text: t("admin.check.ok"), tone: "#157347" },
+  warn: { text: t("admin.check.warn"), tone: "#B54708" },
+  bad: { text: t("admin.check.bad"), tone: "#B42318" },
+  unknown: { text: t("admin.check.unknown"), tone: "#667085" }
 };
 
 /** The worst state in the set, as the panel's own badge. */
 const WORST_LABEL: Record<CheckState, { text: string; tone: string }> = {
-  ok: { text: "全部正常", tone: "#157347" },
-  warn: { text: "有一项需要注意", tone: "#B54708" },
-  bad: { text: "有项目出问题", tone: "#B42318" },
-  unknown: { text: "部分测不到", tone: "#667085" }
+  ok: { text: t("admin.check.worst.ok"), tone: "#157347" },
+  warn: { text: t("admin.check.worst.warn"), tone: "#B54708" },
+  bad: { text: t("admin.check.worst.bad"), tone: "#B42318" },
+  unknown: { text: t("admin.check.worst.unknown"), tone: "#667085" }
 };
 
 /** How each recorded transition reads in the 最近的报警 list. */
 const EVENT_LABEL: Record<string, { text: string; tone: string }> = {
-  detected: { text: "发现", tone: "#B54708" },
-  new: { text: "已报警", tone: "#B42318" },
-  reminder: { text: "仍未恢复", tone: "#B42318" },
-  recovered: { text: "已恢复", tone: "#157347" }
+  detected: { text: t("admin.event.detected"), tone: "#B54708" },
+  new: { text: t("admin.event.new"), tone: "#B42318" },
+  reminder: { text: t("admin.event.reminder"), tone: "#B42318" },
+  recovered: { text: t("admin.event.recovered"), tone: "#157347" }
 };
 
 /** Older than this and the self-check itself has probably stopped running. */
 const SELFCHECK_STALE_HOURS = 3;
 
-function ago(hours: number | null) {
-  if (hours === null) return "—";
-  if (hours < 1) return `${Math.max(1, Math.round(hours * 60))} 分钟前`;
-  if (hours < 48) return `${hours.toFixed(1)} 小时前`;
-  return `${Math.round(hours / 24)} 天前`;
-}
-
-const num = (n: number) => (n < 0 ? "未知" : formatNumber(n));
+const num = (n: number) => (n < 0 ? t("admin.dash.unknown") : formatNumber(n));
 
 export default async function AdminDashboardPage() {
   const user = await requireAdminSessionUser();
@@ -87,37 +80,35 @@ export default async function AdminDashboardPage() {
   const showDefense = can(user, "publish.revalidate");
   const [stats, sync, search, misses, recent, defense, defenseEvents] = await Promise.all([
     getDashboardStats(),
-    getSyncStatus(),
+    /* 别的站不跑这个任务，连查都不用查。 */
+    (SANTUI_LOCALES as readonly string[]).includes(SITE_LOCALE) ? getSyncStatus() : Promise.resolve(null),
     getSearchStatus(),
     listSearchMisses(12),
     getRecentArticles(6),
     showDefense ? readDefenseReport() : Promise.resolve(null),
     showDefense ? readDefenseEvents() : Promise.resolve([])
   ]);
-  const badge = SYNC_LABEL[sync.state];
   const searchBadge = SEARCH_LABEL[search.state];
 
   return (
     <AdminShell user={user}>
       <section className="admin-card">
         <div className="dash-head">
-          <h2 style={{ margin: 0 }}>平台概览</h2>
+          <h2 style={{ margin: 0 }}>{t("admin.dash.title")}</h2>
           {/* Hidden rather than shown-and-refused: an editor seeing a button
               they cannot use would press it when their change seems missing,
               which is the moment this tool is least appropriate. */}
           {can(user, "publish.revalidate") ? <RevalidateButton /> : null}
         </div>
-        <p className="dash-note">
-          保存文章、视频、页面内容、资料、分类或问答后，相关公开页面会立刻更新，不需要做任何事。
-        </p>
+        <p className="dash-note">{t("admin.dash.saveNote")}</p>
         <div className="dash-stats">
           {[
-            { label: "文章", value: stats.articles, href: "/admin/articles" },
-            { label: "视频", value: stats.videos, href: "/admin/videos" },
-            { label: "资料", value: stats.materials, href: "/admin/materials" },
-            { label: "页面", value: stats.pages, href: "/admin/content" },
-            { label: "三退声明", value: stats.declarations, href: "/admin/declarations" },
-            { label: "审计记录", value: stats.audits, href: "/admin/audit" }
+            { label: t("admin.dash.stat.articles"), value: stats.articles, href: "/admin/articles" },
+            { label: t("admin.dash.stat.videos"), value: stats.videos, href: "/admin/videos" },
+            { label: t("admin.dash.stat.materials"), value: stats.materials, href: "/admin/materials" },
+            { label: t("admin.dash.stat.pages"), value: stats.pages, href: "/admin/content" },
+            { label: t("admin.dash.stat.declarations"), value: stats.declarations, href: "/admin/declarations" },
+            { label: t("admin.dash.stat.audits"), value: stats.audits, href: "/admin/audit" }
           ].map((s) => (
             <Link key={s.label} className="dash-stat" href={s.href}>
               <b>{num(s.value)}</b>
@@ -128,7 +119,7 @@ export default async function AdminDashboardPage() {
         {stats.declarationsPending > 0 ? (
           <p className="dash-pending">
             <Link href="/admin/declarations">
-              有 {num(stats.declarationsPending)} 条三退声明待处理 →
+              {t("admin.dash.declarationsPending", { n: num(stats.declarationsPending) })}
             </Link>
           </p>
         ) : null}
@@ -137,7 +128,7 @@ export default async function AdminDashboardPage() {
       {showDefense ? (
         <section className="admin-card">
           <div className="dash-head">
-            <h3 style={{ margin: 0 }}>站点防护</h3>
+            <h3 style={{ margin: 0 }}>{t("admin.dash.defense.title")}</h3>
             {defense ? (
               <span
                 className="dash-badge"
@@ -147,15 +138,11 @@ export default async function AdminDashboardPage() {
               </span>
             ) : null}
           </div>
-          <p className="dash-note">
-            10 月 13 日那场攻击之后加的几道防护，这里看它们现在还在不在。每小时自动检查一次，
-            任何一项变成「出问题」会发一封邮件；同一个问题不会重复发，坏着的话每天提醒一次，
-            恢复了再发一封。「测不到」多半是被我们自己的防火墙挑战页挡住了 —— 那是防火墙在干活，不是故障。
-          </p>
+          <p className="dash-note">{t("admin.dash.defense.note")}</p>
           {!defense ? (
             <p className="dash-alert">
-              <b>还没有检查过。</b>每小时的自动检查还没跑第一次，或者 Vercel 的 Cron
-              还没认到 <code>/api/cron/selfcheck</code>。可以先点下面的「立即检查」手动跑一次。
+              <b>{t("admin.dash.defense.never")}</b>
+              {tRich("admin.dash.defense.neverBody", { path: <code>/api/cron/selfcheck</code> })}
             </p>
           ) : (
             <>
@@ -171,15 +158,21 @@ export default async function AdminDashboardPage() {
                 ))}
               </div>
               <p className="dash-note">
-                检查于 {ago((Date.now() - new Date(defense.checkedAt).getTime()) / 3_600_000)}
-                　（{formatDateTime(defense.checkedAt)}）
+                {t("admin.dash.defense.checkedAt")}
+                {/* 时间是数据，不是文案 —— 不标出来，文案快照每跑一次自检就报
+                    一条假差异。 */}
+                <span data-snapshot="data">
+                  {ago((Date.now() - new Date(defense.checkedAt).getTime()) / 3_600_000)}
+                  　（{formatDateTime(defense.checkedAt)}）
+                </span>
               </p>
               {(Date.now() - new Date(defense.checkedAt).getTime()) / 3_600_000 > SELFCHECK_STALE_HOURS ? (
                 <p className="dash-alert">
-                  <b>自检本身可能已经停了。</b>上面这些结论是 {ago((Date.now() - new Date(defense.checkedAt).getTime()) / 3_600_000)}的，
-                  不代表现在的状态 —— 自检停掉之后这块面板不会报错，只会一直停在最后一次的结果，
-                  报警邮件也不会再发。请到 Vercel → 项目 → Settings → Cron Jobs，
-                  确认 <code>/api/cron/selfcheck</code> 还在并且是 Enabled。
+                  <b>{t("admin.dash.defense.staleTitle")}</b>
+                  {tRich("admin.dash.defense.staleBody", {
+                    ago: ago((Date.now() - new Date(defense.checkedAt).getTime()) / 3_600_000),
+                    path: <code>/api/cron/selfcheck</code>
+                  })}
                 </p>
               ) : null}
               {/* Grouped by remedy rather than one block per check: the three
@@ -205,15 +198,15 @@ export default async function AdminDashboardPage() {
           )}
           {defenseEvents.length > 0 ? (
             <>
-              <h4 style={{ margin: "18px 0 6px", fontSize: 14 }}>最近的报警</h4>
+              <h4 style={{ margin: "18px 0 6px", fontSize: 14 }}>{t("admin.dash.defense.recentAlerts")}</h4>
               <p className="dash-note" style={{ marginTop: 0 }}>
-                只记状态变化，不记每次检查 —— 每小时跑一次的检查如果把自己也记下来，
-                真正要紧的那两行会被两百行淹掉。「发现」那一行通常比邮件早一小时，
-                因为连续两次坏才发信：它回答的是<b>什么时候开始的</b>，邮件回答的只是什么时候告诉你的。
+                {tRich("admin.dash.defense.alertsNote", {
+                  what: <b>{t("admin.dash.defense.alertsNoteWhat")}</b>
+                })}
               </p>
               <table className="admin-table" style={{ maxWidth: 620, fontVariantNumeric: "tabular-nums" }}>
                 <thead>
-                  <tr><th style={{ width: 150 }}>时间</th><th style={{ width: 90 }}>发生了什么</th><th>哪一项</th></tr>
+                  <tr><th style={{ width: 150 }}>{t("admin.dash.defense.col.time")}</th><th style={{ width: 90 }}>{t("admin.dash.defense.col.what")}</th><th>{t("admin.dash.defense.col.which")}</th></tr>
                 </thead>
                 <tbody data-snapshot="data">
                   {defenseEvents.slice(0, 12).map((e, i) => {
@@ -236,115 +229,16 @@ export default async function AdminDashboardPage() {
         </section>
       ) : null}
 
-      {showDefense ? (
-        <section className="admin-card">
-          <h3 style={{ marginTop: 0 }}>防火墙里的放行规则</h3>
-          <p className="dash-note">
-            这里记的是几条<b>绕过全部防火墙规则</b>的放行规则。它们在 <b>Vercel</b> 的防火墙里，
-            不在 Cloudflare —— <code>tuidang.org</code> 在 Cloudflare 上只做 DNS，网站托管在 Vercel。
-            （只有 <code>service</code>、<code>santui</code> 那几个子域是 Cloudflare 代理的。）
-            找错地方会白费很多时间，这是 2026-10-15 真发生过的事。
-          </p>
-          <table className="admin-table" style={{ maxWidth: 760 }}>
-            <thead>
-              <tr><th style={{ width: 210 }}>规则</th><th style={{ width: 230 }}>认什么</th><th>给谁用</th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Allow 免翻 reverse proxy v2</td>
-                <td>出口 IP <b>并且</b> <code>td-auth</code> 请求头</td>
-                <td>Tom 维护的免翻墙反代。墙内读者靠它访问本站</td>
-              </tr>
-              <tr>
-                <td style={{ color: "#B54708" }}>Allow 免翻 reverse proxy（旧）</td>
-                <td>只认 <code>td-auth</code> 请求头</td>
-                <td><b>待删。</b>只为换密钥期间不断线而保留，Tom 确认新密钥生效后就撤掉</td>
-              </tr>
-              <tr>
-                <td>Bypass for selfcheck probe</td>
-                <td><code>x-quitccp-probe</code> 请求头</td>
-                <td>上面「站点防护」里那三项需要真实渲染页面的检查</td>
-              </tr>
-            </tbody>
-          </table>
-          <p className="dash-note">
-            <b>Vercel 的 Bypass 会终止后续全部规则</b> —— 不只是跳过机器人挑战，而是连按 ASN 的封禁、
-            按 IP 的 300 次/分限速一起跳过。所以命中放行规则的请求，等于对全站免检。
-            反代那条绕不开：一台代理替很多人取页面，一分钟 300 次一下就超，不给它免检墙内就打不开。
-          </p>
-          <p className="dash-note">
-            v2 比旧的那条严得多：<b>两个条件是「并且」</b>，光知道请求头、不是从那个 IP 来的照样被挡。
-            实测过 —— 拿着正确的新密钥从别处请求，返回 429。
-          </p>
-          <p className="dash-alert">
-            <b>免翻墙打不开了，先看这里。</b>命令行 <code>npx vercel firewall rules list</code>
-            　看那条 <code>Allow 免翻 reverse proxy v2</code> 还在不在、是不是还排在
-            「Rate limit per IP」上面。排到下面去就会被 300 次/分那条挡住，表现和被删掉一样。
-            <br />
-            <b>还有一个新的失效方式：反代换了服务器、出口 IP 变了，这条规则就不再匹配。</b>
-            表现是墙内打不开，而本站这边一切正常、没有任何报错 —— 对我们来说那只是又一个被挑战的请求。
-            遇到这种情况先问 Tom 现在的出口 IP，再用 <code>rules edit</code> 改掉。
-          </p>
-          <p className="dash-note" style={{ marginBottom: 0 }}>
-            为什么这里是一段说明而不是一项自动检查：探针没法可靠地验证它。
-            Node 的 fetch 会复用连接，而「站点防护」的其他探针正带着放行头在同一个连接池上跑，
-            所以一个不带头的请求也会骑在已经放行过的连接上，永远返回正常 —— 测不出规则是不是被删了。
-            同样的原因，原来那项「防火墙挑战」探针也已经撤掉了。
-          </p>
-        </section>
-      ) : null}
+      {/* 这两块属于「哪个站」，不属于「哪种语言」：防火墙规则每个 Vercel
+          项目各一份，抓登记册的 cron 只在中文站跑。放在各自的组件里，
+          组件的文档说明了为什么别的站不该看到它们。 */}
+      {showDefense && SITE_LOCALE === "zh" ? <FirewallNotesPanel /> : null}
+
+      {sync ? <SantuiSyncPanel sync={sync} /> : null}
 
       <section className="admin-card">
         <div className="dash-head">
-          <h3 style={{ margin: 0 }}>登记册同步（santui.tuidang.org）</h3>
-          <span className="dash-badge" style={{ color: badge.tone, borderColor: badge.tone }}>
-            {badge.text}
-          </span>
-        </div>
-        {sync.state === "never" ? (
-          <p className="dash-note">
-            还没有任何快照。首页的退党数字正在用 CMS 里的备用值。
-          </p>
-        ) : (
-          <>
-            <div className="dash-sync">
-              <div><b>{sync.totalDisplay || "—"}</b><span>首页显示</span></div>
-              <div><b>{sync.total ? sync.total.toLocaleString("en-US") : "—"}</b><span>总计人数</span></div>
-              <div><b>{sync.declarations}</b><span>轮播声明</span></div>
-              <div><b>{ago(sync.ageHours)}</b><span>上次同步</span></div>
-            </div>
-            <p className="dash-note">
-              每 {SYNC_INTERVAL_HOURS} 小时自动同步一次（UTC 时间每 {SYNC_INTERVAL_HOURS} 小时的 17 分）。
-              由 Vercel Cron 定时触发 <code>/api/cron/santui</code>，通过 Browserless
-              的云端浏览器抓取 —— santui.tuidang.org 有 Cloudflare 验证，普通请求会被挡，
-              必须用真实浏览器。平时不需要做任何事，它会一直自己跑。
-            </p>
-            <p className="dash-note">
-              上次同步：{sync.fetchedAt ? formatDateTime(sync.fetchedAt) : "—"}
-              {sync.sourceUpdatedAt ? `　来源站更新于：${sync.sourceUpdatedAt}` : ""}
-              {sync.newest ? `　最新一条声明：${sync.newest}` : ""}
-            </p>
-            {sync.state !== "fresh" ? (
-              <p className="dash-alert">
-                <b>同步可能已经停了。</b>首页的退党数字和下面的声明会一直停在上次抓到的内容，
-                不会报错。请按顺序检查：
-                <br />1. Vercel → 项目 → Settings → Cron Jobs，确认 <code>/api/cron/santui</code>
-                还在、并且是 Enabled；点「Run」手动跑一次，看 View Logs 里是不是 200。
-                <br />2. browserless.io → 账号首页，看本月 Units 是不是用完了
-                （免费额度 1,000，每次同步约 1 个 Unit）。
-                <br />3. Vercel 环境变量 <code>BROWSER_WS_ENDPOINT</code>、
-                <code>BROWSER_WS_MODE</code>、<code>CRON_SECRET</code> 是否还在。
-                <br />4. 都正常但还是不行：GitHub Actions 里的「Sync santui registry」
-                仍保留着，可手动运行一次作为应急。
-              </p>
-            ) : null}
-          </>
-        )}
-      </section>
-
-      <section className="admin-card">
-        <div className="dash-head">
-          <h3 style={{ margin: 0 }}>站内搜索</h3>
+          <h3 style={{ margin: 0 }}>{t("admin.dash.search.title")}</h3>
           <span
             className="dash-badge"
             style={{ color: searchBadge.tone, borderColor: searchBadge.tone }}
@@ -355,34 +249,30 @@ export default async function AdminDashboardPage() {
         <div className="dash-sync">
           <div>
             <b>{BACKEND_LABEL[search.effective] ?? search.effective}</b>
-            <span>当前由谁回答</span>
+            <span>{t("admin.dash.search.who")}</span>
           </div>
           <div>
-            <b>{search.probeResults > 0 ? `${search.probeMs} ms` : "无结果"}</b>
-            <span>试搜「三退」</span>
+            <b>{search.probeResults > 0 ? `${search.probeMs} ms` : t("admin.dash.search.noResult")}</b>
+            <span>{t("admin.dash.search.probe", { term: PROBE_TERM })}</span>
           </div>
           <div>
             <b>
               {search.meiliConfigured
                 ? search.indexed === null
-                  ? "读不到"
-                  : search.indexed.toLocaleString("en-US")
-                : "未启用"}
+                  ? t("admin.dash.search.unreadable")
+                  : formatNumber(search.indexed)
+                : t("admin.dash.search.disabled")}
             </b>
-            <span>索引条目</span>
+            <span>{t("admin.dash.search.indexed")}</span>
           </div>
           <div>
-            <b>{search.expected.toLocaleString("en-US")}</b>
-            <span>数据库条目</span>
+            <b>{formatNumber(search.expected)}</b>
+            <span>{t("admin.dash.search.expected")}</span>
           </div>
         </div>
         <p className="dash-note">
-          搜索覆盖文章、视频、资料三类内容，支持繁简互通、多词与同义词；
-          三退声明与退党证明不在本站搜索范围内，由 santui.tuidang.org 与
-          service.tuidang.org 提供查询。
-          {search.meiliConfigured
-            ? "　内容保存后立即进入索引，另有每小时增量与每周全量同步兜底。"
-            : "　目前直接查询数据库，内容一发布即可搜到，无需同步。"}
+          {t("admin.dash.search.note")}
+          {t(search.meiliConfigured ? "admin.dash.search.noteMeili" : "admin.dash.search.noteDirect")}
         </p>
         {search.state === "down" ? (
           <p className="dash-alert">
@@ -444,26 +334,26 @@ export default async function AdminDashboardPage() {
 
       <section className="admin-card">
         <div className="dash-head">
-          <h3 style={{ margin: 0 }}>最近修改的文章</h3>
+          <h3 style={{ margin: 0 }}>{t("admin.dash.recentTitle")}</h3>
           <span className="dash-actions">
-            <Link className="admin-btn admin-btn-sm" href="/admin/articles/new">新建文章</Link>
-            <Link className="admin-btn admin-btn-sm" href="/admin/videos/new">新建视频</Link>
-            <Link className="admin-btn admin-btn-sm" href="/admin/materials/new">新建资料</Link>
+            <Link className="admin-btn admin-btn-sm" href="/admin/articles/new">{t("admin.dash.newArticle")}</Link>
+            <Link className="admin-btn admin-btn-sm" href="/admin/videos/new">{t("admin.dash.newVideo")}</Link>
+            <Link className="admin-btn admin-btn-sm" href="/admin/materials/new">{t("admin.dash.newMaterial")}</Link>
           </span>
         </div>
         {recent.length === 0 ? (
-          <p className="dash-note">暂无文章。</p>
+          <p className="dash-note">{t("admin.dash.noArticles")}</p>
         ) : (
           <table className="admin-table">
             <thead>
-              <tr><th>标题</th><th>分类</th><th>状态</th><th>更新时间</th></tr>
+              <tr><th>{t("admin.dash.col.title")}</th><th>{t("admin.dash.col.category")}</th><th>{t("admin.dash.col.status")}</th><th>{t("admin.dash.col.updated")}</th></tr>
             </thead>
             <tbody data-snapshot="data">
               {recent.map((a) => (
                 <tr key={a.id}>
                   <td><Link href={`/admin/articles/${a.id}`}>{a.title}</Link></td>
                   <td>{a.category || "—"}</td>
-                  <td>{a.status === "published" ? "已发布" : a.status === "draft" ? "草稿" : a.status}</td>
+                  <td>{a.status === "published" ? t("admin.status.published") : a.status === "draft" ? t("admin.status.draft") : a.status}</td>
                   <td>{formatDateTime(a.updatedAt)}</td>
                 </tr>
               ))}
