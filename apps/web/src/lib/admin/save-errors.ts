@@ -7,17 +7,19 @@
  * only has to wait out and try again. Somebody editing a long article had no
  * way to tell a passing hiccup from a lost afternoon.
  */
+import { t } from "@/lib/i18n";
+
 export function explainSaveFailure(error: unknown): string {
   if (error instanceof Error) return error.message;
   const detail = error as { message?: string; code?: string } | null;
   const code = detail?.code ?? "";
   const message = detail?.message ?? "";
   if (code === "57014" || /statement timeout/i.test(message)) {
-    return "数据库这会儿忙不过来，这次没存上。稍等几秒再按一次「保存」——内容还在页面上，不会丢。";
+    return t("admin.save.timeout");
   }
   if (code === "23505" || /duplicate|unique/i.test(message)) {
-    return "有重复的网址或编号，换一个再存。";
+    return t("admin.save.duplicate");
   }
-  if (code === "23502") return `有必填字段是空的：${message}`;
-  return message || "保存失败。";
+  if (code === "23502") return t("admin.save.missingField", { detail: message });
+  return message || t("admin.save.failed");
 }

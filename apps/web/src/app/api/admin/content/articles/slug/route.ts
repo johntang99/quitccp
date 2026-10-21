@@ -19,7 +19,9 @@ export async function GET(request: Request) {
   const slug = (searchParams.get("slug") ?? "").trim();
   // The article being edited does not clash with itself.
   const selfId = (searchParams.get("id") ?? "").trim();
-  const locale = (searchParams.get("locale") ?? SITE_LOCALE).trim();
+  /* 同新建那条路由：语言由部署决定。网址在本站内唯一就够了，
+     别的站的同名网址不冲突（它们在别的域名上）。 */
+  const locale = SITE_LOCALE;
   if (!slug) return NextResponse.json({ slug: "", available: false, suggestion: "" });
 
   const supabase = createSupabaseAdminClient();

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { DeleteImpact } from "./DeleteImpact";
+import { t } from "@/lib/i18n";
 
 /**
  * Delete one article, behind a confirmation that names it.
@@ -37,7 +38,7 @@ export function ArticleDeleteButton({ id, title }: { id: string; title: string }
         style={{ marginLeft: 4 }}
         onClick={() => setOpen(true)}
       >
-        删除
+        {t("admin.art.delete")}
       </button>
 
       {open ? (
@@ -70,13 +71,13 @@ export function ArticleDeleteButton({ id, title }: { id: string; title: string }
             }}
           >
             <h3 id={`del-h-${id}`} style={{ margin: "0 0 10px", fontSize: 17 }}>
-              删除这篇文章？
+              {t("admin.art.delete.title")}
             </h3>
             <p style={{ margin: "0 0 6px", lineHeight: 1.6, wordBreak: "break-word" }}>
-              《{title}》
+              {t("admin.art.delete.name", { title })}
             </p>
             <p style={{ margin: "0 0 12px", color: "#8a90a0", fontSize: 13, lineHeight: 1.6 }}>
-              删除后文章将从网站上消失，原链接变成 404。此操作无法在后台撤销。
+              {t("admin.art.delete.warning")}
             </p>
             {/* 对话框一打开就查，不等第二次点击 —— 这正是「铁证如山」32 集被删时
                 没人看见的那句话。 */}
@@ -89,7 +90,7 @@ export function ArticleDeleteButton({ id, title }: { id: string; title: string }
                 onClick={() => setOpen(false)}
                 disabled={submitting}
               >
-                取消
+                {t("admin.cancel")}
               </button>
               <form
                 method="post"
@@ -98,7 +99,7 @@ export function ArticleDeleteButton({ id, title }: { id: string; title: string }
               >
                 <input type="hidden" name="id" value={id} />
                 <button className="admin-btn admin-btn-danger" type="submit" disabled={submitting}>
-                  {submitting ? "正在删除…" : "确认删除"}
+                  {t(submitting ? "admin.art.delete.deleting" : "admin.art.delete.confirm")}
                 </button>
               </form>
             </div>

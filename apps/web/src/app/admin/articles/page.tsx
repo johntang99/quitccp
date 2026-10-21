@@ -7,15 +7,17 @@ import { listArticleAuthors, searchArticles, type ArticleSearchFilters } from "@
 import { listCategories } from "@/lib/admin/repository";
 import { WarmPages } from "@/components/admin/WarmPages";
 import { formatNumber } from "@/lib/format";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 
 interface PageProps {
   searchParams: Promise<Record<string, string | undefined>>;
 }
 
 const GAPS = [
-  { key: "no-cover", label: "缺封面图" },
-  { key: "no-author", label: "缺作者" },
-  { key: "no-summary", label: "缺摘要" }
+  { key: "no-cover", label: t("admin.art.gap.noCover") },
+  { key: "no-author", label: t("admin.art.gap.noAuthor") },
+  { key: "no-summary", label: t("admin.art.gap.noSummary") }
 ] as const;
 
 export default async function AdminArticlesPage({ searchParams }: PageProps) {
@@ -77,11 +79,11 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
             className="admin-input"
             name="q"
             defaultValue={params.q ?? ""}
-            placeholder="搜索标题、摘要或 slug"
+            placeholder={t("admin.art.searchPlaceholder")}
             style={{ flex: 1, minWidth: 240 }}
           />
           <select className="admin-select" name="category" defaultValue={params.category ?? ""}>
-            <option value="">全部分类</option>
+            <option value="">{t("admin.art.allCategories")}</option>
             {categories.map((c) => (
               <option key={c.slug} value={c.slug}>
                 {c.name}（{c.articleCount}）
@@ -89,13 +91,13 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
             ))}
           </select>
           <select className="admin-select" name="status" defaultValue={params.status ?? ""}>
-            <option value="">全部状态</option>
-            <option value="published">已发布</option>
-            <option value="draft">草稿</option>
-            <option value="archived">已归档</option>
+            <option value="">{t("admin.art.allStatuses")}</option>
+            <option value="published">{t("admin.status.published")}</option>
+            <option value="draft">{t("admin.status.draft")}</option>
+            <option value="archived">{t("admin.status.archived")}</option>
           </select>
           <select className="admin-select" name="author" defaultValue={params.author ?? ""}>
-            <option value="">全部作者</option>
+            <option value="">{t("admin.art.allAuthors")}</option>
             {authors.map((a) => (
               <option key={a} value={a}>
                 {a}
@@ -103,18 +105,18 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
             ))}
           </select>
           <label style={{ color: "#8a90a0", display: "flex", gap: 6, alignItems: "center" }}>
-            发布于
+            {t("admin.art.publishedBetween")}
             <input className="admin-input" type="date" name="from" defaultValue={params.from ?? ""} />
-            至
+            {t("admin.art.dateTo")}
             <input className="admin-input" type="date" name="to" defaultValue={params.to ?? ""} />
           </label>
           {/* 发布时间 is the default now. Sorting by 更新时间 is still offered, but
               it groups rather than orders: the import stamped 80 articles per
               second, so it cannot tell those 80 apart. */}
           <select className="admin-select" name="sort" defaultValue={params.sort ?? "published"}>
-            <option value="published">发布时间（新→旧）</option>
-            <option value="updated">更新时间（新→旧）</option>
-            <option value="title">标题 A→Z</option>
+            <option value="published">{t("admin.art.sort.published")}</option>
+            <option value="updated">{t("admin.art.sort.updated")}</option>
+            <option value="title">{t("admin.art.sort.title")}</option>
           </select>
           {params.gap ? <input type="hidden" name="gap" value={params.gap} /> : null}
           {params.featured ? <input type="hidden" name="featured" value={params.featured} /> : null}
@@ -122,7 +124,7 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
             <input type="hidden" name="editorArchive" value={params.editorArchive} />
           ) : null}
           <button className="admin-btn admin-btn-primary" type="submit">
-            搜索
+            {t("admin.art.search")}
           </button>
         </form>
 
@@ -134,13 +136,13 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
               href={hrefWith({ featured: params.featured ? undefined : "1", page: undefined })}
               className={`article-chip${params.featured ? " is-on" : ""}`}
             >
-              ★ 重要
+              {t("admin.art.featured")}
             </Link>
             <Link
               href={hrefWith({ editorArchive: params.editorArchive ? undefined : "1", page: undefined })}
               className={`article-chip${params.editorArchive ? " is-on" : ""}`}
             >
-              ✦ 精彩保留
+              {t("admin.art.editorArchive")}
             </Link>
             {GAPS.map((gap) => (
               <Link
@@ -154,13 +156,17 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
           </span>
           {hasFilters ? (
             <Link className="admin-btn admin-btn-sm" href="/admin/articles">
-              清除全部筛选
+              {t("admin.art.clearFilters")}
             </Link>
           ) : null}
         </div>
 
         <p className="muted" style={{ margin: 0 }}>
-          符合条件 <b>{formatNumber(result.total)}</b> 篇 · 第 {result.page}／{result.pageCount} 页
+          {tRich("admin.art.resultCount", {
+            total: <b>{formatNumber(result.total)}</b>,
+            page: formatNumber(result.page),
+            pages: formatNumber(result.pageCount)
+          })}
         </p>
       </section>
 
@@ -170,13 +176,13 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
         <form id="bulk-form" method="post" action="/api/admin/content/articles/bulk" className="admin-toolbar">
           <input type="hidden" name="back" value={currentHref} />
           <select className="admin-select" name="action" defaultValue="category">
-            <option value="category">改主分类为…</option>
-            <option value="publish">发布</option>
-            <option value="draft">退回草稿</option>
-            <option value="archive">归档</option>
+            <option value="category">{t("admin.art.bulk.setCategory")}</option>
+            <option value="publish">{t("admin.art.bulk.publish")}</option>
+            <option value="draft">{t("admin.art.bulk.draft")}</option>
+            <option value="archive">{t("admin.art.bulk.archive")}</option>
           </select>
           <select className="admin-select" name="category" defaultValue="">
-            <option value="">（选择目标分类）</option>
+            <option value="">{t("admin.art.bulk.pickCategory")}</option>
             {categories.map((c) => (
               <option key={c.slug} value={c.name}>
                 {c.name}
@@ -184,9 +190,9 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
             ))}
           </select>
           <button className="admin-btn" type="submit">
-            对选中的文章执行
+            {t("admin.art.bulk.run")}
           </button>
-          <span className="muted">勾选左侧复选框后执行；改分类只替换主分类，副分类不动。</span>
+          <span className="muted">{t("admin.art.bulk.hint")}</span>
         </form>
 
         <ArticleTable rows={result.rows} />
@@ -194,16 +200,16 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
         <div className="admin-toolbar" style={{ marginTop: 12 }}>
           {result.page > 1 ? (
             <Link className="admin-btn" href={hrefWith({ page: String(result.page - 1) })}>
-              ← 上一页
+              {t("admin.art.prevPage")}
             </Link>
           ) : null}
           {result.page < result.pageCount ? (
             <Link className="admin-btn" href={hrefWith({ page: String(result.page + 1) })}>
-              下一页 →
+              {t("admin.art.nextPage")}
             </Link>
           ) : null}
           <span className="muted">
-            每页
+            {t("admin.art.perPage")}
             {[20, 50, 100].map((size) => (
               <Link
                 key={size}

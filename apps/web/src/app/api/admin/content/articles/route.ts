@@ -28,7 +28,8 @@ export async function GET(request: Request) {
   const page = Number(searchParams.get("page") ?? "1");
   const pageSize = Number(searchParams.get("pageSize") ?? "20");
   const status = searchParams.get("status");
-  const locale = searchParams.get("locale");
+  /* 同上：列表只列本站的。查询串里给什么都不作数。 */
+  const locale = SITE_LOCALE;
   const category = searchParams.get("category");
   const cursor = searchParams.get("cursor");
   const q = searchParams.get("q")?.toLowerCase();
@@ -38,7 +39,7 @@ export async function GET(request: Request) {
       page,
       pageSize,
       status: status ?? undefined,
-      locale: locale ?? undefined,
+      locale,
       category: category ?? undefined,
       q: q ?? undefined,
       cursor: cursor ?? undefined
@@ -59,7 +60,18 @@ export async function POST(request: Request) {
   const slug = String(formData.get("slug") ?? "");
   const title = String(formData.get("title") ?? "");
   const section = String(formData.get("section") ?? "news");
-  const locale = String(formData.get("locale") ?? SITE_LOCALE);
+  /*
+   * 语言由这个部署决定，不听浏览器。
+   *
+   * 原来是 `formData.get("locale") ?? SITE_LOCALE`，而表单里写死了
+   * `<input type="hidden" name="locale" value="zh">` —— 英文站的编辑新建一篇
+   * 文章，会存成中文站的内容：它出现在中文站的列表和栏目页上，而在自己站上
+   * 根本找不到。不报错。
+   *
+   * 不保留「客户端可以指定」这个能力：一个站的后台只该往自己站写内容，而
+   * 一个能被请求体改掉的 locale 等于一个能往别的站写内容的口子。
+   */
+  const locale = SITE_LOCALE;
   const status = String(formData.get("status") ?? "draft") as
     | "draft"
     | "review"

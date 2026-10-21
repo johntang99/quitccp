@@ -6,6 +6,8 @@ import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { searchArticles } from "@/lib/admin/article-search";
 import { listCategories } from "@/lib/admin/repository";
 import { formatNumber } from "@/lib/format";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 
 interface PageProps {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -59,22 +61,17 @@ export default async function LatestArticlesPage({ searchParams }: PageProps) {
 
       <section className="admin-card">
         <p className="muted" style={{ margin: "0 0 10px" }}>
-          {byUpdated ? (
-            <>
-              按<b>更新时间</b>倒序，最近改动过的在最前。注意：15,514 篇迁移文章的更新时间来自导入那几分钟，
-              彼此几乎相同，所以这个顺序只对导入后编辑过的文章有意义。
-            </>
-          ) : (
-            <>
-              按<b>发布时间</b>倒序，最新发表的在最前。
-            </>
-          )}
-          需要更早的文章请用<Link href="/admin/articles">「查找与修改」</Link>。
+          {byUpdated
+            ? tRich("admin.latest.noteUpdated", { what: <b>{t("admin.latest.noteUpdatedWhat")}</b> })
+            : tRich("admin.latest.notePublished", { what: <b>{t("admin.latest.notePublishedWhat")}</b> })}
+          {tRich("admin.latest.olderHint", {
+            link: <Link href="/admin/articles">{t("admin.latest.olderHintLink")}</Link>
+          })}
         </p>
         <div className="admin-toolbar" style={{ margin: 0 }}>
           <span className="article-chips">
             <Link className={`article-chip${params.category ? "" : " is-on"}`} href={chipHref({ category: undefined })}>
-              全部
+              {t("admin.latest.all")}
             </Link>
             {categories
               .filter((c) => c.articleCount > 0)
@@ -93,13 +90,13 @@ export default async function LatestArticlesPage({ searchParams }: PageProps) {
             href={chipHref({ unpublished: params.unpublished ? undefined : "1" })}
             style={{ marginLeft: "auto" }}
           >
-            只看未发布
+            {t("admin.latest.unpublishedOnly")}
           </Link>
           <Link
             className={`admin-btn admin-btn-sm${byUpdated ? " admin-btn-primary" : ""}`}
             href={chipHref({ sort: byUpdated ? undefined : "updated" })}
           >
-            按更新时间
+            {t("admin.latest.byUpdated")}
           </Link>
         </div>
       </section>
@@ -108,13 +105,13 @@ export default async function LatestArticlesPage({ searchParams }: PageProps) {
         <form id="bulk-form" method="post" action="/api/admin/content/articles/bulk" className="admin-toolbar">
           <input type="hidden" name="back" value={chipHref({})} />
           <select className="admin-select" name="action" defaultValue="category">
-            <option value="category">改主分类为…</option>
-            <option value="publish">发布</option>
-            <option value="draft">退回草稿</option>
-            <option value="archive">归档</option>
+            <option value="category">{t("admin.art.bulk.setCategory")}</option>
+            <option value="publish">{t("admin.art.bulk.publish")}</option>
+            <option value="draft">{t("admin.art.bulk.draft")}</option>
+            <option value="archive">{t("admin.art.bulk.archive")}</option>
           </select>
           <select className="admin-select" name="category" defaultValue="">
-            <option value="">（选择目标分类）</option>
+            <option value="">{t("admin.art.bulk.pickCategory")}</option>
             {categories.map((c) => (
               <option key={c.slug} value={c.name}>
                 {c.name}
@@ -122,12 +119,15 @@ export default async function LatestArticlesPage({ searchParams }: PageProps) {
             ))}
           </select>
           <button className="admin-btn" type="submit">
-            对选中的文章执行
+            {t("admin.art.bulk.run")}
           </button>
         </form>
         <ArticleTable rows={result.rows} numbered dateColumn={byUpdated ? "updated" : "published"} />
         <p className="muted" style={{ margin: "12px 0 0" }}>
-          显示 {result.rows.length} 篇，全站共 {formatNumber(result.total)} 篇
+          {t("admin.latest.showing", {
+            shown: formatNumber(result.rows.length),
+            total: formatNumber(result.total)
+          })}
         </p>
       </section>
     </AdminShell>

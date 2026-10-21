@@ -215,7 +215,7 @@ export default async function AdminDashboardPage() {
                       <tr key={`${e.at}-${e.kind}-${i}`}>
                         <td>{formatDateTime(e.at)}</td>
                         <td style={{ color: badge.tone }}>{badge.text}</td>
-                        <td>{e.labels.join("、") || "—"}</td>
+                        <td>{e.labels.join(t("admin.listSep")) || "—"}</td>
                       </tr>
                     );
                   })}

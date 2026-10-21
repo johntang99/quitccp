@@ -65,6 +65,22 @@ export function formatDateTime(value: Date | string | number, locale: string = s
 }
 
 /** 排序用的比较函数。中文按拼音，其余按各自语言的规则。 */
+/**
+ * 只要时分秒，按站的语言。
+ *
+ * 给「✓ 已保存 · 14:32」这类状态行用。原来那里写的是
+ * `toLocaleTimeString("zh-CN", { hour12: false })` —— 英文站会显示中文的
+ * 时间格式。hour12 不写死：英文读者习惯 12 小时制，而中文站本来就是 24 小时制，
+ * 两边都交给 Intl 按语言决定。
+ */
+export function formatTime(value: Date | string | number, locale: string = siteIntlLocale): string {
+  return new Date(value).toLocaleTimeString(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+}
+
 export function compareText(a: string, b: string, locale: string = siteIntlLocale): number {
   return a.localeCompare(b, locale);
 }

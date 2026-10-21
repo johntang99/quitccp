@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 
 /**
  * 「删掉会牵连什么」—— 删除对话框里的那一段。
@@ -60,19 +62,19 @@ export function DeleteImpact({ kind, id }: { kind: "article" | "video"; id: stri
   };
   const quiet = { ...box, background: "#f4f5f8", color: "#8a90a0" };
 
-  if (state === "loading") return <p style={quiet}>正在检查删掉会牵连什么…</p>;
+  if (state === "loading") return <p style={quiet}>{t("admin.impact.checking")}</p>;
   if (state === "failed" || !data) {
-    return <p style={quiet}>牵连检查没跑通，这次看不到。删除本身不受影响。</p>;
+    return <p style={quiet}>{t("admin.impact.failed")}</p>;
   }
 
   const { external, hasOwnOld, redirectSample, inbound, inboundTotal } = data;
-  const thing = kind === "video" ? "这支视频" : "这篇文章";
+  const thing = t(kind === "video" ? "admin.impact.thing.video" : "admin.impact.thing.article");
 
   if (external === 0 && inboundTotal === 0) {
     return (
       <p style={{ ...box, background: "#eef7f0", color: "#2f6b42" }}>
-        没有外部旧链接指向它，站内也没有别的内容链接到它。
-        {hasOwnOld ? "（只有它自己改名前的地址，删掉无妨。）" : ""}
+        {t("admin.impact.clear")}
+        {hasOwnOld ? t("admin.impact.onlyOwnOld") : ""}
       </p>
     );
   }
@@ -85,31 +87,33 @@ export function DeleteImpact({ kind, id }: { kind: "article" | "video"; id: stri
 
   return (
     <div style={{ ...box, background: tone.background, color: tone.color }}>
-      <b>{serious ? "删掉之后这些地方会断：" : "删掉之前请先确认："}</b>
+      <b>{t(serious ? "admin.impact.serious" : "admin.impact.confirmFirst")}</b>
 
       {external > 0 ? (
         <p style={{ margin: "6px 0 0" }}>
-          · 有 <b>{external}</b> 条外部旧链接指向{thing}，删掉后它们会先跳一次再 404。
+          {tRich("admin.impact.external", { n: <b>{external}</b>, thing })}
           {redirectSample.length > 0 ? (
-            <span style={{ color: tone.hint }}> 例如 {redirectSample.slice(0, 2).join("、")}
-              {external > 2 ? " 等" : ""}。</span>
+            <span style={{ color: tone.hint }}>
+              {t("admin.impact.externalSample", {
+                list: redirectSample.slice(0, 2).join(t("admin.listSep")),
+                more: external > 2 ? t("admin.impact.externalMore") : ""
+              })}
+            </span>
           ) : null}
           <br />
-          <span style={{ color: tone.hint }}>
-            如果内容是搬去了别处（比如改成视频重新发布了），这些链接应该改指过去，而不是留着跳 404。
-          </span>
+          <span style={{ color: tone.hint }}>{t("admin.impact.externalHint")}</span>
         </p>
       ) : null}
 
       {inboundTotal > 0 ? (
         <p style={{ margin: "6px 0 0" }}>
-          · 站内有 <b>{inboundTotal}</b> 处内容链接到{thing}，删掉后那里会出现死链：
+          {tRich("admin.impact.inbound", { n: <b>{inboundTotal}</b>, thing })}
           <br />
           {inbound.map((row) => {
             /* 每一条直接链到它自己的编辑页。牵连的往往不是文章 —— 问答在
                /admin/faq，视频在 /admin/videos，写死一个入口就是指错地方。 */
             const href = EDIT_PATH[row.kind]?.(row.id);
-            const name = `${KIND_NAME[row.kind] ?? row.kind}《${row.label}》`;
+            const name = `${KIND_NAME[row.kind] ?? row.kind}${t("admin.art.delete.name", { title: row.label })}`;
             return (
               <span key={`${row.kind}-${row.id}`} style={{ color: tone.hint }}>
                 {href ? (
@@ -124,11 +128,12 @@ export function DeleteImpact({ kind, id }: { kind: "article" | "video"; id: stri
             );
           })}
           {inboundTotal > inbound.length ? (
-            <span style={{ color: tone.hint }}>…另外 {inboundTotal - inbound.length} 处<br /></span>
+            <span style={{ color: tone.hint }}>
+              {t("admin.impact.inboundMore", { n: inboundTotal - inbound.length })}
+              <br />
+            </span>
           ) : null}
-          <span style={{ color: tone.hint }}>
-            这些要手工改 —— 链接指向一篇即将不存在的内容，没有哪种自动改法是对的。
-          </span>
+          <span style={{ color: tone.hint }}>{t("admin.impact.inboundHint")}</span>
         </p>
       ) : null}
     </div>
@@ -136,10 +141,10 @@ export function DeleteImpact({ kind, id }: { kind: "article" | "video"; id: stri
 }
 
 const KIND_NAME: Record<string, string> = {
-  article: "文章",
-  video: "视频",
-  faq: "问答",
-  page: "页面"
+  article: t("admin.kind.article"),
+  video: t("admin.kind.video"),
+  faq: t("admin.kind.faq"),
+  page: t("admin.kind.page")
 };
 
 /* 页面内容没有按 id 的编辑页，落到列表页；其余三类都能直接点进去。 */

@@ -6,6 +6,9 @@ import { MarkdownEditor, type MarkdownEditorHandle } from "./MarkdownEditor";
 import { warmPages } from "@/lib/admin/warm-pages";
 import { requestSlug, retargetSlugDate, useAutoSlug } from "./use-auto-slug";
 import { SITE_LOCALE } from "@/lib/site-config";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
+import { formatTime } from "@/lib/format";
 
 /**
  * The single article form, used for both creating and editing.
@@ -88,10 +91,10 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
         body: JSON.stringify({ title: v.title, body: v.bodyMarkdown })
       });
       const data = (await response.json()) as { summary?: string; error?: string };
-      if (!response.ok || !data.summary) throw new Error(data.error || "生成失败");
+      if (!response.ok || !data.summary) throw new Error(data.error || t("admin.form.aiFailed"));
       set("summary", data.summary);
     } catch (error) {
-      setAiError(error instanceof Error ? error.message : "生成失败");
+      setAiError(error instanceof Error ? error.message : t("admin.form.aiFailed"));
     } finally {
       setAiBusy(false);
     }
@@ -170,13 +173,13 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
 
   const submit = (status: string) => {
     const missing =
-      !v.title.trim() ? "标题" :
-      !v.slug.trim() ? "网址 slug" :
-      !v.bodyMarkdown.trim() ? "正文" :
-      !v.category.trim() ? "主分类" :
-      v.heroImage.trim() && !v.heroImageAlt.trim() ? "封面图说明" : "";
+      !v.title.trim() ? "admin.form.field.title" :
+      !v.slug.trim() ? "admin.form.field.slug" :
+      !v.bodyMarkdown.trim() ? "admin.form.field.body" :
+      !v.category.trim() ? "admin.form.field.category" :
+      v.heroImage.trim() && !v.heroImageAlt.trim() ? "admin.form.field.imageAlt" : "";
     if (missing) {
-      setError(`请先填写「${missing}」。`);
+      setError(t("admin.form.fillFirst", { field: t(missing) }));
       return;
     }
     setError("");
@@ -211,10 +214,10 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
         warm?: string[];
       };
       if (!response.ok || !payload.ok) {
-        setError(payload.error || "保存失败。");
+        setError(payload.error || t("admin.save.failed"));
         return;
       }
-      setSaved({ at: new Date().toLocaleTimeString("zh-CN", { hour12: false }), status });
+      setSaved({ at: formatTime(new Date()), status });
       /* Build the pages this article appears on now, so the editor's own click
          through to the public page is a hit rather than a 1.5s render. */
       warmPages(payload.warm ?? []);
@@ -227,7 +230,7 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
         window.history.replaceState(null, "", `/admin/articles/${payload.id}`);
       }
     } catch {
-      setError("保存失败：连不上服务器。");
+      setError(t("admin.form.saveFailedOffline"));
     } finally {
       setSaving(false);
     }
@@ -247,7 +250,6 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
         {/* Values the form posts; the visible controls above drive them. */}
         {v.id ? <input type="hidden" name="id" value={v.id} /> : null}
         <input type="hidden" name="status" defaultValue={v.status} />
-        <input type="hidden" name="locale" value="zh" />
         <input type="hidden" name="section" value={v.section} />
         <input type="hidden" name="bodyMarkdown" value={v.bodyMarkdown} />
         <input type="hidden" name="secondaryCategories" value={v.secondaryCategories.join(",")} />
@@ -268,7 +270,10 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
             ) : null}
 
             <div className="field">
-              <label htmlFor="af-title">标题（Title）<span className="req">*</span></label>
+              <label htmlFor="af-title">
+                {t("admin.form.title")}
+                <span className="req">{t("admin.form.required")}</span>
+              </label>
               <input
                 id="af-title"
                 name="title"
@@ -279,19 +284,22 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
             </div>
 
             <div className="field">
-              <label htmlFor="af-subtitle">副标题（Subtitle）</label>
+              <label htmlFor="af-subtitle">{t("admin.form.subtitle")}</label>
               <input
                 id="af-subtitle"
                 name="subtitle"
                 className="admin-input"
                 value={v.subtitle}
                 onChange={(e) => set("subtitle", e.target.value)}
-                placeholder="可留空。显示在标题下方，比摘要短。"
+                placeholder={t("admin.form.subtitlePlaceholder")}
               />
             </div>
 
             <div className="field">
-              <label htmlFor="af-slug">网址 Slug<span className="req">*</span></label>
+              <label htmlFor="af-slug">
+                {t("admin.form.slug")}
+                <span className="req">{t("admin.form.required")}</span>
+              </label>
               <div className="row">
                 <input
                   id="af-slug"
@@ -316,7 +324,7 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
                     }
                   }}
                 >
-                  由标题重新生成
+                  {t("admin.form.regenSlug")}
                 </button>
               </div>
               <div className="row" style={{ marginTop: 6, alignItems: "center", gap: 10 }}>
@@ -334,7 +342,7 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
                       if (!slugTouched || mode === "new") set("slug", "");
                     }}
                   />
-                  网址前面加日期（推荐）
+                  {t("admin.form.datePrefix")}
                 </label>
                 {slugCheck && !slugCheck.available ? (
                   <button
@@ -345,18 +353,20 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
                       set("slug", slugCheck.suggestion);
                     }}
                   >
-                    改用 {slugCheck.suggestion.slice(-18)}
+                    {t("admin.form.useSuggestion", { slug: slugCheck.suggestion.slice(-18) })}
                   </button>
                 ) : null}
               </div>
               <span className="hint">
-                标题会自动转成拼音，例如「三退大潮」→ santui-dachao。中文地址编码后是一长串百分号，所以全站都用拼音。
-                {v.slug ? <> 最终网址：<code>/news/{v.slug}</code></> : null}
-                {mode === "edit" ? " 发布后修改会让旧链接失效。" : ""}
+                {t("admin.form.slugHint")}
+                {v.slug
+                  ? tRich("admin.form.slugFinal", { url: <code>/news/{v.slug}</code> })
+                  : null}
+                {mode === "edit" ? t("admin.form.slugEditWarning") : ""}
               </span>
               {slugCheck && !slugCheck.available ? (
                 <span className="hint" style={{ color: "#b42318" }}>
-                  这个网址已被《{slugCheck.takenBy}》占用。
+                  {t("admin.form.slugTaken", { title: slugCheck.takenBy ?? "" })}
                 </span>
               ) : null}
             </div>
@@ -364,7 +374,10 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
 
           <div className="admin-card">
             <div className="field" style={{ margin: 0 }}>
-              <span className="cap">正文（Body · Markdown）<span className="req">*</span></span>
+              <span className="cap">
+                {t("admin.form.body")}
+                <span className="req">{t("admin.form.required")}</span>
+              </span>
               <MarkdownEditor
                 ref={editor}
                 value={v.bodyMarkdown}
@@ -377,15 +390,15 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
           <div className="admin-card">
             <div className="field" style={{ margin: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                <label htmlFor="af-summary" style={{ margin: 0 }}>摘要（Summary）</label>
+                <label htmlFor="af-summary" style={{ margin: 0 }}>{t("admin.form.summary")}</label>
                 <button
                   type="button"
                   className="admin-btn admin-btn-sm"
                   onClick={generateSummary}
                   disabled={aiBusy || v.bodyMarkdown.trim().length < 60}
-                  title="读完正文后生成 100–150 字摘要"
+                  title={t("admin.form.aiTitle")}
                 >
-                  {aiBusy ? "生成中…" : "✦ AI 生成"}
+                  {t(aiBusy ? "admin.form.aiGenerating" : "admin.form.aiSummary")}
                 </button>
                 {aiError ? (
                   <span role="status" style={{ color: "#b42318", fontSize: 12.5 }}>{aiError}</span>
@@ -417,10 +430,10 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
                     )
                   }
                 >
-                  从正文首段生成
+                  {t("admin.form.summaryFromBody")}
                 </button>
                 <span className="hint">
-                  用于列表卡片与搜索结果。建议 60–160 字。当前 <b>{v.summary.length}</b> 字。AI 生成的是草稿，请先读一遍再保存。
+                  {tRich("admin.form.summaryHint", { n: <b>{v.summary.length}</b> })}
                 </span>
               </div>
             </div>
@@ -429,9 +442,9 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
 
         <div>
           <div className="admin-card">
-            <h3 style={{ marginTop: 0 }}>发布（Publish）</h3>
+            <h3 style={{ marginTop: 0 }}>{t("admin.form.publishPanel")}</h3>
             <div className="field">
-              <label htmlFor="af-published">发布时间</label>
+              <label htmlFor="af-published">{t("admin.form.publishedAt")}</label>
               <input
                 id="af-published"
                 type="datetime-local"
@@ -448,20 +461,20 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
                   }
                 }}
               />
-              <span className="hint">可回填旧日期。没有定时发布：保存即上线。</span>
+              <span className="hint">{t("admin.form.publishedAtHint")}</span>
             </div>
             {/* In the publish panel rather than further down the page: these are
                 decisions made at the moment of publishing, and the panel is the
                 one part of the form that is on screen without scrolling. */}
             <div className="field" style={{ marginBottom: 12 }}>
-              <span className="cap">编辑标记</span>
+              <span className="cap">{t("admin.form.editorMarks")}</span>
               <label style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
                 <input
                   type="checkbox"
                   checked={v.featured}
                   onChange={(e) => set("featured", e.target.checked)}
                 />
-                <b>重要</b>
+                <b>{t("admin.form.featured")}</b>
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 7 }}>
                 <input
@@ -469,12 +482,9 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
                   checked={v.editorArchive}
                   onChange={(e) => set("editorArchive", e.target.checked)}
                 />
-                <b>精彩保留</b>
+                <b>{t("admin.form.editorArchive")}</b>
               </label>
-              <span className="hint">
-                两者互不影响，可以都勾、都不勾。「重要」给首页与栏目顶部的少量精选，
-                「精彩保留」留给过了时效仍值得读的文章。
-              </span>
+              <span className="hint">{t("admin.form.marksHint")}</span>
             </div>
 
             <div className="row">
@@ -484,10 +494,12 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
                 disabled={saving}
                 onClick={() => submit("published")}
               >
-                {saving ? "保存中…" : mode === "new" ? "发布" : "保存并发布"}
+                {saving
+                  ? t("admin.form.saving")
+                  : t(mode === "new" ? "admin.form.publish" : "admin.form.saveAndPublish")}
               </button>
               <button type="button" className="admin-btn" disabled={saving} onClick={() => submit("draft")}>
-                {saving ? "保存中…" : "保存草稿"}
+                {t(saving ? "admin.form.saving" : "admin.form.saveDraft")}
               </button>
             </div>
             {saved ? (
@@ -495,19 +507,25 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
                 role="status"
                 style={{ margin: "8px 0 0", color: "#1f7a4d", fontSize: 13, fontWeight: 600 }}
               >
-                ✓ 已保存（{saved.status === "published" ? "已发布" : "草稿"}） · {saved.at}
+                {t("admin.form.savedAt", {
+                  status: t(saved.status === "published" ? "admin.status.published" : "admin.status.draft"),
+                  at: saved.at
+                })}
                 　
                 <a href={`/admin/preview/news/${v.slug}`} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 400 }}>
-                  查看 ↗
+                  {t("admin.form.viewLink")}
                 </a>
               </p>
             ) : null}
           </div>
 
           <div className="admin-card">
-            <h3 style={{ marginTop: 0 }}>分类与标签</h3>
+            <h3 style={{ marginTop: 0 }}>{t("admin.form.categoriesPanel")}</h3>
             <div className="field">
-              <label htmlFor="af-cat">主分类<span className="req">*</span></label>
+              <label htmlFor="af-cat">
+                {t("admin.form.mainCategory")}
+                <span className="req">{t("admin.form.required")}</span>
+              </label>
               <select
                 id="af-cat"
                 name="category"
@@ -515,17 +533,17 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
                 value={v.category}
                 onChange={(e) => set("category", e.target.value)}
               >
-                <option value="">— 请选择 —</option>
+                <option value="">{t("admin.form.pickOne")}</option>
                 {categories.map((c) => (
                   <option key={c.slug} value={c.name}>
                     {c.name}
                   </option>
                 ))}
               </select>
-              <span className="hint">决定文章归属的栏目页与面包屑。</span>
+              <span className="hint">{t("admin.form.mainCategoryHint")}</span>
             </div>
             <div className="field">
-              <span className="cap">副分类</span>
+              <span className="cap">{t("admin.form.secondaryCategories")}</span>
               <div className="article-chips">
                 {categories
                   .filter((c) => c.name !== v.category)
@@ -540,10 +558,10 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
                     </button>
                   ))}
               </div>
-              <span className="hint">可多选，文章会同时出现在这些栏目页里。</span>
+              <span className="hint">{t("admin.form.secondaryHint")}</span>
             </div>
             <div className="field" style={{ margin: 0 }}>
-              <label htmlFor="af-tags">标签（逗号分隔）</label>
+              <label htmlFor="af-tags">{t("admin.form.tags")}</label>
               <input
                 id="af-tags"
                 className="admin-input"
@@ -554,7 +572,7 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
           </div>
 
           <div className="admin-card">
-            <h3 style={{ marginTop: 0 }}>封面图</h3>
+            <h3 style={{ marginTop: 0 }}>{t("admin.form.coverPanel")}</h3>
             {v.heroImage ? (
               <img
                 src={v.heroImage}
@@ -563,22 +581,23 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
               />
             ) : (
               <div style={{ width: "100%", height: 150, background: "#f1f1f4", borderRadius: 4, display: "grid", placeItems: "center", color: "#8a90a0", fontSize: 13 }}>
-                未设置
+                {t("admin.form.coverUnset")}
               </div>
             )}
             <div className="row" style={{ margin: "10px 0" }}>
               <button type="button" className="admin-btn" onClick={() => setPicker("hero")}>
-                选择图片…
+                {t("admin.form.pickImage")}
               </button>
               {v.heroImage ? (
                 <button type="button" className="admin-btn" onClick={() => set("heroImage", "")}>
-                  清除
+                  {t("admin.form.clear")}
                 </button>
               ) : null}
             </div>
             <div className="field">
               <label htmlFor="af-alt">
-                图片说明（Alt）{v.heroImage ? <span className="req">*</span> : null}
+                {t("admin.form.imageAlt")}
+                {v.heroImage ? <span className="req">{t("admin.form.required")}</span> : null}
               </label>
               <input
                 id="af-alt"
@@ -587,10 +606,10 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
                 value={v.heroImageAlt}
                 onChange={(e) => set("heroImageAlt", e.target.value)}
               />
-              <span className="hint">读屏软件会读出这句话；没有它，图片对视障读者等于不存在。</span>
+              <span className="hint">{t("admin.form.imageAltHint")}</span>
             </div>
             <div className="field" style={{ margin: 0 }}>
-              <label htmlFor="af-credit">图片来源</label>
+              <label htmlFor="af-credit">{t("admin.form.imageCredit")}</label>
               <input
                 id="af-credit"
                 name="heroCredit"
@@ -602,9 +621,9 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
           </div>
 
           <div className="admin-card">
-            <h3 style={{ marginTop: 0 }}>署名与来源</h3>
+            <h3 style={{ marginTop: 0 }}>{t("admin.form.bylinePanel")}</h3>
             <div className="field">
-              <label htmlFor="af-author">作者</label>
+              <label htmlFor="af-author">{t("admin.form.author")}</label>
               <input
                 id="af-author"
                 name="author"
@@ -618,10 +637,10 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
                   <option key={a} value={a} />
                 ))}
               </datalist>
-              <span className="hint">下拉里是站内用过的署名，点一下即可复用。</span>
+              <span className="hint">{t("admin.form.authorHint")}</span>
             </div>
             <div className="field">
-              <label htmlFor="af-translator">译者</label>
+              <label htmlFor="af-translator">{t("admin.form.translator")}</label>
               <input
                 id="af-translator"
                 name="translator"
@@ -631,7 +650,7 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
               />
             </div>
             <div className="field">
-              <label htmlFor="af-srct">转载原文标题</label>
+              <label htmlFor="af-srct">{t("admin.form.sourceTitle")}</label>
               <input
                 id="af-srct"
                 name="sourceTitle"
@@ -641,7 +660,7 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
               />
             </div>
             <div className="field" style={{ margin: 0 }}>
-              <label htmlFor="af-srcu">转载原文链接</label>
+              <label htmlFor="af-srcu">{t("admin.form.sourceUrl")}</label>
               <input
                 id="af-srcu"
                 name="sourceUrl"
@@ -649,7 +668,7 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
                 value={v.sourceUrl}
                 onChange={(e) => set("sourceUrl", e.target.value)}
               />
-              <span className="hint">填写后文末会注明出处，并加 canonical，避免被判为抄袭。</span>
+              <span className="hint">{t("admin.form.sourceUrlHint")}</span>
             </div>
           </div>
         </div>
@@ -657,11 +676,11 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
 
       <ImagePickerModal
         open={picker !== null}
-        fieldLabel={picker === "hero" ? "封面图" : "正文图片"}
+        fieldLabel={t(picker === "hero" ? "admin.form.coverPanel" : "admin.form.bodyImage")}
         onClose={() => setPicker(null)}
         onSelect={(url) => {
           if (picker === "hero") set("heroImage", url);
-          else editor.current?.insertAtCaret(`\n\n![图片说明](${url})\n\n`);
+          else editor.current?.insertAtCaret(`\n\n![${t("admin.form.insertedImageAlt")}](${url})\n\n`);
           setPicker(null);
         }}
       />

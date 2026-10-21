@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { t } from "@/lib/i18n";
 import { formatBytes, uploadFile } from "@/lib/admin/upload-client";
 import { toEmbedUrl } from "@/lib/video-host";
 import { VideoEmbedModal } from "./VideoEmbedModal";
@@ -49,7 +50,7 @@ function apply(
     return { next: value.slice(0, start) + a + value.slice(end), caret: start + a.length };
   }
   if (kind === "wrap") {
-    const body = selected || "文字";
+    const body = selected || t("admin.md.placeholderWord");
     return {
       next: value.slice(0, start) + a + body + b + value.slice(end),
       caret: start + a.length + body.length
@@ -58,7 +59,7 @@ function apply(
   // line: prefix every selected line, extending to the line start so the
   // prefix is not dropped into the middle of a sentence.
   const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-  const block = value.slice(lineStart, end) || "文字";
+  const block = value.slice(lineStart, end) || t("admin.md.placeholderWord");
   const prefixed = block
     .split("\n")
     .map((line, i) => (a === "1. " ? `${i + 1}. ${line}` : a + line))
@@ -100,10 +101,10 @@ function renderPreview(md: string): string {
   const blocks = esc(md).split(/\n{2,}/);
   return blocks
     .map((block) => {
-      const t = block.trim();
-      if (!t) return "";
+      const chunk = block.trim();
+      if (!chunk) return "";
       // A markdown table, recognised by the |---|---| separator on line two.
-      const tableLines = t.split("\n").map((line) => line.trim());
+      const tableLines = chunk.split("\n").map((line) => line.trim());
       if (
         tableLines.length >= 2 &&
         /^\|.*\|$/.test(tableLines[0]) &&
@@ -119,9 +120,9 @@ function renderPreview(md: string): string {
           .join("")}</tbody></table>`;
       }
 
-      const fence = t.match(/^:::\s*video\s+(\S+)/);
+      const fence = chunk.match(/^:::\s*video\s+(\S+)/);
       if (fence) {
-        const caption = t.split("\n").slice(1).filter((l) => l !== ":::").join(" ");
+        const caption = chunk.split("\n").slice(1).filter((l) => l !== ":::").join(" ");
         // Show the actual player rather than a black rectangle. The block was
         // escaped above, so the address has to be unescaped before use, and only
         // a known video host is allowed through -- the preview is for the
@@ -135,7 +136,7 @@ function renderPreview(md: string): string {
               : `<iframe src="${embed}" allowfullscreen loading="lazy"></iframe>`
           }${caption ? `<figcaption>${caption}</figcaption>` : ""}</figure>`;
         }
-        return `<div class="md-video">▶ 认不出的视频地址${caption ? ` — ${caption}` : ""}</div>`;
+        return `<div class="md-video">▶ ${t("admin.md.unknownVideo")}${caption ? ` — ${caption}` : ""}</div>`;
       }
       /*
        * A linked recording previews as a player, as it will on the page.
@@ -154,16 +155,16 @@ function renderPreview(md: string): string {
        * use, and only http(s) is allowed through: this is an editor's own
        * screen, but an src is still an src.
        */
-      const audioLink = t.match(/\[([^\]]*)\]\((https?:\/\/[^)\s]+?\.(?:mp3|m4a|wav|ogg)(?:\?[^)\s]*)?)\)/i);
+      const audioLink = chunk.match(/\[([^\]]*)\]\((https?:\/\/[^)\s]+?\.(?:mp3|m4a|wav|ogg)(?:\?[^)\s]*)?)\)/i);
       if (audioLink) {
         const raw = audioLink[2].replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
         if (/^https?:\/\//i.test(raw)) {
-          const label = audioLink[1].trim() || "下载";
-          const at = t.indexOf(audioLink[0]);
+          const label = audioLink[1].trim() || t("admin.md.downloadShort");
+          const at = chunk.indexOf(audioLink[0]);
           // The asterisks that usually wrap the link are markup, not words.
           const tidy = (part: string) => part.replace(/^[*_\s]+|[*_\s]+$/g, "").trim();
-          const before = tidy(t.slice(0, at));
-          const after = tidy(t.slice(at + audioLink[0].length));
+          const before = tidy(chunk.slice(0, at));
+          const after = tidy(chunk.slice(at + audioLink[0].length));
           const player = `<figure class="md-audio"><audio src="${raw}" controls preload="none"></audio><figcaption>${label}</figcaption></figure>`;
           return [
             before ? `<p>${before.replace(/\n/g, "<br>")}</p>` : "",
@@ -174,17 +175,17 @@ function renderPreview(md: string): string {
             .join("");
         }
       }
-      if (/^###\s+/.test(t)) return `<h3>${t.replace(/^###\s+/, "")}</h3>`;
-      if (/^##\s+/.test(t)) return `<h2>${t.replace(/^##\s+/, "")}</h2>`;
-      if (/^&gt;\s?/.test(t)) return `<blockquote>${t.replace(/^&gt;\s?/gm, "")}</blockquote>`;
-      if (/^---+$/.test(t)) return "<hr>";
-      if (/^(-|\*)\s+/m.test(t) && t.split("\n").every((l) => /^(-|\*)\s+/.test(l.trim()))) {
-        return `<ul>${t.split("\n").map((l) => `<li>${l.replace(/^\s*(-|\*)\s+/, "")}</li>`).join("")}</ul>`;
+      if (/^###\s+/.test(chunk)) return `<h3>${chunk.replace(/^###\s+/, "")}</h3>`;
+      if (/^##\s+/.test(chunk)) return `<h2>${chunk.replace(/^##\s+/, "")}</h2>`;
+      if (/^&gt;\s?/.test(chunk)) return `<blockquote>${chunk.replace(/^&gt;\s?/gm, "")}</blockquote>`;
+      if (/^---+$/.test(chunk)) return "<hr>";
+      if (/^(-|\*)\s+/m.test(chunk) && chunk.split("\n").every((l) => /^(-|\*)\s+/.test(l.trim()))) {
+        return `<ul>${chunk.split("\n").map((l) => `<li>${l.replace(/^\s*(-|\*)\s+/, "")}</li>`).join("")}</ul>`;
       }
-      if (t.split("\n").every((l) => /^\d+\.\s+/.test(l.trim()))) {
-        return `<ol>${t.split("\n").map((l) => `<li>${l.replace(/^\s*\d+\.\s+/, "")}</li>`).join("")}</ol>`;
+      if (chunk.split("\n").every((l) => /^\d+\.\s+/.test(l.trim()))) {
+        return `<ol>${chunk.split("\n").map((l) => `<li>${l.replace(/^\s*\d+\.\s+/, "")}</li>`).join("")}</ol>`;
       }
-      return `<p>${t.replace(/\n/g, "<br>")}</p>`;
+      return `<p>${chunk.replace(/\n/g, "<br>")}</p>`;
     })
     .join("\n")
     .replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, '<img src="$2" alt="$1">')
@@ -281,42 +282,42 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
   return (
     <div className="md">
       <div className="md-bar">
-        <Btn title="二级标题" onClick={() => run("line", "## ")}><b>H2</b></Btn>
-        <Btn title="三级标题" onClick={() => run("line", "### ")}><b>H3</b></Btn>
+        <Btn title={t("admin.md.h2")} onClick={() => run("line", "## ")}><b>H2</b></Btn>
+        <Btn title={t("admin.md.h3")} onClick={() => run("line", "### ")}><b>H3</b></Btn>
         <span className="md-sep" />
-        <Btn title="粗体" onClick={() => run("wrap", "**", "**")}><b>B</b></Btn>
-        <Btn title="斜体" onClick={() => run("wrap", "*", "*")}><i>I</i></Btn>
-        <Btn title="删除线" onClick={() => run("wrap", "~~", "~~")}><s>S</s></Btn>
+        <Btn title={t("admin.md.bold")} onClick={() => run("wrap", "**", "**")}><b>B</b></Btn>
+        <Btn title={t("admin.md.italic")} onClick={() => run("wrap", "*", "*")}><i>I</i></Btn>
+        <Btn title={t("admin.md.strike")} onClick={() => run("wrap", "~~", "~~")}><s>S</s></Btn>
         <span className="md-sep" />
-        <Btn title="引用" onClick={() => run("line", "> ")}>❝</Btn>
-        <Btn title="无序列表" onClick={() => run("line", "- ")}>• 列表</Btn>
-        <Btn title="有序列表" onClick={() => run("line", "1. ")}>1. 列表</Btn>
+        <Btn title={t("admin.md.quote")} onClick={() => run("line", "> ")}>❝</Btn>
+        <Btn title={t("admin.md.ul")} onClick={() => run("line", "- ")}>• {t("admin.md.listLabel")}</Btn>
+        <Btn title={t("admin.md.ol")} onClick={() => run("line", "1. ")}>1. {t("admin.md.listLabel")}</Btn>
         <span className="md-sep" />
         <Btn
-          title="插入链接"
+          title={t("admin.md.insertLink")}
           onClick={() => {
-            const href = window.prompt("链接地址", "https://");
+            const href = window.prompt(t("admin.md.linkPrompt"), "https://");
             if (href) run("wrap", "[", `](${href})`);
           }}
         >
-          🔗 链接
+          {t("admin.md.link")}
         </Btn>
-        <Btn title="从媒体库插入图片" onClick={onPickImage}>🖼 图片</Btn>
+        <Btn title={t("admin.md.pickImage")} onClick={onPickImage}>{t("admin.md.image")}</Btn>
         {/* A dialog rather than window.prompt: the 干净世界 /embed/ rule needs
             more room than a prompt's single label, and the address has to be
             echoed back for the editor to see it was understood. */}
-        <Btn title="插入 YouTube / 干净世界 / mp4 视频" onClick={() => setVideoModal(true)}>
-          ▶ 视频
+        <Btn title={t("admin.md.insertVideo")} onClick={() => setVideoModal(true)}>
+          {t("admin.md.video")}
         </Btn>
         {/* Music arrives as a file, not a URL: 151 of the 160 歌曲 articles are
             a recording plus a credit line, and before this the only way to add
             one was to type the Markdown link by hand. The file goes straight to
             Storage via a signed URL -- see lib/admin/upload-client. */}
         <Btn
-          title="上传音频（MP3 / M4A / WAV / OGG）"
+          title={t("admin.md.uploadAudio")}
           onClick={() => audioInput.current?.click()}
         >
-          {audioBusy === null ? "♪ 音频" : `上传中 ${audioBusy}%`}
+          {audioBusy === null ? t("admin.md.audio") : t("admin.md.uploading", { n: audioBusy })}
         </Btn>
         <input
           ref={audioInput}
@@ -338,7 +339,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
                 onProgress: (percent) => setAudioBusy(percent)
               });
               // The shape the article renderer turns into a player.
-              run("insert", `\n\n*[下载链接](${result.url})*\n\n`);
+              run("insert", `\n\n*[${t("admin.md.downloadLabel")}](${result.url})*\n\n`);
             } catch (error) {
               setAudioError((error as Error).message);
             } finally {
@@ -347,13 +348,13 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
           }}
         />
         <Btn
-          title="插入表格"
-          onClick={() => run("insert", "\n| 列一 | 列二 |\n| --- | --- |\n| 内容 | 内容 |\n")}
+          title={t("admin.md.insertTable")}
+          onClick={() => run("insert", t("admin.md.tableTemplate"))}
         >
-          ▦ 表格
+          {t("admin.md.table")}
         </Btn>
         <span className="md-sep" />
-        <Btn title="分隔线" onClick={() => run("insert", "\n\n---\n\n")}>— 分隔线</Btn>
+        <Btn title={t("admin.md.hr")} onClick={() => run("insert", "\n\n---\n\n")}>{t("admin.md.hrLabel")}</Btn>
         <span className="md-grow">
           {(["edit", "split", "preview"] as Mode[]).map((m) => (
             <button
@@ -362,7 +363,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
               className={`md-tool md-mode${mode === m ? " is-on" : ""}`}
               onClick={() => setMode(m)}
             >
-              {m === "edit" ? "编辑" : m === "split" ? "并排" : "预览"}
+              {t(m === "edit" ? "admin.md.mode.edit" : m === "split" ? "admin.md.mode.split" : "admin.md.mode.preview")}
             </button>
           ))}
         </span>
@@ -382,7 +383,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
             onClick={rememberCaret}
             onKeyUp={rememberCaret}
             onFocus={rememberCaret}
-            placeholder="正文，Markdown 格式。可直接把图片拖进来。"
+            placeholder={t("admin.md.bodyPlaceholder")}
           />
         ) : null}
         {mode !== "edit" ? (
@@ -393,14 +394,16 @@ export const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorPro
       </div>
 
       <div className="md-foot">
-        <span>{formatNumber(stats.chars)} 字</span>
-        <span>约 {stats.minutes} 分钟</span>
+        <span>{t("admin.md.chars", { n: formatNumber(stats.chars) })}</span>
+        <span>{t("admin.md.minutes", { n: stats.minutes })}</span>
         <span>
-          图片 {stats.images} · 视频 {stats.videos} · 链接 {stats.links}
+          {t("admin.md.counts", { images: stats.images, videos: stats.videos, links: stats.links })}
         </span>
         {/* An upload that fails must say so: the button returns to idle either
             way, which on its own is indistinguishable from success. */}
-        {audioError ? <span style={{ color: "#b42318" }}>音频上传失败：{audioError}</span> : null}
+        {audioError ? (
+          <span style={{ color: "#b42318" }}>{t("admin.md.audioFailed", { error: audioError })}</span>
+        ) : null}
       </div>
 
       {videoModal ? (

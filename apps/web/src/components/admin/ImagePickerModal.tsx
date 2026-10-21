@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { t } from "@/lib/i18n";
 import { formatBytes, uploadFile } from "@/lib/admin/upload-client";
 
 interface MediaItem {
@@ -70,9 +71,9 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
   const explainLoadFailure = (error: unknown) => {
     const raw = error instanceof Error ? error.message : "";
     if (/too many connections/i.test(raw)) {
-      return "数据库这会儿忙不过来，媒体库没读出来。等几秒按「刷新」一般就好。上传不受影响，可以直接传。";
+      return t("admin.pick.busy");
     }
-    return raw || "读取媒体库失败。按「刷新」再试一次。";
+    return raw || t("admin.pick.readFailed");
   };
 
   const loadLibrary = async () => {
@@ -81,7 +82,7 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
     try {
       const response = await fetch("/api/admin/media/list");
       const payload = await readPayload(response);
-      if (!response.ok) throw new Error(String(payload.error || "读取媒体库失败"));
+      if (!response.ok) throw new Error(String(payload.error || t("admin.pick.readFailedShort")));
       setItems((payload.items as MediaItem[]) ?? []);
       setUploadEnabled(payload.uploadEnabled !== false);
     } catch (error) {
@@ -102,18 +103,18 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
 
   const handleUpload = async (file: File) => {
     if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
-      setStatus(`文件过大，请上传小于 ${MAX_UPLOAD_MB}MB 的图片。`);
+      setStatus(t("admin.pick.tooLarge", { mb: MAX_UPLOAD_MB }));
       return;
     }
     setUploading(true);
     setProgress(0);
-    setStatus(`正在上传 ${formatBytes(file.size)}…`);
+    setStatus(t("admin.pick.uploadingSize", { size: formatBytes(file.size) }));
     try {
       const result = await uploadFile(file, { folder: "home", onProgress: setProgress });
       onSelect(result.url);
       onClose();
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "上传失败");
+      setStatus(error instanceof Error ? error.message : t("admin.pick.uploadFailed"));
     } finally {
       setUploading(false);
       setProgress(null);
@@ -121,7 +122,7 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
   };
 
   const handleDelete = async (item: MediaItem) => {
-    if (!window.confirm(`删除「${item.name}」？引用了这张图片的页面会失去图片。`)) return;
+    if (!window.confirm(t("admin.pick.confirmDelete", { name: item.name }))) return;
     try {
       const response = await fetch("/api/admin/media/delete", {
         method: "POST",
@@ -129,10 +130,10 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
         body: JSON.stringify({ id: item.id })
       });
       const payload = await readPayload(response);
-      if (!response.ok) throw new Error(String(payload.error || "删除失败"));
+      if (!response.ok) throw new Error(String(payload.error || t("admin.pick.deleteFailed")));
       setItems((prev) => prev.filter((row) => row.id !== item.id));
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "删除失败");
+      setStatus(error instanceof Error ? error.message : t("admin.pick.deleteFailed"));
     }
   };
 
@@ -140,7 +141,7 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="选择图片"
+      aria-label={t("admin.pick.aria")}
       style={{
         position: "fixed",
         inset: 0,
@@ -166,9 +167,11 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
         }}
       >
         <div className="admin-toolbar" style={{ margin: 0, padding: "12px 16px", borderBottom: "1px solid #ececec" }}>
-          <strong>选择图片{fieldLabel ? ` — ${fieldLabel}` : ""}</strong>
+          <strong>
+            {fieldLabel ? t("admin.pick.titleWithField", { field: fieldLabel }) : t("admin.pick.title")}
+          </strong>
           <button className="admin-btn" type="button" onClick={loadLibrary} disabled={loading}>
-            刷新
+            {t("admin.pick.refresh")}
           </button>
           {/* A real button that opens the picker itself, rather than a <label>
               wrapping a display:none input and relying on the browser to
@@ -182,7 +185,9 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
             disabled={!uploadEnabled || uploading}
             onClick={() => fileInput.current?.click()}
           >
-            {uploading ? `上传中 ${progress ?? 0}%` : `上传图片（≤ ${MAX_UPLOAD_MB}MB）`}
+            {uploading
+              ? t("admin.pick.uploading", { n: progress ?? 0 })
+              : t("admin.pick.upload", { mb: MAX_UPLOAD_MB })}
           </button>
           <input
             ref={fileInput}
@@ -200,13 +205,13 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
             }}
           />
           <button className="admin-btn" type="button" onClick={onClose} style={{ marginLeft: "auto" }}>
-            关闭
+            {t("admin.pick.close")}
           </button>
         </div>
 
         {!uploadEnabled ? (
           <p style={{ margin: 0, padding: "10px 16px", color: "#8a6d1f", fontSize: 13 }}>
-            未配置 SUPABASE_STORAGE_BUCKET，暂时无法上传；可在下方直接填写图片地址。
+            {t("admin.pick.noBucket")}
           </p>
         ) : null}
         {status ? (
@@ -219,7 +224,7 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
           <input
             className="admin-input"
             style={{ flex: 1 }}
-            placeholder="或直接粘贴图片地址 https://…"
+            placeholder={t("admin.pick.urlPlaceholder")}
             value={pastedUrl}
             onChange={(event) => setPastedUrl(event.target.value)}
           />
@@ -233,15 +238,15 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
               onClose();
             }}
           >
-            使用此地址
+            {t("admin.pick.useUrl")}
           </button>
         </div>
 
         <div style={{ overflow: "auto", padding: 16 }}>
           {loading ? (
-            <p>正在加载…</p>
+            <p>{t("admin.pick.loading")}</p>
           ) : items.length === 0 ? (
-            <p style={{ color: "#666" }}>媒体库还没有图片。点击上方「上传图片」添加。</p>
+            <p style={{ color: "#666" }}>{t("admin.pick.empty")}</p>
           ) : (
             <div
               style={{
@@ -294,7 +299,7 @@ export function ImagePickerModal({ open, fieldLabel, onClose, onSelect }: ImageP
                       style={{ padding: "2px 6px", fontSize: 12 }}
                       onClick={() => handleDelete(item)}
                     >
-                      删除
+                      {t("admin.pick.delete")}
                     </button>
                   </div>
                 </div>

@@ -1,4 +1,6 @@
 import { AdminShell } from "@/components/admin/AdminShell";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 import { CategoryRowActions } from "@/components/admin/CategoryRowActions";
 import { ArticleTabs } from "@/components/admin/ArticleTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
@@ -17,20 +19,15 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
     <AdminShell user={user}>
       <ArticleTabs active="categories" />
       <section className="admin-card">
-        <h2 style={{ marginTop: 0 }}>分类管理</h2>
+        <h2 style={{ marginTop: 0 }}>{t("admin.cat.title")}</h2>
         <p>
-          可新增、重命名、排序分类；删除前需先移除该分类下文章映射。
-          名称和排序改完保存，网站上立刻就是新的。
+          {t("admin.cat.intro1")}
           <br />
-          slug 建好之后不能再改，只能看：它是分类页的网址，改了旧链接就全断了。
-          新建分类时 slug 可用英文填写（中文名称必须填）。
+          {t("admin.cat.intro2")}
           <br />
-          「页面说明」是分类页标题下面那句话。留空的话，那里会沿用原来的
-          「SLUG · N 篇」—— 那是网址和篇数，不是一句介绍。
+          {t("admin.cat.intro3")}
           <br />
-          勾上「公开页面」，这个分类才会有 /news/&lt;slug&gt; 列表页，并出现在
-          新闻页顶部的分类 tab 里；取消勾选，那个地址就不再对外。tab 的顺序就是
-          上面的「排序」。
+          {tRich("admin.cat.intro4", { path: <code>/news/&lt;slug&gt;</code> })}
 
         </p>
         {params.error ? (
@@ -44,19 +41,19 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
         <table className="admin-table">
           <thead>
             <tr>
-              <th style={{ width: 60 }}>排序</th>
-              <th style={{ width: 150 }}>名称</th>
+              <th style={{ width: 60 }}>{t("admin.cat.col.order")}</th>
+              <th style={{ width: 150 }}>{t("admin.cat.col.name")}</th>
               <th style={{ width: 170 }}>slug</th>
-              <th style={{ width: 70 }}>文章数</th>
-              <th style={{ width: 86 }}>公开页面</th>
-              <th>页面说明</th>
-              <th style={{ width: 110 }}>操作</th>
+              <th style={{ width: 70 }}>{t("admin.cat.col.count")}</th>
+              <th style={{ width: 86 }}>{t("admin.cat.col.public")}</th>
+              <th>{t("admin.cat.col.blurb")}</th>
+              <th style={{ width: 110 }}>{t("admin.cat.col.actions")}</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={7}>暂无分类</td>
+                <td colSpan={7}>{t("admin.cat.empty")}</td>
               </tr>
             ) : (
               rows.map((row) => (
@@ -78,9 +75,9 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
                         value="1"
                         form={`ac-${row.id}`}
                         defaultChecked={row.isNewsListing}
-                        aria-label={`${row.name} 是否有公开列表页`}
+                        aria-label={t("admin.cat.aria.publicToggle", { name: row.name })}
                       />
-                      <span>{row.isNewsListing ? "公开" : "不公开"}</span>
+                      <span>{t(row.isNewsListing ? "admin.cat.public" : "admin.cat.notPublic")}</span>
                     </label>
                   </td>
                   <td>
@@ -94,9 +91,9 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
                       name="description"
                       defaultValue={row.description}
                       rows={2}
-                      placeholder="留空则沿用原来的「SLUG · N 篇」"
+                      placeholder={t("admin.cat.blurbPlaceholder")}
                       style={{ width: "100%", minWidth: 260, resize: "vertical" }}
-                      aria-label={`${row.name} 的页面说明`}
+                      aria-label={t("admin.cat.aria.blurb", { name: row.name })}
                     />
                   </td>
                   <td>
@@ -114,13 +111,13 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
                         type="number"
                         step={1}
                         defaultValue={row.sortOrder}
-                        aria-label={`${row.name} 的排序`}
+                        aria-label={t("admin.cat.aria.order", { name: row.name })}
                       />
                       <input
                         className="admin-input"
                         name="name"
                         defaultValue={row.name}
-                        aria-label={`${row.name} 的名称`}
+                        aria-label={t("admin.cat.aria.name", { name: row.name })}
                         required
                       />
                     </form>
@@ -130,7 +127,7 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
                         id={row.id}
                         name={row.name}
                         count={row.articleCount}
-                        unit="篇文章"
+                        kind="article"
                         deleteAction="/api/admin/content/categories/delete"
                       />
                     </div>
@@ -143,18 +140,18 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
       </section>
 
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>新增分类</h3>
+        <h3 style={{ marginTop: 0 }}>{t("admin.cat.addTitle")}</h3>
         <form method="post" action="/api/admin/content/categories" className="admin-toolbar">
-          <input className="admin-input" name="name" placeholder="分类名称（可用中文）" required />
+          <input className="admin-input" name="name" placeholder={t("admin.cat.namePlaceholder")} required />
           <input
             className="admin-input"
             name="slug"
-            placeholder="slug（英文；中文名称必须填写）"
+            placeholder={t("admin.cat.slugPlaceholder")}
           />
           <input
             className="admin-input"
             name="description"
-            placeholder="页面说明（标题下面那句话）"
+            placeholder={t("admin.cat.blurbNewPlaceholder")}
             style={{ minWidth: 260 }}
           />
           <input
@@ -163,12 +160,12 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
             type="number"
             step={1}
             defaultValue={0}
-            placeholder="排序"
+            placeholder={t("admin.cat.orderPlaceholder")}
             style={{ width: 90 }}
-            aria-label="排序"
+            aria-label={t("admin.cat.orderPlaceholder")}
           />
           <button className="admin-btn admin-btn-primary" type="submit">
-            新增
+            {t("admin.cat.add")}
           </button>
         </form>
       </section>

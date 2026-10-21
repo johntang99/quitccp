@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { t } from "@/lib/i18n";
 import { createPortal } from "react-dom";
 
 /**
@@ -36,17 +37,26 @@ export function CategoryRowActions({
   name,
   count,
   deleteAction,
-  /** 「视频」/「篇文章」 -- what the blocking message counts. */
-  unit,
+  /**
+   * 这个分类装的是什么。
+   *
+   * 原来是一个字符串 `unit`（「篇文章」/「个视频」），而提示里用
+   * `unit.replace(/^篇/, "")` 去掉量词 —— 只剥「篇」，所以视频分类那边显示的是
+   * 「这个分类下面没有**个**视频」。中文的量词绑在名词上，不是能从句子里剥出来
+   * 的前缀；换成别的语言更没有这回事。
+   *
+   * 所以改成按种类查文案：带量词的「{count} 篇文章」和不带的「文章」各是一条。
+   */
+  kind,
   /** What disappears with the row, named in the confirmation. */
-  alsoLost = "分类页的说明文字会一并消失。"
+  alsoLost = t("admin.cat.alsoLost")
 }: {
   formId: string;
   id: string;
   name: string;
   count: number;
   deleteAction: string;
-  unit: string;
+  kind: "article" | "video";
   alsoLost?: string;
 }) {
   const [saving, setSaving] = useState(false);
@@ -102,13 +112,13 @@ export function CategoryRowActions({
         }}
       >
         <h3 id={`delvc-h-${id}`} style={{ margin: "0 0 10px", fontSize: 17 }}>
-          {blocked ? "这个分类还不能删" : "删除这个分类？"}
+          {t(blocked ? "admin.cat.cannotDelete" : "admin.cat.confirmDelete")}
         </h3>
         <p style={{ margin: "0 0 6px", lineHeight: 1.6, wordBreak: "break-word" }}>「{name}」</p>
         <p style={{ margin: "0 0 18px", color: "#8a90a0", fontSize: 13, lineHeight: 1.6 }}>
           {blocked
-            ? `下面还有 ${count} ${unit}。请先把它们改到别的分类，再回来删。`
-            : `这个分类下面没有${unit.replace(/^篇/, "")}，删掉不影响任何页面。${alsoLost}`}
+            ? t("admin.cat.blockedBody", { counted: t(`admin.cat.counted.${kind}`, { count }) })
+            : t("admin.cat.emptyBody", { thing: t(`admin.cat.thing.${kind}`), alsoLost })}
         </p>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button
@@ -118,7 +128,7 @@ export function CategoryRowActions({
             onClick={() => setOpen(false)}
             disabled={deleting}
           >
-            {blocked ? "知道了" : "取消"}
+            {t(blocked ? "admin.cat.understood" : "admin.cancel")}
           </button>
           {blocked ? null : (
             /* Its own two fields, not the row's form: that form carries the
@@ -132,7 +142,7 @@ export function CategoryRowActions({
             >
               <input type="hidden" name="id" value={id} />
               <button className="admin-btn admin-btn-danger" type="submit" disabled={deleting}>
-                {deleting ? "正在删除…" : "确认删除"}
+                {t(deleting ? "admin.art.delete.deleting" : "admin.art.delete.confirm")}
               </button>
             </form>
           )}
@@ -153,7 +163,7 @@ export function CategoryRowActions({
           disabled={saving}
           style={{ flex: 1, justifyContent: "center" }}
         >
-          {saving ? "保存中…" : "更新"}
+          {t(saving ? "admin.cat.updating" : "admin.cat.update")}
         </button>
         <button
           className="admin-btn admin-btn-danger"
@@ -161,9 +171,15 @@ export function CategoryRowActions({
           onClick={() => setOpen(true)}
           disabled={saving}
           style={{ flex: 1, justifyContent: "center" }}
-          title={blocked ? `还有 ${count} ${unit}在这个分类下，不能删` : "删除这个分类"}
+          title={
+            blocked
+              ? t("admin.cat.deleteBlockedTitle", {
+                  counted: t(`admin.cat.counted.${kind}`, { count })
+                })
+              : t("admin.cat.deleteTitle")
+          }
         >
-          删除
+          {t("admin.art.delete")}
         </button>
       </div>
       {open && typeof document !== "undefined" ? createPortal(dialog, document.body) : null}

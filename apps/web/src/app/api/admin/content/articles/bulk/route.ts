@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { t } from "@/lib/i18n";
 import { adminCanWrite, canBulkPublish, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { bulkSetPrimaryCategory, bulkUpdateArticleStatus } from "@/lib/admin/repository";
 import { revalidateNews } from "@/lib/admin/revalidate-news";
@@ -40,19 +41,19 @@ export async function POST(request: Request) {
   const action = String(formData.get("action") ?? "review");
   const back = String(formData.get("back") ?? "/admin/articles");
   if (ids.length === 0) {
-    return NextResponse.redirect(new URL(`${back}${back.includes("?") ? "&" : "?"}msg=${encodeURIComponent("没有选中任何文章。")}`, request.url), 303);
+    return NextResponse.redirect(new URL(`${back}${back.includes("?") ? "&" : "?"}msg=${encodeURIComponent(t("admin.bulk.nothingSelected"))}`, request.url), 303);
   }
 
   try {
     if (action === "category") {
       const target = String(formData.get("category") ?? "").trim();
-      if (!target) throw new Error("请先选择目标分类。");
+      if (!target) throw new Error(t("admin.bulk.pickTargetFirst"));
       /* Read before the move: afterwards these slugs are unchanged, but doing it
          in one place keeps both branches alike. */
       const touched = await slugsFor(ids);
       const moved = await bulkSetPrimaryCategory(ids, target, user.email);
       await revalidateNews(touched);
-      const msg = `已把 ${moved} 篇的主分类改为「${target}」。`;
+      const msg = t("admin.bulk.movedCategory", { n: moved, target });
       return NextResponse.redirect(
         new URL(`${back}${back.includes("?") ? "&" : "?"}msg=${encodeURIComponent(msg)}`, request.url),
         303
@@ -60,21 +61,27 @@ export async function POST(request: Request) {
     }
 
     if ((action === "publish" || action === "archive") && !canBulkPublish(user)) {
-      return NextResponse.json({ error: "只有管理员或超级管理员可以发布或归档。编辑请先「保存草稿」，再请管理员发布。" }, { status: 403 });
+      return NextResponse.json({ error: t("admin.bulk.forbidden") }, { status: 403 });
     }
     const nextStatus =
       action === "publish" ? "published" : action === "archive" ? "archived" : "draft";
     const touched = await slugsFor(ids);
     await bulkUpdateArticleStatus(ids, nextStatus, user.email);
     await revalidateNews(touched);
-    const label = action === "publish" ? "发布" : action === "archive" ? "归档" : "退回草稿";
-    const msg = `已把 ${ids.length} 篇${label}。`;
+    const label = t(
+      action === "publish"
+        ? "admin.bulk.action.publish"
+        : action === "archive"
+          ? "admin.bulk.action.archive"
+          : "admin.bulk.action.draft"
+    );
+    const msg = t("admin.bulk.done", { n: ids.length, action: label });
     return NextResponse.redirect(
       new URL(`${back}${back.includes("?") ? "&" : "?"}msg=${encodeURIComponent(msg)}`, request.url),
       303
     );
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "批量操作失败。";
+    const msg = error instanceof Error ? error.message : t("admin.bulk.failed");
     return NextResponse.redirect(
       new URL(`${back}${back.includes("?") ? "&" : "?"}msg=${encodeURIComponent(msg)}`, request.url),
       303

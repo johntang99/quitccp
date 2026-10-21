@@ -35,5 +35,5 @@ test("多个语言展开成 OR，并且整体被括起来", () => {
 test("没给语言时不生成一个会删光全部的条件", () => {
   /* 空列表展开成空的 OR 段，`() AND (...)` 在 Meilisearch 上是语法错误 ——
      报错比静默删光好，但更该在这里就拦住。 */
-  assert.throws(() => staleSweepFilter([], 1), /语言/);
+  assert.throws(() => staleSweepFilter([], 1), /no locales/);
 });

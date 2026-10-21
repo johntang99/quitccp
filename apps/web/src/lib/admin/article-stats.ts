@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { t } from "@/lib/i18n";
 import { listCategories } from "@/lib/admin/repository";
 import { SITE_LOCALE } from "@/lib/site-config";
 
@@ -64,21 +65,21 @@ export async function getArticleStats(actorEmail: string): Promise<ArticleStats>
   return {
     total,
     byStatus: [
-      { key: "published", label: "已发布", count: published },
-      { key: "draft", label: "草稿", count: draft },
-      { key: "archived", label: "已归档", count: archived }
+      { key: "published", label: t("admin.status.published"), count: published },
+      { key: "draft", label: t("admin.status.draft"), count: draft },
+      { key: "archived", label: t("admin.status.archived"), count: archived }
     ],
     bySection: [
-      { key: "news", label: "新闻", count: news },
-      { key: "resources", label: "资料", count: resources }
+      { key: "news", label: t("admin.stats.section.news"), count: news },
+      { key: "resources", label: t("admin.stats.section.resources"), count: resources }
     ],
     byCategory: categories
       .map((row) => ({ name: row.name, slug: row.slug, count: row.articleCount }))
       .sort((a, b) => b.count - a.count),
     gaps: [
-      { key: "no-cover", label: "缺封面图", count: noCover, href: "/admin/articles?gap=no-cover" },
-      { key: "no-author", label: "缺作者署名", count: noAuthor, href: "/admin/articles?gap=no-author" },
-      { key: "no-summary", label: "缺摘要", count: noSummary, href: "/admin/articles?gap=no-summary" }
+      { key: "no-cover", label: t("admin.art.gap.noCover"), count: noCover, href: "/admin/articles?gap=no-cover" },
+      { key: "no-author", label: t("admin.stats.gap.noAuthorLong"), count: noAuthor, href: "/admin/articles?gap=no-author" },
+      { key: "no-summary", label: t("admin.art.gap.noSummary"), count: noSummary, href: "/admin/articles?gap=no-summary" }
     ],
     byYear
   };

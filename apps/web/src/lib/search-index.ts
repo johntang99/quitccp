@@ -248,7 +248,7 @@ export interface SyncResult {
 export function staleSweepFilter(locales: readonly string[], runStartedAt: number): string {
   /* 空列表会展开成 `() AND (...)`，那是个语法错误；但万一哪天 Meilisearch
      把它当成「全部匹配」，这一扫就会删光整个索引。在这里拦住。 */
-  if (locales.length === 0) throw new Error("staleSweepFilter：没有给语言，拒绝生成清理条件");
+  if (locales.length === 0) throw new Error("staleSweepFilter: refusing to build a sweep filter with no locales");
   const mine = locales.map((l) => `locale = "${l}"`).join(" OR ");
   const stale = `synced_at < ${runStartedAt} OR synced_at NOT EXISTS`;
   return `(${mine}) AND (${stale})`;

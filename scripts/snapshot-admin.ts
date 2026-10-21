@@ -180,12 +180,19 @@ async function main() {
      * 要比的是「读者看得见的字」，不是 DOM 的节点边界。
      *
      * 把一句话从「两段文字 + 一个变量」改成一条完整文案，渲染出来的字一模
-     * 一样，但 React 原来在两个文本节点之间插的分隔没了，按行比就会报一条
-     * 假警报。真正不能变的是把空白压平之后的那串字。
+     * 一样，但 React 原来在两个文本节点之间插的分隔没了 —— 压平之后
+     * 「新闻」「区」变成「新闻区」，「改：」「Jeff Lee」变成「改：Jeff Lee」。
+     * 按空白敏感的方式比，这类改动每次都报一堆假差异。
+     *
+     * 所以判定成败看的是**去掉全部空白**之后的字串；空白本身的变化照旧说出来，
+     * 只是不算失败。字词有没有被改，由 npm run zh:unchanged 精确把关 —— 它比的
+     * 是改动前的源码，不受渲染时节点怎么切的影响。
      */
     const flat = (x: string) => x.replace(/\s+/g, " ").trim();
-    if (flat(before) === flat(text)) {
-      console.log(`  ～ ${page}：文字没变，只是节点边界变了（已更新快照）`);
+    const words = (x: string) => flat(x).replace(/\s+/g, "");
+    if (words(before) === words(text)) {
+      const note = flat(before) === flat(text) ? "只是节点边界变了" : "只是空白与节点边界变了";
+      console.log(`  ～ ${page}：文字没变，${note}（已更新快照）`);
       writeFileSync(file, text);
       continue;
     }

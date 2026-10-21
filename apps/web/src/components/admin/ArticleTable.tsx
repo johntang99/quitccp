@@ -1,13 +1,14 @@
 import Link from "next/link";
+import { t } from "@/lib/i18n";
 import { actorLabel, listAdminDisplayNames } from "@/lib/admin/user-admin-repository";
 import type { ArticleRecord } from "@/lib/admin/types";
 import { ArticleDeleteButton } from "./ArticleDeleteButton";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
-  published: { label: "已发布", cls: "b-pub" },
-  draft: { label: "草稿", cls: "b-draft" },
-  review: { label: "待审校", cls: "b-review" },
-  archived: { label: "已归档", cls: "b-arch" }
+  published: { label: t("admin.status.published"), cls: "b-pub" },
+  draft: { label: t("admin.status.draft"), cls: "b-draft" },
+  review: { label: t("admin.status.review"), cls: "b-review" },
+  archived: { label: t("admin.status.archived"), cls: "b-arch" }
 };
 
 function day(value: string | null): string {
@@ -43,15 +44,19 @@ export async function ArticleTable({
           <tr>
             {selectable ? <th style={{ width: 28 }} /> : null}
             {numbered ? <th style={{ width: 36 }}>#</th> : null}
-            <th style={{ width: 76 }}>封面</th>
-            <th>标题</th>
-            <th>分类</th>
-            <th>作者</th>
-            <th>状态</th>
-            <th style={{ width: 44, textAlign: "center" }} title="重要">重要</th>
-            <th style={{ width: 62, textAlign: "center" }} title="精彩保留">精彩</th>
-            <th>编辑</th>
-            <th>{dateColumn === "updated" ? "更新" : "发布"}</th>
+            <th style={{ width: 76 }}>{t("admin.art.col.cover")}</th>
+            <th>{t("admin.art.col.title")}</th>
+            <th>{t("admin.art.col.category")}</th>
+            <th>{t("admin.art.col.author")}</th>
+            <th>{t("admin.art.col.status")}</th>
+            <th style={{ width: 44, textAlign: "center" }} title={t("admin.art.col.featured")}>
+              {t("admin.art.col.featuredShort")}
+            </th>
+            <th style={{ width: 62, textAlign: "center" }} title={t("admin.art.col.editorArchive")}>
+              {t("admin.art.col.editorArchiveShort")}
+            </th>
+            <th>{t("admin.art.col.editor")}</th>
+            <th>{t(dateColumn === "updated" ? "admin.art.col.updated" : "admin.art.col.published")}</th>
             <th />
           </tr>
         </thead>
@@ -59,7 +64,7 @@ export async function ArticleTable({
           {rows.length === 0 ? (
             <tr>
               <td colSpan={11} style={{ color: "#8a90a0", padding: 24, textAlign: "center" }}>
-                没有符合条件的文章。
+                {t("admin.art.empty")}
               </td>
             </tr>
           ) : null}
@@ -93,7 +98,7 @@ export async function ArticleTable({
                         fontSize: 11
                       }}
                     >
-                      无图
+                      {t("admin.art.noImage")}
                     </div>
                   )}
                 </td>
@@ -105,17 +110,17 @@ export async function ArticleTable({
                     <div style={{ color: "#8a90a0", fontSize: 12 }}>{row.subtitle}</div>
                   ) : null}
                 </td>
-                <td>{row.category || <span style={{ color: "#b42318" }}>未分类</span>}</td>
+                <td>{row.category || <span style={{ color: "#b42318" }}>{t("admin.art.uncategorised")}</span>}</td>
                 <td>{row.author || <span style={{ color: "#8a90a0" }}>—</span>}</td>
                 <td>
                   <span className={`badge ${status.cls}`}>{status.label}</span>
                 </td>
                 {/* A mark when set, nothing when not: a column of ✗ is noise,
                     and what an editor scans for is the few that are flagged. */}
-                <td style={{ textAlign: "center" }} title={row.featured ? "重要" : ""}>
+                <td style={{ textAlign: "center" }} title={row.featured ? t("admin.art.col.featured") : ""}>
                   {row.featured ? <span style={{ color: "#c8102e", fontSize: 15 }}>★</span> : null}
                 </td>
-                <td style={{ textAlign: "center" }} title={row.editorArchive ? "精彩保留" : ""}>
+                <td style={{ textAlign: "center" }} title={row.editorArchive ? t("admin.art.col.editorArchive") : ""}>
                   {row.editorArchive ? <span style={{ color: "#1f7a4d", fontSize: 15 }}>✦</span> : null}
                 </td>
                 {/* 编辑 in the masthead sense: the person who handled the piece
@@ -124,8 +129,8 @@ export async function ArticleTable({
                 <td style={{ color: "#8a90a0", whiteSpace: "nowrap" }} title={row.createdBy || undefined}>
                   {actorLabel(row.createdBy, actorNames)}
                   {row.updatedBy && row.updatedBy !== row.createdBy ? (
-                    <div style={{ fontSize: 11 }} title={`最后修改：${row.updatedBy}`}>
-                      改：{actorLabel(row.updatedBy, actorNames)}
+                    <div style={{ fontSize: 11 }} title={t("admin.art.lastEditedBy", { email: row.updatedBy })}>
+                      {t("admin.art.changedBy", { name: actorLabel(row.updatedBy, actorNames) })}
                     </div>
                   ) : null}
                 </td>
@@ -134,7 +139,7 @@ export async function ArticleTable({
                 </td>
                 <td style={{ whiteSpace: "nowrap" }}>
                   <Link className="admin-btn admin-btn-sm" href={`/admin/articles/${row.id}`}>
-                    编辑
+                    {t("admin.art.edit")}
                   </Link>
                   <a
                     className="admin-btn admin-btn-sm"
@@ -143,7 +148,7 @@ export async function ArticleTable({
                     rel="noopener noreferrer"
                     style={{ marginLeft: 4 }}
                   >
-                    预览
+                    {t("admin.art.preview")}
                   </a>
                   <ArticleDeleteButton id={row.id} title={row.title} />
                 </td>

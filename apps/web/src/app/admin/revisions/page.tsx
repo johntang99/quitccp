@@ -34,7 +34,8 @@ export default async function AdminRevisionsPage() {
               <th>快照</th>
             </tr>
           </thead>
-          <tbody>
+          {/* 整张表是数据库里的修订记录（含 JSON 快照），每次有人保存内容就变。 */}
+          <tbody data-snapshot="data">
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={5}>暂无修订记录</td>

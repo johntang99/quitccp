@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { t } from "@/lib/i18n";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { ArticleTabs } from "@/components/admin/ArticleTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
@@ -16,11 +17,11 @@ export default async function ArticleStatsPage() {
       <ArticleTabs active="stats" />
 
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>总览</h3>
+        <h3 style={{ marginTop: 0 }}>{t("admin.stats.overview")}</h3>
         <div className="stat-grid">
           <div className="stat">
             <div className="n">{formatNumber(stats.total)}</div>
-            <div className="k">文章总数</div>
+            <div className="k">{t("admin.stats.total")}</div>
           </div>
           {stats.byStatus.map((row) => (
             <div className="stat" key={row.key}>
@@ -31,20 +32,20 @@ export default async function ArticleStatsPage() {
           {stats.bySection.map((row) => (
             <div className="stat" key={row.key}>
               <div className="n">{formatNumber(row.count)}</div>
-              <div className="k">{row.label}区</div>
+              <div className="k">{t("admin.stats.sectionSuffix", { label: row.label })}</div>
             </div>
           ))}
         </div>
       </section>
 
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>按分类</h3>
+        <h3 style={{ marginTop: 0 }}>{t("admin.stats.byCategory")}</h3>
         <table className="admin-table">
           <thead>
             <tr>
-              <th>分类</th>
-              <th style={{ width: "40%" }}>占比</th>
-              <th style={{ textAlign: "right" }}>篇数</th>
+              <th>{t("admin.stats.col.category")}</th>
+              <th style={{ width: "40%" }}>{t("admin.stats.col.share")}</th>
+              <th style={{ textAlign: "right" }}>{t("admin.stats.col.count")}</th>
               <th />
             </tr>
           </thead>
@@ -70,7 +71,7 @@ export default async function ArticleStatsPage() {
                   </td>
                   <td>
                     <Link className="admin-btn admin-btn-sm" href={`/admin/articles?category=${row.slug}`}>
-                      查看
+                      {t("admin.stats.view")}
                     </Link>
                   </td>
                 </tr>
@@ -80,7 +81,7 @@ export default async function ArticleStatsPage() {
           <tfoot>
             <tr>
               <td>
-                <b>合计</b>
+                <b>{t("admin.stats.sum")}</b>
               </td>
               <td />
               <td style={{ textAlign: "right" }}>
@@ -91,19 +92,19 @@ export default async function ArticleStatsPage() {
           </tfoot>
         </table>
         <p className="muted" style={{ margin: "10px 0 0" }}>
-          一篇文章可归多个分类，各分类之和可能大于总数。
+          {t("admin.stats.multiCategoryNote")}
         </p>
       </section>
 
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>按发布年份（近 12 年）</h3>
+        <h3 style={{ marginTop: 0 }}>{t("admin.stats.byYear")}</h3>
         <div className="spark">
           {stats.byYear.map((row) => (
             <i
               key={row.year}
               className={row.count > peakYear * 0.6 ? "hi" : undefined}
               style={{ height: `${Math.max(4, (row.count / peakYear) * 100)}%` }}
-              title={`${row.year}：${row.count} 篇`}
+              title={t("admin.stats.yearTitle", { year: row.year, count: row.count })}
             />
           ))}
         </div>
@@ -115,9 +116,9 @@ export default async function ArticleStatsPage() {
       </section>
 
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>需要处理</h3>
+        <h3 style={{ marginTop: 0 }}>{t("admin.stats.todo")}</h3>
         <p className="muted" style={{ margin: "0 0 10px" }}>
-          不是错误，是迁移一万五千篇旧文留下的空缺。点「去处理」会打开筛选好的列表。
+          {t("admin.stats.todoNote")}
         </p>
         <table className="admin-table">
           <tbody>
@@ -131,7 +132,7 @@ export default async function ArticleStatsPage() {
                 </td>
                 <td style={{ width: 1 }}>
                   <Link className="admin-btn admin-btn-sm" href={gap.href}>
-                    去处理
+                    {t("admin.stats.goFix")}
                   </Link>
                 </td>
               </tr>

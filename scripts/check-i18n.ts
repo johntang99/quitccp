@@ -97,6 +97,9 @@ function uiChars(file: string): number {
     if (opensBlock) continue;
 
     if (trimmed.startsWith("*") || trimmed.startsWith("//")) continue;
+    /* console.* 永远不是界面 —— 它只进日志。算进来会让「还剩多少要翻」
+       虚高，而这个数字是用来判断英文站还差多少才能上线的。 */
+    if (/\bconsole\.(log|warn|error|info|debug)\(/.test(line)) continue;
     /* asString( 可能跨多行，第二个参数常单独一行。看到它就进入兜底区，
        直到这一段的括号配平为止。 */
     if (CMS_FALLBACK.test(line)) inFallback = true;

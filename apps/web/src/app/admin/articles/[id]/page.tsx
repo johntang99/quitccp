@@ -5,6 +5,7 @@ import { ArticleForm } from "@/components/admin/ArticleForm";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { getArticleFormLookups } from "@/lib/admin/article-form-data";
 import { getArticleById } from "@/lib/admin/repository";
+import { t } from "@/lib/i18n";
 
 interface EditArticlePageProps {
   params: Promise<{ id: string }>;
@@ -20,8 +21,13 @@ export default async function EditArticlePage({ params, searchParams }: EditArti
   if (!article) notFound();
   const { categories, authors } = await getArticleFormLookups(user.email);
 
-  const statusLabel =
-    article.status === "published" ? "已发布" : article.status === "archived" ? "已归档" : "草稿";
+  const statusLabel = t(
+    article.status === "published"
+      ? "admin.status.published"
+      : article.status === "archived"
+        ? "admin.status.archived"
+        : "admin.status.draft"
+  );
 
   return (
     <AdminShell user={user}>
@@ -32,13 +38,13 @@ export default async function EditArticlePage({ params, searchParams }: EditArti
       ) : null}
       <section className="admin-card" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <Link className="admin-btn" href="/admin/articles">
-          ← 返回列表
+          {t("admin.art.backToList")}
         </Link>
         <strong>{statusLabel}</strong>
-        <h2 style={{ margin: 0, fontSize: 18 }}>编辑文章</h2>
+        <h2 style={{ margin: 0, fontSize: 18 }}>{t("admin.art.editTitle")}</h2>
         <code style={{ color: "#8a90a0" }}>/news/{article.slug}</code>
         <a className="admin-btn" style={{ marginLeft: "auto" }} href={`/admin/preview/news/${article.slug}`} target="_blank" rel="noopener noreferrer">
-          在站点查看 ↗
+          {t("admin.art.viewOnSite")}
         </a>
       </section>
 

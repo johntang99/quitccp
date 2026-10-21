@@ -115,7 +115,7 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
                         id={row.id}
                         name={row.name}
                         count={row.videoCount}
-                        unit="个视频"
+                        kind="video"
                         deleteAction="/api/admin/content/video-categories/delete"
                       />
                     </div>
