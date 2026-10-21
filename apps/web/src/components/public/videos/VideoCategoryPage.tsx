@@ -1,6 +1,7 @@
 import type { PublicVideoCard, PublicVideoCategory, VideoSort } from "@/lib/public-content";
 import { Duration, MONO, Play, SERIF, Still, videoHref } from "./VideoParts";
 import { THEME_BOOTSTRAP, VideoThemeToggle } from "./VideoThemeToggle";
+import { t } from "@/lib/i18n";
 
 /**
  * One series' listing page.
@@ -47,9 +48,9 @@ export function VideoCategoryPage({
         <div className="vp-shell vp-head-inner">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
             <span style={{ fontSize: 13, color: "var(--muted)" }}>
-              <a href="/" style={{ color: "inherit", textDecoration: "none" }}>首页</a>
+              <a href="/" style={{ color: "inherit", textDecoration: "none" }}>{t("video.home")}</a>
               <span style={{ opacity: 0.5 }}> / </span>
-              <a href="/videos" style={{ color: "inherit", textDecoration: "none" }}>视频</a>
+              <a href="/videos" style={{ color: "inherit", textDecoration: "none" }}>{t("video.videos")}</a>
               <span style={{ opacity: 0.5 }}> / </span>
               {category.name}
             </span>
@@ -63,7 +64,7 @@ export function VideoCategoryPage({
                   {category.name}
                 </h1>
                 <span style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--acc)" }}>
-                  {category.total} 部 · 第 {category.page} / {category.pageCount} 页
+                  {t("video.countPage", { total: category.total, page: category.page, pages: category.pageCount })}
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: 15, lineHeight: "var(--lh-body)", color: "var(--muted)", maxWidth: 760 }}>
@@ -73,18 +74,18 @@ export function VideoCategoryPage({
 
             {/* 最新 / 最早 only. The design's third option, 最热, has no data
                 behind it -- see VideoSort. */}
-            <div className="vp-sorts" role="group" aria-label="排序">
+            <div className="vp-sorts" role="group" aria-label={t("video.aria.sort")}>
               <a className="vp-sort" data-on={category.sort === "latest" ? "1" : undefined} href={href(1, "latest")}>
-                最新
+                {t("video.newest")}
               </a>
               <a className="vp-sort" data-on={category.sort === "oldest" ? "1" : undefined} href={href(1, "oldest")}>
-                最早
+                {t("video.oldest")}
               </a>
             </div>
           </div>
 
-          <nav aria-label="视频系列" className="vp-chips">
-            <a className="vp-chip" href="/videos">视频首页</a>
+          <nav aria-label={t("video.aria.series")} className="vp-chips">
+            <a className="vp-chip" href="/videos">{t("video.allVideos")}</a>
             {siblings.map((sibling) => (
               <a
                 key={sibling.slug}
@@ -100,7 +101,7 @@ export function VideoCategoryPage({
               data-on={category.slug === "archive" ? "1" : undefined}
               href="/videos/archive"
             >
-              全部视频
+              {t("video.allInSection")}
             </a>
           </nav>
         </div>
@@ -116,17 +117,17 @@ export function VideoCategoryPage({
       <section className="vp-shell vp-section">
         <div className="vp-cat-head">
           <span style={{ fontFamily: SERIF, fontWeight: 700, fontSize: "clamp(20px, 2.2vw, 24px)", color: "var(--title)" }}>
-            全部影片
+            {t("video.allFilms")}
           </span>
           {category.videos.length > 0 ? (
             <span style={{ fontSize: 13, color: "var(--muted)" }}>
-              显示 {firstIndex}–{lastIndex} / {category.total}
+              {t("video.range", { from: firstIndex, to: lastIndex, total: category.total })}
             </span>
           ) : null}
         </div>
 
         {category.videos.length === 0 ? (
-          <p style={{ color: "var(--muted)", fontSize: 15 }}>这个栏目还没有内容。</p>
+          <p style={{ color: "var(--muted)", fontSize: 15 }}>{t("video.emptySection")}</p>
         ) : grid.length > 0 ? (
           <div className="vp-grid-4" style={{ rowGap: 28 }}>
             {grid.map((card) => (
@@ -136,7 +137,7 @@ export function VideoCategoryPage({
         ) : (
           // Fewer than five films in the category: the lead and 接着看 above
           // already show every one of them, so the grid would repeat them.
-          <p style={{ color: "var(--muted)", fontSize: 15 }}>本页影片已全部列于上方。</p>
+          <p style={{ color: "var(--muted)", fontSize: 15 }}>{t("video.allListed")}</p>
         )}
       </section>
 
@@ -166,7 +167,7 @@ function LeadCard({ card, sort }: { card: PublicVideoCard; sort: VideoSort }) {
           <span style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             {/* Truthful under either order: newest first makes this the latest,
                 oldest first makes it the earliest. */}
-            <span className="vp-cat-flag">{sort === "oldest" ? "最早一期" : "最新一期"}</span>
+            <span className="vp-cat-flag">{sort === "oldest" ? t("video.oldestIssue") : t("video.latestIssue")}</span>
             {dateOf(card) ? (
               <span style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--lav-text)" }}>{dateOf(card)}</span>
             ) : null}
@@ -201,7 +202,7 @@ function UpNext({ cards }: { cards: PublicVideoCard[] }) {
           borderBottom: "2px solid var(--title)"
         }}
       >
-        接着看
+        {t("video.continue")}
       </span>
       {cards.map((card, index) => (
         <a
@@ -296,16 +297,16 @@ function Pager({
 }) {
   const { page, pageCount, total } = category;
   return (
-    <nav aria-label="分页" className="vp-shell vp-cat-pager-wrap">
+    <nav aria-label={t("video.aria.pager")} className="vp-shell vp-cat-pager-wrap">
       <div className="vp-cat-pager">
         <span style={{ fontSize: 13, color: "var(--muted)" }}>
-          第 {page} / {pageCount} 页 · 共 {total} 部
+          {t("video.pageOf", { page, pages: pageCount, total })}
         </span>
         <span style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
           {page > 1 ? (
-            <a className="vp-cat-step" href={href(page - 1)} rel="prev">← 上一页</a>
+            <a className="vp-cat-step" href={href(page - 1)} rel="prev">{t("video.prev")}</a>
           ) : (
-            <span className="vp-cat-step" aria-disabled="true" style={{ opacity: 0.45 }}>← 上一页</span>
+            <span className="vp-cat-step" aria-disabled="true" style={{ opacity: 0.45 }}>{t("video.prev")}</span>
           )}
           {pageNumbers(page, pageCount).map((entry, index) =>
             entry === "gap" ? (
@@ -323,7 +324,7 @@ function Pager({
             )
           )}
           {page < pageCount ? (
-            <a className="vp-cat-next-page" href={href(page + 1)} rel="next">下一页 →</a>
+            <a className="vp-cat-next-page" href={href(page + 1)} rel="next">{t("video.next")}</a>
           ) : null}
         </span>
       </div>

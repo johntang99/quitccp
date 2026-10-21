@@ -6,6 +6,7 @@ import type { SearchResultType } from "@/lib/search-substring";
 import { SearchHighlight } from "@/components/public/SearchHighlight";
 import { recordSearchMiss } from "@/lib/search-misses";
 import { SITE_LOCALE } from "@/lib/site-config";
+import { t } from "@/lib/i18n";
 
 /**
  * A full-text scan over 120MB of prose can take the better part of a minute for
@@ -31,10 +32,10 @@ const MAX_RESULTS = 200;
 const PAGE_SIZE = 20;
 
 const TYPE_TABS: { key: string; label: string }[] = [
-  { key: "all", label: "全部" },
-  { key: "article", label: "新闻与报告" },
-  { key: "video", label: "视频" },
-  { key: "material", label: "资料" }
+  { key: "all", label: t("search.tab.all") },
+  { key: "article", label: t("search.tab.article") },
+  { key: "video", label: t("search.tab.video") },
+  { key: "material", label: t("search.tab.material") }
 ];
 
 function formatDate(value: string | null): string {
@@ -107,18 +108,20 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       <section className="phead phead--slim">
         <div className="wrap">
           <p className="crumb">
-            <Link href="/">首页</Link>
+            <Link href="/">{t("search.home")}</Link>
             <span>/</span>
-            <span>搜索</span>
+            <span>{t("search.crumb")}</span>
           </p>
-          <h1>搜索结果</h1>
+          <h1>{t("search.title")}</h1>
           <p className="sub">
-            关键词：{query || "（未输入）"}
+            {t("search.keyword", { q: query || t("search.noKeyword") })}
             {/* The count is what is actually being shown. When the ceiling was
                 hit it says so rather than appending a "+", which read as "3+
                 materials" on a filtered view and meant nothing to anybody. */}
             {query
-              ? `　共 ${ordered.length} 条${capped ? `（匹配更多，仅显示前 ${MAX_RESULTS} 条）` : ""}`
+              ? capped
+            ? t("search.countCapped", { n: ordered.length, max: MAX_RESULTS })
+            : t("search.count", { n: ordered.length })
               : ""}
           </p>
         </div>
@@ -151,13 +154,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     className={sort === "relevance" ? "chip on" : "chip"}
                     href={searchHref({ q: query, type })}
                   >
-                    按相关度
+                    {t("search.byRelevance")}
                   </Link>
                   <Link
                     className={sort === "date" ? "chip on" : "chip"}
                     href={searchHref({ q: query, type, sort: "date" })}
                   >
-                    最新优先
+                    {t("search.byNewest")}
                   </Link>
                 </div>
               </div>
@@ -166,10 +169,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             {rows.length === 0 ? (
               <p>
                 {!query
-                  ? "请输入关键词。"
+                  ? t("search.promptEmpty")
                   : incomplete
-                    ? "这次搜索用时过长，已经停下，所以还没有找到结果——不代表站内没有相关内容。请把关键词写得更具体一些，或者改用标题里会出现的词。"
-                    : "没有匹配结果。"}
+                    ? t("search.timeout")
+                    : t("search.noResults")}
               </p>
             ) : (
               <div className="arch">
@@ -208,10 +211,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             )}
 
             {pageCount > 1 ? (
-              <nav className="pager" aria-label="搜索结果分页">
+              <nav className="pager" aria-label={t("search.aria.pager")}>
                 {current > 1 ? (
                   <Link href={searchHref({ q: query, sort, type, page: current - 1 })}>
-                    ← 上一页
+                    {t("search.prev")}
                   </Link>
                 ) : null}
                 {Array.from({ length: pageCount }, (_, index) => index + 1)
@@ -233,7 +236,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                   ))}
                 {current < pageCount ? (
                   <Link href={searchHref({ q: query, sort, type, page: current + 1 })}>
-                    下一页 →
+                    {t("search.next")}
                   </Link>
                 ) : null}
               </nav>
@@ -241,31 +244,31 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
             {capped ? (
               <p className="muted" style={{ marginTop: 16 }}>
-                换用更具体的关键词，或再加一个词缩小范围，例如「三退 义工」。
+                {t("search.narrowHint")}
               </p>
             ) : null}
             {incomplete && rows.length > 0 ? (
               <p className="muted" style={{ marginTop: 16 }}>
-                这次搜索用时较长，上面是已经找到的部分结果，可能还有没列出的内容。
+                {t("search.partialHint")}
               </p>
             ) : null}
           </article>
           <aside className="side">
             <section className="panel">
-              <h4>搜索说明</h4>
+              <h4>{t("search.helpTitle")}</h4>
               <ul>
-                <li>可以用两个词，例如「法轮功 迫害」</li>
-                <li>繁体、简体都可以，结果一样</li>
-                <li>默认按相关度：标题命中的排在前面</li>
+                <li>{t("search.helpTwoWords")}</li>
+                <li>{t("search.helpVariants")}</li>
+                <li>{t("search.helpRelevance")}</li>
               </ul>
             </section>
             <section className="panel">
-              <h4>查询三退声明</h4>
-              <p>声明与退党证明不在本站搜索范围内，请前往：</p>
+              <h4>{t("search.declareTitle")}</h4>
+              <p>{t("search.declareBody")}</p>
               <ul>
                 <li>
                   <a href="https://santui.tuidang.org/search" target="_blank" rel="noopener noreferrer">
-                    声明查询 ↗
+                    {t("search.declareLookup")}
                   </a>
                 </li>
                 <li>
@@ -274,7 +277,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    退党证明验证 ↗
+                    {t("search.certVerify")}
                   </a>
                 </li>
               </ul>

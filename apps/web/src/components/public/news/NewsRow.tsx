@@ -1,5 +1,6 @@
 import type { NewsCard } from "@/lib/public-content";
 import { T, articleHref, day } from "./newsTokens";
+import { t } from "@/lib/i18n";
 
 /**
  * One article in a listing.
@@ -51,7 +52,7 @@ export function NewsRow({ item }: { item: NewsCard }) {
         <span style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 2, fontSize: 13, flexWrap: "wrap" }}>
           <span style={{ fontFamily: T.mono, color: T.mutedSoft, whiteSpace: "nowrap" }}>{day(item.publishedAt)}</span>
           {item.category ? <span className="news-cat-tag">{item.category}</span> : null}
-          <span style={{ marginLeft: "auto", color: T.seal, fontSize: 13 }}>阅读 →</span>
+          <span style={{ marginLeft: "auto", color: T.seal, fontSize: 13 }}>{t("news.read")}</span>
         </span>
       </span>
     </a>

@@ -94,7 +94,16 @@ function scan(root: string): Row[] {
 }
 
 const all = scan("apps/web/src");
-const isAdmin = (f: string) => f.startsWith("app/admin/") || f.startsWith("components/admin/") || f.startsWith("lib/admin/");
+/* app/api/admin/* 也是后台 —— 它返回的错误提示只有后台界面会显示。
+   漏掉它会让公开站的数字虚高，而这个数字是用来判断「英文站还差多少才能上线」的。 */
+const isAdmin = (f: string) =>
+  f.startsWith("app/admin/") ||
+  f.startsWith("components/admin/") ||
+  f.startsWith("lib/admin/") ||
+  f.startsWith("app/api/admin/");
+
+/* 运维脚本和定时任务的文案只出现在日志和报警邮件里，不是任何站的界面。 */
+const isOps = (f: string) => f.startsWith("app/api/cron/") || f.startsWith("lib/notify");
 /*
  * 模板单独一栏。
  *
@@ -108,7 +117,8 @@ const isAdmin = (f: string) => f.startsWith("app/admin/") || f.startsWith("compo
  */
 const isTemplate = (f: string) => f.startsWith("components/templates/");
 const templateRows = all.filter((r) => isTemplate(r.file));
-const publicRows = all.filter((r) => !isAdmin(r.file) && !isTemplate(r.file));
+const opsRows = all.filter((r) => isOps(r.file));
+const publicRows = all.filter((r) => !isAdmin(r.file) && !isTemplate(r.file) && !isOps(r.file));
 const adminRows = all.filter((r) => isAdmin(r.file));
 const sum = (rows: Row[]) => rows.reduce((n, r) => n + r.chars, 0);
 
@@ -116,6 +126,7 @@ console.log("\n========== 界面文案 ==========\n");
 console.log(`  公开站界面   还有 ${sum(publicRows)} 个汉字写死在 ${publicRows.length} 个文件里  ← 要翻`);
 console.log(`  后台界面     还有 ${sum(adminRows)} 个汉字写死在 ${adminRows.length} 个文件里  ← 要翻（中英两版）`);
 console.log(`  模板兜底     ${sum(templateRows)} 个汉字在 ${templateRows.length} 个文件里  ← 不用翻，内容走 CMS`);
+console.log(`  运维与报警   ${sum(opsRows)} 个汉字在 ${opsRows.length} 个文件里  ← 不用翻，只进日志和邮件`);
 
 if (SHOW_FILES) {
   for (const [label, rows] of [["公开站界面", publicRows], ["后台界面", adminRows], ["模板兜底", templateRows]] as [string, Row[]][]) {
