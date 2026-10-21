@@ -750,7 +750,12 @@ Cron 定义在 `apps/web/vercel.json` 里，**而这个文件在仓库里，四�
 
 ## 执行进度
 
-- [x] 第 0 阶段：迁移执行器 —— **进行中**
+- [x] **第 0 阶段：迁移执行器 —— 已完成 2026-10-21**
+  - `scripts/migrate.ts` + `npm run migrate`，默认预演
+  - `schema_migrations` 表：(suite, filename) 主键、sha256 校验和、执行时间与执行人
+  - 生产库已 baseline：content 36 个 + service 5 个，共 41 个登记为「已跑」，未执行任何 SQL
+  - 三条拒绝路径实测通过：库里缺对象时拒绝 baseline、已跑过的文件被改过时整体拒绝、
+    即使同时有新文件待跑也不放行
 - [ ] 第 1 阶段：补齐表结构
 - [ ] 第 2 阶段：locale 收口层
 - [ ] 第 3 阶段：语言策略化

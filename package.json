@@ -16,6 +16,7 @@
     "dev": "npm run dev:web",
     "studio": "node scripts/studio.mjs",
     "check:migrations": "npm run check:migrations --workspaces --if-present",
+    "migrate": "tsx scripts/migrate.ts",
     "benchmark:search": "tsx scripts/benchmark-search.ts",
     "benchmark:search:generate": "tsx scripts/generate-search-benchmark-results.ts",
     "benchmark:search:subset": "tsx scripts/benchmark-search-subset.ts",
