@@ -68,9 +68,29 @@ const CMS_FALLBACK = /\bas(String|StringArray|ObjectArray|Record)\s*\(/;
 function uiChars(file: string): number {
   let n = 0;
   let inFallback = false;
+  let inBlockComment = false;
   for (const line of readFileSync(file, "utf8").split("\n")) {
     const trimmed = line.trim();
-    if (trimmed.startsWith("*") || trimmed.startsWith("//") || trimmed.startsWith("/*")) continue;
+
+    /*
+     * 跨多行的注释要整段跳过，不能只看行首。
+     *
+     * 原来只认行首是 * 或 // 的行，于是 `{/* 说明…` 这种 JSX 注释的第二行
+     * 开始全被算成待翻文案 —— 这个仓库的注释写得密，几百字就这么虚挂在待办上，
+     * 而数字降不到零就没人信它。
+     */
+    if (inBlockComment) {
+      if (line.includes("*/")) inBlockComment = false;
+      continue;
+    }
+    const opensBlock = /\/\*|\{\s*\/\*/.test(line);
+    if (opensBlock && !line.includes("*/")) {
+      inBlockComment = true;
+      continue;
+    }
+    if (opensBlock) continue;
+
+    if (trimmed.startsWith("*") || trimmed.startsWith("//")) continue;
     /* asString( 可能跨多行，第二个参数常单独一行。看到它就进入兜底区，
        直到这一段的括号配平为止。 */
     if (CMS_FALLBACK.test(line)) inFallback = true;
@@ -104,6 +124,23 @@ const isAdmin = (f: string) =>
 
 /* 运维脚本和定时任务的文案只出现在日志和报警邮件里，不是任何站的界面。 */
 const isOps = (f: string) => f.startsWith("app/api/cron/") || f.startsWith("lib/notify");
+
+/*
+ * 没有任何地方引用的组件。
+ *
+ * 三退声明和退党证明的表单在 santui.tuidang.org 和 service.tuidang.org 上，
+ * 本站的 /services/declare 和 /services/verify 走的是 FormTemplate（内容来自
+ * CMS）。这两个组件是改版时留下的，VideoLibraryIndex 同理。
+ *
+ * 它们不翻 —— 翻一个永远不会渲染的组件，是把工期花在零收益上。单列出来而不是
+ * 直接忽略，是因为「这里有死代码」本身是该被看见的事；清理它是另一件事。
+ */
+const DEAD = [
+  "components/public/DeclareForm.tsx",
+  "components/public/VerifyForm.tsx",
+  "components/public/VideoLibraryIndex.tsx"
+];
+const isDead = (f: string) => DEAD.includes(f);
 /*
  * 模板单独一栏。
  *
@@ -118,7 +155,8 @@ const isOps = (f: string) => f.startsWith("app/api/cron/") || f.startsWith("lib/
 const isTemplate = (f: string) => f.startsWith("components/templates/");
 const templateRows = all.filter((r) => isTemplate(r.file));
 const opsRows = all.filter((r) => isOps(r.file));
-const publicRows = all.filter((r) => !isAdmin(r.file) && !isTemplate(r.file) && !isOps(r.file));
+const deadRows = all.filter((r) => isDead(r.file));
+const publicRows = all.filter((r) => !isAdmin(r.file) && !isTemplate(r.file) && !isOps(r.file) && !isDead(r.file));
 const adminRows = all.filter((r) => isAdmin(r.file));
 const sum = (rows: Row[]) => rows.reduce((n, r) => n + r.chars, 0);
 
@@ -127,6 +165,7 @@ console.log(`  公开站界面   还有 ${sum(publicRows)} 个汉字写死在 ${
 console.log(`  后台界面     还有 ${sum(adminRows)} 个汉字写死在 ${adminRows.length} 个文件里  ← 要翻（中英两版）`);
 console.log(`  模板兜底     ${sum(templateRows)} 个汉字在 ${templateRows.length} 个文件里  ← 不用翻，内容走 CMS`);
 console.log(`  运维与报警   ${sum(opsRows)} 个汉字在 ${opsRows.length} 个文件里  ← 不用翻，只进日志和邮件`);
+console.log(`  死代码       ${sum(deadRows)} 个汉字在 ${deadRows.length} 个文件里  ← 不用翻，没有任何地方引用`);
 
 if (SHOW_FILES) {
   for (const [label, rows] of [["公开站界面", publicRows], ["后台界面", adminRows], ["模板兜底", templateRows]] as [string, Row[]][]) {

@@ -4,9 +4,10 @@ import { CmsMarkdown } from "@/components/public/MarkdownBody";
 import { InteriorHead, InteriorTabs } from "@/components/templates/InteriorScaffold";
 import type { PublicFaqGroup, PublicFaqItem } from "@/lib/public-content";
 import { FaqIndex, FaqSearch } from "./FaqIndex";
+import { t } from "@/lib/i18n";
 
-const TITLE = "三退问答";
-const SUBTITLE = "关于声明、证明、移民与安全的常见问题。点开任意一条查看完整解答。";
+const TITLE = t("faq.title");
+const SUBTITLE = t("faq.subtitle");
 
 /** /services/faq — the card grid. */
 export function FaqIndexPage({ groups, q }: { groups: PublicFaqGroup[]; q: string }) {
@@ -20,7 +21,7 @@ export function FaqIndexPage({ groups, q }: { groups: PublicFaqGroup[]; q: strin
           <FaqSearch q={q} action="/services/faq" />
           {q ? (
             <p className="faq-crumb" style={{ textAlign: "center" }}>
-              「{q}」共找到 {total} 条 · <Link href={"/services/faq" as Route}>显示全部</Link>
+              {t("faq.searchResult", { q, n: total })}<Link href={"/services/faq" as Route}>{t("faq.showAll")}</Link>
             </p>
           ) : null}
           <FaqIndex groups={groups} q={q} />
@@ -49,7 +50,7 @@ export function FaqCategoryPage({ group }: { group: PublicFaqGroup }) {
       <section className="sec" style={{ paddingTop: 44 }}>
         <div className="wrap">
           <p className="faq-crumb">
-            <Link href={"/services/faq" as Route}>三退问答</Link> / {group.name}（{group.total} 条）
+            <Link href={"/services/faq" as Route}>{t("faq.title")}</Link> / {group.name}{t("faq.groupCount", { n: group.total })}
           </p>
           <div className="faq-grid" style={{ gridTemplateColumns: "minmax(0, 1fr)" }}>
             <section className="faq-card faq-surface">
@@ -92,7 +93,7 @@ export function FaqItemPage({
       <section className="sec" style={{ padding: "44px 0 88px" }}>
         <div className="wrap">
           <p className="faq-crumb">
-            <Link href={"/services/faq" as Route}>三退问答</Link>
+            <Link href={"/services/faq" as Route}>{t("faq.title")}</Link>
             {category.slug ? (
               <>
                 {" / "}
@@ -105,7 +106,7 @@ export function FaqItemPage({
           </div>
           <p style={{ marginTop: 34 }}>
             <Link className="faq-more" href={"/services/faq" as Route}>
-              ← 返回全部问答
+              {t("faq.backToAll")}
             </Link>
           </p>
         </div>

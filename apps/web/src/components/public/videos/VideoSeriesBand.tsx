@@ -1,5 +1,6 @@
 import type { VideoLibraryShelf } from "@/lib/public-content";
 import { MONO, Play, SERIF, Still, videoHref } from "./VideoParts";
+import { t } from "@/lib/i18n";
 
 /**
  * 《九评共产党》 — the series band, as a slow marquee.
@@ -32,13 +33,13 @@ export function VideoSeriesBand({ shelf }: { shelf: VideoLibraryShelf }) {
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <span style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, letterSpacing: "0.08em", color: "var(--gold-lt)" }}>
-            SERIES · {shelf.name} · 共 {shelf.total} 集
+            {t("video.seriesCount", { name: shelf.name, n: shelf.total })}
           </span>
           <span style={{ fontFamily: SERIF, fontWeight: 700, fontSize: "clamp(28px, 3.2vw, 44px)", color: "#fff" }}>
-            《九评共产党》
+            {t("video.jiuping")}
           </span>
           <span style={{ fontSize: 15, color: "var(--cream-text)", maxWidth: 720 }}>
-            九篇评论，九部影片。系列另含《魔鬼在统治着我们的世界》《共产主义的终极目的》视频版与播报版。
+            {t("video.jiupingIntro")}
           </span>
         </div>
         {/* The series page, not the oldest film on this shelf: only nine of the
@@ -56,7 +57,7 @@ export function VideoSeriesBand({ shelf }: { shelf: VideoLibraryShelf }) {
             borderRadius: 4
           }}
         >
-          从第一评开始观看 →
+          {t("video.startFirst")}
         </a>
       </div>
 
@@ -113,7 +114,7 @@ export function VideoSeriesBand({ shelf }: { shelf: VideoLibraryShelf }) {
                 </span>
               </Still>
               <span style={{ display: "flex", flexDirection: "column", gap: 6, padding: "16px 18px 18px" }}>
-                <span style={{ fontSize: 13, color: "var(--cream-text)" }}>{shelf.name} · 视频版</span>
+                <span style={{ fontSize: 13, color: "var(--cream-text)" }}>{t("video.videoEdition", { name: shelf.name })}</span>
                 <span
                   style={{
                     fontFamily: SERIF,

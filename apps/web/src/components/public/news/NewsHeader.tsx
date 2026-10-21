@@ -1,6 +1,7 @@
 import { getNewsCategoryTabs } from "@/lib/public-content";
 import { T } from "./newsTokens";
 import { formatNumber } from "@/lib/format";
+import { t } from "@/lib/i18n";
 
 /**
  * The masthead, with the category row sitting inside it on the gradient.
@@ -76,9 +77,9 @@ export async function NewsHeader({
         {listing ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <span style={{ fontSize: 13, color: "var(--lav-lt)" }}>
-              <a href="/" style={{ color: "inherit", textDecoration: "none" }}>首页</a>
+              <a href="/" style={{ color: "inherit", textDecoration: "none" }}>{t("news.home")}</a>
               <span style={{ opacity: 0.5 }}> / </span>
-              <a href="/news" style={{ color: "inherit", textDecoration: "none" }}>新闻与报告</a>
+              <a href="/news" style={{ color: "inherit", textDecoration: "none" }}>{t("news.section")}</a>
               <span style={{ opacity: 0.5 }}> / </span>
               {listing.name}
             </span>
@@ -87,7 +88,7 @@ export async function NewsHeader({
                 {listing.name}
               </h1>
               <span style={{ fontFamily: T.sans, fontWeight: 500, fontSize: 13, letterSpacing: "0.08em", color: T.gold }}>
-                {listing.en} · {formatNumber(listing.total)} 篇
+                {listing.en} · {t("news.countArticles", { n: formatNumber(listing.total) })}
               </span>
             </div>
             {listing.description ? (
@@ -102,21 +103,21 @@ export async function NewsHeader({
               NEWSROOM · {today}
             </span>
             <h1 style={{ margin: 0, fontFamily: T.serif, fontWeight: 700, fontSize: "clamp(30px, 3.6vw, 48px)" }}>
-              新闻与报告
+              {t("news.section")}
             </h1>
             <p style={{ margin: 0, fontSize: 15, lineHeight: "var(--lh-body)", color: T.onDark, maxWidth: 720 }}>
-              机构公告、调查报告、专题评论、国际声援与三退新闻。全部内容注明来源与日期，可自由转载与翻译。
+              {t("news.intro")}
             </p>
           </div>
         )}
       </div>
 
-      <nav aria-label="新闻分类" className="news-shell news-tabs">
+      <nav aria-label={t("news.aria.tabs")} className="news-shell news-tabs">
         {/* 新闻首页 is this section's front page; 全部新闻 at the far end is the
             whole archive. They used to be one tab called 全部, which meant the
             homepage and the 15,515-article listing shared a name. */}
         <a href="/news" style={tabStyle(isHome)}>
-          新闻首页
+          {t("news.newsHome")}
         </a>
         {tabs.map((category) => (
           <a
@@ -128,7 +129,7 @@ export async function NewsHeader({
           </a>
         ))}
         <a href="/news/archive" style={tabStyle(wholeSection)}>
-          全部新闻
+          {t("news.allNews")}
         </a>
       </nav>
     </header>

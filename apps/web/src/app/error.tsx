@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { t } from "@/lib/i18n";
 
 /**
  * What a reader sees when a page cannot be rendered.
@@ -27,18 +28,18 @@ export default function Error({ reset }: { error: Error & { digest?: string }; r
     <section className="sec">
       <div className="wrap">
         <article className="sectionCard">
-          <h1 className="sectionTitle">我们暂时无法加载这个页面</h1>
-          <p>本站近期持续遭受大规模网络攻击。我们正在处理，内容没有丢失。</p>
-          <p className="muted">请稍后重试，或访问我们的其它站点：</p>
+          <h1 className="sectionTitle">{t("error.title")}</h1>
+          <p>{t("error.body")}</p>
+          <p className="muted">{t("error.others")}</p>
           <ul className="muted" style={{ lineHeight: 2, margin: "8px 0 20px", paddingInlineStart: "1.2em" }}>
             <li>
-              声明三退{" "}
+              {t("error.declare")}{" "}
               <a href="https://santui.tuidang.org" rel="noopener noreferrer">
                 santui.tuidang.org
               </a>
             </li>
             <li>
-              查询退党证明{" "}
+              {t("error.cert")}{" "}
               <a href="https://service.tuidang.org/cert-verify/" rel="noopener noreferrer">
                 service.tuidang.org
               </a>
@@ -46,10 +47,10 @@ export default function Error({ reset }: { error: Error & { digest?: string }; r
           </ul>
           <div className="hero-cta">
             <button type="button" className="btn btn--seal" onClick={reset}>
-              重新载入
+              {t("error.retry")}
             </button>
             <Link className="btn btn--line" href="/">
-              返回首页
+              {t("error.home")}
             </Link>
           </div>
         </article>
