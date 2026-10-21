@@ -22,15 +22,48 @@ import { useEffect } from "react";
  * worse failure than one that occasionally suggests the old shape.
  */
 
-/** The old behaviour, kept as the offline answer. ASCII and CJK, nothing else. */
+/* 短记号的字母表，和服务端一致：去掉了 0/O、1/l/I 这些念出来会混的。 */
+const TOKEN_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+/**
+ * 离线兜底用的短记号。
+ *
+ * djb2，不是 sha256 —— 浏览器里的 crypto.subtle 是异步的，而这个函数要在输入
+ * 的每一次按键之间同步返回。算出来的记号和服务端的不一样，这没关系：接口一旦
+ * 恢复，下一次按键就会用服务端的结果覆盖它。这里要保证的只有一件事 ——
+ * **任何情况下都不产生非 ASCII 的地址**。
+ */
+function localToken(text: string): string {
+  let h = 5381;
+  for (let i = 0; i < text.length; i += 1) h = ((h << 5) + h + text.charCodeAt(i)) >>> 0;
+  let out = "";
+  for (let i = 0; i < 7; i += 1) {
+    out += TOKEN_ALPHABET[h % TOKEN_ALPHABET.length];
+    h = Math.floor(h / TOKEN_ALPHABET.length) + 0x9e3779b9;
+  }
+  return out;
+}
+
+/**
+ * 接口不通时在本地算一个地址。
+ *
+ * 以前这里保留 CJK 字符，于是接口一挂，编辑就会拿到一个中文地址 —— 正是整个
+ * 拼音改造要消灭的东西，而且它会一路存进数据库。现在只留 ASCII：拉丁字母原样
+ * 用，其余（中文、日文、泰文）一律退到短记号。
+ *
+ * 拼音在这里算不出来：pinyin-pro 解包约一兆，不该为了一个兜底路径塞给浏览器。
+ * 所以中文标题在离线时拿到的是记号而不是拼音 —— 接口恢复后会被覆盖成拼音。
+ */
 function localSlug(title: string, withDate: boolean, at?: string | null): string {
-  const base = title
+  const latin = title
     .trim()
     .toLowerCase()
     .replace(/[\s　]+/g, "-")
-    .replace(/[^0-9a-z㐀-䶿一-鿿-]+/g, "")
+    .replace(/[^0-9a-z-]+/g, "")
     .replace(/-{2,}/g, "-")
     .replace(/^-+|-+$/g, "");
+  /* 拉丁部分太短就说明这个标题基本不是拉丁文字，用记号更诚实。 */
+  const base = latin.replace(/-/g, "").length >= 3 ? latin : localToken(title.trim());
   if (!base || !withDate) return base;
   /* 和服务端一样按 UTC 取年月日：站上现有的日期前缀都是 UTC，而且线上跑在
      Vercel（服务器时区就是 UTC）。用本地时钟会让编辑在纽约深夜建的那一篇，

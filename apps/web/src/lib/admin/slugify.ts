@@ -1,4 +1,8 @@
-import { pinyin } from "pinyin-pro";
+/* 相对路径，不是 @/ 别名：这个文件被 scripts/ 下的脚本直接引用，而那些脚本
+   从仓库根跑，看不到 apps/web/tsconfig.json 里的 paths 配置。用别名会让
+   pinyin-slug-dryrun 这类脚本在 import 阶段就挂掉。 */
+import { transliterate, hasTransliterator } from "../slug/transliterate";
+import { SITE_LOCALE } from "../site-config";
 
 /**
  * Turns a Chinese title into the slug that becomes its public address.
@@ -130,10 +134,6 @@ export function episodeToken(title: string): string {
  * ü has no place in a URL. Hanyu Pinyin only puts it after n and l (虐 nüe,
  * 绿 lü), and dropping the diaeresis is what every Chinese site does: nue, lu.
  */
-function stripDiacritics(value: string): string {
-  return value.normalize("NFD").replace(/[̀-ͯ]/g, "");
-}
-
 export interface SlugOptions {
   /** Prepend `YYYY-MM-DD-`. The 资料 form offers this as a checkbox. */
   withDate?: boolean;
@@ -155,6 +155,12 @@ export interface SlugOptions {
    * 做这次改名要消灭的东西。打开这个开关，头部让出位置，把末尾接回来。
    */
   keepTail?: boolean;
+  /**
+   * 用哪种语言的转写办法。默认当前站。
+   *
+   * 显式传它的场合只有一个：跑批脚本在另一个站的内容上操作。日常走默认。
+   */
+  locale?: string;
 }
 
 /**
@@ -162,32 +168,20 @@ export interface SlugOptions {
  * should treat as "leave the field alone" rather than writing an empty slug.
  */
 export function slugifyTitle(title: string, options: SlugOptions = {}): string {
-  /* Traditional text goes in as it is. `pinyin-pro` reads both scripts, and
-     首鋼煉鋼廠 and 首钢炼钢厂 already come back as the same `shougang-liangang
-     -chang`, so the slug is stable whichever way a title was typed.
-
-     Converting to simplified first was the obvious move and was wrong: the
-     character table in `zh-variants.ts` maps 么 to its variant 幺, so 是什么
-     came back `shi-shen-yao` instead of `shi-shen-me`. That table exists to
-     widen a search, where an extra reading costs nothing; a slug wants the one
-     correct reading, and the pinyin dictionary already has it. */
-  const parts = pinyin(title.trim(), {
-    toneType: "none",
-    type: "array",
-    nonZh: "consecutive"
-  });
-
-  const base = stripDiacritics(parts.join("-"))
-    .toLowerCase()
-    /* Everything that is not a letter, a digit or a separator goes. Chinese
-       that pinyin-pro could not read (rare characters, 〇, emoji) falls in here
-       and is dropped rather than left to be percent-encoded later. */
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/-{2,}/g, "-")
-    .replace(/^-+|-+$/g, "");
+  const locale = options.locale ?? SITE_LOCALE;
+  /* 转写办法按语言选，见 lib/slug/transliterate.ts 的三层框架。中文仍然是拼音，
+     行为和改造前一字不差。 */
+  const base = transliterate(title, locale);
 
   if (!base) return "";
-  const body = trim(base, options.limit ?? 80, episodeToken(title), options.keepTail ?? false);
+
+  /*
+   * 没有转写器的语言（日、韩）拿到的是一个七位短记号 —— 它本来就短，截断和
+   * 「保住集数」这些规则对它没有意义，截了反而会毁掉它的唯一性。
+   */
+  const body = hasTransliterator(locale)
+    ? trim(base, options.limit ?? 80, episodeToken(title), options.keepTail ?? false)
+    : base;
   return options.withDate ? `${datePrefix(options.date)}${body}` : body;
 }
 

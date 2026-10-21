@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSessionUser } from "@/lib/admin/auth";
 import { slugifyTitle } from "@/lib/admin/slugify";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * Romanises a title for 资料's slug field.
@@ -28,9 +29,12 @@ export async function GET(request: Request) {
 
   /* 日期前缀用这一篇自己的发布时间，不是今天。编辑回填旧日期是常事，而前缀
      存在的意义就是区分同名文章 —— 全都盖上今天，它就什么也没区分。 */
+  /* 不接受调用方传语言：网址用哪种转写办法由这个站决定，不由请求决定。
+     让前端能指定的话，一个拼错的参数就能在中文站上造出一条日文式的地址。 */
   const slug = slugifyTitle(title, {
     withDate: params.get("date") === "1",
-    date: params.get("at") || null
+    date: params.get("at") || null,
+    locale: SITE_LOCALE
   });
-  return NextResponse.json({ slug });
+  return NextResponse.json({ slug, locale: SITE_LOCALE });
 }
