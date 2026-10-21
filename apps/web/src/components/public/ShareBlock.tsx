@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { QrCode } from "@/lib/qr";
+import { t } from "@/lib/i18n";
 
 /**
  * 一篇文章、一支影片读完之后的那一块：短地址、复制、转发、二维码、打印。
@@ -100,7 +101,7 @@ export function ShareBlock({
         document.execCommand("copy");
         setCopied(true);
       } catch {
-        window.prompt("复制这个地址：", url);
+        window.prompt(t("share.copyPrompt"), url);
       }
       document.body.removeChild(field);
     }
@@ -116,23 +117,23 @@ export function ShareBlock({
   };
 
   return (
-    <section className="sharebox" data-native={canNative ? "1" : "0"} aria-label="转载与分享">
+    <section className="sharebox" data-native={canNative ? "1" : "0"} aria-label={t("share.aria.box")}>
       <div className="sharebox-in">
         <div className="sharebox-main">
-          <p className="sharebox-h">转载与分享</p>
+          <p className="sharebox-h">{t("share.heading")}</p>
 
           {/* 手机上最该按的那一颗，所以它排在地址前面。桌面浏览器基本没有这个
               接口，`data-native` 翻过来之前它一直是隐藏的。 */}
           <button type="button" className="sharenative" onClick={share}>
             <IconShare />
-            <span>分享</span>
+            <span>{t("share.share")}</span>
           </button>
 
           <div className="sharefield">
             <span className="sharefield-url">{shown}</span>
             <button type="button" className="sharefield-copy" onClick={copy}>
               <IconCopy />
-              <span>{copied ? "已复制 ✓" : "复制"}</span>
+              <span>{copied ? t("share.copied") : t("share.copy")}</span>
             </button>
           </div>
 
@@ -143,7 +144,7 @@ export function ShareBlock({
                 href={`https://x.com/intent/post?url=${enc}&text=${encTitle}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="分享到 X"
+                aria-label={t("share.aria.x")}
               >
                 <IconX />
               </a>
@@ -152,7 +153,7 @@ export function ShareBlock({
                 href={`https://www.facebook.com/sharer/sharer.php?u=${enc}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="分享到 Facebook"
+                aria-label={t("share.aria.facebook")}
               >
                 <IconFacebook />
               </a>
@@ -161,7 +162,7 @@ export function ShareBlock({
                 href={`https://t.me/share/url?url=${enc}&text=${encTitle}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="分享到 Telegram"
+                aria-label={t("share.aria.telegram")}
               >
                 <IconTelegram />
               </a>
@@ -170,11 +171,11 @@ export function ShareBlock({
                 href={`https://api.whatsapp.com/send?text=${encTitle}%20${enc}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="分享到 WhatsApp"
+                aria-label={t("share.aria.whatsapp")}
               >
                 <IconWhatsApp />
               </a>
-              <a className="sharepip" href={`mailto:?subject=${encTitle}&body=${enc}`} aria-label="用邮件分享">
+              <a className="sharepip" href={`mailto:?subject=${encTitle}&body=${enc}`} aria-label={t("share.aria.email")}>
                 <IconMail />
               </a>
             </div>
@@ -184,23 +185,23 @@ export function ShareBlock({
             {qr ? (
               <button type="button" className="sharebtn shareqr-btn" onClick={() => setQrOpen(true)}>
                 <IconQr />
-                <span>二维码</span>
+                <span>{t("share.qr")}</span>
               </button>
             ) : null}
 
             <button type="button" className="sharebtn" onClick={() => window.print()}>
               <IconPrint />
-              <span>打印</span>
+              <span>{t("share.print")}</span>
             </button>
           </div>
         </div>
 
         {qr ? (
           <div className="shareqr">
-            <button type="button" className="shareqr-tile" onClick={() => setQrOpen(true)} aria-label="放大二维码">
+            <button type="button" className="shareqr-tile" onClick={() => setQrOpen(true)} aria-label={t("share.aria.qrZoom")}>
               <QrSvg qr={qr} size={78} />
             </button>
-            <span>扫码分享</span>
+            <span>{t("share.qrTile")}</span>
           </div>
         ) : null}
       </div>
@@ -208,8 +209,8 @@ export function ShareBlock({
       {/* 只在打印时出现。屏幕上转载条款在侧栏里，而侧栏不上纸 —— 一张印出来
           准备再传出去的纸，恰恰最需要这一句和来源。 */}
       <p className="share-printnote">
-        {kind === "v" ? "本片" : "本文"}可自由转载、翻译与再制作，无需事先取得授权，注明来源即可。
-        来源：全球退党服务中心 {shown}
+        {kind === "v" ? t("share.reprintVideo") : t("share.reprintArticle")}
+        {t("share.source", { site: t("site.name"), url: shown })}
       </p>
 
       {/* 弹层挂到 body 上：这一块外面任何一层有 transform 都会让 position:fixed
@@ -230,7 +231,7 @@ function QrSvg({ qr, size }: { qr: QrCode; size: number }) {
       viewBox={`0 0 ${qr.size} ${qr.size}`}
       shapeRendering="crispEdges"
       role="img"
-      aria-label="本页短地址的二维码"
+      aria-label={t("share.aria.qrImage")}
     >
       <path fill="#1F1750" d={qr.path} />
     </svg>
@@ -288,17 +289,17 @@ function QrModal({
   };
 
   return (
-    <div className="shareqr-veil" role="dialog" aria-modal="true" aria-label="扫码打开本页" onClick={onClose}>
+    <div className="shareqr-veil" role="dialog" aria-modal="true" aria-label={t("share.aria.qrDialog")} onClick={onClose}>
       <div className="shareqr-card" onClick={(event) => event.stopPropagation()}>
-        <p className="shareqr-title">扫码打开本页</p>
+        <p className="shareqr-title">{t("share.qrDialogTitle")}</p>
         <QrSvg qr={qr} size={200} />
         <p className="shareqr-url">{shown}</p>
         <div className="shareqr-acts">
           <button type="button" className="sharebtn" onClick={download}>
-            下载图片
+            {t("share.qrDownload")}
           </button>
           <button type="button" className="sharebtn" onClick={onClose}>
-            关闭
+            {t("share.close")}
           </button>
         </div>
       </div>

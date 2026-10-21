@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SITE_LANGUAGES, SITE_SOCIALS } from "@/lib/site-languages";
 import { SECTION_CONFIG, loadSectionNavOverrides, mergeSectionNav } from "@/lib/section-nav";
+import { t } from "@/lib/i18n";
 
 /* Icon paths, keyed by the label in SITE_SOCIALS -- moved here with the icons
    themselves when the topbar was removed. */
@@ -51,10 +52,10 @@ export async function SiteFooter() {
           <div>
             <div className="foot-brand">
               <span className="seal">退</span>
-              <span>全球退党服务中心</span>
+              <span>{t("site.name")}</span>
             </div>
             <p style={{ margin: 0, maxWidth: "34ch", lineHeight: 1.9 }}>
-              Global Service Center for Quitting the Chinese Communist Party
+              {t("site.nameEn")}
               <br />
               40-46 Main Street, Flushing, NY 11354
             </p>
@@ -78,62 +79,62 @@ export async function SiteFooter() {
 
           </div>
           <div>
-            <h5>{name("services", "服务")}</h5>
+            <h5>{name("services", t("footer.services"))}</h5>
             <ul>
               <li>
-                <Link href="/services/declare">声明三退</Link>
+                <Link href="/services/declare">{t("footer.declare")}</Link>
               </li>
               <li>
-                <Link href="/services/cert">办理退党证明</Link>
+                <Link href="/services/cert">{t("footer.cert")}</Link>
               </li>
               <li>
-                <Link href="/services/verify">查询验证</Link>
+                <Link href="/services/verify">{t("footer.verify")}</Link>
               </li>
               <li>
-                <Link href="/services/faq">三退问答</Link>
+                <Link href="/services/faq">{t("footer.faq")}</Link>
               </li>
               <li>
-                <Link href="/resources/tools">安全访问</Link>
+                <Link href="/resources/tools">{t("footer.tools")}</Link>
               </li>
             </ul>
           </div>
           <div>
-            <h5>内容</h5>
+            <h5>{t("footer.content")}</h5>
             <ul>
               <li>
-                <Link href="/news">{name("news", "新闻与报告")}</Link>
+                <Link href="/news">{name("news", t("footer.news"))}</Link>
               </li>
               <li>
-                <Link href="/involve/stories">三退故事</Link>
+                <Link href="/involve/stories">{t("footer.stories")}</Link>
               </li>
               <li>
-                <Link href="/videos">{name("videos", "视频")}</Link>
+                <Link href="/videos">{name("videos", t("footer.videos"))}</Link>
               </li>
               <li>
-                <Link href="/resources">{name("resources", "资源馆")}</Link>
+                <Link href="/resources">{name("resources", t("footer.resources"))}</Link>
               </li>
               <li>
-                <Link href="/about/network">全球网络</Link>
+                <Link href="/about/network">{t("footer.network")}</Link>
               </li>
             </ul>
           </div>
           <div>
-            <h5>{name("about", "关于我们")}</h5>
+            <h5>{name("about", t("footer.about"))}</h5>
             <ul>
               <li>
-                <Link href="/about">使命与原则</Link>
+                <Link href="/about">{t("footer.mission")}</Link>
               </li>
               <li>
-                <Link href="/about/team">理事会与团队</Link>
+                <Link href="/about/team">{t("footer.team")}</Link>
               </li>
               <li>
-                <Link href="/services/contact">联系我们</Link>
+                <Link href="/services/contact">{t("footer.contact")}</Link>
               </li>
             </ul>
           </div>
         </div>
         <div className="foot-bottom">
-          <span>© 2005-2026 全球退党服务中心 · 501(c)(3) 非营利组织</span>
+          <span>{t("footer.copyright", { site: t("site.name") })}</span>
           <div className="foot-reach">
             {/* Both came down from the topbar. They sit on the bottom line
                 rather than in the brand column because neither is part of the
@@ -141,9 +142,9 @@ export async function SiteFooter() {
                 may need before anything else works, and the social icons are
                 where a reader looks once they are no longer in the masthead. */}
             <Link className="foot-reach-link" href="/resources/tools">
-              免翻墙链接
+              {t("footer.mirrors")}
             </Link>
-            <div className="socials" aria-label="社交渠道">
+            <div className="socials" aria-label={t("footer.aria.socials")}>
               {SITE_SOCIALS.map((social) => (
                 <a
                   key={social.label}
@@ -163,7 +164,7 @@ export async function SiteFooter() {
             {/* Both documents were imported from www.tuidang.org on 2026-10-07
                 and live in the CMS now; the old copies stop resolving when that
                 domain becomes this site. */}
-            <Link href="/legal/terms">服务条款</Link> · <Link href="/legal/privacy">隐私政策</Link>
+            <Link href="/legal/terms">{t("footer.terms")}</Link> · <Link href="/legal/privacy">{t("footer.privacy")}</Link>
           </span>
         </div>
       </div>
