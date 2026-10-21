@@ -18,6 +18,7 @@
     "check:migrations": "npm run check:migrations --workspaces --if-present",
     "migrate": "tsx scripts/migrate.ts",
     "verify": "tsx scripts/verify-site.ts",
+    "locale:check": "tsx scripts/check-locale-scope.ts",
     "benchmark:search": "tsx scripts/benchmark-search.ts",
     "benchmark:search:generate": "tsx scripts/generate-search-benchmark-results.ts",
     "benchmark:search:subset": "tsx scripts/benchmark-search-subset.ts",

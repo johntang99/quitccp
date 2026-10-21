@@ -10,6 +10,7 @@ import { firstImageInMarkdown } from "@/lib/markdown-image";
 import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
 import type { RenderablePage } from "./site-data";
 import { extractNewsSlugFromHref, toNewsArticleSlug } from "./news-linking";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 const fallbackCatalog: RenderablePage[] = routeSeeds.map((seed) => {
   const contentPath = pageRouteToContentPath(seed.section, seed.slug);
@@ -19,7 +20,7 @@ const fallbackCatalog: RenderablePage[] = routeSeeds.map((seed) => {
     title: seed.title,
     template: seed.template,
     summary: `${seed.title} - ${seed.template}`,
-    locale: "zh",
+    locale: SITE_LOCALE,
     contentPath,
     content:
       prototypePageContentSeeds.find((row) => row.section === seed.section && row.slug === seed.slug)?.data ?? {}
@@ -457,7 +458,7 @@ async function findVirtualNewsArticle(slug: string): Promise<VirtualArticleCandi
   const { data, error } = await supabase
     .from("cms_content_entries")
     .select("path, data")
-    .eq("locale", "zh")
+    .eq("locale", SITE_LOCALE)
     .in("path", [...VIRTUAL_NEWS_SOURCE_PATHS]);
   if (error) throw error;
 
@@ -511,7 +512,7 @@ function isTableMissingError(error: unknown): boolean {
 
 export async function getRenderablePage(section: string, slug = "index"): Promise<RenderablePage | null> {
   const fallback = fallbackFind(section, slug);
-  const locale = "zh";
+  const locale = SITE_LOCALE;
   const contentPath = pageRouteToContentPath(section, slug);
   try {
     const supabase = createSupabasePublicClient();
@@ -648,7 +649,7 @@ async function loadRenderableArticle(
     title: `文章：${normalizedSlug}`,
     template: "article" as TemplateKind,
     summary: "article",
-    locale: "zh",
+    locale: SITE_LOCALE,
     contentPath: "pages/news-article.json",
     content:
       prototypePageContentSeeds.find((row) => row.section === "news" && row.slug === "article")?.data ?? {}
@@ -664,7 +665,7 @@ async function loadRenderableArticle(
           "author, hero_image, hero_image_alt, hero_credit, short_code"
       )
       .eq("slug", normalizedSlug)
-      .eq("locale", "zh")
+      .eq("locale", SITE_LOCALE)
       // Drafts are readable only by someone signed into the admin, which is
       // what the 预览 button needs. Without this check an unpublished article
       // was live at its public URL, and the slug is the Chinese title -- not a
@@ -695,7 +696,7 @@ async function loadRenderableArticle(
         title: virtual.title,
         template: "article",
         summary: virtual.summary || "article",
-        locale: "zh",
+        locale: SITE_LOCALE,
         contentPath: "pages/news-article.json",
         content: {
           ...fallbackContent,
@@ -787,7 +788,7 @@ async function loadRenderableArticle(
       title: String(row.title),
       template: "article",
       summary: summary || "article",
-      locale: "zh",
+      locale: SITE_LOCALE,
       contentPath: "pages/news-article.json",
       content: {
         ...fallbackContent,
@@ -924,6 +925,7 @@ export async function getRenderableVideo(slug: string): Promise<PublicVideoRecor
         "id, slug, title, episode, description, body_markdown, source_url, backup_url, cover_image, " +
           "cover_image_alt, speaker, source_credit, published_at, duration_seconds, status, short_code"
       )
+      .eq("locale", SITE_LOCALE)
       .eq("slug", normalized)
       .eq("status", "published")
       .maybeSingle();
@@ -985,6 +987,7 @@ async function videoSiblings(categorySlug: string, excludeSlug: string): Promise
     const { data: cat } = await supabase
       .from("cms_video_categories")
       .select("id")
+      .eq("locale", SITE_LOCALE)
       .eq("slug", categorySlug)
       .maybeSingle();
     if (!cat) return [];
@@ -998,6 +1001,7 @@ async function videoSiblings(categorySlug: string, excludeSlug: string): Promise
     const { data: rows } = await supabase
       .from("cms_videos")
       .select("slug, title, episode, description, cover_image, duration_seconds, published_at, source_url")
+      .eq("locale", SITE_LOCALE)
       .in("id", videoIds)
       .eq("status", "published")
       .neq("slug", excludeSlug)
@@ -1130,6 +1134,7 @@ export async function getVideoCategory(
       const { data: category } = await supabase
         .from("cms_video_categories")
         .select("id, slug, name, description")
+        .eq("locale", SITE_LOCALE)
         .eq("slug", slug)
         .maybeSingle();
       if (!category) return null;
@@ -1146,6 +1151,7 @@ export async function getVideoCategory(
       : supabase
           .from("cms_videos")
           .select(`${columns}, cms_video_category_map!inner(category_id)`, { count: "exact" })
+          .eq("locale", SITE_LOCALE)
           .eq("cms_video_category_map.category_id", categoryId);
     query = query.eq("status", "published");
     if (virtual?.filter === "featured") query = query.eq("featured", true);
@@ -1192,6 +1198,7 @@ export async function listPublicVideoCategories(): Promise<
     const { data } = await supabase
       .from("cms_video_categories")
       .select("id, slug, name, sort_order")
+      .eq("locale", SITE_LOCALE)
       .order("sort_order", { ascending: true });
     const rows = data ?? [];
     const counts = await Promise.all(
@@ -1232,6 +1239,7 @@ export async function getRelatedArticles(
     const { data: category } = await supabase
       .from("cms_article_categories")
       .select("id")
+      .eq("locale", SITE_LOCALE)
       .eq("name", categoryName)
       .maybeSingle();
     if (!category) return [];
@@ -1239,6 +1247,7 @@ export async function getRelatedArticles(
     const { data } = await supabase
       .from("cms_articles")
       .select("slug, title, hero_image, published_at, cms_article_category_map!inner(category_id)")
+      .eq("locale", SITE_LOCALE)
       .eq("cms_article_category_map.category_id", category.id)
       .eq("status", "published")
       .neq("slug", excludeSlug)
@@ -1415,6 +1424,7 @@ export const getNewsCategoryTabs = cache(async (): Promise<NewsCategoryTab[]> =>
     const { data } = await supabase
       .from("cms_article_categories")
       .select("slug, name, sort_order")
+      .eq("locale", SITE_LOCALE)
       .eq("is_news_listing", true);
     const rows = (data ?? [])
       .map((row) => ({
@@ -1515,6 +1525,7 @@ async function newsByCategory(
   const { data, count } = await supabase
     .from("cms_articles")
     .select(`${NEWS_CARD_COLUMNS}, id, cms_article_category_map!inner(category_id)`, { count: "exact" })
+    .eq("locale", SITE_LOCALE)
     .eq("cms_article_category_map.category_id", categoryId)
     .eq("status", "published")
     .order("published_at", { ascending: false, nullsFirst: false })
@@ -1537,6 +1548,7 @@ export async function getNewsHome(): Promise<NewsHome> {
     const { data: categoryRows } = await supabase
       .from("cms_article_categories")
       .select("id, slug, name")
+      .eq("locale", SITE_LOCALE)
       .in("slug", NEWS_CATEGORIES.map((row) => row.slug));
     const categoryById = new Map(
       (categoryRows ?? []).map((row) => [String(row.id), String(row.name)])
@@ -1549,6 +1561,7 @@ export async function getNewsHome(): Promise<NewsHome> {
       const { data: articles } = await supabase
         .from("cms_articles")
         .select("id, slug")
+        .eq("locale", SITE_LOCALE)
         .in("slug", slugs);
       const idBy = new Map((articles ?? []).map((row) => [String(row.id), String(row.slug)]));
       const { data: maps } = await supabase
@@ -1570,6 +1583,7 @@ export async function getNewsHome(): Promise<NewsHome> {
       supabase
         .from("cms_articles")
         .select(NEWS_CARD_COLUMNS)
+        .eq("locale", SITE_LOCALE)
         .eq("status", "published")
         .eq("section", "news")
         .eq("featured", true)
@@ -1579,6 +1593,7 @@ export async function getNewsHome(): Promise<NewsHome> {
       supabase
         .from("cms_articles")
         .select(NEWS_CARD_COLUMNS)
+        .eq("locale", SITE_LOCALE)
         .eq("status", "published")
         .eq("section", "news")
         .order("published_at", { ascending: false, nullsFirst: false })
@@ -1587,6 +1602,7 @@ export async function getNewsHome(): Promise<NewsHome> {
       supabase
         .from("cms_articles")
         .select(NEWS_CARD_COLUMNS)
+        .eq("locale", SITE_LOCALE)
         .eq("status", "published")
         .eq("section", "news")
         .eq("editor_archive", true)
@@ -1651,7 +1667,11 @@ async function primaryCategoryNames(slugs: string[]): Promise<Map<string, string
   if (unique.length === 0) return new Map();
   try {
     const supabase = createSupabasePublicClient();
-    const { data: articles } = await supabase.from("cms_articles").select("id, slug").in("slug", unique);
+    const { data: articles } = await supabase
+      .from("cms_articles")
+      .select("id, slug")
+      .eq("locale", SITE_LOCALE)
+      .in("slug", unique);
     const slugById = new Map((articles ?? []).map((row) => [String(row.id), String(row.slug)]));
     if (slugById.size === 0) return new Map();
     const { data: maps } = await supabase
@@ -1723,6 +1743,7 @@ export async function getHomeNews(channelNames: string[]): Promise<HomeNewsLive>
        * purely on date, and two took the 最新发布 column the day they were
        * imported.
        */
+        .eq("locale", SITE_LOCALE)
         .eq("status", "published")
         .eq("section", "news")
         .order("published_at", { ascending: false, nullsFirst: false })
@@ -1813,6 +1834,7 @@ export async function getHomeVideo(): Promise<HomeVideoLive> {
       supabase
         .from("cms_videos")
         .select(columns)
+        .eq("locale", SITE_LOCALE)
         .eq("status", "published")
         .order("published_at", { ascending: false, nullsFirst: false })
         .order("id", { ascending: true });
@@ -2006,6 +2028,7 @@ export async function getNewsListing(
       const { data } = await supabase
         .from("cms_article_categories")
         .select("id, name, description, is_news_listing")
+        .eq("locale", SITE_LOCALE)
         .eq("slug", slug)
         .maybeSingle();
       /* 没有这一行，或者编辑没把它开出来 —— 两种情况都是 404。这是公开页
@@ -2028,6 +2051,7 @@ export async function getNewsListing(
               `${columns}, cms_article_category_map!inner(category_id)`,
               withCount ? { count: "exact" } : undefined
             )
+            .eq("locale", SITE_LOCALE)
             .eq("cms_article_category_map.category_id", categoryId);
       /*
        * News only, same reason as the homepage band.
@@ -2124,6 +2148,7 @@ export async function getVideoHome(): Promise<VideoHome> {
     const { data: flaggedRows } = await supabase
       .from("cms_videos")
       .select(featureColumns)
+      .eq("locale", SITE_LOCALE)
       .eq("status", "published")
       .eq("featured", true)
       .neq("cover_image", "")
@@ -2136,6 +2161,7 @@ export async function getVideoHome(): Promise<VideoHome> {
       : await supabase
           .from("cms_videos")
           .select(featureColumns)
+          .eq("locale", SITE_LOCALE)
           .eq("status", "published")
           .neq("cover_image", "")
           .order("published_at", { ascending: false, nullsFirst: false })
@@ -2145,6 +2171,7 @@ export async function getVideoHome(): Promise<VideoHome> {
     const { data: upnextRows } = await supabase
       .from("cms_videos")
       .select("slug, title, episode, description, cover_image, duration_seconds, published_at, source_url")
+      .eq("locale", SITE_LOCALE)
       .eq("status", "published")
       .order("published_at", { ascending: false, nullsFirst: false })
       .order("id", { ascending: true })
@@ -2271,6 +2298,7 @@ export async function getMaterialCategories(): Promise<PublicMaterialCategory[]>
       supabase
         .from("cms_material_categories")
         .select("slug, name, summary, sort_order")
+        .eq("locale", SITE_LOCALE)
         .order("sort_order", { ascending: true }),
       supabase
         .from("cms_material_category_map")
@@ -2303,6 +2331,7 @@ export async function getMaterialsByCategory(categorySlug?: string): Promise<Pub
     const { data, error } = await supabase
       .from("cms_materials")
       .select(MATERIAL_SELECT)
+      .eq("locale", SITE_LOCALE)
       .eq("status", "published")
       .order("published_at", { ascending: false, nullsFirst: false })
       .order("id", { ascending: true })
@@ -2340,6 +2369,7 @@ export async function getMaterial(slug: string): Promise<PublicMaterial | null> 
     const { data, error } = await supabase
       .from("cms_materials")
       .select(MATERIAL_SELECT)
+      .eq("locale", SITE_LOCALE)
       .eq("slug", normalized)
       .eq("status", "published")
       .maybeSingle();
@@ -2396,7 +2426,12 @@ async function categoryIdBySlug(
   supabase: ReturnType<typeof createSupabasePublicClient>,
   slug: string
 ): Promise<string> {
-  const { data } = await supabase.from("cms_article_categories").select("id").eq("slug", slug).maybeSingle();
+  const { data } = await supabase
+    .from("cms_article_categories")
+    .select("id")
+    .eq("locale", SITE_LOCALE)
+    .eq("slug", slug)
+    .maybeSingle();
   return data ? String(data.id) : "";
 }
 
@@ -2462,6 +2497,7 @@ export async function getCultureListing(filterKey = "all", page = 1, pageSize = 
       .select(
         "slug, title, summary, hero_image, published_at, cms_article_category_map!inner(category_id)"
       )
+      .eq("locale", SITE_LOCALE)
       .eq("status", "published")
       .in("cms_article_category_map.category_id", scope)
       .order("published_at", { ascending: false, nullsFirst: false })
@@ -2523,12 +2559,14 @@ export async function getPublicFaq(search = ""): Promise<PublicFaqGroup[]> {
   const { data: categories, error } = await supabase
     .from("cms_faq_categories")
     .select("id, slug, name, summary, sort_order")
+    .eq("locale", SITE_LOCALE)
     .order("sort_order", { ascending: true });
   if (error || !categories) return [];
 
   let query = supabase
     .from("cms_faqs")
     .select("slug, question, answer_markdown, category_id, position")
+    .eq("locale", SITE_LOCALE)
     .eq("status", "published");
   const term = search.trim();
   if (term) query = query.ilike("question", `%${term}%`);
@@ -2574,6 +2612,7 @@ export async function getPublicFaqItem(
   const { data, error } = await supabase
     .from("cms_faqs")
     .select("slug, question, answer_markdown, category_id")
+    .eq("locale", SITE_LOCALE)
     .eq("slug", decodeURIComponent(slug))
     .eq("status", "published")
     .maybeSingle();
@@ -2643,6 +2682,7 @@ export async function getArticleSlugByShortCode(code: string): Promise<string | 
   const { data, error } = await supabase
     .from("cms_articles")
     .select("slug")
+    .eq("locale", SITE_LOCALE)
     .eq("short_code", code)
     .maybeSingle();
   if (error) throw error;
@@ -2655,6 +2695,7 @@ export async function getVideoSlugByShortCode(code: string): Promise<string | nu
   const { data, error } = await supabase
     .from("cms_videos")
     .select("slug")
+    .eq("locale", SITE_LOCALE)
     .eq("short_code", code)
     .maybeSingle();
   if (error) throw error;
