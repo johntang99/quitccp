@@ -73,15 +73,17 @@ function main() {
   const haystackWithOldTable = `${haystack}\n${git(`show ${REF}:apps/web/src/lib/i18n/zh.ts`)}`;
 
   /*
-   * 源码里跨行拼接的字符串，在 flat 之后中间夹着 `" + "`。
+   * 源码里跨行拼接的字符串，在 flat 之后中间夹着一个加号。
    *
-   *     "多半是 GitHub 慢了一拍，" +
-   *     "也可能是这个月的……"
+   *     `最近改过的那篇文章（${article.slug}）……` +
+   *     "但线上页面里没有这个标题 —— ……" +
+   *     "编辑的改动不会出现在网站上……"
    *
-   * 渲染出来是连着的一句，而这里按连续子串找就断在那个加号上。把这种拼接缝
-   * 去掉，比的才是真正渲染出来的那串字。
+   * 渲染出来是连着的一句，而这里按连续子串找就断在那个加号上。模板字符串和
+   * 普通字符串会混着用，所以两种引号都要认 —— 只认双引号时，自检那七条
+   * remedy 全都报成了「找不到原文」，而它们一个字都没改。
    */
-  const flatHay = flat(haystackWithOldTable).replace(/"\s*\+\s*"/g, "");
+  const flatHay = flat(haystackWithOldTable).replace(/[`"]\s*\+\s*[`"]/g, "");
 
   const newZh = added.filter(([, v]) => HAN.test(v));
   const missing = newZh.filter(([, v]) => {

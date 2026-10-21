@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { t } from "@/lib/i18n";
 import { SITE_LOCALE } from "@/lib/site-config";
 import { mirrorRewrite, rewriteMediaUrl } from "@/lib/media-mirror";
 import { AwsClient } from "aws4fetch";
@@ -150,18 +151,16 @@ function checkMirrorSwitch(): DefenseCheck {
   if (!rule) {
     return {
       key: "mirror_switch",
-      label: "媒体镜像开关",
+      label: t("sc.mirrorSwitch"),
       state: "bad",
-      value: "未开启",
+      value: t("sc.mirrorSwitch.off"),
       remedy:
-        "图片和视频正在直接走 Supabase，R2 镜像没有生效。到 Vercel → Settings → " +
-        "Environment Variables 确认 NEXT_PUBLIC_MEDIA_MIRROR_HOST = media.tdinfo.org " +
-        "还在、且 Production 环境勾着。注意它是编译时写进代码的，补上之后必须重新部署一次才生效。"
+        t("sc.mirrorSwitch.remedy")
     };
   }
   return {
     key: "mirror_switch",
-    label: "媒体镜像开关",
+    label: t("sc.mirrorSwitch"),
     state: "ok",
     value: rule.to.replace(/^\/\//, "").replace(/\/$/, "")
   };
@@ -204,16 +203,16 @@ const MAX_CLASSIFY = 25;
  */
 async function checkMirrorComplete(): Promise<DefenseCheck> {
   const key = "mirror_sync";
-  const label = "媒体已进镜像";
+  const label = t("sc.mirrored");
   const rule = mirrorRewrite();
-  if (!rule) return { key, label, state: "unknown", value: "镜像未开启" };
+  if (!rule) return { key, label, state: "unknown", value: t("sc.mirrored.off") };
 
   const accountId = process.env.R2_ACCOUNT_ID?.trim();
   const accessKeyId = process.env.R2_ACCESS_KEY_ID?.trim();
   const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY?.trim();
   const bucket = process.env.R2_BUCKET?.trim();
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
-    return { key, label, state: "unknown", value: "R2 未配置" };
+    return { key, label, state: "unknown", value: t("sc.mirrored.noR2") };
   }
   const endpoint = process.env.R2_ENDPOINT?.trim() || `https://${accountId}.r2.cloudflarestorage.com`;
   const aws = new AwsClient({ accessKeyId, secretAccessKey, service: "s3", region: "auto" });
@@ -289,7 +288,7 @@ async function checkMirrorComplete(): Promise<DefenseCheck> {
     }
 
     if (missing.length === 0) {
-      return { key, label, state: "ok", value: `${rows.length} 个全在` };
+      return { key, label, state: "ok", value: t("sc.mirrored.allThere", { n: rows.length }) };
     }
 
     /* Ask the source about each one, up to a bound: an archive that has lost
@@ -312,12 +311,12 @@ async function checkMirrorComplete(): Promise<DefenseCheck> {
         key,
         label,
         state: "warn",
-        value: `${orphans.length} 个源文件已不存在`,
+        value: t("sc.mirrored.orphans", { n: orphans.length }),
         remedy:
-          `有 ${orphans.length} 个媒体记录指向的文件在 Supabase 上也已经没有了（返回 NoSuchKey），` +
-          "所以镜像不了 —— 这不是同步出问题。多半是内容迁移时登记了文件却没传上去。" +
-          `例如 ${orphans.slice(0, 3).map((o) => o.key).join("、")}。` +
-          "读者看不到坏图的前提是没有页面引用它们；确认之后可以把这些记录从媒体库删掉，这一项就会恢复正常。"
+          t("sc.mirrored.orphansRemedy", {
+            n: orphans.length,
+            examples: orphans.slice(0, 3).map((o) => o.key).join(t("admin.listSep"))
+          })
       };
     }
 
@@ -325,23 +324,23 @@ async function checkMirrorComplete(): Promise<DefenseCheck> {
       key,
       label,
       state: "bad",
-      value: `${broken.length + unclassified} 个没进镜像`,
+      value: t("sc.mirrored.broken", { n: broken.length + unclassified }),
       remedy:
-        `这些文件在 Supabase 上存在、但不在 ${rule.to.replace(/^\/\//, "").replace(/\/$/, "")} 上，` +
-        "说明复制那一步失败了。" +
-        `最近的几个：${broken.slice(0, 3).map((b) => b.key).join("、")}。` +
-        "先到 Vercel → Logs 搜 media-mirror 看报的是什么（HTTP 411 是 R2 拒绝没有 Content-Length 的请求，" +
-        "HTTP 403 多半是密钥问题）；再确认 R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET 都还在。" +
-        "读者那一侧暂时不受影响：取不到镜像会自动回退 Supabase。" +
-        (orphans.length > 0 ? `　另有 ${orphans.length} 个源文件本身已不存在，那是另一回事。` : "")
+        t("sc.mirrored.brokenRemedy", {
+          host: rule.to.replace(/^\/\//, "").replace(/\/$/, ""),
+          examples: broken.slice(0, 3).map((b) => b.key).join(t("admin.listSep"))
+        }) +
+        (orphans.length > 0 ? t("sc.mirrored.brokenAlsoOrphans", { n: orphans.length }) : "")
     };
   } catch (error) {
     return {
       key,
       label,
       state: "unknown",
-      value: "比对失败",
-      remedy: `对照 R2 与媒体表时出错：${error instanceof Error ? error.message : "未知错误"}`
+      value: t("sc.mirrored.compareFailed"),
+      remedy: t("sc.mirrored.compareFailedRemedy", {
+        error: error instanceof Error ? error.message : t("sc.unknownError")
+      })
     };
   }
 }
@@ -365,7 +364,7 @@ async function checkMirrorComplete(): Promise<DefenseCheck> {
  */
 async function checkSearchBound(): Promise<DefenseCheck> {
   const key = "search_bound";
-  const label = "搜索 5 秒上限";
+  const label = t("sc.searchTimeout");
   try {
     const supabase = createSupabaseAdminClient();
     const started = Date.now();
@@ -383,12 +382,9 @@ async function checkSearchBound(): Promise<DefenseCheck> {
         key,
         label,
         state: "bad",
-        value: "调不动",
+        value: t("sc.searchTimeout.broken"),
         remedy:
-          `search_articles_body 调用失败：${error.message}。正文搜索会退回没有时限的写法，` +
-          "一次慢查询就能占住一个数据库连接（一共只有 60 个）。" +
-          "请重新执行 supabase/content/migrations/026_search_body_timeout.sql，" +
-          "并确认结尾的 grant execute ... to service_role 也跑到了。"
+          t("sc.searchTimeout.brokenRemedy", { error: error.message })
       };
     }
     return { key, label, state: "ok", value: `${ms} ms` };
@@ -397,8 +393,8 @@ async function checkSearchBound(): Promise<DefenseCheck> {
       key,
       label,
       state: "unknown",
-      value: "测不到",
-      remedy: error instanceof Error ? error.message : "未知错误"
+      value: t("sc.unmeasurable"),
+      remedy: error instanceof Error ? error.message : t("sc.unknownError")
     };
   }
 }
@@ -427,14 +423,14 @@ async function checkSearchBound(): Promise<DefenseCheck> {
  */
 async function checkLogArchive(): Promise<DefenseCheck> {
   const key = "log_archive";
-  const label = "日志存档";
+  const label = t("sc.logArchive");
 
   const accountId = process.env.R2_ACCOUNT_ID?.trim();
   const accessKeyId = process.env.R2_ACCESS_KEY_ID?.trim();
   const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY?.trim();
   const bucket = process.env.R2_LOG_BUCKET?.trim();
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
-    return { key, label, state: "unknown", value: "未配置" };
+    return { key, label, state: "unknown", value: t("sc.logArchive.unconfigured") };
   }
 
   const endpoint = process.env.R2_ENDPOINT?.trim() || `https://${accountId}.r2.cloudflarestorage.com`;
@@ -479,7 +475,11 @@ async function checkLogArchive(): Promise<DefenseCheck> {
         key,
         label,
         state: "ok",
-        value: `${recent.length} 批 / ${size}${mins === null ? "" : `（最近 ${mins} 分钟前）`}`
+        value: t("sc.logArchive.ok", {
+          n: recent.length,
+          size,
+          age: mins === null ? "" : t("sc.logArchive.age", { mins })
+        })
       };
     }
 
@@ -492,31 +492,28 @@ async function checkLogArchive(): Promise<DefenseCheck> {
         key,
         label,
         state: "unknown",
-        value: "还没有数据",
+        value: t("sc.logArchive.empty"),
         remedy:
-          "日志桶是空的，说明 Vercel 那边的 Log Drain 还没建起来。" +
-          "开通步骤见 workers/vercel-log-drain/README.md —— 建桶、设签名密钥、部署 Worker、" +
-          "在 Vercel 的 Team Settings → Drains 里指向它。"
+          t("sc.logArchive.emptyRemedy")
       };
     }
     return {
       key,
       label,
       state: "bad",
-      value: "近 3 小时无新日志",
+      value: t("sc.logArchive.stale"),
       remedy:
-        "日志存档以前收到过数据，但最近 3 小时一批都没有 —— 这中间出了什么问题，而且不会报错，" +
-        "网站照常提供服务。按顺序查：Vercel → Team Settings → Drains，看这条 drain 是不是被停用或删了；" +
-        "Cloudflare → Workers → vercel-log-drain，看它的日志里有没有 403（签名密钥两边对不上）或 500。" +
-        "在修好之前这段时间的日志是补不回来的，Vercel 自己只留一天。"
+        t("sc.logArchive.staleRemedy")
     };
   } catch (error) {
     return {
       key,
       label,
       state: "unknown",
-      value: "读不到",
-      remedy: `列举 R2 日志桶失败：${error instanceof Error ? error.message : "未知错误"}`
+      value: t("sc.logArchive.unreadable"),
+      remedy: t("sc.logArchive.unreadableRemedy", {
+        error: error instanceof Error ? error.message : t("sc.unknownError")
+      })
     };
   }
 }
@@ -579,11 +576,11 @@ async function checkLogArchive(): Promise<DefenseCheck> {
  */
 async function checkRenderedPage(): Promise<DefenseCheck[]> {
   const cacheKey = "page_cached";
-  const cacheLabel = "文章页走 CDN 缓存";
+  const cacheLabel = t("sc.cdnCache");
   const freshKey = "page_fresh";
-  const freshLabel = "页面内容是最新的";
+  const freshLabel = t("sc.pageFresh");
   const htmlKey = "page_media_r2";
-  const htmlLabel = "页面图片指向镜像";
+  const htmlLabel = t("sc.imagesMirrored");
 
   const blocked = (why: string, remedy?: string): DefenseCheck[] =>
     [
@@ -596,13 +593,7 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
      out in full because this panel is where somebody will come looking for it
      six months from now, not the documentation. */
   const bypassRemedy =
-    "这三项需要真的取一次渲染好的页面，而我们自己的防火墙会挑战一切非浏览器请求 —— " +
-    "不是故障，是防火墙在干活。要让它们测得到，到 Vercel → 项目 → Firewall 新建一条规则，" +
-    "放在那条 Challenge 规则**上面**（规则自上而下匹配，Allow 命中后不再往下走）：" +
-    "If 请求头 x-quitccp-probe equals <一串随机字符串> → Then Allow。" +
-    "再把同一串字符串配成环境变量 PROBE_BYPASS_SECRET。" +
-    "这个请求头只决定防火墙要不要挑战这个请求，它能访问到的就是每个读者本来就能拿到的公开页面。" +
-    "详见 docs/implementation/selfcheck-and-alerts.md。";
+    t("sc.bypassRemedy");
 
   let article: { slug: string; title: string } | null = null;
   try {
@@ -617,9 +608,9 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
     const row = data?.[0];
     if (row?.slug && row?.title) article = { slug: row.slug, title: row.title };
   } catch {
-    return blocked("读不到文章");
+    return blocked(t("sc.cannotReadArticle"));
   }
-  if (!article) return blocked("没有已发布文章");
+  if (!article) return blocked(t("sc.noPublishedArticle"));
 
   const url = `${publicOrigin()}/news/${article.slug}`;
 
@@ -649,8 +640,8 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
   for (let attempt = 0; attempt < CACHE_ATTEMPTS; attempt++) {
     if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, CACHE_RETRY_MS));
     response = await probe(url);
-    if (!response) return blocked("连不上");
-    if (wasChallenged(response)) return blocked("被挑战页挡住", bypassRemedy);
+    if (!response) return blocked(t("sc.cannotConnect"));
+    if (wasChallenged(response)) return blocked(t("sc.challenged"), bypassRemedy);
     cacheHeader = response.headers.get("x-vercel-cache") ?? "";
     html = await response.text();
     if (CACHED.test(cacheHeader)) break;
@@ -660,7 +651,7 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
 
   /* --- 1. still served from the edge cache --- */
   if (!cacheHeader) {
-    checks.push({ key: cacheKey, label: cacheLabel, state: "unknown", value: "没有缓存头" });
+    checks.push({ key: cacheKey, label: cacheLabel, state: "unknown", value: t("sc.cdnCache.noHeader") });
   } else if (CACHED.test(cacheHeader)) {
     checks.push({ key: cacheKey, label: cacheLabel, state: "ok", value: cacheHeader });
   } else {
@@ -670,10 +661,7 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
       state: "bad",
       value: cacheHeader,
       remedy:
-        `文章页连续 ${CACHE_ATTEMPTS} 次都是 ${cacheHeader}，说明它又变成每次请求都重新渲染了 —— ` +
-        "洪水会直接打到数据库，这正是 10-13 那晚的情形。" +
-        "通常是某个组件里新加了 cookies()、headers() 或 noStore()，让整棵树退出了静态渲染。" +
-        "查最近改过的 layout，和 /news/[slug] 这条路径上用到的组件。"
+        t("sc.cdnCache.missRemedy", { n: CACHE_ATTEMPTS, header: cacheHeader })
     });
   }
 
@@ -684,20 +672,15 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
      most often changes, and it appears in the HTML verbatim. */
   const titleInPage = htmlContainsText(html, article.title);
   if (titleInPage) {
-    checks.push({ key: freshKey, label: freshLabel, state: "ok", value: "与数据库一致" });
+    checks.push({ key: freshKey, label: freshLabel, state: "ok", value: t("sc.pageFresh.ok") });
   } else {
     checks.push({
       key: freshKey,
       label: freshLabel,
       state: "bad",
-      value: "页面是旧的",
+      value: t("sc.pageFresh.stale"),
       remedy:
-        `最近改过的那篇文章（${article.slug}）在数据库里的标题是「${article.title}」，` +
-        "但线上页面里没有这个标题 —— 保存之后清缓存那一步没生效，" +
-        "编辑的改动不会出现在网站上，而且不会报任何错。" +
-        "先在后台随便保存一次那篇文章，看页面是否更新；" +
-        "不行的话查 /api/admin/content/articles 的 revalidatePath 调用，" +
-        "以及 next.config.ts 里这条路径的配置。"
+        t("sc.pageFresh.staleRemedy", { slug: article.slug, title: article.title })
     });
   }
 
@@ -707,7 +690,7 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
      requests still land on unprotected Supabase Storage. */
   const rule = mirrorRewrite();
   if (!rule) {
-    checks.push({ key: htmlKey, label: htmlLabel, state: "unknown", value: "镜像未开启" });
+    checks.push({ key: htmlKey, label: htmlLabel, state: "unknown", value: t("sc.mirrored.off") });
   } else {
     const mirrorHost = rule.to.replace(/^\/\//, "").replace(/\/$/, "");
     const onMirror = html.split(mirrorHost).length - 1;
@@ -733,14 +716,12 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
         key: htmlKey,
         label: htmlLabel,
         state: "bad",
-        value: `${onSupabase} 处仍指向 Supabase`,
+        value: t("sc.images.onSupabase", { n: onSupabase }),
         remedy:
-          "渲染出来的页面里还有直接指向 Supabase 的图片地址，这些请求绕过 R2，" +
-          "打在没有任何防护的 Storage 上。多半是新加的代码直接用了 getPublicUrl()，" +
-          "没有经过 rewriteMediaUrl()。参考 docs/implementation/media-on-r2.md 里的清单。"
+          t("sc.images.onSupabaseRemedy")
       });
     } else if (onMirror === 0) {
-      checks.push({ key: htmlKey, label: htmlLabel, state: "unknown", value: "这篇没有图" });
+      checks.push({ key: htmlKey, label: htmlLabel, state: "unknown", value: t("sc.images.none") });
     } else {
       /* The page points at the mirror -- but pointing at it and it answering
          are two different things, and Cloudflare caches an R2 404 for four
@@ -761,15 +742,15 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
           key: htmlKey,
           label: htmlLabel,
           state: "warn",
-          value: `${onMirror} 处是镜像，但取不到`,
+          value: t("sc.images.mirroredUnreachable", { n: onMirror }),
           remedy:
-            `页面里的图片地址都指向镜像了，但抽查的那一个返回 HTTP ${served || "连不上"}。` +
-            "读者那一侧不会看到坏图 —— 浏览器会自动退回 Supabase —— 但图片少了 R2 的缓存和限速保护。" +
-            `地址：${first?.[0] ?? ""}。` +
-            "注意 Cloudflare 会把 R2 的 404 缓存 4 小时，所以补上文件之后要到 Cloudflare 后台清一次缓存才看得到。"
+            t("sc.images.mirroredUnreachableRemedy", {
+              status: served || t("sc.cannotConnect"),
+              url: first?.[0] ?? ""
+            })
         });
       } else {
-        checks.push({ key: htmlKey, label: htmlLabel, state: "ok", value: `${onMirror} 处全是镜像` });
+        checks.push({ key: htmlKey, label: htmlLabel, state: "ok", value: t("sc.images.allMirrored", { n: onMirror }) });
       }
     }
   }
@@ -800,7 +781,7 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
  */
 async function checkDeadRedirects(): Promise<DefenseCheck> {
   const key = "dead_redirects";
-  const label = "旧链接去向";
+  const label = t("sc.redirects");
 
   try {
     const supabase = createSupabaseAdminClient();
@@ -812,7 +793,7 @@ async function checkDeadRedirects(): Promise<DefenseCheck> {
 
     const dead = Number(count ?? 0);
     if (dead === 0) {
-      return { key, label, state: "ok", value: `${total ?? "?"} 条全部指向现有内容` };
+      return { key, label, state: "ok", value: t("sc.redirects.ok", { n: total ?? "?" }) };
     }
 
     /* 看到数字之后第一个问题一定是「哪几条」，所以直接把前几条列进去。 */
@@ -830,22 +811,19 @@ async function checkDeadRedirects(): Promise<DefenseCheck> {
       key,
       label,
       state: "bad",
-      value: `${dead} 条跳到不存在的地址`,
+      value: t("sc.redirects.dead", { n: dead }),
       remedy:
-        `有 ${dead} 条重定向的目标已经不存在，读者点旧链接会先跳一次再看到 404。` +
-        (listed ? `例如：${listed}。` : "") +
-        "先分清是「内容搬了」还是「内容没了」：" +
-        "搬了的跑 npx tsx scripts/repoint-stale-destinations.ts（按 slug_legacy 配，改名的都能自动接上）；" +
-        "改成了别的形态、比如文章改视频的，跑 npx tsx scripts/repoint-series-redirects.ts；" +
-        "确实没了的跑 npx tsx scripts/retire-dead-redirects.ts，它会先把清单写进 " +
-        "docs/implementation/retired-redirects.csv 再删。三个脚本都默认预演，加 --apply 才动库。"
+        t("sc.redirects.deadRemedy", {
+          n: dead,
+          examples: listed ? t("sc.redirects.examples", { list: listed }) : ""
+        })
     };
   } catch (error) {
     return {
       key,
       label,
       state: "unknown",
-      value: error instanceof Error ? error.message.slice(0, 60) : "查不到"
+      value: error instanceof Error ? error.message.slice(0, 60) : t("sc.notFound")
     };
   }
 }
@@ -865,7 +843,7 @@ async function checkDeadRedirects(): Promise<DefenseCheck> {
  */
 async function checkCrossLocaleLinks(): Promise<DefenseCheck> {
   const key = "cross_locale_links";
-  const label = "跨语言错误关联";
+  const label = t("sc.crossLocale");
 
   try {
     const supabase = createSupabaseAdminClient();
@@ -873,27 +851,28 @@ async function checkCrossLocaleLinks(): Promise<DefenseCheck> {
     if (error) throw new Error(error.message);
 
     const bad = Number(data ?? 0);
-    if (bad === 0) return { key, label, state: "ok", value: "0 条" };
+    if (bad === 0) return { key, label, state: "ok", value: t("sc.crossLocale.zero") };
 
     return {
       key,
       label,
       state: "bad",
-      value: `${bad} 条`,
-      remedy:
-        `有 ${bad} 条分类或标签关联把一种语言的内容挂到了另一种语言的栏目下。` +
-        "那篇内容会出现在它不该出现的栏目里，而前台不会报错。" +
-        "跑 select * from cms_article_category_map m join cms_articles a on a.id=m.article_id " +
-        "join cms_article_categories c on c.id=m.category_id where a.locale is distinct from c.locale " +
-        "找出具体是哪些（视频、资料、标签三张关联表同理），再决定是改分类还是改内容的语言。" +
-        "顺便查一下是谁写进去的 —— 能绕过收口层写入，说明还有一条没收住的路径。"
+      value: t("sc.crossLocale.bad", { n: bad }),
+      /* SQL 当占位符传进去，不写在译文里 —— 它和语言无关，
+         而混在句子中间的话，每种语言都得抄一遍，抄错一个字就查不出东西。 */
+      remedy: t("sc.crossLocale.badRemedy", {
+        n: bad,
+        sql:
+          "select * from cms_article_category_map m join cms_articles a on a.id=m.article_id " +
+          "join cms_article_categories c on c.id=m.category_id where a.locale is distinct from c.locale"
+      })
     };
   } catch (error) {
     return {
       key,
       label,
       state: "unknown",
-      value: error instanceof Error ? error.message.slice(0, 60) : "查不到"
+      value: error instanceof Error ? error.message.slice(0, 60) : t("sc.notFound")
     };
   }
 }
