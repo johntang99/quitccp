@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { MarkdownEditor, type MarkdownEditorHandle } from "./MarkdownEditor";
 import { warmPages } from "@/lib/admin/warm-pages";
-import { requestSlug, useAutoSlug } from "./use-auto-slug";
+import { requestSlug, retargetSlugDate, useAutoSlug } from "./use-auto-slug";
 
 /**
  * The single article form, used for both creating and editing.
@@ -436,9 +436,16 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
                 type="datetime-local"
                 className="admin-input"
                 value={publishedLocal}
-                onChange={(e) =>
-                  set("publishedAt", e.target.value ? new Date(e.target.value).toISOString() : null)
-                }
+                onChange={(e) => {
+                  const next = e.target.value ? new Date(e.target.value).toISOString() : null;
+                  set("publishedAt", next);
+                  /* 地址里的日期跟着发布时间走，只换日期段。理由见
+                     retargetSlugDate 的注释。只在新建时做 —— 改一篇已发布
+                     文章的发布时间，不该悄悄挪动线上地址。 */
+                  if (mode !== "edit" && datePrefix) {
+                    set("slug", retargetSlugDate(v.slug, next));
+                  }
+                }}
               />
               <span className="hint">可回填旧日期。没有定时发布：保存即上线。</span>
             </div>

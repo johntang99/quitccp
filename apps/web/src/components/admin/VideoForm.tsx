@@ -6,7 +6,7 @@ import { GanjingEmbedNotice } from "./GanjingEmbedNotice";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { MarkdownEditor, type MarkdownEditorHandle } from "./MarkdownEditor";
 import { warmPages } from "@/lib/admin/warm-pages";
-import { requestSlug, useAutoSlug } from "./use-auto-slug";
+import { requestSlug, retargetSlugDate, useAutoSlug } from "./use-auto-slug";
 
 /**
  * The single video form, used for both creating and editing.
@@ -551,9 +551,25 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                 // Posting the raw datetime-local value leaves the server to
                 // guess a zone -- in production that is UTC, not the editor's,
                 // so the time shifted by the offset on every save.
-                onChange={(event) =>
-                  set("publishedAt", event.target.value ? new Date(event.target.value).toISOString() : null)
-                }
+                onChange={(event) => {
+                  const next = event.target.value ? new Date(event.target.value).toISOString() : null;
+                  set("publishedAt", next);
+                  /*
+                   * 地址里的日期跟着发布时间走，但只换日期那一段。
+                   *
+                   * 新建表单的发布时间默认「现在」，编辑往往先输标题、地址按
+                   * 「现在」生成，之后才回填真正的发布日 —— 而那时地址多半已经
+                   * 被标记成「动过」，跟标题走的钩子就停了。2026-10-21 查出 20
+                   * 条是这么来的：地址上写 10-21，内容其实是 10-20 的。
+                   *
+                   * 只在新建时做。编辑一篇已发布的内容时改发布时间，不该悄悄
+                   * 挪动一个已经发出去的地址 —— 那是改名，有它自己的代价。
+                   * 真要改，「由标题重新生成」那颗按钮是明确的入口。
+                   */
+                  if (mode !== "edit" && datePrefix) {
+                    set("slug", retargetSlugDate(value.slug, next));
+                  }
+                }}
               />
             </div>
             {/* Same two flags as articles, in the publish panel for the same

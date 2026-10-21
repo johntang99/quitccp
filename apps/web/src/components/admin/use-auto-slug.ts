@@ -94,6 +94,37 @@ export async function requestSlug(
   return typeof data.slug === "string" && data.slug ? data.slug : localSlug(title, withDate, at);
 }
 
+/**
+ * 把地址开头的日期换成这一天，主体一个字不动。
+ *
+ * ## 为什么需要它
+ *
+ * 新建表单的发布时间默认「现在」，编辑先输标题、地址按「现在」生成，之后才把
+ * 发布时间回填成真正的那一天 —— 可这时地址多半已经被标记成「动过」，跟着标题
+ * 走的那个钩子就停了，于是地址上留着创建当天的日期。
+ *
+ * 2026-10-21 查出 20 条是这么来的：slug 前缀 10-21，发布时间却是 10-20。
+ * 不报错，只是地址上的日期和这篇内容的日期对不上 —— 而日期前缀存在的全部意义
+ * 就是标出它是哪一天的内容。
+ *
+ * ## 为什么只换日期段，不重新生成整个地址
+ *
+ * 重新生成会把编辑手工改过的主体一起冲掉。把标题改短、把地址改顺口，是编辑
+ * 常做的事；因为改了一下发布时间就把它抹掉，比日期不对更糟。
+ *
+ * 没有日期前缀的地址（编辑自己写的、或者没勾「加日期」）原样返回。
+ */
+export function retargetSlugDate(slug: string, at?: string | null): string {
+  const m = /^(\d{4}-\d{2}-\d{2})-(.+)$/.exec(slug.trim());
+  if (!m) return slug;
+  const when = at ? new Date(at) : new Date();
+  if (Number.isNaN(when.getTime())) return slug;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  /* UTC，和服务端 datePrefix 以及 localSlug 保持一致。 */
+  const day = `${when.getUTCFullYear()}-${pad(when.getUTCMonth() + 1)}-${pad(when.getUTCDate())}`;
+  return day === m[1] ? slug : `${day}-${m[2]}`;
+}
+
 export function useAutoSlug(
   title: string,
   options: { enabled: boolean; withDate: boolean; at?: string | null },
