@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { mirrorRewrite } from "@/lib/media-mirror";
+import { t } from "@/lib/i18n";
 
 export interface GalleryItem {
   src: string;
@@ -63,14 +64,14 @@ export function HeroGallery({ items }: { items: GalleryItem[] }) {
         <img src={shown.src} alt={shown.alt} />
       </div>
       {items.length > 1 ? (
-        <div className="hero-gallery-thumbs" role="tablist" aria-label="图集">
+        <div className="hero-gallery-thumbs" role="tablist" aria-label={t("hero.aria.gallery")}>
           {items.map((item, index) => (
             <button
               key={`${item.src}-${index}`}
               type="button"
               role="tab"
               aria-selected={index === active}
-              aria-label={item.alt || `图片 ${index + 1}`}
+              aria-label={item.alt || t("hero.aria.image", { n: index + 1 })}
               className={index === active ? "is-active" : undefined}
               onClick={() => select(index)}
             >
@@ -81,7 +82,7 @@ export function HeroGallery({ items }: { items: GalleryItem[] }) {
       ) : null}
       {shown.alt ? <p className="hero-media-caption">{shown.alt}</p> : null}
       <span className="sr-only" aria-live="polite">
-        第 {active + 1} 张，共 {count} 张
+        {t("hero.imageOf", { n: active + 1, total: count })}
       </span>
     </div>
   );
@@ -119,7 +120,7 @@ export function HeroVideo({
           {isEmbedUrl(trimmed) ? (
             <iframe
               src={trimmed}
-              title={caption || "视频"}
+              title={caption || t("hero.videoTitle")}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
@@ -142,7 +143,7 @@ export function HeroVideo({
             type="button"
             className="hero-video-play"
             onClick={() => setPlaying(true)}
-            aria-label={caption ? `播放：${caption}` : "播放视频"}
+            aria-label={caption ? t("hero.aria.playNamed", { name: caption }) : t("hero.aria.play")}
           >
             <span aria-hidden="true">▶</span>
           </button>
@@ -150,7 +151,7 @@ export function HeroVideo({
       </div>
       {caption ? <p className="hero-media-caption">{caption}</p> : null}
       {!hasVideo ? (
-        <p className="hero-media-caption">尚未设置视频地址。</p>
+        <p className="hero-media-caption">{t("hero.noVideo")}</p>
       ) : null}
     </div>
   );
@@ -542,8 +543,8 @@ export function HeroBackgroundVideo({
           className="hero-sound"
           onClick={toggleSound}
           aria-pressed={!muted}
-          aria-label={muted ? "打开声音" : "关闭声音"}
-          title={muted ? "打开声音" : "关闭声音"}
+          aria-label={muted ? t("hero.soundOn") : t("hero.soundOff")}
+          title={muted ? t("hero.soundOn") : t("hero.soundOff")}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 9v6h4l5 4V5L8 9H4z" />

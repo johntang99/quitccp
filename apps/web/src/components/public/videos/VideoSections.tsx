@@ -1,5 +1,6 @@
 import type { PublicVideoCard, VideoLibraryShelf } from "@/lib/public-content";
 import { Duration, MONO, Play, SERIF, SectionHead, Still, kicker, runtime, videoHref } from "./VideoParts";
+import { t } from "@/lib/i18n";
 
 /** The film the page opens with, beside 最新上线. */
 export function FeatureBand({
@@ -82,9 +83,9 @@ export function FeatureBand({
                   padding: "5px 10px",
                   borderRadius: 3
                 }}
-                title={featureIsFlagged ? "编辑标记为「重要」" : undefined}
+                title={featureIsFlagged ? t("video.flaggedImportant") : undefined}
               >
-                {featureIsFlagged ? "★ 重要" : "最新上线"}
+                {featureIsFlagged ? t("video.important") : t("video.latestOnline")}
               </span>
               {[featureCategory, feature.episode, runtime(feature.durationSeconds)]
                 .filter(Boolean)
@@ -161,10 +162,10 @@ export function FeatureBand({
               style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--gold)", boxShadow: "0 0 0 4px rgba(224,184,92,0.22)" }}
               aria-hidden="true"
             />
-            最新上线
+            {t("video.latestOnline")}
           </span>
           <a href="/videos/archive" style={{ fontSize: 13, color: "var(--acc)", textDecoration: "none" }}>
-            全部 →
+            {t("video.allArrow")}
           </a>
         </div>
         {upnext.map((card, index) => (
@@ -216,7 +217,7 @@ export function LeadAndGrid({ shelf, note }: { shelf: VideoLibraryShelf; note?: 
 
   return (
     <section className="vp-shell vp-section">
-      <SectionHead name={shelf.name} count={shelf.total} note={note} href={`/videos/${shelf.slug}`} more="全部影片 →" />
+      <SectionHead name={shelf.name} count={shelf.total} note={note} href={`/videos/${shelf.slug}`} more={t("video.allFilmsArrow")} />
       <div className="vp-split">
         <a
           href={videoHref(lead.slug)}
@@ -285,7 +286,7 @@ export function PanelDuo({ shelves }: { shelves: VideoLibraryShelf[] }) {
                   <span style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--acc)" }}>{shelf.total} 部</span>
                 </span>
                 <a href={`/videos/${shelf.slug}`} style={{ fontSize: 13, color: "var(--acc)", textDecoration: "none" }}>
-                  全部 →
+                  {t("video.allArrow")}
                 </a>
               </div>
               <a
@@ -363,10 +364,10 @@ export function EpisodeRow({ shelf, note }: { shelf: VideoLibraryShelf; note?: s
       <SectionHead
         name={shelf.name}
         count={shelf.total}
-        unit="集"
+        unit={t("video.unitEpisode")}
         note={note}
         href={`/videos/${shelf.slug}`}
-        more={`全部 ${shelf.total} 集 →`}
+        more={t("video.allEpisodes", { n: shelf.total })}
       />
       <div className="vp-grid-4" style={{ position: "relative" }}>
         <span style={{ position: "absolute", left: 0, right: 0, top: -12, height: 2, background: "var(--rule)" }} aria-hidden="true" />
@@ -423,7 +424,7 @@ export function PanelPairs({ shelves }: { shelves: VideoLibraryShelf[] }) {
                 <span style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--acc)" }}>{shelf.total} 部</span>
               </span>
               <a href={`/videos/${shelf.slug}`} style={{ fontSize: 13, color: "var(--acc)", textDecoration: "none" }}>
-                全部 →
+                {t("video.allArrow")}
               </a>
             </div>
             <div className="vp-grid-2" style={{ gap: 16 }}>
@@ -452,7 +453,7 @@ export function CardRow({ shelf, note }: { shelf: VideoLibraryShelf; note?: stri
   if (shelf.videos.length === 0) return null;
   return (
     <section className="vp-shell vp-section">
-      <SectionHead name={shelf.name} note={note} href={`/videos/${shelf.slug}`} more="全部影片 →" />
+      <SectionHead name={shelf.name} note={note} href={`/videos/${shelf.slug}`} more={t("video.allFilmsArrow")} />
       <div className="vp-grid-4">
         {shelf.videos.slice(0, 4).map((card) => (
           <a

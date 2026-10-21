@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit, clientFingerprint } from "@/lib/security/rate-limit";
 import { verifyCertificate } from "@/lib/service/public-intake";
+import { t } from "@/lib/i18n";
 
 /**
  * Open certificate verification.
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
   const limit = checkRateLimit(`verify:${fingerprint}`, RATE_LIMIT, RATE_WINDOW_SECONDS);
   if (!limit.allowed) {
     return NextResponse.json(
-      { error: "查验过于频繁，请稍后再试。" },
+      { error: t("verify.tooMany") },
       { status: 429, headers: { "retry-after": String(limit.retryAfterSeconds) } }
     );
   }
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as Record<string, unknown>;
   } catch {
-    return NextResponse.json({ error: "请求格式有误。" }, { status: 400 });
+    return NextResponse.json({ error: t("verify.badRequest") }, { status: 400 });
   }
 
   const serial = typeof body.serialNumber === "string" ? body.serialNumber.trim() : "";
@@ -39,18 +40,18 @@ export async function POST(request: Request) {
 
   if (!serial) {
     return NextResponse.json(
-      { error: "请输入证明编号。", fieldErrors: [{ field: "serialNumber", message: "请输入证明编号。" }] },
+      { error: t("verify.serialRequired"), fieldErrors: [{ field: "serialNumber", message: t("verify.serialRequired") }] },
       { status: 400 }
     );
   }
   if (serial.length > 64) {
-    return NextResponse.json({ error: "证明编号格式有误。" }, { status: 400 });
+    return NextResponse.json({ error: t("verify.serialBadFormat") }, { status: 400 });
   }
 
   try {
     const result = await verifyCertificate(serial, name, fingerprint);
     return NextResponse.json({ ok: true, ...result });
   } catch {
-    return NextResponse.json({ error: "查验未能完成，请稍后再试。" }, { status: 500 });
+    return NextResponse.json({ error: t("verify.failed") }, { status: 500 });
   }
 }

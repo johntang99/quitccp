@@ -1,6 +1,7 @@
 import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
 import { searchEverythingBySubstring, type SearchResultType } from "@/lib/search-substring";
 import { SITE_LOCALE } from "@/lib/site-config";
+import { t } from "@/lib/i18n";
 
 export interface SearchArticleResult {
   id: string;
@@ -103,9 +104,9 @@ function getMeiliConfig() {
 }
 
 const MEILI_TYPE_LABEL: Record<SearchResultType, string> = {
-  article: "新闻与报告",
-  video: "视频",
-  material: "资料"
+  article: t("search.typeArticle"),
+  video: t("search.typeVideo"),
+  material: t("search.typeMaterial")
 };
 
 function toSearchRowsFromMeili(hits: MeiliHit[]): SearchArticleResult[] {
@@ -154,7 +155,7 @@ async function searchWithPgTrgm(
     score: Number(row.score ?? 0),
     type: "article" as SearchResultType,
     href: `/news/${encodeURIComponent(String(row.slug))}`,
-    typeLabel: "新闻与报告",
+    typeLabel: t("search.typeArticle"),
     publishedAt: null
   }));
 }
@@ -227,7 +228,7 @@ async function searchWithIlikeFallback(
     score: 0,
     type: "article" as SearchResultType,
     href: `/news/${encodeURIComponent(String(row.slug))}`,
-    typeLabel: "新闻与报告",
+    typeLabel: t("search.typeArticle"),
     publishedAt: null
   }));
 }

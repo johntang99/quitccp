@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { t } from "@/lib/i18n";
 
 /**
  * Anonymous public intake.
@@ -42,9 +43,9 @@ export function validateDeclaration(input: Partial<PublicDeclarationInput>): Val
 
   const alias = (input.alias ?? "").trim();
   if (!alias) {
-    errors.push({ field: "alias", message: "请填写署名。可以是真名、化名或代号。" });
+    errors.push({ field: "alias", message: t("intake.aliasRequired") });
   } else if (alias.length > ALIAS_MAX) {
-    errors.push({ field: "alias", message: `署名请控制在 ${ALIAS_MAX} 字以内。` });
+    errors.push({ field: "alias", message: t("intake.aliasTooLong", { max: ALIAS_MAX }) });
   }
 
   const scopes = Array.isArray(input.organizationScopes) ? input.organizationScopes : [];
@@ -52,19 +53,19 @@ export function validateDeclaration(input: Partial<PublicDeclarationInput>): Val
     (ORGANIZATION_SCOPES as readonly string[]).includes(scope)
   );
   if (validScopes.length === 0) {
-    errors.push({ field: "organizationScopes", message: "请至少选择一个要退出的组织。" });
+    errors.push({ field: "organizationScopes", message: t("intake.scopeRequired") });
   }
 
   const statement = (input.statement ?? "").trim();
   if (statement.length < STATEMENT_MIN) {
-    errors.push({ field: "statement", message: "请写下你的声明内容，至少十个字。" });
+    errors.push({ field: "statement", message: t("intake.statementRequired") });
   } else if (statement.length > STATEMENT_MAX) {
-    errors.push({ field: "statement", message: `声明内容请控制在 ${STATEMENT_MAX} 字以内。` });
+    errors.push({ field: "statement", message: t("intake.statementTooLong", { max: STATEMENT_MAX }) });
   }
 
   const region = (input.region ?? "").trim();
   if (region.length > REGION_MAX) {
-    errors.push({ field: "region", message: "所在地区填写过长。" });
+    errors.push({ field: "region", message: t("intake.regionTooLong") });
   }
 
   return errors;

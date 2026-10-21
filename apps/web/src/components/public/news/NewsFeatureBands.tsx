@@ -1,5 +1,6 @@
 import type { NewsCategoryBlock } from "@/lib/public-content";
 import { T, articleHref, day } from "./newsTokens";
+import { t } from "@/lib/i18n";
 
 /**
  * 追查国际调查报告 — the reports run as a numbered series, so the design gives
@@ -59,7 +60,7 @@ export function InvestigationsBand({ block }: { block: NewsCategoryBlock }) {
         </div>
         <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: T.onDark, flexWrap: "wrap" }}>
           <span style={{ background: T.gold, color: "var(--on-gold)", fontWeight: 500, padding: "3px 9px", borderRadius: 3 }}>
-            {lead.episode ? `第 ${lead.episode} 集 · 最新` : "最新"}
+            {lead.episode ? t("news.episodeLatest", { n: lead.episode }) : t("news.latest")}
           </span>
           <span style={{ fontFamily: T.mono, whiteSpace: "nowrap" }}>{day(lead.publishedAt)}</span>
         </span>
@@ -79,12 +80,12 @@ export function InvestigationsBand({ block }: { block: NewsCategoryBlock }) {
         >
           <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <span style={{ fontFamily: T.sans, fontWeight: 500, fontSize: 13, letterSpacing: "0.08em", color: T.gold }}>
-              INVESTIGATIONS · 特案专辑
+              {t("news.investigationsBand")}
             </span>
             <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 26 }}>{block.name}</span>
           </span>
           <a href={`/news/${block.slug}`} style={{ fontSize: 13, color: T.gold, textDecoration: "none", whiteSpace: "nowrap" }}>
-            全部集数 →
+            {t("news.allEpisodes")}
           </a>
         </div>
         {block.rest.map((item) => (
@@ -106,7 +107,7 @@ export function InvestigationsBand({ block }: { block: NewsCategoryBlock }) {
               {item.episode ? (
                 <>
                   <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 30, color: T.gold }}>{item.episode}</span>
-                  <span style={{ fontSize: 13, color: T.onDarkSoft, marginTop: 4 }}>集</span>
+                  <span style={{ fontSize: 13, color: T.onDarkSoft, marginTop: 4 }}>{t("news.episodeUnit")}</span>
                 </>
               ) : (
                 <span style={{ fontFamily: T.mono, fontSize: 13, color: T.onDarkSoft, whiteSpace: "nowrap" }}>{day(item.publishedAt)}</span>
@@ -184,14 +185,14 @@ export function CommentaryBand({ block }: { block: NewsCategoryBlock }) {
             borderBottom: `2px solid ${T.ink}`
           }}
         >
-          <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 18 }}>评论员专栏</span>
+          <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 18 }}>{t("news.commentaryColumn")}</span>
           <a href={`/news/${block.slug}`} style={{ fontSize: 13, color: T.seal, textDecoration: "none" }}>
-            更多 →
+            {t("news.more")}
           </a>
         </div>
         <div className="news-commentary-cols">
           {block.rest.map((item) => {
-            const name = item.author || "全球退党服务中心";
+            const name = item.author || t("site.name");
             return (
               <a
                 key={item.slug}

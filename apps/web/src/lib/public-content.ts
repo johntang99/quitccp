@@ -360,7 +360,7 @@ export function markdownToBodyRows(
       flushParagraph();
       for (const match of embedded) rows.push({ type: "figure", src: match[2], alt: match[1] });
       for (const match of audioLinks) {
-        rows.push({ type: "audio", src: match[2], label: match[1].trim() || "下载" });
+        rows.push({ type: "audio", src: match[2], label: match[1].trim() || t("content.download") });
       }
     }
   }
@@ -787,7 +787,7 @@ async function loadRenderableArticle(
     const resolvedByline = [
       toDateLabel(articleDate),
       asString(row.author) || t("content.siteLibrary"),
-      `约 ${formatNumber(plainBody.length)} 字`
+      t("content.approxChars", { n: formatNumber(plainBody.length) })
     ];
     return {
       section: "news",
@@ -1107,7 +1107,7 @@ export type VideoSort = "latest" | "oldest";
  */
 const VIDEO_VIRTUAL_LISTINGS: Record<string, { name: string; filter?: "featured" }> = {
   archive: { name: t("video.allVideosArchive") },
-  featured: { name: "重要影片", filter: "featured" }
+  featured: { name: t("video.featuredFilms"), filter: "featured" }
 };
 
 /** The listing slugs under /videos that are not database categories. */
@@ -1963,10 +1963,10 @@ export type NewsSort = "latest" | "oldest";
  * real instead of dead-ending on the homepage strip.
  */
 const NEWS_VIRTUAL_LISTINGS: Record<string, { name: string; en: string; filter?: "featured" | "editor_archive" }> = {
-  archive: { name: "全部文章", en: "ALL ARTICLES" },
-  latest: { name: "最新发布", en: "LATEST" },
-  featured: { name: "重要报导", en: "FEATURED", filter: "featured" },
-  "editor-archive": { name: "精彩保留", en: "EDITOR'S PICKS", filter: "editor_archive" }
+  archive: { name: t("news.allArticlesName"), en: "ALL ARTICLES" },
+  latest: { name: t("news.latestName"), en: "LATEST" },
+  featured: { name: t("news.featured"), en: "FEATURED", filter: "featured" },
+  "editor-archive": { name: t("news.editorArchive"), en: "EDITOR'S PICKS", filter: "editor_archive" }
 };
 
 /**
@@ -2651,7 +2651,7 @@ export async function getPublicFaqItem(
       question: String(data.question),
       answerMarkdown: String(data.answer_markdown ?? "")
     },
-    category: { slug: String(category?.slug ?? ""), name: String(category?.name ?? "未分类") }
+    category: { slug: String(category?.slug ?? ""), name: String(category?.name ?? t("content.uncategorised")) }
   };
 }
 
