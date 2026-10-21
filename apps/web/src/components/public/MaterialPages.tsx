@@ -2,6 +2,7 @@ import Link from "next/link";
 import { InteriorHead, InteriorTabs } from "@/components/templates/InteriorScaffold";
 import { externalLinkProps } from "@/lib/external-services";
 import type { PublicMaterial, PublicMaterialCategory } from "@/lib/public-content";
+import { t } from "@/lib/i18n";
 
 /**
  * 真相点资料 — the category listing and the single-material page.
@@ -19,7 +20,7 @@ function FileLinks({ files }: { files: PublicMaterial["files"] }) {
     <div className="fmt">
       {files.map((file) => (
         <a key={`${file.label}-${file.url}`} className="pill" href={file.url} {...externalLinkProps(file.url)}>
-          {file.label || `下载${file.kind ? `（${file.kind}）` : ""}`}
+          {file.label || (file.kind ? t("material.downloadKind", { kind: file.kind }) : t("material.download"))}
         </a>
       ))}
     </div>
@@ -40,15 +41,15 @@ export function MaterialCategoryPage({
       <section className="sec" style={{ padding: "52px 0 88px" }}>
         <div className="wrap">
           <p className="eyebrow" style={{ marginBottom: 8 }}>
-            共 {materials.length} 项
+            {t("material.count", { n: materials.length })}
           </p>
           <p style={{ margin: "0 0 32px" }}>
             <Link className="more" href="/resources/downloads">
-              ← 返回全部资料
+              {t("material.backToAll")}
             </Link>
           </p>
           {materials.length === 0 ? (
-            <p style={{ color: "var(--muted)" }}>这个分类下还没有资料。</p>
+            <p style={{ color: "var(--muted)" }}>{t("material.emptyCategory")}</p>
           ) : (
             <div className="arch">
               {materials.map((material) => (
@@ -69,7 +70,7 @@ export function MaterialCategoryPage({
                       <h3>{material.title}</h3>
                       <p>{material.summary}</p>
                       <p className="meta">
-                        {material.files.length} 个文件
+                        {t("material.files", { n: material.files.length })}
                         {material.publishedAt ? ` · ${material.publishedAt.slice(0, 10)}` : ""}
                       </p>
                     </div>
@@ -136,23 +137,23 @@ export function MaterialDetailPage({ material }: { material: PublicMaterial }) {
 
           <aside className="side">
             <div className="panel">
-              <h4>下载</h4>
+              <h4>{t("material.download")}</h4>
               <ul>
                 {material.files.map((file) => (
                   <li key={`${file.label}-${file.url}`}>
                     <a href={file.url} {...externalLinkProps(file.url)}>
-                      {file.label || "下载"}
+                      {file.label || t("material.download")}
                       {file.kind ? <em style={{ fontStyle: "normal", color: "var(--muted)" }}> · {file.kind}</em> : null}
                     </a>
                   </li>
                 ))}
-                {material.files.length === 0 ? <li style={{ color: "var(--muted)" }}>暂无文件。</li> : null}
+                {material.files.length === 0 ? <li style={{ color: "var(--muted)" }}>{t("material.noFiles")}</li> : null}
               </ul>
             </div>
             <div className="panel">
-              <h4>使用说明</h4>
+              <h4>{t("material.usage")}</h4>
               <p style={{ fontSize: 13.5, lineHeight: "var(--lh-body)", margin: 0, color: "var(--ink-soft)" }}>
-                可自由下载、印制、转载、翻译与再制作，无需事先取得授权，也不需要通知我们。注明来源即可。
+                {t("material.terms")}
               </p>
             </div>
           </aside>
@@ -200,9 +201,9 @@ export function MaterialsIndexPage({
                     a category whose every link was "#". */}
                 <p className="f">
                   {category.count > 0 ? (
-                    <Link href={`/resources/downloads/${category.slug}`}>{category.count} 项 · 查看全部 →</Link>
+                    <Link href={`/resources/downloads/${category.slug}`}>{t("material.seeAll", { n: category.count })}</Link>
                   ) : (
-                    "暂无资料"
+                    t("material.empty")
                   )}
                 </p>
               </article>
@@ -220,7 +221,7 @@ export function MaterialsIndexPage({
                 <p>{link.body}</p>
                 <p className="f">
                   <a href={link.href} {...externalLinkProps(link.href)}>
-                    {link.badge ? `${link.badge} · ` : ""}前往 →
+                    {link.badge ? `${link.badge} · ` : ""}{t("material.goto")}
                   </a>
                 </p>
               </article>

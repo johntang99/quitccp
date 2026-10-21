@@ -8,12 +8,13 @@ import { markdownToBodyRows } from "@/lib/public-content";
 import type { PublicVideoRecord, PublicVideoCard } from "@/lib/public-content";
 import { hostOf, isFileUrl, toEmbedUrl } from "@/lib/video-host";
 import { formatNumber } from "@/lib/format";
+import { t } from "@/lib/i18n";
 
 type PublicVideo = PublicVideoRecord;
 
 function minutes(seconds: number | null): string {
   if (!seconds || seconds < 1) return "";
-  return `${Math.round(seconds / 60)} 分`;
+  return t("video.minutes", { n: Math.round(seconds / 60) });
 }
 
 /**
@@ -121,9 +122,9 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
       <header className="vstage">
         <div className="wrap">
           <p className="vcrumb">
-            <Link href={"/" as Route}>首页</Link>
+            <Link href={"/" as Route}>{t("video.home")}</Link>
             <span aria-hidden="true">/</span>
-            <Link href={"/videos" as Route}>视频</Link>
+            <Link href={"/videos" as Route}>{t("video.videos")}</Link>
             {video.category ? (
               <>
                 <span aria-hidden="true">/</span>
@@ -167,21 +168,21 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
                   {host.label}
                 </span>
               ) : null}
-              {minutes(video.durationSeconds) ? <span>片长 {minutes(video.durationSeconds)}</span> : null}
+              {minutes(video.durationSeconds) ? <span>{t("video.duration", { d: minutes(video.durationSeconds) })}</span> : null}
               {chars > 0 ? (
                 <span>
-                  约 <b className="vnum">{formatNumber(chars)}</b> 字
+                  {t("video.chars", { n: formatNumber(chars) })}
                   {chars >= 1200 ? (
                     <>
-                      {" · 阅读约 "}
-                      <b className="vnum">{readingMinutes(chars)}</b> 分钟
+                      {t("video.readTime")}
+                      <b className="vnum">{readingMinutes(chars)}</b>{t("video.readMinutes")}
                     </>
                   ) : null}
                 </span>
               ) : null}
               {embed && !host.reachableInChina && video.backupUrl ? (
                 <a className="vghost" href={video.backupUrl} target="_blank" rel="noopener noreferrer">
-                  改看干净世界版本 ↗
+                  {t("video.ganjing")}
                 </a>
               ) : null}
               {/* 短地址放播放器正下方，不放页尾：视频是看几秒就想转发的东西，
@@ -216,8 +217,8 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
           {showToc || railVideos.length > 0 ? (
             <aside className="vrail">
               {showToc ? (
-                <nav className="vbox" aria-label="本片文字目录">
-                  <h2>本片文字目录</h2>
+                <nav className="vbox" aria-label={t("video.aria.toc")}>
+                  <h2>{t("video.toc")}</h2>
                   <ul className="vtoc">
                     {headings.map((item) => (
                       <li key={item.id}>
@@ -226,14 +227,14 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
                     ))}
                   </ul>
                   {headingsHidden > 0 ? (
-                    <p className="vtoc-rest">另有 {headingsHidden} 节，继续往下读</p>
+                    <p className="vtoc-rest">{t("video.tocRest", { n: headingsHidden })}</p>
                   ) : null}
                 </nav>
               ) : null}
 
               {railVideos.length > 0 ? (
                 <div className="vbox">
-                  <h2>{video.category ? `${video.category} · 同系列` : "同系列"}</h2>
+                  <h2>{video.category ? t("video.sameSeriesIn", { cat: video.category }) : t("video.sameSeries")}</h2>
                   <div className="vmini">
                     {railVideos.map((card) => (
                       <Link key={card.slug} href={`/videos/${encodeURIComponent(card.slug)}` as Route}>
@@ -260,11 +261,11 @@ export function VideoDetail({ video }: { video: PublicVideo }) {
           <div className="wrap">
             <div className="vmore-head">
               <div>
-                <p className="eyebrow">继续观看</p>
-                <h2>{video.category || "影音节目"}</h2>
+                <p className="eyebrow">{t("video.keepWatching")}</p>
+                <h2>{video.category || t("video.programmes")}</h2>
               </div>
               <Link className="vmore-link" href={categoryHref}>
-                查看全部{video.category ? ` ${video.category}` : ""} →
+                {t("video.seeAll", { cat: video.category ? ` ${video.category}` : "" })}
               </Link>
             </div>
             <div className="vcards">

@@ -5,6 +5,7 @@ import { NewsRow } from "./NewsRow";
 import { NewsInfiniteRows } from "./NewsInfiniteRows";
 import { NEWS_MAX_CHUNK } from "./newsChunks";
 import { formatNumber } from "@/lib/format";
+import { t } from "@/lib/i18n";
 
 /**
  * A listing page: one category, or one of the section-wide scopes
@@ -62,11 +63,11 @@ export async function NewsListingPage({ listing }: { listing: NewsListing }) {
                   alt=""
                   style={{ width: "100%", aspectRatio: "16 / 9", height: "auto", objectFit: "cover", display: "block" }}
                 />
-                <span className="news-cat-flag">本栏头条</span>
+                <span className="news-cat-flag">{t("news.leadFlag")}</span>
               </span>
             ) : null}
             <span className="news-cat-lead-body">
-              {lead.image ? null : <span className="news-cat-flag news-cat-flag--inline">本栏头条</span>}
+              {lead.image ? null : <span className="news-cat-flag news-cat-flag--inline">{t("news.leadFlag")}</span>}
               <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, flexWrap: "wrap" }}>
                 {lead.category ? (
                   <>
@@ -98,7 +99,7 @@ export async function NewsListingPage({ listing }: { listing: NewsListing }) {
                   color: T.seal
                 }}
               >
-                阅读全文
+                {t("news.readFull")}
                 <span className="news-cat-arrow" aria-hidden="true">→</span>
               </span>
             </span>
@@ -109,22 +110,22 @@ export async function NewsListingPage({ listing }: { listing: NewsListing }) {
       <div className={`news-shell news-cat-body${showLead ? "" : " news-cat-body--flat"}`}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="news-cat-bar">
-            <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 22 }}>全部文章</span>
+            <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 22 }}>{t("news.allArticles")}</span>
             {/* 最新 / 最早. The design's second pill is 最热; nothing counts reads,
                 so there is no such order to offer. */}
             <span className="news-cat-sorts">
               <a className="news-cat-sort" data-on={listing.sort === "latest" ? "1" : undefined} href={href(1, "latest")}>
-                最新
+                {t("news.newest")}
               </a>
               <a className="news-cat-sort" data-on={listing.sort === "oldest" ? "1" : undefined} href={href(1, "oldest")}>
-                最早
+                {t("news.oldest")}
               </a>
             </span>
           </div>
 
           {rows.length === 0 ? (
             <p style={{ color: T.muted, fontSize: 15 }}>
-              {listing.total === 0 ? "这个栏目还没有文章。" : "本页文章已全部列于上方。"}
+              {listing.total === 0 ? t("news.emptySection") : t("news.allListed")}
             </p>
           ) : (
             rows.map((item) => <NewsRow key={item.slug} item={item} />)
@@ -168,7 +169,7 @@ export async function NewsListingPage({ listing }: { listing: NewsListing }) {
             <div className="news-cat-panel">
               {/* 编辑精选, not 本栏最热: these are the 精彩保留 articles the editors
                   flagged. A "most read" rail would need a counter nothing keeps. */}
-              <span className="news-cat-panel-head">编辑精选</span>
+              <span className="news-cat-panel-head">{t("news.editorPicks")}</span>
               {listing.picks.map((item, index) => (
                 <a
                   key={item.slug}
@@ -195,7 +196,7 @@ export async function NewsListingPage({ listing }: { listing: NewsListing }) {
           ) : null}
 
           <div className="news-cat-panel news-cat-panel--dark">
-            <span className="news-cat-panel-head news-cat-panel-head--dark">其他栏目</span>
+            <span className="news-cat-panel-head news-cat-panel-head--dark">{t("news.otherSections")}</span>
             {tabs.filter((category) => category.slug !== listing.slug).map((category) => (
               <a key={category.slug} href={`/news/${category.slug}`} className="news-cat-other">
                 <span>{category.name}</span>
@@ -217,9 +218,9 @@ export async function NewsListingPage({ listing }: { listing: NewsListing }) {
 }
 
 const OTHER_SCOPES = [
-  { slug: "archive", name: "全部文章" },
-  { slug: "featured", name: "重要报导" },
-  { slug: "editor-archive", name: "精彩保留" }
+  { slug: "archive", name: t("news.allArticles") },
+  { slug: "featured", name: t("news.featured") },
+  { slug: "editor-archive", name: t("news.editorArchive") }
 ];
 
 /** Pages around the current one, with ellipses where a run is skipped. */
@@ -247,13 +248,13 @@ function Pager({
 }) {
   const { page, pageCount, total } = listing;
   return (
-    <nav aria-label="分页" className="news-cat-pager">
+    <nav aria-label={t("news.aria.pager")} className="news-cat-pager">
       <span style={{ fontSize: 13, color: T.muted }}>
-        第 {page} / {pageCount} 页 · 共 {formatNumber(total)} 篇
+        {t("news.pageOf", { page, pages: pageCount, total: formatNumber(total) })}
       </span>
       <span style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
         {page > 1 ? (
-          <a className="news-cat-step" href={href(page - 1)} rel="prev">← 上一页</a>
+          <a className="news-cat-step" href={href(page - 1)} rel="prev">{t("news.prev")}</a>
         ) : (
           <span className="news-cat-step" aria-disabled="true" style={{ color: "var(--lav-muted)" }}>← 上一页</span>
         )}
@@ -273,7 +274,7 @@ function Pager({
           )
         )}
         {page < pageCount ? (
-          <a className="news-cat-next" href={href(page + 1)} rel="next">下一页 →</a>
+          <a className="news-cat-next" href={href(page + 1)} rel="next">{t("news.next")}</a>
         ) : null}
       </span>
     </nav>
