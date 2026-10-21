@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { InteriorHead, InteriorTabs } from "@/components/templates/InteriorScaffold";
 import { CULTURE_FILTERS, type CultureListing } from "@/lib/public-content";
+import { t } from "@/lib/i18n";
 
 /**
  * 中华传统文化 — the article archive, read from the article library.
@@ -76,12 +77,12 @@ export function CulturePage({
             </div>
 
             <p className="meta" style={{ margin: "0 0 18px" }}>
-              共 {listing.total} 篇 · 第 {listing.page} / {listing.pageCount} 页
+              {t("culture.countPage", { total: listing.total, page: listing.page, pages: listing.pageCount })}
             </p>
 
             <div className="arch">
               {listing.rows.length === 0 ? (
-                <p style={{ color: "var(--muted)" }}>这个分类下还没有文章。</p>
+                <p style={{ color: "var(--muted)" }}>{t("culture.empty")}</p>
               ) : (
                 listing.rows.map((row) => (
                   <article key={row.slug} className="arow">
@@ -110,7 +111,7 @@ export function CulturePage({
                   </span>
                 ))}
                 {listing.page < listing.pageCount ? (
-                  <Link href={href(activeFilter, listing.page + 1)}>下一页 →</Link>
+                  <Link href={href(activeFilter, listing.page + 1)}>{t("culture.next")}</Link>
                 ) : null}
               </div>
             ) : null}
@@ -118,7 +119,7 @@ export function CulturePage({
 
           <aside className="side">
             <div className="panel">
-              <h4>分类</h4>
+              <h4>{t("culture.categories")}</h4>
               <ul>
                 {CULTURE_FILTERS.filter((f) => f.key !== "all").map((filter) => (
                   <li key={filter.key}>

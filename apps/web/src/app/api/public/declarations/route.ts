@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit, clientFingerprint } from "@/lib/security/rate-limit";
 import { createPublicDeclaration, validateDeclaration } from "@/lib/service/public-intake";
+import { t } from "@/lib/i18n";
 
 /**
  * Anonymous 三退 declaration intake.
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
   const limit = checkRateLimit(`declare:${fingerprint}`, RATE_LIMIT, RATE_WINDOW_SECONDS);
   if (!limit.allowed) {
     return NextResponse.json(
-      { error: "提交过于频繁，请稍后再试。" },
+      { error: t("declare.tooMany") },
       { status: 429, headers: { "retry-after": String(limit.retryAfterSeconds) } }
     );
   }
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as Record<string, unknown>;
   } catch {
-    return NextResponse.json({ error: "请求格式有误。" }, { status: 400 });
+    return NextResponse.json({ error: t("declare.badRequest") }, { status: 400 });
   }
 
   // Honeypot: a field hidden from real users. Report success so a bot gets no
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
 
   const errors = validateDeclaration(input);
   if (errors.length > 0) {
-    return NextResponse.json({ error: "请检查填写内容。", fieldErrors: errors }, { status: 400 });
+    return NextResponse.json({ error: t("declare.checkFields"), fieldErrors: errors }, { status: 400 });
   }
 
   try {
@@ -68,6 +69,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, ...receipt }, { status: 201 });
   } catch {
     // Never surface the underlying database error to an anonymous caller.
-    return NextResponse.json({ error: "提交未能完成，请稍后再试。" }, { status: 500 });
+    return NextResponse.json({ error: t("declare.failed") }, { status: 500 });
   }
 }

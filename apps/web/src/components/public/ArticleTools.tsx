@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { t } from "@/lib/i18n";
 
 /**
  * 没有短码的文章结尾那两颗。
@@ -32,7 +33,7 @@ export function ArticleTools() {
         document.execCommand("copy");
         setCopied(true);
       } catch {
-        window.prompt("复制这个地址：", url);
+        window.prompt(t("share.copyPrompt"), url);
       }
       document.body.removeChild(field);
     }
@@ -42,10 +43,10 @@ export function ArticleTools() {
   return (
     <>
       <button type="button" className="pill" onClick={copyCurrent}>
-        {copied ? "已复制 ✓" : "复制链接"}
+        {copied ? t("share.copied") : t("share.copyLink")}
       </button>
       <button type="button" className="pill" onClick={() => window.print()}>
-        打印
+        {t("share.print")}
       </button>
     </>
   );

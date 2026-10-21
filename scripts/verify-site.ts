@@ -140,6 +140,27 @@ async function checkDatabase() {
   await client.end();
 }
 
+/**
+ * 探针是不是被防火墙挡在门外了。
+ *
+ * 判据是拿到挑战页本身，而不是「取回来的东西不对」—— 后者有很多种原因，
+ * 只有前者能确定地说「这不是网站的问题」。
+ */
+async function probeBlocked(): Promise<boolean> {
+  if (LOCAL) return false;
+  try {
+    const res = await fetch(`${BASE}/`, {
+      headers: PROBE ? { "x-quitccp-probe": PROBE } : {},
+      signal: AbortSignal.timeout(20_000)
+    });
+    if (res.status === 200) return false;
+    const body = await res.text();
+    return /Security Checkpoint|challenge-platform|__vercel_challenge/i.test(body);
+  } catch {
+    return false;
+  }
+}
+
 async function checkSelfcheck() {
   console.log("\n【自检】");
   if (!CRON) { console.log("  － 没有 CRON_SECRET，跳过"); return; }
@@ -151,12 +172,38 @@ async function checkSelfcheck() {
       },
       signal: AbortSignal.timeout(150_000)
     });
-    const body = (await res.json()) as { worst?: string; checks?: { label: string; state: string; value: string }[] };
+    const body = (await res.json()) as {
+      worst?: string;
+      checks?: { key: string; label: string; state: string; value: string }[];
+    };
+    /*
+     * 探针被防火墙挡住时，「页面内容是最新的」会报「页面是旧的」—— 因为它拿到的
+     * 是 Vercel 的挑战页而不是文章。那不是站坏了，是放行规则排在限速之下轮不到
+     * 执行（2026-10-21 查证两次：探针 403 + Vercel Security Checkpoint，而同一篇
+     * 文章在本地和真实浏览器里都正常）。
+     *
+     * 每次都靠人去查一遍，这条检查迟早会被当成噪音直接忽略 —— 所以先替人查一次，
+     * 把「站坏了」和「探针进不去」分开说。
+     */
+    const blocked = await probeBlocked();
+
     for (const c of body.checks ?? []) {
       /* unknown 不算失败：探针被防火墙挡住、R2 没配，都会是这个状态，
          而它们不代表中文站坏了。bad 才算。 */
-      if (c.state === "bad") fail(`${c.label}：${c.value}`);
-      else ok(`${c.label}：${c.value}`);
+      if (c.state === "bad") {
+        if (blocked && c.key === "page_fresh") {
+          console.log(`  － ${c.label}：${c.value}（探针被防火墙挡住，不是站坏了）`);
+        } else {
+          fail(`${c.label}：${c.value}`);
+        }
+      } else ok(`${c.label}：${c.value}`);
+    }
+    if (blocked) {
+      console.log(
+        "\n  注：探针拿到的是 Vercel 的挑战页，所以依赖它的检查项不作数。\n" +
+          "     根因是防火墙里那条 x-quitccp-probe 放行规则排在限速规则之下，\n" +
+          "     规则自上而下匹配，轮不到它。把它挪到限速和挑战之上即可。"
+      );
     }
     if (!body.checks?.length) fail("自检没有返回任何项");
   } catch (error) {

@@ -1,5 +1,6 @@
 import type { NewsCard } from "@/lib/public-content";
 import { T, articleHref, day } from "./newsTokens";
+import { t } from "@/lib/i18n";
 
 /**
  * 精彩保留 — six cards on the same blue the masthead uses.
@@ -52,7 +53,7 @@ export function NewsArchiveBand({ items }: { items: NewsCard[] }) {
             <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: "clamp(26px, 2.8vw, 36px)" }}>精彩保留</span>
           </div>
           <span style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 14, color: T.onDarkSoft }}>值得反复阅读的深度内容，长期置顶</span>
+            <span style={{ fontSize: 14, color: T.onDarkSoft }}>{t("news.archiveNote")}</span>
             {/* The band shows six; the rest were unreachable until this listing
                 existed. */}
             <a href="/news/editor-archive" style={{ fontSize: 14, color: T.gold, textDecoration: "none", whiteSpace: "nowrap" }}>

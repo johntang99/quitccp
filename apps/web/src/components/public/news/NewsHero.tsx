@@ -1,5 +1,6 @@
 import type { NewsCard } from "@/lib/public-content";
 import { T, articleHref, day, shortDay } from "./newsTokens";
+import { t } from "@/lib/i18n";
 
 /**
  * Says that a card is one of the 重要 selection.
@@ -20,7 +21,7 @@ function FeaturedTag({ size = 12 }: { size?: number }) {
         color: T.goldDeep,
         whiteSpace: "nowrap"
       }}
-      title="编辑标记为「重要」"
+      title={t("video.flaggedImportant")}
     >
       <span aria-hidden="true">★</span>
       重要

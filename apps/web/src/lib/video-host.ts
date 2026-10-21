@@ -7,6 +7,8 @@
  * tuidang.org goes away, and a list that hides where they are makes that easy to
  * forget.
  */
+
+import { t } from "@/lib/i18n";
 export type VideoHost = "youtube" | "ganjing" | "vimeo" | "tuidang" | "file" | "none" | "other";
 
 export interface HostInfo {
@@ -18,13 +20,13 @@ export interface HostInfo {
 
 export function hostOf(url: string): HostInfo {
   const value = (url ?? "").trim();
-  if (!value) return { key: "none", label: "无地址", reachableInChina: false };
+  if (!value) return { key: "none", label: t("videoHost.none"), reachableInChina: false };
   if (/youtube\.com|youtu\.be/i.test(value)) return { key: "youtube", label: "YouTube", reachableInChina: false };
-  if (/ganjing/i.test(value)) return { key: "ganjing", label: "干净世界", reachableInChina: true };
+  if (/ganjing/i.test(value)) return { key: "ganjing", label: t("videoHost.ganjing"), reachableInChina: true };
   if (/vimeo\.com/i.test(value)) return { key: "vimeo", label: "Vimeo", reachableInChina: false };
-  if (/(^|\/\/)(www\.)?tuidang\.org/i.test(value)) return { key: "tuidang", label: "自有（旧站）", reachableInChina: false };
-  if (/\.(mp4|webm|m3u8)(\?|$)/i.test(value)) return { key: "file", label: "自有文件", reachableInChina: true };
-  return { key: "other", label: "其它", reachableInChina: false };
+  if (/(^|\/\/)(www\.)?tuidang\.org/i.test(value)) return { key: "tuidang", label: t("videoHost.own"), reachableInChina: false };
+  if (/\.(mp4|webm|m3u8)(\?|$)/i.test(value)) return { key: "file", label: t("videoHost.file"), reachableInChina: true };
+  return { key: "other", label: t("videoHost.other"), reachableInChina: false };
 }
 
 /**

@@ -16,6 +16,7 @@ import {
 import { THEME_BOOTSTRAP } from "@/components/public/videos/VideoThemeToggle";
 import type { VideoSort } from "@/lib/public-content";
 import { getRenderableVideo, getVideoCategory, getVideoHome, listPublicVideoCategories } from "@/lib/public-content";
+import { t } from "@/lib/i18n";
 
 /**
  * A content page renders in about a second. Without this it inherits Vercel's
@@ -148,9 +149,9 @@ export default async function VideosPage({ params }: { params: Promise<{ slug?: 
             color: "var(--muted)"
           }}
         >
-          <span>全部节目可自由下载、转载与再制作</span>
+          <span>{t("video.freeToUse")}</span>
           <span style={{ display: "flex", gap: 20, alignItems: "center" }}>
-            <span>同步发布于</span>
+            <span>{t("video.alsoOn")}</span>
             <span style={{ color: "var(--title)" }}>YouTube</span>
             <span style={{ color: "var(--title)" }}>GanJingWorld</span>
           </span>

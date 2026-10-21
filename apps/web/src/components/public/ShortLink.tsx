@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { t } from "@/lib/i18n";
 
 /**
  * 一条看得见、点一下就能复制的短地址。
@@ -59,7 +60,7 @@ export function ShortLink({
         document.execCommand("copy");
         setCopied(true);
       } catch {
-        window.prompt("复制这个地址：", url);
+        window.prompt(t("share.copyPrompt"), url);
       }
       document.body.removeChild(field);
     }
@@ -71,10 +72,10 @@ export function ShortLink({
       type="button"
       className={className}
       onClick={copy}
-      title="短地址，点一下复制"
+      title={t("share.shortTitle")}
       style={{ fontFamily: "ui-monospace, Menlo, monospace", cursor: "pointer" }}
     >
-      {copied ? "已复制 ✓" : shown}
+      {copied ? t("share.copied") : shown}
     </button>
   );
 }
