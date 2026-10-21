@@ -4,6 +4,7 @@ import type { Route } from "next";
 import { EXTERNAL_LINK_PROPS } from "@/lib/external-services";
 import { FigureZoom } from "@/components/public/FigureZoom";
 import { SECTION_CONFIG, loadSectionNavOverrides, mergeSectionNav, type SectionTab } from "@/lib/section-nav";
+import { t } from "@/lib/i18n";
 
 
 function getHref(section: string, slug: string): Route {
@@ -93,7 +94,7 @@ export async function InteriorHead({
       <div className={`wrap${dressed ? " phead-split" : ""}`}>
         <div className={dressed ? "phead-copy" : undefined}>
         <p className="crumb">
-          <Link href="/">首页</Link>
+          <Link href="/">{t("nav.home")}</Link>
           <span>/</span>
           {slug === "index" || !config ? (
             <span>{sectionLabel}</span>

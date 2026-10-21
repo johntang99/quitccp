@@ -1,5 +1,5 @@
 /**
- * 英文站的后台，实际渲染出来还有多少中文。
+ * 英文站实际渲染出来还有多少中文 —— 后台或公开站。
  *
  * ## 为什么不看文件里的字数就够
  *
@@ -15,12 +15,21 @@
  * 所以这里不读源码，直接用英文站的后台账号把页面取下来，数渲染结果里的汉字。
  * 排在前面的就是「英文编辑最先看见的中文」。
  *
- *     npm run admin:rendered
+ *     npm run admin:rendered     # 后台 29 页（要登录）
+ *     npm run site:rendered      # 公开站（不用登录）
  *
- * 需要 VERIFY_ADMIN_EMAIL / VERIFY_ADMIN_PASSWORD，并且那个账号的权限要够 ——
- * 编辑看不到用户管理、审计、日志、主题，用编辑账号跑会漏掉四页。
+ * 后台那一档需要 VERIFY_ADMIN_EMAIL / VERIFY_ADMIN_PASSWORD，并且那个账号的
+ * 权限要够 —— 编辑看不到用户管理、审计、日志、主题，用编辑账号跑会漏掉四页。
+ *
+ * ## 公开站这一档量的是另一件事
+ *
+ * 后台的中文在源码里，翻译就是把它搬进语言包。公开站的中文**几乎全在数据里**：
+ * 首页区块、导航标签、统计数字的说明，都来自 cms_content_entries。英文站一条
+ * locale='en' 的记录都没有，于是整站回落到 @quitccp/content-schema 里那份中文
+ * 原型内容 —— 所以这个数字降下来靠的是播种，不是改代码。
  */
 
+const PUBLIC_MODE = process.argv.includes("--public");
 const BASE = process.env.RENDERED_BASE ?? "http://localhost:4021";
 
 /*
@@ -35,7 +44,18 @@ const REMOTE = !/^https?:\/\/(localhost|127\.0\.0\.1)/.test(BASE);
 const probeHeaders: Record<string, string> = PROBE && REMOTE ? { "x-quitccp-probe": PROBE } : {};
 
 
-const PAGES = [
+/*
+ * 公开站。和 verify-site 的清单对齐，另外补上几个只有在栏目页上才看得见的
+ * 页面 —— 首页干净了不代表栏目页干净。
+ */
+const PUBLIC_PAGES = [
+  "/", "/news", "/videos", "/resources", "/resources/culture", "/resources/downloads",
+  "/services", "/services/faq", "/services/declare", "/services/cert",
+  "/about", "/about/history", "/about/team", "/involve", "/involve/volunteer",
+  "/search?q=quit"
+];
+
+const ADMIN_PAGES = [
   "/admin/dashboard", "/admin/content", "/admin/articles", "/admin/articles/new",
   "/admin/articles/latest", "/admin/articles/stats", "/admin/categories",
   "/admin/videos", "/admin/videos/new", "/admin/videos/stats", "/admin/video-categories",
@@ -45,6 +65,8 @@ const PAGES = [
   "/admin/cert-stats", "/admin/audit", "/admin/logs", "/admin/revisions",
   "/admin/account", "/admin/settings", "/admin/declarations"
 ];
+
+const PAGES = PUBLIC_MODE ? PUBLIC_PAGES : ADMIN_PAGES;
 
 /**
  * 去掉标了 data-snapshot="data" 的区块。
@@ -138,7 +160,8 @@ const HAN = /[一-鿿]/g;
 const HAN_ONE = /[一-鿿]/;
 
 async function main() {
-  const cookie = await login();
+  /* 公开站不用登录；后台每一页都要。 */
+  const cookie = PUBLIC_MODE ? "" : await login();
   const rows: { page: string; han: number; sample: string }[] = [];
   let unreachable = 0;
 
@@ -162,7 +185,8 @@ async function main() {
   rows.sort((a, b) => b.han - a.han);
   const total = rows.reduce((n, r) => n + r.han, 0);
 
-  console.log(`\n  英文站后台：${rows.length} 页，渲染出来共 ${total} 个汉字\n`);
+  const what = PUBLIC_MODE ? "公开站" : "后台";
+  console.log(`\n  英文站${what}：${rows.length} 页，渲染出来共 ${total} 个汉字\n`);
   for (const r of rows) {
     if (r.han === 0) continue;
     console.log(`  ${String(r.han).padStart(5)}  ${r.page.padEnd(32)} ${r.sample}…`);
