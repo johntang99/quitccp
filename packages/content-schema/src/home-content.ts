@@ -39,69 +39,32 @@ export type HomeSectionKey = (typeof HOME_SECTION_ORDER)[number];
  * `registry` is layout-only by design -- its entries come from the declaration
  * feed, not from editors.
  */
-export const HOME_SECTION_VARIANTS: Record<HomeSectionKey, { value: string; label: string }[]> = {
-  hero: [
-    { value: "centered", label: "居中大标题 Centered（默认）" },
-    { value: "photo-split", label: "左文右图 Photo split（对半）" },
-    { value: "gallery-split", label: "左文右图集 Gallery split（对半）" },
-    { value: "video-split", label: "左文右视频 Video split（对半）" },
-    // Two variants over one layout. They render identically apart from what
-    // fills the backdrop, but an editor picking "video" and seeing a photo
-    // (because a field further down was blank) has no way to tell what went
-    // wrong -- so the choice is made here, explicitly, rather than inferred from
-    // whether a URL happens to be filled in.
-    { value: "full-bleed", label: "卡片叠加·照片 Card overlay photo" },
-    { value: "full-bleed-video", label: "卡片叠加·视频 Card overlay video" }
-  ],
-  registry: [
-    { value: "split", label: "左数字右滚动 Split（默认）" },
-    { value: "dawn", label: "曙光 Dawn · 与「我们的服务」「见证者」合并" },
-    { value: "stacked", label: "上下堆叠 Stacked" },
-    { value: "count-only", label: "仅显示数字 Count only" },
-    { value: "stream-only", label: "仅显示滚动声明 Stream only" }
-  ],
-  services: [
-    { value: "cards3", label: "三栏卡片 Cards ×3（默认）" },
-    { value: "cards2", label: "两栏卡片 Cards ×2" },
-    { value: "list", label: "列表 List" }
-  ],
-  news: [
-    { value: "lead-list", label: "左主图右列表 Lead + list（默认）" },
-    { value: "broadsheet", label: "报刊头版 Broadsheet · 与「专题栏目」合并" },
-    { value: "feature", label: "大图头条 Feature（突出）" },
-    { value: "grid", label: "等分网格 Grid" }
-  ],
-  channels: [
-    { value: "grid4", label: "四栏 Grid ×4（默认）" },
-    { value: "grid2", label: "两栏 Grid ×2" }
-  ],
-  video: [
-    { value: "grid3", label: "三栏 Grid ×3（默认）" },
-    { value: "screening", label: "放映室 Screening（深色影院）" },
-    { value: "grid4", label: "四栏 Grid ×4" },
-    { value: "list", label: "列表 List" }
-  ],
-  voices: [
-    { value: "grid3", label: "三栏引语 Quotes ×3（默认）" },
-    { value: "stacked", label: "纵向排列 Stacked" }
-  ],
-  network: [
-    { value: "split", label: "左文右城市 Split（默认）" },
-    { value: "stacked", label: "上下堆叠 Stacked" }
-  ],
-  resources: [
-    { value: "grid", label: "网格 Grid（默认）" },
-    { value: "list", label: "列表 List" }
-  ],
-  about: [
-    { value: "cells3", label: "三栏 Cells ×3（默认）" },
-    { value: "verified", label: "可检验 Verified · 与「参与我们」合并" },
-    { value: "stacked", label: "纵向排列 Stacked" }
-  ],
-  involve: [
-    { value: "grid4", label: "四栏 Grid ×4（默认）" },
-    { value: "list", label: "列表 List" }
-  ]
+/**
+ * 每个区块有哪些版式可选。
+ *
+ * 只有取值，没有名字。
+ *
+ * 名字原来也在这里（「居中大标题 Centered（默认）」那种），而这个包是中英
+ * 两个站共用的 schema —— 共享包不该依赖某个站的文案表，而写死中文就意味着
+ * 英文站的后台下拉里是中文。所以这里只说「有哪些」，叫什么由后台的文案表
+ * 按 home.variant.<区块>.<取值> 查。
+ *
+ * 顺带：check-i18n 原来只扫 apps/web/src，所以这个包一直没被计入。它里面
+ * 两万四千个汉字绝大多数是播种内容（原型页面那一份就占一万九），归「CMS
+ * 兜底」；但版式名是真界面，少算的正是这一笔。现在它也扫 packages。
+ */
+export const HOME_SECTION_VARIANTS: Record<HomeSectionKey, readonly string[]> = {
+  hero: ["centered", "photo-split", "gallery-split", "video-split", "full-bleed", "full-bleed-video"],
+  registry: ["split", "dawn", "stacked", "count-only", "stream-only"],
+  services: ["cards3", "cards2", "list"],
+  news: ["lead-list", "broadsheet", "feature", "grid"],
+  channels: ["grid4", "grid2"],
+  video: ["grid3", "screening", "grid4", "list"],
+  voices: ["grid3", "stacked"],
+  network: ["split", "stacked"],
+  resources: ["grid", "list"],
+  about: ["cells3", "verified", "stacked"],
+  involve: ["grid4", "list"]
 };
 
 export interface LinkItem {

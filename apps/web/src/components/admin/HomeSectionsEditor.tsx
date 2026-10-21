@@ -1,6 +1,8 @@
 "use client";
 
 import { HOME_SECTION_VARIANTS } from "@quitccp/content-schema";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 import { VideoUploadField } from "@/components/admin/VideoUploadField";
 import { HERO_MOBILE_RATIO, HERO_RATIO, VideoRatioHint } from "@/components/admin/VideoRatioHint";
 import {
@@ -35,64 +37,64 @@ export interface HomeSectionDef {
 }
 
 export const HOME_SECTIONS: HomeSectionDef[] = [
-  { key: "hero", label: "首屏 Hero" },
+  { key: "hero", label: t("home.sec.hero") },
   {
     key: "registry",
-    label: "实时登记册 Registry",
-    note: "声明内容来自三退网站的数据，不在此编辑；这里只调整版式与说明文字。"
+    label: t("home.sec.registry"),
+    note: t("home.sec.registryNote")
   },
-  { key: "services", label: "我们的服务 Services" },
-  { key: "news", label: "新闻与报告 News（公开更新与重点议题）" },
-  { key: "channels", label: "栏目卡片 Channels（专题栏目）" },
+  { key: "services", label: t("home.sec.services") },
+  { key: "news", label: t("home.sec.news") },
+  { key: "channels", label: t("home.sec.channels") },
   {
     key: "video",
-    label: "视频资源 Video",
-    note: "「导语」「底部说明」「底部标记」留空即不显示；填上文字就会出现。"
+    label: t("home.sec.video"),
+    note: t("home.sec.videoNote")
   },
-  { key: "voices", label: "见证者 Voices" },
+  { key: "voices", label: t("home.sec.voices") },
   {
     key: "network",
-    label: "全球网络 Network",
-    hiddenNote: "已从首页移除。服务点查找仍在 /about/network，并从「关于我们」与「服务」页面链接过去。"
+    label: t("home.sec.network"),
+    hiddenNote: t("home.sec.networkHidden")
   },
   {
     key: "resources",
-    label: "资源馆 Resources",
-    hiddenNote: "已从首页移除：同样的链接在 /resources 页面上，首页这一排是重复的。"
+    label: t("home.sec.resources"),
+    hiddenNote: t("home.sec.resourcesHidden")
   },
-  { key: "about", label: "关于我们 About" },
-  { key: "involve", label: "参与我们 Involve" }
+  { key: "about", label: t("home.sec.about") },
+  { key: "involve", label: t("home.sec.involve") }
 ];
 
 const FIELD_LABELS: Record<string, string> = {
-  eyebrow: "小标题（Eyebrow）",
-  title: "标题（Title）",
-  heading: "区块标题（Heading）",
-  body: "正文（Body）",
-  lede: "导语（Lede）",
-  image: "图片（Image）",
-  imageAlt: "图片说明（Image alt）",
-  count: "登记数字（Count）",
-  countLabel: "数字说明（Count label）",
-  noteLabel: "数字注释链接文字（Note label）",
-  noteHref: "数字注释链接地址（Note link）",
-  streamHeading: "滚动区标题（Stream heading）",
-  liveLabel: "实时标签（Live label，如「实时登记册 · LIVE」）",
-  moreLabel: "更多链接文字（More label）",
-  moreHref: "更多链接地址（More link）",
-  buttonLabel: "按钮文字（Button label）",
-  buttonHref: "按钮链接（Button link）",
-  citiesLabel: "城市列表标题（Cities label）",
-  listTitle: "侧栏标题（List title）",
-  listTitleEn: "侧栏英文标签（List title, latin）",
-  listMoreLabel: "侧栏底部链接文字（List more label）",
-  listMoreHref: "侧栏底部链接地址（List more link）",
-  latestLabel: "卡片区标题（Latest label）",
-  footNote: "底部说明（Footer note）",
-  footMark: "底部标记（Footer mark）",
-  asideImage: "右侧推广图（Promo image，留空则显示三项统计）",
-  asideImageAlt: "推广图说明（Promo image alt）",
-  asideHref: "推广图链接（Promo link）"
+  eyebrow: t("home.f.eyebrow"),
+  title: t("home.f.title"),
+  heading: t("home.f.heading"),
+  body: t("home.f.body"),
+  lede: t("home.f.lede"),
+  image: t("home.f.image"),
+  imageAlt: t("home.f.imageAlt"),
+  count: t("home.f.count"),
+  countLabel: t("home.f.countLabel"),
+  noteLabel: t("home.f.noteLabel"),
+  noteHref: t("home.f.noteHref"),
+  streamHeading: t("home.f.streamHeading"),
+  liveLabel: t("home.f.liveLabel"),
+  moreLabel: t("home.f.moreLabel"),
+  moreHref: t("home.f.moreHref"),
+  buttonLabel: t("home.f.buttonLabel"),
+  buttonHref: t("home.f.buttonHref"),
+  citiesLabel: t("home.f.citiesLabel"),
+  listTitle: t("home.f.listTitle"),
+  listTitleEn: t("home.f.listTitleEn"),
+  listMoreLabel: t("home.f.listMoreLabel"),
+  listMoreHref: t("home.f.listMoreHref"),
+  latestLabel: t("home.f.latestLabel"),
+  footNote: t("home.f.footNote"),
+  footMark: t("home.f.footMark"),
+  asideImage: t("home.f.asideImage"),
+  asideImageAlt: t("home.f.asideImageAlt"),
+  asideHref: t("home.f.asideHref")
 };
 
 /** Render order per section. Anything unlisted follows, alphabetically. */
@@ -182,10 +184,10 @@ const LINK_FIELDS = new Set([
  */
 const NUMBER_FIELDS: Record<string, { label: string; min: number; max: number; hint?: string }> = {
   "registry.feedCount": {
-    label: "滚动条数（Feed count）",
+    label: t("home.l.feedCount"),
     min: 1,
     max: 20,
-    hint: "滚动带里显示多少条声明；声明不足时会循环填满。"
+    hint: t("home.l.feedCountHint")
   }
 };
 
@@ -195,7 +197,7 @@ const NUMBER_FIELDS: Record<string, { label: string; min: number; max: number; h
  * of city names.
  */
 const STRING_LIST_FIELDS: Record<string, { label: string; hint?: string }> = {
-  "network.cities": { label: "城市（Cities，每行一个）", hint: "按填写顺序显示。" }
+  "network.cities": { label: t("home.l.cities"), hint: t("home.l.citiesHint") }
 };
 
 const OBJECT_EDITORS: Record<string, ObjectEditorSpec> = {
@@ -203,36 +205,36 @@ const OBJECT_EDITORS: Record<string, ObjectEditorSpec> = {
   // the band is featuring; the secondary button follows that film's own series.
   // What is left is the wording around it.
   "video.featured": {
-    label: "本期推荐（Featured）· 影片本身由视频库自动填入",
+    label: t("home.l.featured"),
     fields: [
-      { key: "tag", label: "角标（Tag，如「本期推荐」）" },
-      { key: "primaryLabel", label: "主按钮文字（Primary label）" }
+      { key: "tag", label: t("home.l.featuredTag") },
+      { key: "primaryLabel", label: t("home.l.primaryLabel") }
     ]
   },
   // Image, title, summary, date and link come from the article the band is
   // leading with. What is left is the wording around it.
   "news.lead": {
-    label: "头条文章（Lead story）· 文章本身由文章库自动填入",
+    label: t("home.l.lead"),
     fields: [
-      { key: "tag", label: "角标（Tag，如「头条」）" },
-      { key: "kicker", label: "英文前缀（Kicker，如 FEATURE）" }
+      { key: "tag", label: t("home.l.leadTag") },
+      { key: "kicker", label: t("home.l.kicker") }
     ]
   }
 };
 
 const ROW_EDITORS: Record<string, RowEditorSpec> = {
   "news.items": {
-    label: "最新发布（Latest）",
+    label: t("home.l.latest"),
     blank: { title: "", date: "", href: "/news", image: "" },
     fields: [
-      { key: "image", label: "图片（Image）", kind: "image" },
-      { key: "title", label: "标题（Title）", kind: "area" },
-      { key: "date", label: "日期（Date）" },
-      { key: "href", label: "链接（Link）" }
+      { key: "image", label: t("home.f.image"), kind: "image" },
+      { key: "title", label: t("home.f.title"), kind: "area" },
+      { key: "date", label: t("home.l.date") },
+      { key: "href", label: t("home.l.href") }
     ]
   },
   "channels.cards": {
-    label: "专题栏目（Channels）",
+    label: t("home.l.channels"),
     blank: {
       title: "",
       en: "",
@@ -256,104 +258,104 @@ const ROW_EDITORS: Record<string, RowEditorSpec> = {
     // way to be corrected. Left empty it still fills itself in, so nobody has
     // to know the slug of their own column.
     fields: [
-      { key: "title", label: "栏目名称（Channel name，须与新闻分类同名）" },
-      { key: "en", label: "英文标签（Latin label，如 INVESTIGATIONS）" },
+      { key: "title", label: t("home.l.channelName") },
+      { key: "en", label: t("home.l.latinLabel") },
       {
         key: "image",
-        label: "图片（Image）",
+        label: t("home.f.image"),
         kind: "image",
-        hint: "栏目名称与新闻分类同名时，这里填什么都会被该栏目最新一篇文章的图替换；只有不同名的卡片（例如「九评共产党」）才用这里设的图。"
+        hint: t("home.l.channelImageHint")
       },
-      { key: "leadTitle", label: "导读标题（Lead headline）", kind: "area", hint: "同上：同名栏目会被自动替换。" },
-      { key: "leadHref", label: "导读链接（Lead link）", hint: "同上：同名栏目会被自动替换。" },
-      { key: "footLabel", label: "底部链接文字（Foot label）" },
+      { key: "leadTitle", label: t("home.l.leadTitle"), kind: "area", hint: t("home.l.sameAsAbove") },
+      { key: "leadHref", label: t("home.l.leadHref"), hint: t("home.l.sameAsAbove") },
+      { key: "footLabel", label: t("home.l.footLabel") },
       {
         key: "footHref",
-        label: "底部链接地址（Foot link）",
-        hint: "留空＝自动指向这个栏目的分类页。要指去别处就填，例如 /videos/jiuping 或完整网址。"
+        label: t("home.l.footHref"),
+        hint: t("home.l.footHrefHint")
       }
     ]
   },
   "video.items": {
-    label: "视频（Videos）",
+    label: t("home.l.videos"),
     blank: { title: "", meta: "", href: "/videos", image: "", duration: "", badge: "" },
     fields: [
-      { key: "image", label: "封面（Thumbnail）", kind: "image" },
-      { key: "title", label: "标题（Title）", kind: "area" },
-      { key: "meta", label: "系列与类型（Series · kind，如「三退前线 · 现场纪录」）" },
-      { key: "href", label: "链接（Link）" },
-      { key: "duration", label: "时长角标（Duration，如 11:05，留空则不显示）" },
-      { key: "badge", label: "角标（Badge，如 NEW，留空则不显示）" }
+      { key: "image", label: t("home.l.thumbnail"), kind: "image" },
+      { key: "title", label: t("home.f.title"), kind: "area" },
+      { key: "meta", label: t("home.l.meta") },
+      { key: "href", label: t("home.l.href") },
+      { key: "duration", label: t("home.l.duration") },
+      { key: "badge", label: t("home.l.badge") }
     ]
   },
   "registry.substats": {
-    label: "小数据（Sub-stats）",
+    label: t("home.l.subStats"),
     blank: { value: "", label: "" },
     fields: [
-      { key: "value", label: "数字（Value）" },
-      { key: "label", label: "说明（Label）" }
+      { key: "value", label: t("home.l.value") },
+      { key: "label", label: t("home.l.label") }
     ]
   },
   "services.cards": {
-    label: "服务卡片（Service cards）",
+    label: t("home.l.serviceCards"),
     blank: { tag: "", title: "", body: "", links: [], ctaLabel: "", ctaHref: "" },
     fields: [
-      { key: "tag", label: "分类标签（Tag）" },
-      { key: "title", label: "标题（Title）", kind: "area" },
-      { key: "body", label: "说明（Body）", kind: "area" },
-      { key: "links", label: "卡片内链接（Links）", kind: "links" },
-      { key: "ctaLabel", label: "底部按钮文字（CTA label，留空则不显示）" },
-      { key: "ctaHref", label: "底部按钮链接（CTA link）" }
+      { key: "tag", label: t("home.l.tag") },
+      { key: "title", label: t("home.f.title"), kind: "area" },
+      { key: "body", label: t("home.l.bodyText"), kind: "area" },
+      { key: "links", label: t("home.l.links"), kind: "links" },
+      { key: "ctaLabel", label: t("home.l.ctaLabelOptional") },
+      { key: "ctaHref", label: t("home.l.ctaHref") }
     ]
   },
   "about.cells": {
-    label: "指标（Facts）",
+    label: t("home.l.facts"),
     blank: { heading: "", value: "", body: "" },
     fields: [
-      { key: "value", label: "主数字／标题（Figure，左栏）" },
-      { key: "heading", label: "小标题（Lead line，只在有分段条时显示）" },
-      { key: "body", label: "说明（Body）", kind: "area" },
-      { key: "bars", label: "分段条（Split bar）", kind: "bars" }
+      { key: "value", label: t("home.l.figure") },
+      { key: "heading", label: t("home.l.leadLine") },
+      { key: "body", label: t("home.l.bodyText"), kind: "area" },
+      { key: "bars", label: t("home.l.bars"), kind: "bars" }
     ]
   },
   "involve.items": {
-    label: "参与方式（Ways to join）",
+    label: t("home.l.waysToJoin"),
     blank: { title: "", body: "", href: "#", ctaLabel: "", glyph: "" },
     fields: [
-      { key: "title", label: "标题（Title）" },
-      { key: "body", label: "说明（Body）", kind: "area" },
-      { key: "href", label: "链接（Link）" },
-      { key: "ctaLabel", label: "按钮文字（CTA label，留空则用标题）" },
-      { key: "glyph", label: "圆形徽标文字（Glyph，一个字，留空则不显示）" },
-      { key: "primary", label: "作为主推卡片（Primary，金色顶线与实心按钮）", kind: "flag" }
+      { key: "title", label: t("home.f.title") },
+      { key: "body", label: t("home.l.bodyText"), kind: "area" },
+      { key: "href", label: t("home.l.href") },
+      { key: "ctaLabel", label: t("home.l.ctaLabelFallback") },
+      { key: "glyph", label: t("home.l.glyph") },
+      { key: "primary", label: t("home.l.primaryCard"), kind: "flag" }
     ]
   },
   "resources.items": {
-    label: "资源（Resources）",
+    label: t("home.l.resources"),
     blank: { label: "", tag: "", href: "#" },
     fields: [
-      { key: "label", label: "名称（Label）" },
-      { key: "tag", label: "分类标签（Tag）" },
-      { key: "href", label: "链接（Link）" }
+      { key: "label", label: t("home.l.name") },
+      { key: "tag", label: t("home.l.tag") },
+      { key: "href", label: t("home.l.href") }
     ]
   },
   "voices.items": {
-    label: "见证（Voices）",
+    label: t("home.l.voices"),
     blank: { quote: "", name: "", role: "", image: "" },
     fields: [
-      { key: "image", label: "头像（Portrait）", kind: "image" },
-      { key: "quote", label: "引述（Quote）", kind: "area" },
-      { key: "name", label: "姓名（Name）" },
-      { key: "role", label: "身份（Role，可换行）", kind: "area" }
+      { key: "image", label: t("home.l.portrait"), kind: "image" },
+      { key: "quote", label: t("home.l.quote"), kind: "area" },
+      { key: "name", label: t("home.l.personName") },
+      { key: "role", label: t("home.l.role"), kind: "area" }
     ]
   },
   "video.series": {
-    label: "系列标签（Series）",
+    label: t("home.l.series"),
     blank: { label: "", href: "/videos" },
     fields: [
-      { key: "label", label: "名称（Label）" },
-      { key: "href", label: "链接（Link）" },
-      { key: "active", label: "高亮显示（Active，白底）", kind: "flag" }
+      { key: "label", label: t("home.l.name") },
+      { key: "href", label: t("home.l.href") },
+      { key: "active", label: t("home.l.active"), kind: "flag" }
     ]
   }
 };
@@ -395,31 +397,31 @@ function orderFields(sectionKey: string, keys: string[]): string[] {
 function couplingNote(sectionKey: string, data: Record<string, unknown>): string | null {
   const variantOf = (key: string) => String(asRow(data[key]).variant ?? "");
   if (sectionKey === "channels" && variantOf("news") === "broadsheet") {
-    return "「新闻与报告」正在使用「报刊头版」版式，本区块已并入其中显示，这里的「版式」选择不起作用。栏目名称与新闻分类同名的卡片，图片和导读标题由该栏目最新一篇文章自动填入，这里填的会被覆盖；不同名的卡片（例如「九评共产党」指向影片）不会自动更新，图片和导读要在这里自己填。";
+    return t("home.absorb.channelsIntoNews");
   }
   if (
     (sectionKey === "services" || sectionKey === "voices") &&
     variantOf("registry") === "dawn"
   ) {
-    return "「实时登记册」正在使用「曙光」版式，本区块已并入其中显示：内容仍然生效，但这里的「版式」选择不起作用。";
+    return t("home.absorb.servicesIntoRegistry");
   }
   if (sectionKey === "registry" && variantOf("registry") === "dawn") {
-    return "「曙光」版式把「我们的服务」与「见证者」并入本区块一起显示，共四张卡片；两者的内容仍在各自区块里编辑。本版式使用「实时标签」而不是「滚动区标题」。";
+    return t("home.absorb.registryDawn");
   }
   if (sectionKey === "involve" && variantOf("about") === "verified") {
-    return "「关于我们」正在使用「可检验」版式，本区块已并入其中显示：内容仍然生效，但这里的「版式」与「小标题」不起作用（合并后的小标题在「关于我们」里设置）。";
+    return t("home.absorb.involveIntoAbout");
   }
   if (sectionKey === "about" && variantOf("about") === "verified") {
-    return "「可检验」版式把「参与我们」并入本区块一起显示；参与方式仍在「参与我们」里编辑。左栏为拉丁文字时用等宽字体，中文用衬线字体，无需另设。";
+    return t("home.absorb.aboutVerifiable");
   }
   if (sectionKey === "news" && variantOf("news") === "broadsheet") {
-    return "「报刊头版」版式把「栏目卡片（专题栏目）」并入本区块一起显示；栏目卡片仍在该区块里编辑。头条与「最新发布」三条由文章库自动填入——标记为「重要」的最新一篇作头条，其余按发布时间排——这里只设置标题与链接文字。";
+    return t("home.absorb.newsFrontPage");
   }
   if (sectionKey === "channels") {
-    return "栏目名称与新闻分类同名的卡片，图片和导读标题由该栏目最新一篇文章自动填入，这里填的会被覆盖；不同名的卡片（例如「九评共产党」指向影片）不会自动更新，图片和导读要在这里自己填。";
+    return t("home.absorb.channelsAuto");
   }
   if (sectionKey === "video") {
-    return "大图影片与「最新上线」四张卡片由视频库自动填入——标记为「重要」的最新一部作大图，其余按发布时间排——这里只设置区块标题、系列导航与按钮文字。";
+    return t("home.absorb.videoAuto");
   }
   return null;
 }
@@ -448,7 +450,7 @@ export function HomeSectionsEditor({
 
   const galleryEditor = (sectionKey: string, label: string, items: Record<string, unknown>[]) => (
     <div style={{ display: "grid", gap: 10 }}>
-      {items.length === 0 ? <p style={{ margin: 0, color: "#777", fontSize: 13 }}>还没有图片。</p> : null}
+      {items.length === 0 ? <p style={{ margin: 0, color: "#777", fontSize: 13 }}>{t("home.gallery.empty")}</p> : null}
       {items.map((item, index) => (
         <div
           key={index}
@@ -468,9 +470,9 @@ export function HomeSectionsEditor({
           <div style={{ display: "grid", gap: 4 }}>
             <button
               type="button"
-              onClick={() => onPickImage([sectionKey, "gallery", String(index), "src"], `${label} · 第 ${index + 1} 张`)}
+              onClick={() => onPickImage([sectionKey, "gallery", String(index), "src"], t("home.gallery.nth", { label, n: index + 1 }))}
               style={{ padding: 0, border: "1px solid #ececec", background: "none", cursor: "pointer", lineHeight: 0 }}
-              title="更换图片"
+              title={t("home.gallery.replace")}
             >
               {String(item.src ?? "") ? (
                 <img
@@ -480,7 +482,7 @@ export function HomeSectionsEditor({
                 />
               ) : (
                 <span style={{ display: "grid", placeItems: "center", width: 90, height: 68, fontSize: 12, color: "#999" }}>
-                  未设置
+                  {t("home.gallery.unset")}
                 </span>
               )}
             </button>
@@ -488,16 +490,16 @@ export function HomeSectionsEditor({
               className="admin-btn"
               type="button"
               style={{ padding: "2px 6px", fontSize: 12 }}
-              onClick={() => onPickImage([sectionKey, "gallery", String(index), "src"], `${label} · 第 ${index + 1} 张`)}
+              onClick={() => onPickImage([sectionKey, "gallery", String(index), "src"], t("home.gallery.nth", { label, n: index + 1 }))}
             >
-              选择图片…
+              {t("home.gallery.pick")}
             </button>
           </div>
           <div style={{ display: "grid", gap: 6 }}>
             <input
               className="admin-input"
               value={String(item.alt ?? "")}
-              placeholder="图片说明（也用作无障碍替代文字）"
+              placeholder={t("home.gallery.altPlaceholder")}
               onChange={(event) =>
                 updateField([sectionKey, "gallery", String(index), "alt"], event.target.value)
               }
@@ -542,7 +544,7 @@ export function HomeSectionsEditor({
               type="button"
               onClick={() => updateField([sectionKey, "gallery"], items.filter((_, i) => i !== index))}
             >
-              删除
+              {t("home.gallery.remove")}
             </button>
           </div>
         </div>
@@ -553,7 +555,7 @@ export function HomeSectionsEditor({
           type="button"
           onClick={() => updateField([sectionKey, "gallery"], [...items, { src: "", alt: "" }])}
         >
-          + 添加图片
+          {t("home.gallery.add")}
         </button>
       </div>
     </div>
@@ -577,7 +579,7 @@ export function HomeSectionsEditor({
     return (
       <div style={{ display: "grid", gap: 10 }}>
         <label style={{ display: "block" }}>
-          视频地址（Video URL，.mp4/.webm 直链或嵌入地址）
+          {t("home.video.url")}
           {/* The address is long and the editor has to be able to read it to
               tell a working link from a broken one, so the box takes the full
               width of the panel rather than sitting inline after the label. */}
@@ -591,7 +593,7 @@ export function HomeSectionsEditor({
               marginTop: 4
             }}
             value={String(video.src ?? "")}
-            placeholder={backdrop ? "留空则首屏显示图片，不显示视频" : "留空则只显示封面图，不显示播放按钮"}
+            placeholder={backdrop ? t("home.video.urlPlaceholderBackdrop") : t("home.video.urlPlaceholder")}
             onChange={(event) => updateField([sectionKey, "video", "src"], event.target.value)}
           />
         </label>
@@ -602,12 +604,12 @@ export function HomeSectionsEditor({
         {/* 只有满幅背景讲究比例 —— 别的版式把视频放进一个固定的框里，裁不裁
             由那个框说了算，和首屏不是一回事。 */}
         {backdrop && hasSrc && !needsFile ? (
-          <VideoRatioHint src={src} target={HERO_RATIO} targetLabel="2.35:1（1920×816）" />
+          <VideoRatioHint src={src} target={HERO_RATIO} targetLabel={t("home.video.heroRatio")} />
         ) : null}
         {backdrop ? (
           <div style={{ display: "grid", gap: 8 }}>
             <label style={{ display: "block" }}>
-              手机版视频地址（选填）
+              {t("home.video.mobileUrl")}
               <input
                 className="admin-input"
                 style={{
@@ -618,7 +620,7 @@ export function HomeSectionsEditor({
                   marginTop: 4
                 }}
                 value={String(video.srcMobile ?? "")}
-                placeholder="留空＝手机也用上面那支（左右会被裁掉很多）"
+                placeholder={t("home.video.mobilePlaceholder")}
                 onChange={(event) => updateField([sectionKey, "video", "srcMobile"], event.target.value)}
               />
             </label>
@@ -627,31 +629,31 @@ export function HomeSectionsEditor({
               onUploaded={(url) => updateField([sectionKey, "video", "srcMobile"], url)}
             />
             <p style={{ margin: 0, color: "#777", fontSize: 12, lineHeight: 1.7 }}>
-              手机是竖屏，横着的视频放进去必然被裁掉左右两边——2.35:1 的片子在手机上
-              只剩中间 <strong>35%</strong>。填一支<strong>方形（1:1）</strong>的就几乎不裁。
-              这支从哪儿来都行：影片拼接台出片时可以一次出两个比例，手机上剪的、
-              找人另做的，上传上来一样用。
+              {tRich("home.video.mobileHint", {
+                pct: <strong>{t("home.video.mobileHintPct")}</strong>,
+                square: <strong>{t("home.video.mobileHintSquare")}</strong>
+              })}
               <span style={{ display: "block", marginTop: 6 }}>
-                <strong>画面里有烧死的字幕就先别填。</strong>字幕通常横铺大半个画幅，
-                方形只保得住中间约 56%，两头都会被切掉，变成半截话——那比画面窄一点更难看。
-                留空的话手机就沿用上面那支，和现在一样。
+                {tRich("home.video.mobileWarn", {
+                  dontFill: <strong>{t("home.video.mobileWarnDontFill")}</strong>
+                })}
               </span>
             </p>
             {String(video.srcMobile ?? "").trim() ? (
               <VideoRatioHint
                 src={String(video.srcMobile ?? "")}
                 target={HERO_MOBILE_RATIO}
-                targetLabel="1:1（方形）"
+                targetLabel={t("home.video.squareTarget")}
               />
             ) : null}
           </div>
         ) : null}
         <div>
-          <span style={fieldCaption}>封面图（Poster）</span>
-          {imageField([sectionKey, "video", "poster"], `${label} · 视频封面`, String(video.poster ?? ""))}
+          <span style={fieldCaption}>{t("home.video.poster")}</span>
+          {imageField([sectionKey, "video", "poster"], t("home.video.posterLabel", { label }), String(video.poster ?? ""))}
         </div>
         <label>
-          视频说明（Caption）
+          {t("home.video.caption")}
           <input
             className="admin-input"
             value={String(video.caption ?? "")}
@@ -671,9 +673,9 @@ export function HomeSectionsEditor({
               lineHeight: 1.7
             }}
           >
-            这个地址放不进满幅背景。满幅背景需要 <strong>.mp4 或 .webm 文件的直链</strong>（地址以
-            .mp4 结尾），YouTube、Vimeo 等播放页的链接无法用作背景，首页会退回显示图片。
-            要用 YouTube 链接，请把版式改成「左文右视频 Video split」。
+            {tRich("home.video.notBackdrop", {
+              direct: <strong>{t("home.video.notBackdropDirect")}</strong>
+            })}
           </p>
         ) : null}
         {backdrop && hasSrc && !needsFile ? (
@@ -685,9 +687,9 @@ export function HomeSectionsEditor({
               style={{ marginTop: 4 }}
             />
             <span>
-              这段视频有声音，显示喇叭按钮
+              {t("home.video.hasSound")}
               <span style={{ display: "block", color: "#777", fontSize: 12 }}>
-                只在视频真的有声音时勾选。按下去没声音的喇叭，会让访客以为网站坏了。
+                {t("home.video.hasSoundHint")}
               </span>
             </span>
           </label>
@@ -702,20 +704,19 @@ export function HomeSectionsEditor({
               style={{ marginTop: 4 }}
             />
             <span>
-              打开首页时就出声
+              {t("home.video.soundOnLoad")}
               <span style={{ display: "block", color: "#777", fontSize: 12, marginTop: 2 }}>
-                浏览器一律禁止网页自己发出声音，所以这是「尽量」而不是「一定」：
-                常来的访客，浏览器会放行，一进来就有声；第一次来的，通常会被拦下，
-                这时首页保持静音照常播放，等访客在页面上点一下或按一下键，声音才接上。
-                访客自己按喇叭关掉或打开，<strong>以访客为准</strong>，并且会被记住，下次再来还是他选的那样。
+                {tRich("home.video.soundOnLoadHint", {
+                  wins: <strong>{t("home.video.soundOnLoadWins")}</strong>
+                })}
               </span>
             </span>
           </label>
         ) : null}
         <p style={{ margin: 0, color: "#777", fontSize: 12, lineHeight: 1.7 }}>
           {backdrop
-            ? "自动播放：开页即静音循环播放，访客可点右下角喇叭开声音。每位访客都会下载这个文件，建议 10–15 秒、1280px 宽、3MB 以内。开启「减少动态效果」或流量节省的访客只看到封面图。"
-            : "点击才加载：访客未点击播放前不会向视频地址发出任何请求。"}
+            ? t("home.video.autoplayNote")
+            : t("home.video.clickNote")}
         </p>
       </div>
     );
@@ -727,9 +728,9 @@ export function HomeSectionsEditor({
           says which is which without repeating a caption per row. */}
       {items.length > 0 ? (
         <div style={{ ...columnHead, gridTemplateColumns: "1fr 1.4fr 120px auto" }}>
-          <span>按钮文字（Label）</span>
-          <span>链接地址（Link）</span>
-          <span>样式（Style）</span>
+          <span>{t("home.cta.label")}</span>
+          <span>{t("home.cta.href")}</span>
+          <span>{t("home.cta.style")}</span>
           <span />
         </div>
       ) : null}
@@ -741,14 +742,14 @@ export function HomeSectionsEditor({
           <input
             className="admin-input"
             value={String(item.label ?? "")}
-            placeholder="按钮文字"
+            placeholder={t("home.cta.labelPlaceholder")}
             onChange={(event) => updateField([sectionKey, "actions", String(index), "label"], event.target.value)}
           />
           <input
             className="admin-input"
             style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12 }}
             value={String(item.href ?? "")}
-            placeholder="链接地址"
+            placeholder={t("home.cta.hrefPlaceholder")}
             onChange={(event) => updateField([sectionKey, "actions", String(index), "href"], event.target.value)}
           />
           <select
@@ -756,15 +757,15 @@ export function HomeSectionsEditor({
             value={String(item.variant ?? "seal")}
             onChange={(event) => updateField([sectionKey, "actions", String(index), "variant"], event.target.value)}
           >
-            <option value="seal">主按钮 Primary</option>
-            <option value="line-light">次按钮 Secondary</option>
+            <option value="seal">{t("home.cta.primary")}</option>
+            <option value="line-light">{t("home.cta.secondary")}</option>
           </select>
           <button
             className="admin-btn"
             type="button"
             onClick={() => updateField([sectionKey, "actions"], items.filter((_, i) => i !== index))}
           >
-            删除
+            {t("home.cta.remove")}
           </button>
         </div>
       ))}
@@ -776,7 +777,7 @@ export function HomeSectionsEditor({
             updateField([sectionKey, "actions"], [...items, { label: "", href: "", variant: "seal", stamp: "" }])
           }
         >
-          + 添加按钮
+          {t("home.cta.add")}
         </button>
       </div>
     </div>
@@ -806,8 +807,7 @@ export function HomeSectionsEditor({
   return (
     <div className="home-sections" style={{ display: "contents" }}>
       <p style={{ margin: 0, color: "#666" }}>
-        首页按区块编辑。每个区块可单独显示／隐藏并选择版式；文字、图片与列表都可
-        直接编辑。个别区块的版式会把相邻区块并入显示，遇到时区块内会有黄色提示。
+        {t("home.intro")}
       </p>
 
       {HOME_SECTIONS.map((section) => {
@@ -931,8 +931,8 @@ export function HomeSectionsEditor({
               />
               {capped ? (
                 <span style={{ color: over > 0 ? "#b42318" : "#777", fontSize: 12 }}>
-                  {text.length} / {HERO_BODY_MAX} 字
-                  {over > 0 ? ` · 超出 ${over} 字，首页上会被截断，请删减` : ""}
+                  {t("home.charCount", { n: text.length, max: HERO_BODY_MAX })}
+                  {over > 0 ? t("home.charOver", { n: over }) : ""}
                 </span>
               ) : null}
             </label>
@@ -946,7 +946,7 @@ export function HomeSectionsEditor({
           >
             <summary style={{ cursor: "pointer", fontWeight: 600 }}>
               {section.label}
-              {!enabled ? <span style={{ color: "#b42318" }}>（已隐藏）</span> : null}
+              {!enabled ? <span style={{ color: "#b42318" }}>{t("home.hidden")}</span> : null}
             </summary>
 
             <div style={{ display: "grid", gap: 14, marginTop: 12 }}>
@@ -972,19 +972,20 @@ export function HomeSectionsEditor({
                     checked={enabled}
                     onChange={(event) => updateField([section.key, "enabled"], event.target.checked)}
                   />
-                  在首页显示（Show）
+                  {t("home.show")}
                 </label>
                 {variants.length > 0 ? (
                   <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    版式（Layout）
+                    {t("home.layout")}
                     <select
                       className="admin-select"
-                      value={String(value.variant ?? variants[0].value)}
+                      value={String(value.variant ?? variants[0])}
                       onChange={(event) => updateField([section.key, "variant"], event.target.value)}
                     >
+                      {/* 名字按「区块 + 取值」查文案表 —— schema 包只给取值。 */}
                       {variants.map((variant) => (
-                        <option key={variant.value} value={variant.value}>
-                          {variant.label}
+                        <option key={variant} value={variant}>
+                          {t(`home.variant.${section.key}.${variant}`)}
                         </option>
                       ))}
                     </select>
@@ -994,7 +995,7 @@ export function HomeSectionsEditor({
 
               {textBlock.length > 0 || numberKeys.length > 0 || listKeys.length > 0 ? (
                 <fieldset style={fieldsetStyle}>
-                  <legend style={legendStyle}>文字 Text</legend>
+                  <legend style={legendStyle}>{t("home.group.text")}</legend>
                   {textBlock.map(renderText)}
                   {numberKeys.map(renderNumber)}
                   {listKeys.map(renderStringList)}
@@ -1003,7 +1004,7 @@ export function HomeSectionsEditor({
 
               {linkText.length > 0 || structuredKeys.includes("actions") ? (
                 <fieldset style={fieldsetStyle}>
-                  <legend style={legendStyle}>按钮与链接 CTAs</legend>
+                  <legend style={legendStyle}>{t("home.group.ctas")}</legend>
                   {linkText.map(renderText)}
                   {structuredKeys.includes("actions")
                     ? actionsEditor(section.key, asRows(value.actions))
@@ -1013,7 +1014,7 @@ export function HomeSectionsEditor({
 
               {mediaText.length > 0 || structuredKeys.some((k) => k === "gallery" || k === "video") ? (
                 <fieldset style={fieldsetStyle}>
-                  <legend style={legendStyle}>图片与视频 Media</legend>
+                  <legend style={legendStyle}>{t("home.group.media")}</legend>
                   {mediaText.map(renderText)}
                   {/* Video sits above the gallery: card overlay -- photo or
                       video -- is the hero this site actually runs, and the
@@ -1021,13 +1022,13 @@ export function HomeSectionsEditor({
                       below four rows of thumbnails. */}
                   {structuredKeys.includes("video") ? (
                     <div>
-                      <span style={fieldCaption}>视频（Video）</span>
+                      <span style={fieldCaption}>{t("home.group.video")}</span>
                       {videoEditor(section.key, section.label, asRow(value.video))}
                     </div>
                   ) : null}
                   {structuredKeys.includes("gallery") ? (
                     <div>
-                      <span style={fieldCaption}>图集（Gallery）</span>
+                      <span style={fieldCaption}>{t("home.group.gallery")}</span>
                       {galleryEditor(section.key, section.label, asRows(value.gallery))}
                     </div>
                   ) : null}
@@ -1036,7 +1037,7 @@ export function HomeSectionsEditor({
 
               {richKeys.length > 0 ? (
                 <fieldset style={fieldsetStyle}>
-                  <legend style={legendStyle}>内容条目 Items</legend>
+                  <legend style={legendStyle}>{t("home.group.items")}</legend>
                   {richKeys.map((key) => {
                     const objectSpec = OBJECT_EDITORS[`${section.key}.${key}`];
                     const rowSpec = ROW_EDITORS[`${section.key}.${key}`];
@@ -1061,7 +1062,7 @@ export function HomeSectionsEditor({
 
               {jsonKeys.length > 0 ? (
                 <fieldset style={fieldsetStyle}>
-                  <legend style={legendStyle}>列表内容（JSON）</legend>
+                  <legend style={legendStyle}>{t("home.group.json")}</legend>
                   {jsonKeys.map((key) => jsonField(section.key, key, value[key]))}
                 </fieldset>
               ) : null}

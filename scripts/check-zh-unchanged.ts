@@ -50,7 +50,10 @@ function main() {
   const changed = [...after].filter(([k, v]) => before.has(k) && before.get(k) !== v);
 
   /* 改动涉及的文件，改动前的内容全拼在一起 —— 搬文案时一条可能来自任意一个。 */
-  const files = git(`diff --name-only ${REF} -- apps/web/src`)
+  /* packages 也要看：首页版式名的原文在 packages/content-schema 里，
+     而翻译时它们被搬进了后台的文案表。只看 apps/web/src 的话，这 35 条
+     全会报成「找不到原文」。 */
+  const files = git(`diff --name-only ${REF} -- apps/web/src packages`)
     .split("\n")
     .map((f) => f.trim())
     .filter((f) => f && !f.includes("/lib/i18n/"));

@@ -117,12 +117,28 @@ function uiChars(file: string): number {
 function scan(root: string): Row[] {
   return walk(root)
     .filter((f) => !SKIP.some((s) => f.includes(s)))
-    .map((file) => ({ file: file.replace("apps/web/src/", ""), chars: uiChars(file) }))
+    .map((file) => ({
+      file: file.replace("apps/web/src/", "").replace(/^packages\//, ""),
+      chars: uiChars(file)
+    }))
     .filter((r) => r.chars > 0)
     .sort((a, b) => b.chars - a.chars);
 }
 
-const all = scan("apps/web/src");
+/*
+ * packages/ 也要扫。
+ *
+ * 原来只扫 apps/web/src，于是 packages/content-schema 里的一千七百多个汉字
+ * 一直没被计入 —— 其中首页版式名是真界面（后台下拉里显示的就是它们），而
+ * 这个数字本来是用来判断「英文站还差多少才能上线」的。少算的那一笔，是在
+ * 用浏览器打开英文站的首页区块编辑器、看见一列中文版式名时才发现的。
+ *
+ * 文件路径带上包名前缀，免得两个工作区里的同名文件在报告里撞在一起。
+ */
+const all = [
+  ...scan("apps/web/src"),
+  ...scan("packages").map((r) => ({ ...r, file: `packages/${r.file}` }))
+];
 /* app/api/admin/* 也是后台 —— 它返回的错误提示只有后台界面会显示。
    漏掉它会让公开站的数字虚高，而这个数字是用来判断「英文站还差多少才能上线」的。 */
 const isAdmin = (f: string) =>
@@ -184,7 +200,14 @@ const CMS_BACKED = [
   // 「关于我们」各页的默认内容：页面内容编辑器「补齐默认内容」用的那一份，
   // 以及 cms_content_entries 还没有这一条时顶上的那份。英文站不翻译中文站的
   // 机构简介，它会有自己播种的一套。
-  "lib/admin/about-page-defaults.ts"
+  "lib/admin/about-page-defaults.ts",
+  // packages/content-schema 里播种用的那几份：首页、服务、参与、原型页面的
+  // 默认内容。开新站时播一套它自己的，不是翻译中文站这一套。
+  "packages/content-schema/src/home-content.ts",
+  "packages/content-schema/src/services-content.ts",
+  "packages/content-schema/src/involve-content.ts",
+  "packages/content-schema/src/prototype-page-content.ts",
+  "packages/content-schema/src/seed.ts"
 ];
 const isTemplate = (f: string) => f.startsWith("components/templates/") || CMS_BACKED.includes(f);
 const templateRows = all.filter((r) => isTemplate(r.file));

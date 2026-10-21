@@ -1,5 +1,7 @@
 "use client";
 
+import { t } from "@/lib/i18n";
+
 /**
  * Field renderers shared by the section editors (homepage, About).
  *
@@ -138,12 +140,12 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
       <input
         className="admin-input"
         value={value}
-        placeholder="https://… 或点击「选择图片」"
+        placeholder={t("sf.imagePlaceholder")}
         onChange={(event) => updateField(keyPath, event.target.value)}
       />
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <button className="admin-btn" type="button" onClick={() => onPickImage(keyPath, label)}>
-          选择图片…
+          {t("sf.pickImage")}
         </button>
         {value ? (
           <>
@@ -158,11 +160,11 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
               }}
             />
             <button className="admin-btn" type="button" onClick={() => updateField(keyPath, "")}>
-              清除
+              {t("sf.clear")}
             </button>
           </>
         ) : (
-          <span style={{ color: "#999", fontSize: 12 }}>未设置</span>
+          <span style={{ color: "#999", fontSize: 12 }}>{t("sf.unset")}</span>
         )}
       </div>
     </div>
@@ -207,8 +209,8 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
               <span style={fieldCaption}>{field.label}</span>
               {rows.length > 0 ? (
                 <div style={{ ...columnHead, gridTemplateColumns: "minmax(0, 1fr) 90px auto" }}>
-                  <span>名称（Label）</span>
-                  <span>百分比（%）</span>
+                  <span>{t("sf.label")}</span>
+                  <span>{t("sf.percent")}</span>
                   <span />
                 </div>
               ) : null}
@@ -224,7 +226,7 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
                 >
                   <input
                     className="admin-input"
-                    placeholder="名称"
+                    placeholder={t("sf.namePlaceholder")}
                     value={String(bar.label ?? "")}
                     onChange={(event) =>
                       write(rows.map((r, i) => (i === index ? { ...r, label: event.target.value } : r)))
@@ -251,7 +253,7 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
                     type="button"
                     onClick={() => write(rows.filter((_, i) => i !== index))}
                   >
-                    删除
+                    {t("sf.remove")}
                   </button>
                 </div>
               ))}
@@ -261,11 +263,11 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
                   type="button"
                   onClick={() => write([...rows, { label: "", percent: 0 }])}
                 >
-                  + 添加分段
+                  {t("sf.addBar")}
                 </button>
                 {rows.length > 0 ? (
                   <span style={{ fontSize: 12, color: total === 100 ? "#777" : "#b42318" }}>
-                    合计 {total}%{total === 100 ? "" : "（应为 100%）"}
+                    {t("sf.barTotal", { total, warn: total === 100 ? "" : t("sf.barTotalWarn") })}
                   </span>
                 ) : null}
               </div>
@@ -283,11 +285,11 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
             <div key={field.key} style={{ display: "grid", gap: 8 }}>
               <span style={fieldCaption}>{field.label}</span>
               {rows.length === 0 ? (
-                <span style={{ color: "#777", fontSize: 13 }}>还没有条目。</span>
+                <span style={{ color: "#777", fontSize: 13 }}>{t("sf.noItems")}</span>
               ) : (
                 <div style={{ ...columnHead, gridTemplateColumns: "minmax(0, 1.6fr) minmax(0, 1fr) auto" }}>
-                  <span>名称（Label）</span>
-                  <span>数量／说明（Meta）</span>
+                  <span>{t("sf.label")}</span>
+                  <span>{t("sf.meta")}</span>
                   <span />
                 </div>
               )}
@@ -303,7 +305,7 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
                 >
                   <input
                     className="admin-input"
-                    placeholder="名称"
+                    placeholder={t("sf.namePlaceholder")}
                     value={String(item.label ?? "")}
                     onChange={(event) =>
                       write(rows.map((r, i) => (i === index ? { ...r, label: event.target.value } : r)))
@@ -311,20 +313,20 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
                   />
                   <input
                     className="admin-input"
-                    placeholder="数量／说明"
+                    placeholder={t("sf.metaPlaceholder")}
                     value={String(item.meta ?? "")}
                     onChange={(event) =>
                       write(rows.map((r, i) => (i === index ? { ...r, meta: event.target.value } : r)))
                     }
                   />
                   <button className="admin-btn" type="button" onClick={() => write(rows.filter((_, i) => i !== index))}>
-                    删除
+                    {t("sf.remove")}
                   </button>
                 </div>
               ))}
               <div>
                 <button className="admin-btn" type="button" onClick={() => write([...rows, { label: "", meta: "" }])}>
-                  添加条目
+                  {t("sf.addItem")}
                 </button>
               </div>
             </div>
@@ -338,11 +340,11 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
             <div key={field.key} style={{ display: "grid", gap: 8 }}>
               <span style={fieldCaption}>{field.label}</span>
               {rows.length === 0 ? (
-                <span style={{ color: "#777", fontSize: 13 }}>还没有链接。</span>
+                <span style={{ color: "#777", fontSize: 13 }}>{t("sf.noLinks")}</span>
               ) : (
                 <div style={{ ...columnHead, gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.4fr) auto" }}>
-                  <span>文字（Label）</span>
-                  <span>链接（Link）</span>
+                  <span>{t("sf.linkLabel")}</span>
+                  <span>{t("sf.linkHref")}</span>
                   <span />
                 </div>
               )}
@@ -358,7 +360,7 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
                 >
                   <input
                     className="admin-input"
-                    placeholder="文字"
+                    placeholder={t("sf.linkLabelPlaceholder")}
                     value={String(link.label ?? "")}
                     onChange={(event) =>
                       write(
@@ -368,7 +370,7 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
                   />
                   <input
                     className="admin-input"
-                    placeholder="链接"
+                    placeholder={t("sf.linkHrefPlaceholder")}
                     value={String(link.href ?? "")}
                     onChange={(event) =>
                       write(
@@ -381,7 +383,7 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
                     type="button"
                     onClick={() => write(rows.filter((_, i) => i !== index))}
                   >
-                    删除
+                    {t("sf.remove")}
                   </button>
                 </div>
               ))}
@@ -391,7 +393,7 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
                   type="button"
                   onClick={() => write([...rows, { label: "", href: "" }])}
                 >
-                  + 添加链接
+                  {t("sf.addLink")}
                 </button>
               </div>
             </div>
@@ -478,7 +480,7 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
     return (
       <div style={{ display: "grid", gap: 12 }}>
         {rows.length === 0 ? (
-          <p style={{ margin: 0, color: "#777", fontSize: 13 }}>还没有条目。</p>
+          <p style={{ margin: 0, color: "#777", fontSize: 13 }}>{t("sf.noItems")}</p>
         ) : null}
         {rows.map((row, index) => (
           <div
@@ -495,7 +497,7 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
                 disabled={index === 0}
                 onClick={() => move(index, -1)}
               >
-                上移
+                {t("sf.moveUp")}
               </button>
               <button
                 className="admin-btn"
@@ -503,7 +505,7 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
                 disabled={index === rows.length - 1}
                 onClick={() => move(index, 1)}
               >
-                下移
+                {t("sf.moveDown")}
               </button>
               <button
                 className="admin-btn"
@@ -511,7 +513,7 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
                 style={{ marginLeft: "auto" }}
                 onClick={() => write(rows.filter((_, i) => i !== index))}
               >
-                删除
+                {t("sf.remove")}
               </button>
             </div>
             {recordFields(
@@ -530,7 +532,7 @@ export function createFieldRenderers({ updateField, onPickImage }: FieldRenderer
             // would otherwise be the same array on every card added.
             onClick={() => write([...rows, structuredClone(spec.blank)])}
           >
-            + 添加{spec.label}
+            {t("sf.addNamed", { label: spec.label })}
           </button>
         </div>
       </div>
