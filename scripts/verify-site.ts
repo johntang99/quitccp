@@ -1,0 +1,186 @@
+/**
+ * 中文站还好吗。
+ *
+ * 多语言改造会一路动到数据库和公共代码路径，而中文站是唯一一个有真实读者、
+ * 正在被攻击、而且全站 15,372 篇内容都指望它的站。每改一次就要能一条命令问清楚
+ * 「它还正常吗」—— 靠记得逐项去点，迟早有一次会跳过。
+ *
+ * 这个脚本只读，不写任何东西。
+ *
+ *     npm run verify            # 查生产
+ *     npm run verify -- --local # 查本地 dev :4020
+ *     npm run verify -- --locale en
+ *
+ * ## 为什么连数据库行数也查
+ *
+ * 页面返回 200 不代表没出事。一次写错的迁移可以让某张表空掉而页面照样渲染 ——
+ * 列表只是变短，首页只是少几张卡。所以要把行数和一个已知的下限比。
+ */
+
+import pg from "pg";
+
+const LOCAL = process.argv.includes("--local");
+const BASE = LOCAL ? "http://localhost:4020" : (process.env.NEXT_PUBLIC_SITE_URL || "https://www.tuidang.org").replace(/\/$/, "");
+
+function arg(name: string): string | null {
+  const i = process.argv.indexOf(name);
+  return i >= 0 ? process.argv[i + 1] ?? null : null;
+}
+const LOCALE = (arg("--locale") || process.env.SITE_LOCALE || "zh").toLowerCase();
+
+const PROBE = process.env.PROBE_BYPASS_SECRET?.trim();
+const CRON = process.env.CRON_SECRET?.trim();
+
+/*
+ * 下限而不是精确值：编辑每天都在发内容，行数只会涨。写死精确值的话，这个脚本
+ * 每隔几天就要改一次，改着改着就没人信它了。低于下限才是真出事。
+ */
+const MIN_ROWS: Record<string, number> = {
+  cms_articles: 15000,
+  cms_videos: 800,
+  cms_redirects: 31000,
+  cms_materials: 20,
+  cms_faqs: 40,
+  cms_content_entries: 60
+};
+
+const PAGES = ["/", "/news", "/videos", "/resources", "/resources/culture", "/services", "/services/faq", "/about", "/involve", "/search?q=三退", "/sitemap.xml", "/robots.txt"];
+
+/* 每一条都走一条不同的代码路径：拼音迁移留下的跳转、旧 WordPress 数字地址、
+   资料区那条 10-21 才补上的文章兜底、文章改视频之后重指的那批。 */
+const REDIRECTS: [string, string][] = [
+  ["/news/台港景点退党潮-中共官员：退后一身轻-真舒服（图", "改名跳转"],
+  ["/2013/09/08/35483/", "旧 WP 数字地址"],
+  ["/resources/乐曲-听儿说", "资料区文章兜底"],
+  ["/2026/02/08/702451/", "文章改视频后重指"]
+];
+
+let failures = 0;
+const fail = (msg: string) => { failures += 1; console.log(`  ✗ ${msg}`); };
+const ok = (msg: string) => console.log(`  ✓ ${msg}`);
+
+async function get(path: string): Promise<{ status: number; url: string; body?: string }> {
+  try {
+    const res = await fetch(BASE + encodeURI(path), {
+      headers: PROBE && !LOCAL ? { "x-quitccp-probe": PROBE } : {},
+      redirect: "follow"
+    });
+    return { status: res.status, url: res.url, body: await res.text() };
+  } catch (error) {
+    return { status: 0, url: "", body: error instanceof Error ? error.message : "" };
+  }
+}
+
+async function checkPages() {
+  console.log("\n【页面】");
+  for (const p of PAGES) {
+    const r = await get(p);
+    if (r.status === 200) ok(`${p}`);
+    else fail(`${p} → ${r.status || "连不上"}`);
+  }
+}
+
+async function checkRedirects() {
+  console.log("\n【旧地址跳转】");
+  for (const [path, what] of REDIRECTS) {
+    const r = await get(path);
+    const landed = r.url ? decodeURIComponent(new URL(r.url).pathname) : "";
+    if (r.status === 200 && landed !== path) ok(`${what}：${landed.slice(0, 54)}`);
+    else if (r.status === 200) fail(`${what}：200 但没有跳转（${path}）`);
+    else fail(`${what}：${r.status} ${path}`);
+  }
+}
+
+async function checkDatabase() {
+  console.log("\n【数据库】");
+  const client = new pg.Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  try {
+    await client.connect();
+  } catch (error) {
+    fail(`连不上数据库：${error instanceof Error ? error.message : ""}`);
+    return;
+  }
+
+  for (const [table, min] of Object.entries(MIN_ROWS)) {
+    try {
+      const { rows } = await client.query(
+        `select count(*)::int n from ${table} where locale = $1`, [LOCALE]
+      );
+      const n = rows[0].n;
+      if (n >= min) ok(`${table} ${n} 行（下限 ${min}）`);
+      else fail(`${table} 只有 ${n} 行，低于下限 ${min} —— 可能有数据丢了`);
+    } catch (error) {
+      fail(`${table}: ${error instanceof Error ? error.message : ""}`);
+    }
+  }
+
+  /* 迁移有没有跑全。文件数和登记数对不上，说明有人手工跑了 SQL 没登记，
+     或者有迁移压根没跑 —— 两种都会让下一次迁移在意想不到的地方失败。 */
+  try {
+    const { rows } = await client.query(`select suite, count(*)::int n from schema_migrations group by 1 order by 1`);
+    const text = rows.map((r) => `${r.suite}=${r.n}`).join(" ");
+    ok(`迁移登记：${text}`);
+  } catch {
+    fail("schema_migrations 查不到 —— 迁移执行器没启用？");
+  }
+
+  for (const [label, sql] of [
+    ["断链重定向", `select count_dead_redirects($1) n`],
+    ["跨语言错误关联", `select count_cross_locale_links() n`]
+  ] as [string, string][]) {
+    try {
+      const { rows } = await client.query(sql, sql.includes("$1") ? [LOCALE] : []);
+      if (Number(rows[0].n) === 0) ok(`${label} 0`);
+      else fail(`${label} ${rows[0].n} 条`);
+    } catch (error) {
+      fail(`${label}: ${error instanceof Error ? error.message : ""}`);
+    }
+  }
+
+  await client.end();
+}
+
+async function checkSelfcheck() {
+  console.log("\n【自检】");
+  if (!CRON) { console.log("  － 没有 CRON_SECRET，跳过"); return; }
+  try {
+    const res = await fetch(`${BASE}/api/cron/selfcheck`, {
+      headers: {
+        authorization: `Bearer ${CRON}`,
+        ...(PROBE && !LOCAL ? { "x-quitccp-probe": PROBE } : {})
+      },
+      signal: AbortSignal.timeout(150_000)
+    });
+    const body = (await res.json()) as { worst?: string; checks?: { label: string; state: string; value: string }[] };
+    for (const c of body.checks ?? []) {
+      /* unknown 不算失败：探针被防火墙挡住、R2 没配，都会是这个状态，
+         而它们不代表中文站坏了。bad 才算。 */
+      if (c.state === "bad") fail(`${c.label}：${c.value}`);
+      else ok(`${c.label}：${c.value}`);
+    }
+    if (!body.checks?.length) fail("自检没有返回任何项");
+  } catch (error) {
+    fail(`自检调不通：${error instanceof Error ? error.message : ""}`);
+  }
+}
+
+async function main() {
+  console.log(`\n========== 检查 ${BASE}（locale=${LOCALE}）==========`);
+  await checkPages();
+  await checkRedirects();
+  await checkDatabase();
+  await checkSelfcheck();
+
+  console.log("");
+  if (failures === 0) {
+    console.log("✓ 全部通过。\n");
+    return;
+  }
+  console.log(`✗ ${failures} 项不通过。\n`);
+  process.exit(1);
+}
+
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : error);
+  process.exit(1);
+});
