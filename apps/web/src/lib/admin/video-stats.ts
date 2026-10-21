@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { t } from "@/lib/i18n";
 import { listVideoCategories } from "@/lib/admin/video-repository";
 import { SITE_LOCALE } from "@/lib/site-config";
 
@@ -78,23 +79,23 @@ export async function getVideoStats(): Promise<VideoStats> {
   return {
     total,
     byStatus: [
-      { key: "published", label: "已发布", count: published },
-      { key: "draft", label: "草稿", count: draft },
-      { key: "archived", label: "已归档", count: archived }
+      { key: "published", label: t("admin.status.published"), count: published },
+      { key: "draft", label: t("admin.status.draft"), count: draft },
+      { key: "archived", label: t("admin.status.archived"), count: archived }
     ],
     byCategory: categories
       .map((row) => ({ name: row.name, slug: row.slug, count: row.videoCount }))
       .sort((a, b) => b.count - a.count),
     byHost: [
       { key: "youtube", label: "YouTube", count: youtube, reachable: false },
-      { key: "tuidang", label: "自有（旧站）", count: selfHosted, reachable: false },
-      { key: "ganjing", label: "干净世界", count: ganjing, reachable: true },
-      { key: "none", label: "无播放地址", count: noSource, reachable: false }
+      { key: "tuidang", label: t("admin.vid.host.tuidang"), count: selfHosted, reachable: false },
+      { key: "ganjing", label: t("admin.vid.host.ganjing"), count: ganjing, reachable: true },
+      { key: "none", label: t("admin.vstats.host.none"), count: noSource, reachable: false }
     ],
     gaps: [
-      { key: "no-source", label: "缺播放地址", count: noSource, href: "/admin/videos?gap=no-source" },
-      { key: "no-cover", label: "缺封面", count: noCover, href: "/admin/videos?gap=no-cover" },
-      { key: "no-description", label: "缺简介", count: noDescription, href: "/admin/videos?gap=no-description" }
+      { key: "no-source", label: t("admin.vid.gap.noSource"), count: noSource, href: "/admin/videos?gap=no-source" },
+      { key: "no-cover", label: t("admin.vid.gap.noCover"), count: noCover, href: "/admin/videos?gap=no-cover" },
+      { key: "no-description", label: t("admin.vid.gap.noDescription"), count: noDescription, href: "/admin/videos?gap=no-description" }
     ],
     byYear,
     totalSeconds

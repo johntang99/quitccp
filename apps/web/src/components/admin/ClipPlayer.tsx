@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { t } from "@/lib/i18n";
 
 /**
  * Watch a source and mark the two ends of a clip.
@@ -56,13 +57,13 @@ export function ClipPlayer({
         const data = await res.json();
         if (cancelled) return;
         if (!res.ok) {
-          setProblem(String(data.error ?? "打不开"));
+          setProblem(String(data.error ?? t("admin.clip.cannotOpen")));
           return;
         }
         setUrl(String(data.url));
         setKind(data.kind === "hls" ? "hls" : "file");
       } catch (err) {
-        if (!cancelled) setProblem(err instanceof Error ? err.message : "打不开");
+        if (!cancelled) setProblem(err instanceof Error ? err.message : t("admin.clip.cannotOpen"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -96,7 +97,7 @@ export function ClipPlayer({
           hls.loadSource(url);
           hls.attachMedia(video);
           hls.on(Hls.Events.ERROR, (_e, data) => {
-            if (data.fatal) setProblem(`放不了：${data.details}`);
+            if (data.fatal) setProblem(t("admin.clip.cannotPlay", { details: data.details }));
           });
           destroy = () => hls.destroy();
           return;
@@ -106,7 +107,7 @@ export function ClipPlayer({
           video.src = url;
           return;
         }
-        setProblem("这个浏览器放不了这种流，换 Chrome、Edge 或 Safari 试试");
+        setProblem(t("admin.clip.unsupported"));
       })();
     } else {
       video.src = url;
@@ -134,7 +135,7 @@ export function ClipPlayer({
 
   return (
     <div style={{ display: "grid", gap: 8 }}>
-      {loading ? <p className="muted" style={{ margin: 0 }}>正在打开…</p> : null}
+      {loading ? <p className="muted" style={{ margin: 0 }}>{t("admin.clip.opening")}</p> : null}
       {problem ? (
         <p style={{ margin: 0, color: "#b42318", background: "#fef3f2", padding: "8px 10px", borderRadius: 4 }}>
           {problem}
@@ -170,15 +171,22 @@ export function ClipPlayer({
               <span style={{ color: "#999", fontSize: 12 }}> / {fmt(duration)}</span>
             </span>
             <button className="admin-btn admin-btn-sm" type="button" onClick={() => onSetFrom(+now.toFixed(2))}>
-              设为起点
+              {t("admin.clip.setStart")}
             </button>
             <button className="admin-btn admin-btn-sm" type="button" onClick={() => onSetTo(+now.toFixed(2))}>
-              设为终点
+              {t("admin.clip.setEnd")}
             </button>
             <span style={{ width: 12 }} />
             {/* A frame at a time, because the difference between a good in-point
                 and a bad one is often one frame of someone blinking. */}
-            {([["−1 秒", -1], ["−1 帧", -1 / 30], ["＋1 帧", 1 / 30], ["＋1 秒", 1]] as const).map(([label, by]) => (
+            {(
+              [
+                [t("admin.clip.minusSecond"), -1],
+                [t("admin.clip.minusFrame"), -1 / 30],
+                [t("admin.clip.plusFrame"), 1 / 30],
+                [t("admin.clip.plusSecond"), 1]
+              ] as const
+            ).map(([label, by]) => (
               <button
                 key={label}
                 className="admin-btn admin-btn-sm"
@@ -192,15 +200,15 @@ export function ClipPlayer({
 
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", fontSize: 13 }}>
             <button className="admin-btn admin-btn-sm" type="button" onClick={() => seek(from)}>
-              跳到起点 {from}s
+              {t("admin.clip.jumpStart", { t: from })}
             </button>
             <button className="admin-btn admin-btn-sm" type="button" onClick={() => seek(Math.max(0, to - 0.2))}>
-              跳到终点 {to}s
+              {t("admin.clip.jumpEnd", { t: to })}
             </button>
             <button
               className="admin-btn admin-btn-sm"
               type="button"
-              title="从起点放到终点，听听这一段的长短"
+              title={t("admin.clip.playRangeTitle")}
               onClick={() => {
                 const video = videoRef.current;
                 if (!video) return;
@@ -215,10 +223,10 @@ export function ClipPlayer({
                 video.addEventListener("timeupdate", stop);
               }}
             >
-              ▶ 只放这一段
+              {t("admin.clip.playRange")}
             </button>
             <span className="muted" style={{ fontVariantNumeric: "tabular-nums" }}>
-              这一段 {len.toFixed(2)} 秒
+              {t("admin.clip.rangeLength", { n: len.toFixed(2) })}
             </span>
           </div>
         </>

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 
 /**
  * 量一下编辑贴进来的视频是什么比例，不对就当场说。
@@ -85,12 +87,11 @@ export function VideoRatioHint({
   }, [src]);
 
   if (state.kind === "idle") return null;
-  if (state.kind === "loading") return <Note tone="plain">正在读取视频尺寸…</Note>;
+  if (state.kind === "loading") return <Note tone="plain">{t("admin.ratio.measuring")}</Note>;
   if (state.kind === "failed") {
     return (
       <Note tone="plain">
-        读不到这支视频的尺寸，没法检查比例。地址可能打不开，或者对方不允许跨站读取——
-        这不一定代表首页也放不出来，但保存后请自己看一眼首页。
+        {t("admin.ratio.unreadable")}
       </Note>
     );
   }
@@ -102,7 +103,7 @@ export function VideoRatioHint({
   if (off <= TOLERANCE) {
     return (
       <Note tone="good">
-        ✅ {w}×{h}（{ratio.toFixed(2)}:1），正好是 {targetLabel} 的规格，不会被裁。
+        {t("admin.ratio.exact", { w, h, ratio: ratio.toFixed(2), target: targetLabel })}
       </Note>
     );
   }
@@ -113,23 +114,27 @@ export function VideoRatioHint({
 
   return (
     <Note tone="warn">
-      ⚠️ 这支是 {w}×{h}（<strong>{ratio.toFixed(2)}:1</strong>），这个位置按{" "}
-      <strong>{targetLabel}</strong> 排版。
+      {tRich("admin.ratio.mismatch", {
+        w,
+        h,
+        /* `:1` 跟着进 strong —— 原来它就在粗体里面。 */
+        ratio: <strong>{ratio.toFixed(2)}:1</strong>,
+        target: <strong>{targetLabel}</strong>
+      })}
       {cropY > 0 ? (
         <>
           {" "}
-          上下会被裁掉约 <strong>{Math.round(cropY * 100)}%</strong>。
+          {tRich("admin.ratio.cropY", { pct: <strong>{Math.round(cropY * 100)}</strong> })}
         </>
       ) : null}
       {cropX > 0 ? (
         <>
           {" "}
-          左右会被裁掉约 <strong>{Math.round(cropX * 100)}%</strong>。
+          {tRich("admin.ratio.cropX", { pct: <strong>{Math.round(cropX * 100)}</strong> })}
         </>
       ) : null}
       <span style={{ display: "block", marginTop: 6 }}>
-        不是不能用 —— 画面主体在正中间的话，裁掉边角看不出来。要完全不裁，去
-        「影片拼接台」把项目的输出尺寸改成 {targetLabel} 重出一支。
+        {t("admin.ratio.advice", { target: targetLabel })}
       </span>
     </Note>
   );

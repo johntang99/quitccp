@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { t } from "@/lib/i18n";
 import { formatBytes, uploadFile } from "@/lib/admin/upload-client";
 
 /**
@@ -49,14 +50,16 @@ export function VideoUploadField({
     if (extension !== "mp4" && extension !== "webm") {
       setStatus({
         tone: "error",
-        text: `只能上传 .mp4 或 .webm。${extension ? `这个文件是 .${extension}，` : ""}浏览器无法直接播放其它格式，上传后首屏只会显示封面图。请先转成 .mp4 再上传。`
+        text: t("admin.vidup.badFormat", {
+          what: extension ? t("admin.vidup.badFormatWhat", { ext: extension }) : ""
+        })
       });
       return;
     }
     if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
       setStatus({
         tone: "error",
-        text: `文件 ${formatBytes(file.size)}，超过 ${MAX_UPLOAD_MB}MB 上限，无法上传。`
+        text: t("admin.vidup.tooLarge", { size: formatBytes(file.size), mb: MAX_UPLOAD_MB })
       });
       return;
     }
@@ -72,12 +75,12 @@ export function VideoUploadField({
         file.size > SUGGESTED_MB * 1024 * 1024
           ? {
               tone: "warn",
-              text: `已上传并填入地址（${formatBytes(file.size)}）。超过建议的 ${SUGGESTED_MB}MB —— 每位访客打开首页都会下载它，手机流量下会明显变慢。可以考虑压缩或缩短。`
+              text: t("admin.vidup.doneBig", { size: formatBytes(file.size), mb: SUGGESTED_MB })
             }
-          : { tone: "ok", text: `已上传并填入地址（${formatBytes(file.size)}）。` }
+          : { tone: "ok", text: t("admin.vidup.done", { size: formatBytes(file.size) }) }
       );
     } catch (error) {
-      setStatus({ tone: "error", text: error instanceof Error ? error.message : "上传失败。" });
+      setStatus({ tone: "error", text: error instanceof Error ? error.message : t("admin.vidup.failed") });
     } finally {
       setBusy(false);
       // Cleared so picking the same file again still fires a change event.
@@ -100,10 +103,10 @@ export function VideoUploadField({
           disabled={busy}
           onClick={() => inputRef.current?.click()}
         >
-          {busy ? `上传中 ${percent}%` : `上传视频（≤ ${MAX_UPLOAD_MB}MB）`}
+          {busy ? t("admin.vidup.uploading", { n: percent }) : t("admin.vidup.button", { mb: MAX_UPLOAD_MB })}
         </button>
         <span style={{ color: "#777", fontSize: 12 }}>
-          上传后自动填入上面的地址栏。只接受 .mp4 / .webm。
+          {t("admin.vidup.hint")}
         </span>
         <input
           ref={inputRef}

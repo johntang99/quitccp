@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { t } from "@/lib/i18n";
 import fs from "node:fs";
 import path from "node:path";
 import {
@@ -40,10 +41,10 @@ export function repoRoot(): string {
 
 export function studioAvailable(): { ok: boolean; reason: string } {
   if (process.env.VERCEL) {
-    return { ok: false, reason: "线上（Vercel）没有 ffmpeg，剪片只能在本机跑着网站时使用。" };
+    return { ok: false, reason: t("studio.err.noFfmpegHere") };
   }
   if (!fs.existsSync(path.join(repoRoot(), "scripts", "video-studio.mjs"))) {
-    return { ok: false, reason: "找不到 scripts/video-studio.mjs。" };
+    return { ok: false, reason: t("studio.err.noScript") };
   }
   return { ok: true, reason: "" };
 }
@@ -81,7 +82,7 @@ export function runStudio(args: string[], timeoutMs = 600000): Promise<StudioRes
     });
     child.on("error", (e) => {
       clearTimeout(timer);
-      resolve({ ok: false, data: null, log: `起不来：${e.message}` });
+      resolve({ ok: false, data: null, log: t("studio.err.spawnFailed", { message: e.message }) });
     });
     child.on("close", (code) => {
       clearTimeout(timer);
@@ -92,7 +93,7 @@ export function runStudio(args: string[], timeoutMs = 600000): Promise<StudioRes
       try {
         resolve({ ok: true, data: JSON.parse(out.trim().split("\n").pop() ?? "{}"), log: err.trim().slice(-1500) });
       } catch {
-        resolve({ ok: false, data: null, log: `读不懂输出：${out.trim().slice(-800)}` });
+        resolve({ ok: false, data: null, log: t("studio.err.badOutput", { output: out.trim().slice(-800) }) });
       }
     });
   });
@@ -134,23 +135,23 @@ export function readProject(name: string): unknown {
 
 export function writeProject(name: string, data: unknown): void {
   const file = projectPath(name);
-  if (!file) throw new Error("项目名不合法");
+  if (!file) throw new Error(t("studio.err.badName"));
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`);
 }
 
 export function deleteProject(name: string): void {
   const file = projectPath(name);
-  if (!file) throw new Error("项目名不合法");
+  if (!file) throw new Error(t("studio.err.badName"));
   if (fs.existsSync(file)) fs.unlinkSync(file);
 }
 
 export function renameProject(from: string, to: string): void {
   const a = projectPath(from);
   const b = projectPath(to);
-  if (!a || !b) throw new Error("项目名不合法");
-  if (!fs.existsSync(a)) throw new Error("原项目不存在");
-  if (fs.existsSync(b)) throw new Error(`已经有一个叫「${to}」的项目了`);
+  if (!a || !b) throw new Error(t("studio.err.badName"));
+  if (!fs.existsSync(a)) throw new Error(t("studio.err.noSuchProject"));
+  if (fs.existsSync(b)) throw new Error(t("studio.err.nameTaken", { name: to }));
   fs.renameSync(a, b);
 }
 
@@ -202,7 +203,7 @@ export async function writeProjectAnywhere(name: string, data: unknown, who: str
     return;
   }
   const setup = githubSetup();
-  if (!setup) throw new Error("这个站点没有配置 GitHub，存不了项目。");
+  if (!setup) throw new Error(t("studio.err.noGithubSave"));
   await writeProjectToGithub(setup, name, data, `影片拼接台：存 ${name}（${who}）`);
 }
 
@@ -213,7 +214,7 @@ export async function deleteProjectAnywhere(name: string, who: string): Promise<
     return;
   }
   const setup = githubSetup();
-  if (!setup) throw new Error("这个站点没有配置 GitHub，删不了项目。");
+  if (!setup) throw new Error(t("studio.err.noGithubDelete"));
   await deleteProjectOnGithub(setup, name, `影片拼接台：删 ${name}（${who}）`);
 }
 
@@ -230,10 +231,10 @@ export async function renameProjectAnywhere(from: string, to: string, who: strin
     return;
   }
   const setup = githubSetup();
-  if (!setup) throw new Error("这个站点没有配置 GitHub，改不了名。");
-  if (await readProjectFromGithub(setup, to)) throw new Error(`已经有一个叫「${to}」的项目了`);
+  if (!setup) throw new Error(t("studio.err.noGithubRename"));
+  if (await readProjectFromGithub(setup, to)) throw new Error(t("studio.err.nameTaken", { name: to }));
   const source = await readProjectFromGithub(setup, from);
-  if (!source) throw new Error("原项目不存在");
+  if (!source) throw new Error(t("studio.err.noSuchProject"));
   await writeProjectToGithub(setup, to, source.data, `影片拼接台：${from} 改名为 ${to}（${who}）`);
   await deleteProjectOnGithub(setup, from, `影片拼接台：${from} 已改名为 ${to}（${who}）`);
 }

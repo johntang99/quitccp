@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
+import { formatTime } from "@/lib/format";
 import { isGanjingWatchUrl, isVimeoWatchUrl, toEmbedUrl } from "@/lib/video-host";
 import { GanjingEmbedNotice } from "./GanjingEmbedNotice";
 import { ImagePickerModal } from "./ImagePickerModal";
@@ -65,18 +68,18 @@ function toLocalInput(iso: string | null): string {
 export { toEmbedUrl as toEmbed };
 
 const STATUS_LABEL: Record<string, string> = {
-  published: "已发布",
-  draft: "草稿",
-  archived: "已归档"
+  published: t("admin.status.published"),
+  draft: t("admin.status.draft"),
+  archived: t("admin.status.archived")
 };
 
 function platformOf(url: string): string {
   if (!url.trim()) return "";
   if (/youtube\.com|youtu\.be/i.test(url)) return "YouTube";
-  if (/ganjing/i.test(url)) return "干净世界";
+  if (/ganjing/i.test(url)) return t("admin.vid.host.ganjing");
   if (/vimeo/i.test(url)) return "Vimeo";
-  if (/\.mp4(\?|$)/i.test(url)) return "自有文件";
-  return "其它";
+  if (/\.mp4(\?|$)/i.test(url)) return t("admin.vid.host.file");
+  return t("admin.vid.host.other");
 }
 
 export function VideoForm({ initial, categories, mode }: VideoFormProps) {
@@ -113,10 +116,10 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
       });
       const payload = (await response.json()) as { ok?: boolean; error?: string; id?: string; warm?: string[] };
       if (!response.ok || !payload.ok) {
-        setError(payload.error || "保存失败。");
+        setError(payload.error || t("admin.save.failed"));
         return;
       }
-      setSaved({ at: new Date().toLocaleTimeString("zh-CN", { hour12: false }), status });
+      setSaved({ at: formatTime(new Date()), status });
       /* Build the pages this video appears on now, so the editor's own click
          through to the public page is a hit rather than a full render. */
       warmPages(payload.warm ?? []);
@@ -129,7 +132,7 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
         window.history.replaceState(null, "", `/admin/videos/${payload.id}`);
       }
     } catch {
-      setError("保存失败：连不上服务器。");
+      setError(t("admin.form.saveFailedOffline"));
     } finally {
       setSaving(false);
     }
@@ -146,10 +149,10 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
         body: JSON.stringify({ title: value.title, body: value.bodyMarkdown })
       });
       const data = (await response.json()) as { summary?: string; error?: string };
-      if (!response.ok || !data.summary) throw new Error(data.error || "生成失败");
+      if (!response.ok || !data.summary) throw new Error(data.error || t("admin.form.aiFailed"));
       set("description", data.summary);
     } catch (error) {
-      setAiError(error instanceof Error ? error.message : "生成失败");
+      setAiError(error instanceof Error ? error.message : t("admin.form.aiFailed"));
     } finally {
       setAiBusy(false);
     }
@@ -207,7 +210,7 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
   const fetchCover = async () => {
     const sourceUrl = value.sourceUrl.trim() || value.backupUrl.trim();
     if (!sourceUrl) {
-      setCoverNote("先填视频地址，才能去取它的封面。");
+      setCoverNote(t("admin.vidform.coverNeedsSource"));
       return;
     }
     setCoverBusy(true);
@@ -221,12 +224,12 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
       const payload = (await response.json()) as { ok?: boolean; url?: string; reason?: string; error?: string };
       if (payload.ok && payload.url) {
         set("coverImage", payload.url);
-        setCoverNote("已取到封面。");
+        setCoverNote(t("admin.vidform.coverGot"));
         return;
       }
-      setCoverNote(payload.reason || payload.error || "没取到封面，请手动选择一张。");
+      setCoverNote(payload.reason || payload.error || t("admin.vidform.coverMissed"));
     } catch {
-      setCoverNote("取封面失败，请手动选择一张。");
+      setCoverNote(t("admin.vidform.coverFailed"));
     } finally {
       setCoverBusy(false);
     }
@@ -249,13 +252,13 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
    */
   const check = (status: string) => {
     const complaint = !value.title.trim()
-      ? "请填写标题。"
+      ? t("admin.vidform.needTitle")
       : !value.slug.trim()
-        ? "请填写网址 slug。"
+        ? t("admin.vidform.needSlug")
         : !value.category.trim()
-          ? "请选择分类。"
+          ? t("admin.vidform.needCategory")
           : value.coverImageAlt.trim() && !value.coverImage.trim()
-            ? "填了图片说明却没有封面图。"
+            ? t("admin.vidform.altWithoutCover")
             : /*
                * A film with no cover is skipped by the homepage band entirely --
                * that query only lists films that have one -- and shows as a flat
@@ -269,7 +272,7 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                * publish those would be refusing to publish something correct.
                */
               status === "published" && value.sourceUrl.trim() && !value.coverImage.trim()
-              ? "请先设置封面图——没有封面的视频不会出现在首页。可以点「自动获取封面」。"
+              ? t("admin.vidform.needCover")
               : "";
     if (complaint) {
       setError(complaint);
@@ -305,22 +308,23 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
       <div className="article-form">
         <div>
           <section className="admin-card">
-            <h3 style={{ marginTop: 0 }}>播放地址</h3>
+            <h3 style={{ marginTop: 0 }}>{t("admin.vidform.sourcePanel")}</h3>
             <div className="field">
-              <label htmlFor="sourceUrl">视频地址</label>
+              <label htmlFor="sourceUrl">{t("admin.vidform.sourceUrl")}</label>
               <input
                 className="admin-input"
                 id="sourceUrl"
                 name="sourceUrl"
                 value={value.sourceUrl}
                 onChange={(event) => set("sourceUrl", event.target.value)}
-                placeholder="干净世界 / YouTube / Vimeo 的地址，或 .mp4 直链"
+                placeholder={t("admin.vidform.sourcePlaceholder")}
                 style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
               />
               <span className="hint">
-                支持 YouTube、干净世界、Vimeo，以及 .mp4 文件地址。
-                干净世界和 Vimeo 从地址栏复制来的地址嵌不进播放器，粘进来会提示一键改好。
-                {value.sourceUrl ? ` 识别为：${platformOf(value.sourceUrl)}` : ""}
+                {t("admin.vidform.sourceHint")}
+                {value.sourceUrl
+                  ? t("admin.vidform.recognisedAs", { host: platformOf(value.sourceUrl) })
+                  : ""}
               </span>
               {ganjingWatch ? (
                 <GanjingEmbedNotice
@@ -338,7 +342,7 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                 ) : (
                   <iframe
                     src={embed}
-                    title="预览"
+                    title={t("admin.preview")}
                     allowFullScreen
                     style={{ width: "100%", aspectRatio: "16 / 9", border: 0, borderRadius: 4, background: "#111" }}
                   />
@@ -346,23 +350,23 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
               </div>
             ) : (
               <p className="muted" style={{ margin: "0 0 12px" }}>
-                没有播放地址也可以保存——页面会只显示文字，这对旧站那些只有文字稿的集数是对的。
+                {t("admin.vidform.noSourceOk")}
               </p>
             )}
 
             <div className="field">
-              <label htmlFor="backupUrl">干净世界备用地址</label>
+              <label htmlFor="backupUrl">{t("admin.vidform.backupUrl")}</label>
               <input
                 className="admin-input"
                 id="backupUrl"
                 name="backupUrl"
                 value={value.backupUrl}
                 onChange={(event) => set("backupUrl", event.target.value)}
-                placeholder="可留空"
+                placeholder={t("admin.vidform.backupPlaceholder")}
                 style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
               />
               <span className="hint">
-                YouTube 在大陆打不开，填了这里大陆读者才看得到。同样要用 <code>/embed/</code> 地址。
+                {tRich("admin.vidform.backupHint", { embed: <code>/embed/</code> })}
               </span>
               {backupGanjingWatch ? (
                 <GanjingEmbedNotice
@@ -374,10 +378,11 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
           </section>
 
           <section className="admin-card">
-            <h3 style={{ marginTop: 0 }}>基本信息</h3>
+            <h3 style={{ marginTop: 0 }}>{t("admin.vidform.basicPanel")}</h3>
             <div className="field">
               <label htmlFor="title">
-                标题<span className="req">*</span>
+                {t("admin.vidform.title")}
+                <span className="req">{t("admin.form.required")}</span>
               </label>
               <input
                 className="admin-input"
@@ -389,21 +394,22 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
             </div>
 
             <div className="field">
-              <label htmlFor="episode">系列集数</label>
+              <label htmlFor="episode">{t("admin.vidform.episode")}</label>
               <input
                 className="admin-input"
                 id="episode"
                 name="episode"
                 value={value.episode}
                 onChange={(event) => set("episode", event.target.value)}
-                placeholder="第 12 集 / 第十六期，不是系列就留空"
+                placeholder={t("admin.vidform.episodePlaceholder")}
                 style={{ maxWidth: 220 }}
               />
             </div>
 
             <div className="field">
               <label htmlFor="slug">
-                网址 Slug<span className="req">*</span>
+                {t("admin.form.slug")}
+                <span className="req">{t("admin.form.required")}</span>
               </label>
               <div className="row">
                 <input
@@ -429,7 +435,7 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                     }
                   }}
                 >
-                  由标题生成
+                  {t("admin.vidform.regenSlug")}
                 </button>
               </div>
               <div className="row" style={{ marginTop: 6, alignItems: "center", gap: 10 }}>
@@ -449,7 +455,7 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                       }
                     }}
                   />
-                  网址前面加日期（推荐）
+                  {t("admin.form.datePrefix")}
                 </label>
                 {slugCheck && !slugCheck.available ? (
                   <button
@@ -457,31 +463,31 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                     type="button"
                     onClick={() => set("slug", slugCheck.suggestion)}
                   >
-                    改用 {slugCheck.suggestion.slice(-18)}
+                    {t("admin.form.useSuggestion", { slug: slugCheck.suggestion.slice(-18) })}
                   </button>
                 ) : null}
               </div>
               {slugCheck && !slugCheck.available ? (
                 <span className="hint" style={{ color: "#b42318" }}>
-                  这个网址已被《{slugCheck.takenBy}》占用。
+                  {t("admin.form.slugTaken", { title: slugCheck.takenBy ?? "" })}
                 </span>
               ) : null}
             </div>
 
             <div className="field">
-              <label htmlFor="speaker">讲者／受访者</label>
+              <label htmlFor="speaker">{t("admin.vidform.speaker")}</label>
               <input
                 className="admin-input"
                 id="speaker"
                 name="speaker"
                 value={value.speaker}
                 onChange={(event) => set("speaker", event.target.value)}
-                placeholder="多位用顿号分隔，可留空"
+                placeholder={t("admin.vidform.speakerPlaceholder")}
               />
             </div>
 
             <div className="field">
-              <span className="cap">正文</span>
+              <span className="cap">{t("admin.vidform.body")}</span>
               <input type="hidden" name="bodyMarkdown" value={value.bodyMarkdown} />
               <MarkdownEditor
                 ref={editor}
@@ -490,8 +496,7 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                 onPickImage={() => setPicker("body")}
               />
               <span className="hint">
-                支持 Markdown。播放器下方的文字稿放这里——旧站有 174 个集数只有文字稿没有播放器，
-                靠的就是这一栏。
+                {t("admin.vidform.bodyHint")}
               </span>
             </div>
           </section>
@@ -501,15 +506,15 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
           <section className="admin-card">
             <div className="field" style={{ margin: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                <label htmlFor="description" style={{ margin: 0 }}>简介（Summary）</label>
+                <label htmlFor="description" style={{ margin: 0 }}>{t("admin.vidform.description")}</label>
                 <button
                   type="button"
                   className="admin-btn admin-btn-sm"
                   onClick={generateSummary}
                   disabled={aiBusy || value.bodyMarkdown.trim().length < 60}
-                  title="读完文字稿后生成 100–150 字简介"
+                  title={t("admin.vidform.aiTitle")}
                 >
-                  {aiBusy ? "生成中…" : "✦ AI 生成"}
+                  {t(aiBusy ? "admin.form.aiGenerating" : "admin.form.aiSummary")}
                 </button>
                 {aiError ? (
                   <span role="status" style={{ color: "#b42318", fontSize: 12.5 }}>{aiError}</span>
@@ -524,8 +529,7 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                 onChange={(event) => set("description", event.target.value)}
               />
               <span className="hint">
-                列表和分享卡片上显示的一段话。当前 <b>{value.description.length}</b> 字。
-                AI 生成的是草稿，请先读一遍再保存。
+                {tRich("admin.vidform.descriptionHint", { n: <b>{value.description.length}</b> })}
               </span>
             </div>
           </section>
@@ -533,14 +537,16 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
 
         <div className="side">
           <section className="admin-card">
-            <h3 style={{ marginTop: 0 }}>发布</h3>
+            <h3 style={{ marginTop: 0 }}>{t("admin.vidform.publishPanel")}</h3>
             {mode === "edit" ? (
               <p className="muted" style={{ margin: "0 0 10px", fontSize: 13 }}>
-                当前状态：<b>{STATUS_LABEL[value.status] ?? value.status}</b>
+                {tRich("admin.vidform.currentStatus", {
+                  status: <b>{STATUS_LABEL[value.status] ?? value.status}</b>
+                })}
               </p>
             ) : null}
             <div className="field">
-              <label htmlFor="publishedAt">发布时间</label>
+              <label htmlFor="publishedAt">{t("admin.form.publishedAt")}</label>
               <input
                 className="admin-input"
                 id="publishedAt"
@@ -576,14 +582,14 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                 reason: they are decided when publishing, and this panel is the
                 part of the form that is on screen without scrolling. */}
             <div className="field" style={{ marginBottom: 12 }}>
-              <span className="cap">编辑标记</span>
+              <span className="cap">{t("admin.form.editorMarks")}</span>
               <label style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
                 <input
                   type="checkbox"
                   checked={value.featured}
                   onChange={(event) => set("featured", event.target.checked)}
                 />
-                <b>重要</b>
+                <b>{t("admin.form.featured")}</b>
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 7 }}>
                 <input
@@ -591,11 +597,10 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                   checked={value.editorArchive}
                   onChange={(event) => set("editorArchive", event.target.checked)}
                 />
-                <b>精彩保留</b>
+                <b>{t("admin.form.editorArchive")}</b>
               </label>
               <span className="hint">
-                两者互不影响，可以都勾、都不勾。「重要」给首页与栏目顶部的少量精选，
-                「精彩保留」留给过了时效仍值得看的影片。
+                {t("admin.vidform.marksHint")}
               </span>
             </div>
 
@@ -609,7 +614,7 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                 disabled={saving}
                 onClick={() => save("published")}
               >
-                {saving ? "保存中…" : "发表"}
+                {t(saving ? "admin.form.saving" : "admin.vidform.publish")}
               </button>
               <button
                 className="admin-btn"
@@ -617,7 +622,7 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                 disabled={saving}
                 onClick={() => save("draft")}
               >
-                {saving ? "保存中…" : "存草稿"}
+                {t(saving ? "admin.form.saving" : "admin.vidform.saveDraft")}
               </button>
               {mode === "edit" && value.status !== "archived" ? (
                 <button
@@ -626,11 +631,11 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                   disabled={saving}
                   onClick={() => save("archived")}
                 >
-                  {saving ? "保存中…" : "归档"}
+                  {t(saving ? "admin.form.saving" : "admin.vidform.archive")}
                 </button>
               ) : null}
               <a className="admin-btn" href="/admin/videos">
-                取消
+                {t("admin.cancel")}
               </a>
             </div>
             {saved ? (
@@ -638,7 +643,10 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                 role="status"
                 style={{ margin: "8px 0 0", color: "#1f7a4d", fontSize: 13, fontWeight: 600 }}
               >
-                ✓ 已保存（{STATUS_LABEL[saved.status] ?? saved.status}） · {saved.at}
+                {t("admin.form.savedAt", {
+                  status: STATUS_LABEL[saved.status] ?? saved.status,
+                  at: saved.at
+                })}
                 　
                 <a
                   href={`/videos/${encodeURIComponent(value.slug)}`}
@@ -646,18 +654,19 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                   rel="noopener noreferrer"
                   style={{ fontWeight: 400 }}
                 >
-                  查看 ↗
+                  {t("admin.form.viewLink")}
                 </a>
               </p>
             ) : null}
             <span className="hint" style={{ display: "block", marginTop: 6 }}>
-              发表后立即对外可见；存草稿只有后台看得到。保存后留在本页，不会跳回列表。
+              {t("admin.vidform.publishHint")}
             </span>
           </section>
 
           <section className="admin-card">
             <h3 style={{ marginTop: 0 }}>
-              分类<span className="req">*</span>
+              {t("admin.vidform.category")}
+              <span className="req">{t("admin.form.required")}</span>
             </h3>
             <select
               className="admin-select"
@@ -665,7 +674,7 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
               value={value.category}
               onChange={(event) => set("category", event.target.value)}
             >
-              <option value="">— 请选择 —</option>
+              <option value="">{t("admin.form.pickOne")}</option>
               {categories.map((category) => (
                 <option key={category.slug} value={category.name}>
                   {category.name}
@@ -676,7 +685,8 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
 
           <section className="admin-card">
             <h3 style={{ marginTop: 0 }}>
-              封面图<span className="req">*</span>
+              {t("admin.vidform.coverPanel")}
+              <span className="req">{t("admin.form.required")}</span>
             </h3>
             <input type="hidden" name="coverImage" value={value.coverImage} />
             {value.coverImage ? (
@@ -698,28 +708,28 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
                   fontSize: 12
                 }}
               >
-                无封面
+                {t("admin.vidform.noCover")}
               </div>
             )}
             <div className="row" style={{ marginTop: 8 }}>
               <button className="admin-btn admin-btn-sm" type="button" onClick={() => setPicker("cover")}>
-                选择或上传
+                {t("admin.vidform.pickCover")}
               </button>
               <button className="admin-btn admin-btn-sm" type="button" onClick={fetchCover} disabled={coverBusy}>
-                {coverBusy ? "获取中…" : "自动获取封面"}
+                {t(coverBusy ? "admin.vidform.autoCoverBusy" : "admin.vidform.autoCover")}
               </button>
               {value.coverImage ? (
                 <button className="admin-btn admin-btn-sm" type="button" onClick={() => set("coverImage", "")}>
-                  移除
+                  {t("admin.vidform.removeCover")}
                 </button>
               ) : null}
             </div>
             <p className="hint" style={{ marginTop: 6 }}>
               {coverNote ||
-                "没有封面的视频不会出现在首页。「自动获取封面」会去 YouTube／干净世界／Vimeo 取这支片子自己的封面，存到本站。"}
+                t("admin.vidform.coverHint")}
             </p>
             <div className="field" style={{ marginTop: 8 }}>
-              <label htmlFor="coverImageAlt">图片说明</label>
+              <label htmlFor="coverImageAlt">{t("admin.vidform.coverAlt")}</label>
               <input
                 className="admin-input"
                 id="coverImageAlt"
@@ -731,9 +741,9 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
           </section>
 
           <section className="admin-card">
-            <h3 style={{ marginTop: 0 }}>来源</h3>
+            <h3 style={{ marginTop: 0 }}>{t("admin.vidform.sourcePanel2")}</h3>
             <div className="field">
-              <label htmlFor="sourceCredit">制作方／版权</label>
+              <label htmlFor="sourceCredit">{t("admin.vidform.sourceCredit")}</label>
               <input
                 className="admin-input"
                 id="sourceCredit"
@@ -744,7 +754,7 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
             </div>
             {value.legacyUrl ? (
               <p className="muted" style={{ margin: 0, fontSize: 12, wordBreak: "break-all" }}>
-                旧站地址：{value.legacyUrl}
+                {t("admin.vidform.legacyUrl", { url: value.legacyUrl })}
               </p>
             ) : null}
           </section>
@@ -753,11 +763,11 @@ export function VideoForm({ initial, categories, mode }: VideoFormProps) {
 
       <ImagePickerModal
         open={picker !== null}
-        fieldLabel={picker === "cover" ? "封面图" : "正文图片"}
+        fieldLabel={t(picker === "cover" ? "admin.vidform.coverPanel" : "admin.form.bodyImage")}
         onClose={() => setPicker(null)}
         onSelect={(url) => {
           if (picker === "cover") set("coverImage", url);
-          else editor.current?.insertAtCaret(`\n\n![图片说明](${url})\n\n`);
+          else editor.current?.insertAtCaret(`\n\n![${t("admin.form.insertedImageAlt")}](${url})\n\n`);
           setPicker(null);
         }}
       />

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 import { createPortal } from "react-dom";
 import { hostOf, isFileUrl, isGanjingWatchUrl, toEmbedUrl } from "@/lib/video-host";
 
@@ -52,7 +54,7 @@ export function VideoEmbedModal({
    */
   const insert = () => {
     if (!known) return;
-    onInsert(`\n::: video ${embed}\n${caption.trim() || "说明文字"}\n:::\n`);
+    onInsert(`\n::: video ${embed}\n${caption.trim() || t("admin.vidembed.defaultCaption")}\n:::\n`);
     onClose();
   };
 
@@ -86,14 +88,14 @@ export function VideoEmbedModal({
         }}
       >
         <h3 id="videoembed-h" style={{ margin: "0 0 4px", fontSize: 17 }}>
-          插入视频
+          {t("admin.vidembed.title")}
         </h3>
         <p style={{ margin: "0 0 14px", color: "#8a90a0", fontSize: 13, lineHeight: 1.6 }}>
-          支持 YouTube、干净世界、Vimeo，以及 .mp4 / .webm 文件地址。
+          {t("admin.vidembed.subtitle")}
         </p>
 
         <label htmlFor="videoembed-url" style={{ display: "block", fontSize: 13, marginBottom: 4 }}>
-          视频地址
+          {t("admin.vidembed.url")}
         </label>
         <input
           className="admin-input"
@@ -107,17 +109,21 @@ export function VideoEmbedModal({
               insert();
             }
           }}
-          placeholder="干净世界 / YouTube / Vimeo 的地址，或 .mp4 直链"
+          placeholder={t("admin.vidform.sourcePlaceholder")}
           style={{ fontFamily: "ui-monospace, Menlo, monospace", width: "100%" }}
         />
 
         {/* Stated up front, not only after a wrong address is pasted. */}
         <p style={{ margin: "6px 0 0", color: "#8a90a0", fontSize: 12.5, lineHeight: 1.65 }}>
-          支持干净世界、YouTube、Vimeo，以及 .mp4 直链。干净世界和 Vimeo 从地址栏复制来的那种
-          （<code>/video/</code>、<code>vimeo.com/数字</code>）嵌进页面播不了 —— 粘进来会自动改好。
-          {trimmed && known ? <strong style={{ color: "#555" }}> 识别为：{host.label}</strong> : null}
+          {tRich("admin.vidembed.hint", {
+            a: <code>/video/</code>,
+            b: <code>vimeo.com/…</code>
+          })}
+          {trimmed && known ? (
+            <strong style={{ color: "#555" }}>{t("admin.vidform.recognisedAs", { host: host.label })}</strong>
+          ) : null}
           {trimmed && !known ? (
-            <strong style={{ color: "#b42318" }}> 认不出这个地址，插不进去</strong>
+            <strong style={{ color: "#b42318" }}>{t("admin.vidembed.unknown")}</strong>
           ) : null}
         </p>
 
@@ -138,7 +144,7 @@ export function VideoEmbedModal({
             <div style={{ textDecoration: "line-through", opacity: 0.6 }}>{trimmed}</div>
             <div style={{ color: "#1f7a4d" }}>{embed}</div>
             <div style={{ fontFamily: "inherit", marginTop: 2, color: "#1f7a4d", fontSize: 12.5 }}>
-              {isGanjingWatchUrl(trimmed) ? "已改成可嵌入的 /embed/ 地址" : "已换成可嵌入的地址"}
+              {t(isGanjingWatchUrl(trimmed) ? "admin.vidembed.fixedGanjing" : "admin.vidembed.fixedOther")}
             </div>
           </div>
         ) : null}
@@ -147,14 +153,14 @@ export function VideoEmbedModal({
           htmlFor="videoembed-caption"
           style={{ display: "block", fontSize: 13, margin: "14px 0 4px" }}
         >
-          说明文字（可留空）
+          {t("admin.vidembed.caption")}
         </label>
         <input
           className="admin-input"
           id="videoembed-caption"
           value={caption}
           onChange={(event) => setCaption(event.target.value)}
-          placeholder="显示在播放器下面的一行字"
+          placeholder={t("admin.vidembed.captionPlaceholder")}
           style={{ width: "100%" }}
         />
 
@@ -170,7 +176,7 @@ export function VideoEmbedModal({
             ) : (
               <iframe
                 src={embed}
-                title="预览"
+                title={t("admin.preview")}
                 allowFullScreen
                 style={{
                   width: "100%",
@@ -186,7 +192,7 @@ export function VideoEmbedModal({
 
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
           <button className="admin-btn" type="button" onClick={onClose}>
-            取消
+            {t("admin.cancel")}
           </button>
           <button
             className="admin-btn admin-btn-primary"
@@ -194,7 +200,7 @@ export function VideoEmbedModal({
             onClick={insert}
             disabled={!known}
           >
-            插入
+            {t("admin.vidembed.insert")}
           </button>
         </div>
       </div>

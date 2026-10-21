@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/admin/AdminShell";
+import { t } from "@/lib/i18n";
 import { VideoStudio } from "@/components/admin/VideoStudio";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { githubSetup } from "@/lib/admin/github";
@@ -27,10 +28,9 @@ export default async function VideoStudioPage() {
   return (
     <AdminShell user={user}>
       <section className="admin-card" style={{ marginBottom: 14 }}>
-        <h2 style={{ marginTop: 0 }}>影片拼接台</h2>
+        <h2 style={{ marginTop: 0 }}>{t("studio.title")}</h2>
         <p style={{ margin: 0, lineHeight: 1.8 }}>
-          把几段素材接起来、铺上音乐、出片。素材可以直接用干净世界的网址——
-          只取要用的那几秒，不用先下整片。
+          {t("studio.intro")}
         </p>
       </section>
       <VideoStudio

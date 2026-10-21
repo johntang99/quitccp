@@ -62,7 +62,26 @@ function main() {
       /* 新建的文件在 ref 里不存在，跳过。 */
     }
   }
-  const flatHay = flat(haystack);
+  /*
+   * 改动前的 zh 表也算「原文」。
+   *
+   * 把一条文案从 admin.art.* 挪到 admin.list.*（两个页面共用的词），在这里看
+   * 起来就是「新增了一条，而源码里找不到」—— 可是字一个没变，它只是换了个
+   * key 名。改名也该能被看出来，所以把旧表一并当作比对源：值还在旧表里，
+   * 就是改名，不是改字。
+   */
+  const haystackWithOldTable = `${haystack}\n${git(`show ${REF}:apps/web/src/lib/i18n/zh.ts`)}`;
+
+  /*
+   * 源码里跨行拼接的字符串，在 flat 之后中间夹着 `" + "`。
+   *
+   *     "多半是 GitHub 慢了一拍，" +
+   *     "也可能是这个月的……"
+   *
+   * 渲染出来是连着的一句，而这里按连续子串找就断在那个加号上。把这种拼接缝
+   * 去掉，比的才是真正渲染出来的那串字。
+   */
+  const flatHay = flat(haystackWithOldTable).replace(/"\s*\+\s*"/g, "");
 
   const newZh = added.filter(([, v]) => HAN.test(v));
   const missing = newZh.filter(([, v]) => {

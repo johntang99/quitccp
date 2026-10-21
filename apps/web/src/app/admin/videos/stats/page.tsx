@@ -1,4 +1,6 @@
 import { AdminShell } from "@/components/admin/AdminShell";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 import { VideoTabs } from "@/components/admin/VideoTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { getVideoStats } from "@/lib/admin/video-stats";
@@ -20,10 +22,10 @@ export default async function VideoStatsPage() {
       <VideoTabs active="stats" />
 
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>总量</h3>
+        <h3 style={{ marginTop: 0 }}>{t("admin.vstats.totals")}</h3>
         <div className="stat-grid">
           <div className="stat">
-            <div className="muted" style={{ fontSize: 12 }}>视频总数</div>
+            <div className="muted" style={{ fontSize: 12 }}>{t("admin.vstats.totalVideos")}</div>
             <div className="n">{formatNumber(stats.total)}</div>
           </div>
           {stats.byStatus.map((row) => (
@@ -33,17 +35,17 @@ export default async function VideoStatsPage() {
             </div>
           ))}
           <div className="stat">
-            <div className="muted" style={{ fontSize: 12 }}>已知时长</div>
-            <div className="n">{formatNumber(hours)} 小时</div>
+            <div className="muted" style={{ fontSize: 12 }}>{t("admin.vstats.knownDuration")}</div>
+            <div className="n">{t("admin.vstats.hours", { n: formatNumber(hours) })}</div>
           </div>
         </div>
         <p className="muted" style={{ margin: "10px 0 0", fontSize: 13 }}>
-          时长只有自托管的那批取回来了，所以「已知时长」是下限，不是全库的总长度。
+          {t("admin.vstats.durationNote")}
         </p>
       </section>
 
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>需要处理的</h3>
+        <h3 style={{ marginTop: 0 }}>{t("admin.vstats.todo")}</h3>
         <div className="stat-grid">
           {stats.gaps.map((gap) => (
             <a className="stat" key={gap.key} href={gap.href} style={{ textDecoration: "none", color: "inherit" }}>
@@ -57,14 +59,14 @@ export default async function VideoStatsPage() {
       </section>
 
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>按来源平台</h3>
+        <h3 style={{ marginTop: 0 }}>{t("admin.vstats.byHost")}</h3>
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
               <tr>
-                <th>平台</th>
-                <th style={{ textAlign: "right" }}>数量</th>
-                <th>大陆能否直接观看</th>
+                <th>{t("admin.vstats.col.host")}</th>
+                <th style={{ textAlign: "right" }}>{t("admin.vstats.col.count")}</th>
+                <th>{t("admin.vstats.col.reachable")}</th>
               </tr>
             </thead>
             <tbody>
@@ -74,27 +76,27 @@ export default async function VideoStatsPage() {
                     <a href={`/admin/videos?host=${row.key}`}>{row.label}</a>
                   </td>
                   <td style={{ textAlign: "right" }}>{formatNumber(row.count)}</td>
-                  <td className="muted">{row.key === "none" ? "—" : row.reachable ? "可以" : "需翻墙"}</td>
+                  <td className="muted">{row.key === "none" ? "—" : t(row.reachable ? "admin.vstats.reachableYes" : "admin.vstats.reachableNo")}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
         <p className="muted" style={{ margin: "10px 0 0", fontSize: 13 }}>
-          <b>{formatNumber(unreachable)} 个视频大陆读者看不到。</b>
-          给它们补上干净世界的备用地址是编辑部的活，不是技术问题。
+          <b>{t("admin.vstats.unreachable", { n: formatNumber(unreachable) })}</b>
+          {t("admin.vstats.unreachableNote")}
         </p>
       </section>
 
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>每个分类有多少</h3>
+        <h3 style={{ marginTop: 0 }}>{t("admin.vstats.byCategory")}</h3>
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
               <tr>
-                <th>分类</th>
-                <th style={{ textAlign: "right" }}>视频数</th>
-                <th style={{ width: 220 }}>占比</th>
+                <th>{t("admin.list.col.category")}</th>
+                <th style={{ textAlign: "right" }}>{t("admin.vcat.col.count")}</th>
+                <th style={{ width: 220 }}>{t("admin.vstats.col.share")}</th>
               </tr>
             </thead>
             <tbody>
@@ -117,14 +119,14 @@ export default async function VideoStatsPage() {
       </section>
 
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>按年份</h3>
+        <h3 style={{ marginTop: 0 }}>{t("admin.vstats.byYear")}</h3>
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
               <tr>
-                <th>年份</th>
-                <th style={{ textAlign: "right" }}>数量</th>
-                <th style={{ width: 220 }}>分布</th>
+                <th>{t("admin.vstats.col.year")}</th>
+                <th style={{ textAlign: "right" }}>{t("admin.vstats.col.count")}</th>
+                <th style={{ width: 220 }}>{t("admin.vstats.col.spread")}</th>
               </tr>
             </thead>
             <tbody>

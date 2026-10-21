@@ -83,7 +83,7 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
             style={{ flex: 1, minWidth: 240 }}
           />
           <select className="admin-select" name="category" defaultValue={params.category ?? ""}>
-            <option value="">{t("admin.art.allCategories")}</option>
+            <option value="">{t("admin.list.allCategories")}</option>
             {categories.map((c) => (
               <option key={c.slug} value={c.slug}>
                 {c.name}（{c.articleCount}）
@@ -91,7 +91,7 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
             ))}
           </select>
           <select className="admin-select" name="status" defaultValue={params.status ?? ""}>
-            <option value="">{t("admin.art.allStatuses")}</option>
+            <option value="">{t("admin.list.allStatuses")}</option>
             <option value="published">{t("admin.status.published")}</option>
             <option value="draft">{t("admin.status.draft")}</option>
             <option value="archived">{t("admin.status.archived")}</option>
@@ -105,18 +105,18 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
             ))}
           </select>
           <label style={{ color: "#8a90a0", display: "flex", gap: 6, alignItems: "center" }}>
-            {t("admin.art.publishedBetween")}
+            {t("admin.list.publishedBetween")}
             <input className="admin-input" type="date" name="from" defaultValue={params.from ?? ""} />
-            {t("admin.art.dateTo")}
+            {t("admin.list.dateTo")}
             <input className="admin-input" type="date" name="to" defaultValue={params.to ?? ""} />
           </label>
           {/* 发布时间 is the default now. Sorting by 更新时间 is still offered, but
               it groups rather than orders: the import stamped 80 articles per
               second, so it cannot tell those 80 apart. */}
           <select className="admin-select" name="sort" defaultValue={params.sort ?? "published"}>
-            <option value="published">{t("admin.art.sort.published")}</option>
-            <option value="updated">{t("admin.art.sort.updated")}</option>
-            <option value="title">{t("admin.art.sort.title")}</option>
+            <option value="published">{t("admin.list.sort.published")}</option>
+            <option value="updated">{t("admin.list.sort.updated")}</option>
+            <option value="title">{t("admin.list.sort.title")}</option>
           </select>
           {params.gap ? <input type="hidden" name="gap" value={params.gap} /> : null}
           {params.featured ? <input type="hidden" name="featured" value={params.featured} /> : null}
@@ -124,7 +124,7 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
             <input type="hidden" name="editorArchive" value={params.editorArchive} />
           ) : null}
           <button className="admin-btn admin-btn-primary" type="submit">
-            {t("admin.art.search")}
+            {t("admin.list.search")}
           </button>
         </form>
 
@@ -136,13 +136,13 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
               href={hrefWith({ featured: params.featured ? undefined : "1", page: undefined })}
               className={`article-chip${params.featured ? " is-on" : ""}`}
             >
-              {t("admin.art.featured")}
+              {t("admin.list.featured")}
             </Link>
             <Link
               href={hrefWith({ editorArchive: params.editorArchive ? undefined : "1", page: undefined })}
               className={`article-chip${params.editorArchive ? " is-on" : ""}`}
             >
-              {t("admin.art.editorArchive")}
+              {t("admin.list.editorArchive")}
             </Link>
             {GAPS.map((gap) => (
               <Link
@@ -156,7 +156,7 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
           </span>
           {hasFilters ? (
             <Link className="admin-btn admin-btn-sm" href="/admin/articles">
-              {t("admin.art.clearFilters")}
+              {t("admin.list.clearFilters")}
             </Link>
           ) : null}
         </div>
@@ -176,13 +176,13 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
         <form id="bulk-form" method="post" action="/api/admin/content/articles/bulk" className="admin-toolbar">
           <input type="hidden" name="back" value={currentHref} />
           <select className="admin-select" name="action" defaultValue="category">
-            <option value="category">{t("admin.art.bulk.setCategory")}</option>
-            <option value="publish">{t("admin.art.bulk.publish")}</option>
-            <option value="draft">{t("admin.art.bulk.draft")}</option>
-            <option value="archive">{t("admin.art.bulk.archive")}</option>
+            <option value="category">{t("admin.list.bulk.setCategory")}</option>
+            <option value="publish">{t("admin.list.bulk.publish")}</option>
+            <option value="draft">{t("admin.list.bulk.draft")}</option>
+            <option value="archive">{t("admin.list.bulk.archive")}</option>
           </select>
           <select className="admin-select" name="category" defaultValue="">
-            <option value="">{t("admin.art.bulk.pickCategory")}</option>
+            <option value="">{t("admin.list.bulk.pickCategory")}</option>
             {categories.map((c) => (
               <option key={c.slug} value={c.name}>
                 {c.name}
@@ -200,16 +200,16 @@ export default async function AdminArticlesPage({ searchParams }: PageProps) {
         <div className="admin-toolbar" style={{ marginTop: 12 }}>
           {result.page > 1 ? (
             <Link className="admin-btn" href={hrefWith({ page: String(result.page - 1) })}>
-              {t("admin.art.prevPage")}
+              {t("admin.list.prevPage")}
             </Link>
           ) : null}
           {result.page < result.pageCount ? (
             <Link className="admin-btn" href={hrefWith({ page: String(result.page + 1) })}>
-              {t("admin.art.nextPage")}
+              {t("admin.list.nextPage")}
             </Link>
           ) : null}
           <span className="muted">
-            {t("admin.art.perPage")}
+            {t("admin.list.perPage")}
             {[20, 50, 100].map((size) => (
               <Link
                 key={size}

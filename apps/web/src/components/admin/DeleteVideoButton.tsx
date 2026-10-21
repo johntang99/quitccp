@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { t } from "@/lib/i18n";
 import { DeleteImpact } from "./DeleteImpact";
 
 /**
@@ -38,7 +39,7 @@ export function DeleteVideoButton({ id, title }: { id: string; title: string }) 
         type="button"
         onClick={() => setOpen(true)}
       >
-        删除
+        {t("admin.list.delete")}
       </button>
 
       {open ? (
@@ -72,13 +73,13 @@ export function DeleteVideoButton({ id, title }: { id: string; title: string }) 
             }}
           >
             <h3 id={`delv-h-${id}`} style={{ margin: "0 0 10px", fontSize: 17 }}>
-              删除这支视频？
+              {t("admin.vid.delete.title")}
             </h3>
             <p style={{ margin: "0 0 6px", lineHeight: 1.6, wordBreak: "break-word" }}>
               《{title}》
             </p>
             <p style={{ margin: "0 0 12px", color: "#8a90a0", fontSize: 13, lineHeight: 1.6 }}>
-              删除后视频将从网站上消失，原链接变成 404。此操作无法在后台撤销。
+              {t("admin.vid.delete.warning")}
             </p>
             <DeleteImpact kind="video" id={id} />
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -89,7 +90,7 @@ export function DeleteVideoButton({ id, title }: { id: string; title: string }) 
                 onClick={() => setOpen(false)}
                 disabled={submitting}
               >
-                取消
+                {t("admin.cancel")}
               </button>
               <form
                 method="post"
@@ -98,7 +99,7 @@ export function DeleteVideoButton({ id, title }: { id: string; title: string }) 
               >
                 <input type="hidden" name="id" value={id} />
                 <button className="admin-btn admin-btn-danger" type="submit" disabled={submitting}>
-                  {submitting ? "正在删除…" : "确认删除"}
+                  {t(submitting ? "admin.list.delete.deleting" : "admin.list.delete.confirm")}
                 </button>
               </form>
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { toEmbedUrl } from "@/lib/video-host";
+import { t } from "@/lib/i18n";
 
 /**
  * Says that a 干净世界 address is the un-embeddable kind, and offers to fix it.
@@ -30,9 +31,9 @@ export function GanjingEmbedNotice({ url, onFix }: { url: string; onFix: () => v
      the film should be, and either way the fix is the player address. */
   const vimeo = /vimeo\.com/i.test(url);
   const headline = vimeo
-    ? "这是 Vimeo 的观看地址，播放器嵌不进去"
-    : "这是干净世界的 /video/ 地址，播放器嵌不进去";
-  const action = vimeo ? "改成播放器地址" : "改成 /embed/";
+    ? t("admin.vid.embed.vimeoWatch")
+    : t("admin.vid.embed.ganjingWatch");
+  const action = t(vimeo ? "admin.vid.embed.fixVimeo" : "admin.vid.embed.fixGanjing");
 
   return (
     <div

@@ -1,4 +1,6 @@
 import { AdminShell } from "@/components/admin/AdminShell";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 import { VideoTabs } from "@/components/admin/VideoTabs";
 import { CategoryRowActions } from "@/components/admin/CategoryRowActions";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
@@ -17,17 +19,13 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
     <AdminShell user={user}>
       <VideoTabs active="categories" />
       <section className="admin-card">
-        <h2 style={{ marginTop: 0 }}>视频分类 Video categories</h2>
+        <h2 style={{ marginTop: 0 }}>{t("admin.vcat.title")}</h2>
         <p>
-          可新增、重命名、排序；删除前需先移走该分类下的视频。
-          名称和排序改完保存，网站上立刻就是新的。
+          {t("admin.vcat.intro1")}
           <br />
-          slug 建好之后不能再改，只能看：它是分类页的网址，改了所有旧链接就全断了。
-          新建分类时 slug 可用英文填写（中文名称必须填）。
+          {t("admin.vcat.intro2")}
           <br />
-          「页面说明」是分类页标题下面那句话，<b>整句都由你决定</b> —— 包括末尾那句
-          「全部节目可自由下载、转载与再制作。」，它现在也存在这里，可以改、也可以删。
-          留空的话标题下面就什么都不显示。
+          {tRich("admin.vcat.intro3", { yours: <b>{t("admin.vcat.intro3Yours")}</b> })}
         </p>
         {params.error ? (
           <p style={{ margin: "8px 0 0", color: "#b42318", background: "#fef3f2", padding: "8px 10px" }}>
@@ -41,7 +39,7 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
         ) : null}
         {rows.length === 0 ? (
           <p style={{ margin: "8px 0 0", color: "#8a6d1f", background: "#fffbe9", padding: "8px 10px" }}>
-            还没有视频分类表。请先执行
+            {t("admin.vcat.schemaMissing")}
             <code> supabase/content/migrations/012_video_categories.sql</code>。
           </p>
         ) : null}
@@ -51,18 +49,18 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
         <table className="admin-table">
           <thead>
             <tr>
-              <th style={{ width: 60 }}>排序</th>
-              <th style={{ width: 140 }}>名称</th>
+              <th style={{ width: 60 }}>{t("admin.cat.col.order")}</th>
+              <th style={{ width: 140 }}>{t("admin.cat.col.name")}</th>
               <th style={{ width: 150 }}>slug</th>
-              <th style={{ width: 70 }}>视频数</th>
-              <th>页面说明</th>
-              <th style={{ width: 110 }}>操作</th>
+              <th style={{ width: 70 }}>{t("admin.vcat.col.count")}</th>
+              <th>{t("admin.cat.col.blurb")}</th>
+              <th style={{ width: 110 }}>{t("admin.cat.col.actions")}</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6}>暂无分类</td>
+                <td colSpan={6}>{t("admin.cat.empty")}</td>
               </tr>
             ) : (
               rows.map((row) => (
@@ -82,9 +80,9 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
                       name="description"
                       defaultValue={row.description}
                       rows={2}
-                      placeholder="留空则标题下面不显示任何文字"
+                      placeholder={t("admin.vcat.blurbPlaceholder")}
                       style={{ width: "100%", minWidth: 260, resize: "vertical" }}
-                      aria-label={`${row.name} 的页面说明`}
+                      aria-label={t("admin.cat.aria.blurb", { name: row.name })}
                     />
                   </td>
                   <td>
@@ -102,9 +100,9 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
                         type="number"
                         step={1}
                         defaultValue={row.sortOrder}
-                        aria-label={`${row.name} 的排序`}
+                        aria-label={t("admin.cat.aria.order", { name: row.name })}
                       />
-                      <input className="admin-input" name="name" defaultValue={row.name} aria-label={`${row.name} 的名称`} required />
+                      <input className="admin-input" name="name" defaultValue={row.name} aria-label={t("admin.cat.aria.name", { name: row.name })} required />
                     </form>
                     {/* Outside the form on purpose: the delete half posts its
                         own fields, and a form inside a form is illegal HTML.
@@ -128,14 +126,14 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
       </section>
 
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>新增分类</h3>
+        <h3 style={{ marginTop: 0 }}>{t("admin.cat.addTitle")}</h3>
         <form method="post" action="/api/admin/content/video-categories" className="admin-toolbar">
-          <input className="admin-input" name="name" placeholder="分类名称（可用中文）" required />
-          <input className="admin-input" name="slug" placeholder="slug（英文；中文名称必须填写）" />
+          <input className="admin-input" name="name" placeholder={t("admin.cat.namePlaceholder")} required />
+          <input className="admin-input" name="slug" placeholder={t("admin.cat.slugPlaceholder")} />
           <input
             className="admin-input"
             name="description"
-            placeholder="页面说明（标题下面那句话）"
+            placeholder={t("admin.cat.blurbNewPlaceholder")}
             style={{ minWidth: 260 }}
           />
           <input
@@ -144,12 +142,12 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
             type="number"
             step={1}
             defaultValue={0}
-            placeholder="排序"
+            placeholder={t("admin.cat.orderPlaceholder")}
             style={{ width: 90 }}
-            aria-label="排序"
+            aria-label={t("admin.cat.orderPlaceholder")}
           />
           <button className="admin-btn admin-btn-primary" type="submit">
-            新增
+            {t("admin.cat.add")}
           </button>
         </form>
       </section>

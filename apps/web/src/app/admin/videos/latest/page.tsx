@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/admin/AdminShell";
+import { t } from "@/lib/i18n";
 import { VideoTable } from "@/components/admin/VideoTable";
 import { VideoTabs } from "@/components/admin/VideoTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
@@ -47,7 +48,7 @@ export default async function LatestVideosPage({ searchParams }: PageProps) {
         <div className="admin-toolbar" style={{ marginBottom: 6 }}>
           <span className="chips">
             <a className={`chip${params.category ? "" : " on"}`} href={chipHref({ category: undefined })}>
-              全部分类
+              {t("admin.list.allCategories")}
             </a>
             {categories.map((c) => (
               <a
@@ -64,11 +65,11 @@ export default async function LatestVideosPage({ searchParams }: PageProps) {
             style={{ marginLeft: "auto" }}
             href={chipHref({ unpublished: params.unpublished ? undefined : "1" })}
           >
-            只看草稿
+            {t("admin.vlatest.draftsOnly")}
           </a>
         </div>
         <p className="muted" style={{ margin: 0 }}>
-          按更新时间排序，最近改动的在最前面。共 {result.rows.length} 个。
+          {t("admin.vlatest.note", { n: result.rows.length })}
         </p>
       </section>
 

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 import { AspectRatioHelp } from "./AspectRatioHelp";
 import { ClipPlayer } from "./ClipPlayer";
 
@@ -91,7 +93,7 @@ const RATIOS = [
     dims: "1920×816",
     width: 1920,
     height: 816,
-    note: "首屏推荐 · 在首页上不会被裁"
+    note: t("studio.ratio.235.note")
   },
   {
     key: "169",
@@ -99,7 +101,7 @@ const RATIOS = [
     dims: "1920×1080",
     width: 1920,
     height: 1080,
-    note: "贴到首屏上，浏览器会从正中间切掉上下 24%"
+    note: t("studio.ratio.169.note")
   }
 ] as const;
 
@@ -114,9 +116,9 @@ const RATIOS = [
  * 下边 40px、上边 224px，而上边那 224px 在六个采样帧里全是空天。
  */
 const CROPS = [
-  { key: "top", label: "偏上", value: 0.15, note: "保住画面上部" },
-  { key: "center", label: "居中", value: 0.5, note: "上下均分 —— 字幕多半会被切断" },
-  { key: "bottom", label: "偏下", value: 0.85, note: "保住下边的字幕（推荐）" }
+  { key: "top", label: t("studio.crop.top"), value: 0.15, note: t("studio.crop.topNote") },
+  { key: "center", label: t("studio.crop.center"), value: 0.5, note: t("studio.crop.centerNote") },
+  { key: "bottom", label: t("studio.crop.bottom"), value: 0.85, note: t("studio.crop.bottomNote") }
 ] as const;
 
 /** 手机版的规格：方形。首屏在手机上的框接近 1:1，方形放进去几乎不裁。 */
@@ -262,7 +264,7 @@ export function VideoStudio({
   const renderOnGithub = async (preview: boolean) => {
     setProblem("");
     setResult(null);
-    setBusy(preview ? "正在叫 GitHub 出小样…" : "正在叫 GitHub 出片…");
+    setBusy(t(preview ? "studio.busy.githubPreview" : "studio.busy.githubRender"));
     try {
       /* Save first, every time. The workflow renders what is in the
          repository, so an unsaved change would silently not be in the film. */
@@ -272,7 +274,7 @@ export function VideoStudio({
         body: JSON.stringify({ name, project })
       });
       const savedData = await saved.json();
-      if (!saved.ok) throw new Error(savedData.error ?? "存不下来");
+      if (!saved.ok) throw new Error(savedData.error ?? t("studio.err.cannotSave"));
       if (savedData.projects) setProjectList(savedData.projects);
       setSavedName(name);
 
@@ -282,7 +284,7 @@ export function VideoStudio({
         body: JSON.stringify({ name, preview })
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "起不来");
+      if (!response.ok) throw new Error(data.error ?? t("studio.err.cannotStart"));
       setRunPreview(preview);
       setRunFiles([]);
       setRunStartedAt(Date.now());
@@ -300,14 +302,13 @@ export function VideoStudio({
         setRun(null);
         setBusy("");
         setProblem(
-          "已经让 GitHub 出片了，但一时没查到这次运行。多半是 GitHub 慢了一拍，" +
-          "也可能是这个月的 Actions 分钟数用完了。去仓库的 Actions 页面看一眼「出片」。"
+          t("studio.err.runNotFound")
         );
         return;
       }
       setRun(data.run);
     } catch (err) {
-      setProblem(err instanceof Error ? err.message : "起不来");
+      setProblem(err instanceof Error ? err.message : t("studio.err.cannotStart"));
       setBusy("");
     }
   };
@@ -342,7 +343,7 @@ export function VideoStudio({
     if (!run || run.status !== "completed") return;
     setBusy("");
     if (run.conclusion !== "success") {
-      setProblem(`出片没成（${run.conclusion ?? "失败"}）。点下面的链接看 GitHub 上的日志。`);
+      setProblem(t("studio.err.renderFailed", { reason: run.conclusion ?? t("studio.label.failed") }));
     }
   }, [run]);
 
@@ -362,13 +363,13 @@ export function VideoStudio({
       });
       const data = await res.json();
       if (!res.ok) {
-        setProblem(String(data.error ?? "没成"));
+        setProblem(String(data.error ?? t("studio.err.failed")));
         setLog(String(data.error ?? ""));
         return null;
       }
       return data;
     } catch (err) {
-      setProblem(err instanceof Error ? err.message : "请求失败");
+      setProblem(err instanceof Error ? err.message : t("studio.err.requestFailed"));
       return null;
     } finally {
       setBusy("");
@@ -387,7 +388,7 @@ export function VideoStudio({
   }
 
   async function save() {
-    const data = await call("/api/admin/studio/project", { name, project }, "存盘");
+    const data = await call("/api/admin/studio/project", { name, project }, t("studio.busy.save"));
     if (data?.projects) {
       setProjectList(data.projects);
       setSavedName(name);
@@ -437,7 +438,7 @@ export function VideoStudio({
     const data = await call(
       "/api/admin/studio/render",
       { name, project, preview: mode === "preview", upload: mode === "upload" },
-      mode === "preview" ? "出小样…" : mode === "upload" ? "出片并上传…" : "出正式版…"
+      t(mode === "preview" ? "studio.busy.preview" : mode === "upload" ? "studio.busy.upload" : "studio.busy.render")
     );
     if (data) {
       setResult({ files: data.files ?? [], duration: data.duration ?? 0, uploaded: data.uploaded ?? null });
@@ -460,11 +461,10 @@ export function VideoStudio({
     <>
       {!available ? (
         <section className="admin-card" style={{ marginBottom: 14, borderColor: "#f0dca0", background: "#fffbe9" }}>
-          <strong style={{ color: "#6b5312" }}>这里可以排片子，但出不了片</strong>
+          <strong style={{ color: "#6b5312" }}>{t("studio.noFfmpeg.title")}</strong>
           <p style={{ margin: "6px 0 0", color: "#6b5312", lineHeight: 1.8 }}>
             {unavailableReason}
-            挑镜头、定秒数、排顺序、存项目，在这一页上都能做，存好之后
-            在装了 ffmpeg 的电脑上打开同一页，选中这个项目按「出片并上传」就行。
+            {t("studio.noFfmpeg.body")}
           </p>
         </section>
       ) : null}
@@ -488,10 +488,10 @@ export function VideoStudio({
         wrong video is already on the homepage.
       */}
       <section className="admin-card" style={{ marginTop: 14 }}>
-        <h3 style={{ marginTop: 0 }}>1 · 选一个项目，或新建一个</h3>
+        <h3 style={{ marginTop: 0 }}>{t("studio.step1")}</h3>
 
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <label style={{ fontSize: 13, color: "#555" }}>当前</label>
+          <label style={{ fontSize: 13, color: "#555" }}>{t("studio.current")}</label>
           <select
             className="admin-input"
             style={{ width: 230 }}
@@ -503,12 +503,12 @@ export function VideoStudio({
             {projectList.map((p) => (
               <option key={p} value={p}>{p}</option>
             ))}
-            {projectList.includes(name) ? null : <option value="__unsaved__">{name}（还没存过）</option>}
+            {projectList.includes(name) ? null : <option value="__unsaved__">{t("studio.unsaved", { name })}</option>}
           </select>
           <button
             className="admin-btn"
             type="button"
-            title="清空，从头做一条新片子"
+            title={t("studio.newBlankTitle")}
             onClick={() => {
               setProject(EMPTY);
               setResult(null);
@@ -517,22 +517,22 @@ export function VideoStudio({
               setName("new-video.json");
             }}
           >
-            新建空白
+            {t("studio.newBlank")}
           </button>
           <button
             className="admin-btn admin-btn-danger"
             type="button"
             disabled={!projectList.includes(name) || Boolean(busy)}
-            title="删掉这个项目文件。已经出过、上传过的片子不受影响"
+            title={t("studio.deleteTitle")}
             onClick={async () => {
-              if (!window.confirm(`删掉项目「${name}」？\n已经出过、上传过的片子不受影响。`)) return;
-              setBusy("删除中…");
+              if (!window.confirm(t("studio.deleteConfirm", { name }))) return;
+              setBusy(t("studio.busy.deleting"));
               setProblem("");
               const res = await fetch(`/api/admin/studio/project?name=${encodeURIComponent(name)}`, { method: "DELETE" });
               const data = await res.json();
               setBusy("");
               if (!res.ok) {
-                setProblem(String(data.error ?? "删不掉"));
+                setProblem(String(data.error ?? t("studio.err.cannotDelete")));
                 return;
               }
               setProjectList(data.projects);
@@ -543,12 +543,12 @@ export function VideoStudio({
               }
             }}
           >
-            删除
+            {t("studio.delete")}
           </button>
         </div>
 
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}>
-          <label style={{ fontSize: 13, color: "#555" }}>名字</label>
+          <label style={{ fontSize: 13, color: "#555" }}>{t("studio.nameLabel")}</label>
           <input
             className="admin-input"
             style={{ width: 210 }}
@@ -560,12 +560,12 @@ export function VideoStudio({
             className="admin-btn"
             type="button"
             disabled={Boolean(busy) || !name.trim()}
-            title="用这个名字另存一份，原来那个留着不动——想在旧片子基础上做新的就按它"
+            title={t("studio.saveAsTitle")}
             onClick={async () => {
               const base = name.replace(/\.json$/, "");
               const copy = { ...project, output: { ...project.output, name: base } };
               setProject(copy);
-              const data = await call("/api/admin/studio/project", { name, project: copy }, "另存一份…");
+              const data = await call("/api/admin/studio/project", { name, project: copy }, t("studio.busy.saveAs"));
               if (data?.projects) {
                 setProjectList(data.projects);
                 /* The copy is now what is open. Without this, 改名 still
@@ -575,15 +575,15 @@ export function VideoStudio({
               }
             }}
           >
-            另存一份
+            {t("studio.saveAs")}
           </button>
           <button
             className="admin-btn"
             type="button"
             disabled={Boolean(busy) || !projectList.includes(savedName) || name === savedName}
-            title="把当前项目改成这个名字，不留旧的那份"
+            title={t("studio.renameTitle")}
             onClick={async () => {
-              setBusy("改名…");
+              setBusy(t("studio.busy.rename"));
               setProblem("");
               const res = await fetch("/api/admin/studio/project", {
                 method: "PATCH",
@@ -593,7 +593,7 @@ export function VideoStudio({
               const data = await res.json();
               setBusy("");
               if (!res.ok) {
-                setProblem(String(data.error ?? "改名失败"));
+                setProblem(String(data.error ?? t("studio.err.renameFailed")));
                 return;
               }
               setProjectList(data.projects);
@@ -609,17 +609,17 @@ export function VideoStudio({
               );
             }}
           >
-            改名
+            {t("studio.rename")}
           </button>
         </div>
 
         <p className="muted" style={{ fontSize: 12, margin: "10px 0 0", lineHeight: 1.85 }}>
-          一个项目就是一条片子：用哪些片段、配什么音乐、出多大。文件存在仓库的
-          <code> projects/ </code>里，就是命令行读的那个——这一页和
-          <code> node scripts/video-studio.mjs projects/xxx.json </code>出来的片子一模一样。
+          {tRich("studio.projectNote", {
+            dir: <code> projects/ </code>,
+            cmd: <code> node scripts/video-studio.mjs projects/xxx.json </code>
+          })}
           <br />
-          成片的文件名在上面「音乐与出片设置」里另设。<strong>另存一份</strong>会把它一起改成新名字，
-          免得两个项目出的片子互相覆盖。
+          {tRich("studio.projectNote2", { saveAs: <strong>{t("studio.saveAs")}</strong> })}
         </p>
       </section>
 
@@ -628,14 +628,13 @@ export function VideoStudio({
         <>
       <section className="admin-card" style={{ marginBottom: 14 }} id="studio-browse">
         <h3 style={{ marginTop: 0 }}>
-          翻片子
+          {t("studio.browse")}
           <span style={{ fontWeight: 400, fontSize: 13.5, color: "#777", marginLeft: 10 }}>
-            可选 —— 不知道该取第几秒的时候用
+            {t("studio.browseOptional")}
           </span>
         </h3>
         <p className="muted" style={{ marginTop: 0, lineHeight: 1.75 }}>
-          已经知道秒数的话，这一节可以跳过，直接到下面「播放顺序」里加段、把地址粘上就行。
-          不确定的话，把片子放进来翻一翻：总览图看全片，切点列出它自己的镜头，也可以指定几秒单独看。
+          {t("studio.browseNote")}
         </p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <input
@@ -650,7 +649,7 @@ export function VideoStudio({
             type="button"
             disabled={!source.trim() || Boolean(busy)}
             onClick={async () => {
-              const d = await call("/api/admin/studio/inspect", { action: "resolve", source }, "解析中…");
+              const d = await call("/api/admin/studio/inspect", { action: "resolve", source }, t("studio.busy.resolving"));
               if (d) {
                 setInfo(d);
                 setSheet(null);
@@ -659,12 +658,16 @@ export function VideoStudio({
               }
             }}
           >
-            认一下
+            {t("studio.recognise")}
           </button>
         </div>
         {info ? (
           <p style={{ margin: "10px 0 0", fontSize: 13, color: "#555", lineHeight: 1.8 }}>
-            时长 <strong>{clock(info.duration)}</strong>（{info.duration.toFixed(1)}s）· 画面 <strong>{info.size}</strong>
+            {tRich("studio.durationSize", {
+              duration: <strong>{clock(info.duration)}</strong>,
+              seconds: info.duration.toFixed(1),
+              size: <strong>{info.size}</strong>
+            })}
             <span style={{ display: "block", fontFamily: "ui-monospace, Menlo, monospace", fontSize: 11.5, color: "#888", wordBreak: "break-all" }}>
               {info.stream}
             </span>
@@ -675,29 +678,29 @@ export function VideoStudio({
       {/* ---- 2. 找镜头 ---- */}
       {info ? (
         <section className="admin-card" style={{ marginBottom: 14 }}>
-          <h3 style={{ marginTop: 0 }}>在这条片子里找镜头</h3>
+          <h3 style={{ marginTop: 0 }}>{t("studio.step2")}</h3>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <button
               className="admin-btn"
               type="button"
               disabled={Boolean(busy)}
               onClick={async () => {
-                const d = await call("/api/admin/studio/inspect", { action: "scan", source, every: 8 }, "出总览图…");
+                const d = await call("/api/admin/studio/inspect", { action: "scan", source, every: 8 }, t("studio.busy.sheet"));
                 if (d) setSheet(d);
               }}
             >
-              总览图
+              {t("studio.sheet")}
             </button>
             <button
               className="admin-btn"
               type="button"
               disabled={Boolean(busy)}
               onClick={async () => {
-                const d = await call("/api/admin/studio/inspect", { action: "cuts", source }, "找切点…（长片要等）");
+                const d = await call("/api/admin/studio/inspect", { action: "cuts", source }, t("studio.busy.cuts"));
                 if (d) setShots(d.usable ?? []);
               }}
             >
-              它自己的切点
+              {t("studio.ownCuts")}
             </button>
             <span style={{ flex: 1 }} />
             <input
@@ -705,7 +708,7 @@ export function VideoStudio({
               style={{ width: 200 }}
               value={lookAt}
               onChange={(e) => setLookAt(e.target.value)}
-              placeholder="看这几秒：28 30 40"
+              placeholder={t("studio.lookPlaceholder")}
             />
             <button
               className="admin-btn"
@@ -713,20 +716,20 @@ export function VideoStudio({
               disabled={Boolean(busy) || !lookAt.trim()}
               onClick={async () => {
                 const times = lookAt.split(/[\s,，]+/).map(Number).filter((n) => Number.isFinite(n) && n >= 0);
-                const d = await call("/api/admin/studio/inspect", { action: "look", source, times }, "抽帧…");
+                const d = await call("/api/admin/studio/inspect", { action: "look", source, times }, t("studio.busy.frames"));
                 if (d) setFrames(d);
               }}
             >
-              看看
+              {t("studio.look")}
             </button>
           </div>
 
           {sheet ? (
             <figure style={{ margin: "14px 0 0" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={fileUrl(sheet.image)} alt="总览图" style={{ width: "100%", borderRadius: 4, border: "1px solid var(--rule, #ddd)" }} />
+              <img src={fileUrl(sheet.image)} alt={t("studio.sheetAlt")} style={{ width: "100%", borderRadius: 4, border: "1px solid var(--rule, #ddd)" }} />
               <figcaption className="muted" style={{ fontSize: 12.5, marginTop: 6 }}>
-                每 {sheet.every} 秒一帧，从 0 秒起，从左到右、从上到下。第 n 格 ≈ 第 {sheet.every}×(n−1) 秒。
+                {t("studio.sheetNote", { every: sheet.every })}
               </figcaption>
             </figure>
           ) : null}
@@ -734,9 +737,9 @@ export function VideoStudio({
           {frames ? (
             <figure style={{ margin: "14px 0 0" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={fileUrl(frames.image)} alt="抽帧" style={{ width: "100%", borderRadius: 4, border: "1px solid var(--rule, #ddd)" }} />
+              <img src={fileUrl(frames.image)} alt={t("studio.framesAlt")} style={{ width: "100%", borderRadius: 4, border: "1px solid var(--rule, #ddd)" }} />
               <figcaption className="muted" style={{ fontSize: 12.5, marginTop: 6 }}>
-                从左到右：{frames.times.join("s · ")}s
+                {t("studio.framesNote", { times: frames.times.join("s · ") })}
               </figcaption>
             </figure>
           ) : null}
@@ -744,7 +747,7 @@ export function VideoStudio({
           {shots ? (
             <div style={{ marginTop: 14 }}>
               <p style={{ margin: "0 0 8px", fontSize: 13, color: "#555" }}>
-                这条片子自己的镜头里，够长可以整段拿来用的有 {shots.length} 个。点一下就加进下面的顺序里。
+                {t("studio.shotsNote", { n: shots.length })}
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, maxHeight: 220, overflowY: "auto" }}>
                 {shots.map((s) => (
@@ -753,7 +756,7 @@ export function VideoStudio({
                     className="admin-btn admin-btn-sm"
                     type="button"
                     onClick={() => addClip({ source, from: +s.from.toFixed(2), to: +s.to.toFixed(2), note: "" })}
-                    title={`加进顺序：${s.from.toFixed(2)} → ${s.to.toFixed(2)}`}
+                    title={t("studio.addShotTitle", { from: s.from.toFixed(2), to: s.to.toFixed(2) })}
                   >
                     {s.from.toFixed(1)}–{s.to.toFixed(1)} · {s.len.toFixed(1)}s
                   </button>
@@ -770,20 +773,19 @@ export function VideoStudio({
       {/* ---- 3. 顺序 ---- */}
       <section className="admin-card" style={{ marginBottom: 14 }}>
         <h3 style={{ marginTop: 0 }}>
-          2 · 播放顺序
+          {t("studio.step3")}
           <span style={{ fontWeight: 400, fontSize: 14, color: "#777", marginLeft: 10 }}>
-            {project.clips.length} 段，共 {total.toFixed(2)} 秒
+            {t("studio.clipCount", { n: project.clips.length, seconds: total.toFixed(2) })}
           </span>
         </h3>
         <p className="muted" style={{ margin: "0 0 12px", lineHeight: 1.75 }}>
-          每一段就是「某条片子的第几秒到第几秒」。地址直接粘在这一行里——
-          干净世界的网址、.mp4 直链都行，<strong>不用上传</strong>。
-          粘好之后点「看片定点」，片子就在这一行里放起来：拖到想要的那一帧，按「设为起点」「设为终点」。
-          出片时只会去取用到的那几秒。
+          {tRich("studio.sequenceNote", {
+            noUpload: <strong>{t("studio.sequenceNoteNoUpload")}</strong>
+          })}
         </p>
         {project.clips.length === 0 ? (
           <p className="muted" style={{ margin: 0 }}>
-            还没有片段。点下面的「＋ 加一段」，把地址粘进去、填上秒数。
+            {t("studio.noClips")}
           </p>
         ) : (
           <div style={{ display: "grid", gap: 10 }}>
@@ -816,27 +818,27 @@ export function VideoStudio({
                       style={{ fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12 }}
                       value={c.source}
                       onChange={(e) => patchClip(i, { source: e.target.value })}
-                      placeholder="https://www.ganjingworld.com/embed/…  或  artifacts/footage/xxx.mp4"
+                      placeholder={t("studio.sourcePlaceholder")}
                     />
                     <span style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                       <button
                         className={openRow === i ? "admin-btn admin-btn-sm admin-btn-primary" : "admin-btn admin-btn-sm"}
                         type="button"
-                        title="打开播放器，看着画面定起点和终点"
+                        title={t("studio.playerTitle")}
                         disabled={!c.source.trim()}
                         onClick={() => setOpenRow(openRow === i ? null : i)}
                       >
-                        {openRow === i ? "收起播放器" : "看片定点"}
+                        {t(openRow === i ? "studio.playerClose" : "studio.playerOpen")}
                       </button>
                       {available ? (
                         <button
                           className="admin-btn admin-btn-sm"
                           type="button"
-                          title="把这条片子拿到上面，翻总览图、找切点"
+                          title={t("studio.toTopTitle")}
                           disabled={!c.source.trim() || Boolean(busy)}
                           onClick={async () => {
                             setSource(c.source);
-                            const d = await call("/api/admin/studio/inspect", { action: "resolve", source: c.source }, "解析中…");
+                            const d = await call("/api/admin/studio/inspect", { action: "resolve", source: c.source }, t("studio.busy.resolving"));
                             if (d) {
                               setInfo(d);
                               setSheet(null);
@@ -846,7 +848,7 @@ export function VideoStudio({
                             }
                           }}
                         >
-                          拿到上面翻
+                          {t("studio.toTop")}
                         </button>
                       ) : null}
                     </span>
@@ -866,15 +868,15 @@ export function VideoStudio({
                       className="admin-input"
                       value={c.from}
                       onChange={(e) => patchClip(i, { from: Number(e.target.value) })}
-                      title="从第几秒"
-                      placeholder="从"
+                      title={t("studio.fromTitle")}
+                      placeholder={t("studio.from")}
                     />
                     <input
                       className="admin-input"
                       value={c.to}
                       onChange={(e) => patchClip(i, { to: Number(e.target.value) })}
-                      title="到第几秒"
-                      placeholder="到"
+                      title={t("studio.toTitle")}
+                      placeholder={t("studio.to")}
                     />
                     <span
                       style={{
@@ -890,7 +892,7 @@ export function VideoStudio({
                       className="admin-input"
                       value={c.note ?? ""}
                       onChange={(e) => patchClip(i, { note: e.target.value })}
-                      placeholder="这段是什么（只给人看，不影响出片）"
+                      placeholder={t("studio.clipLabelPlaceholder")}
                     />
                     <span style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                       {/* Checking the two ends is how you tell a clip is the shot you
@@ -898,19 +900,19 @@ export function VideoStudio({
                       <button
                         className="admin-btn admin-btn-sm"
                         type="button"
-                        title="看这一段的头尾两帧"
+                        title={t("studio.endsTitle")}
                         style={{ display: available ? undefined : "none" }}
                         disabled={!c.source.trim() || len <= 0 || Boolean(busy)}
                         onClick={async () => {
                           const d = await call(
                             "/api/admin/studio/inspect",
                             { action: "look", source: c.source, times: [Number(c.from), Math.max(0, Number(c.to) - 0.2)] },
-                            `看第 ${i + 1} 段…`
+                            t("studio.busy.lookClip", { n: i + 1 })
                           );
                           if (d) setRowFrames((m) => ({ ...m, [i]: d.image }));
                         }}
                       >
-                        看头尾
+                        {t("studio.ends")}
                       </button>
                       <button className="admin-btn admin-btn-sm" type="button" onClick={() => moveClip(i, -1)} disabled={i === 0}>
                         ↑
@@ -924,7 +926,7 @@ export function VideoStudio({
                         ↓
                       </button>
                       <button className="admin-btn admin-btn-sm admin-btn-danger" type="button" onClick={() => removeClip(i)}>
-                        删
+                        {t("studio.removeClip")}
                       </button>
                     </span>
                   </div>
@@ -949,11 +951,11 @@ export function VideoStudio({
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={fileUrl(shown)}
-                          alt={`第 ${i + 1} 段的头尾`}
+                          alt={t("studio.endsAlt", { n: i + 1 })}
                           style={{ width: "100%", maxWidth: 560, borderRadius: 4, border: "1px solid var(--rule, #ddd)" }}
                         />
                         <figcaption className="muted" style={{ fontSize: 11.5, marginTop: 4 }}>
-                          左：第 {c.from} 秒（这段的开头）　右：第 {c.to} 秒（结尾）
+                          {t("studio.endsNote", { from: c.from, to: c.to })}
                         </figcaption>
                       </figure>
                     </div>
@@ -969,18 +971,18 @@ export function VideoStudio({
             type="button"
             onClick={() => addClip({ source: source || "", from: 0, to: 3, note: "" })}
           >
-            ＋ 加一段
+            {t("studio.addClip")}
           </button>
         </div>
       </section>
 
       {/* ---- 4. 音乐与出片设置 ---- */}
       <section className="admin-card" style={{ marginBottom: 14 }}>
-        <h3 style={{ marginTop: 0 }}>3 · 音乐与出片设置</h3>
+        <h3 style={{ marginTop: 0 }}>{t("studio.step4")}</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
           <div>
             <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>
-              配乐（留空就没有声音）
+              {t("studio.music")}
             </label>
             <input
               className="admin-input"
@@ -992,7 +994,7 @@ export function VideoStudio({
                   music: e.target.value.trim() ? { loop: true, bpm: 115.4, lufs: -16, ...(p.music ?? {}), from: e.target.value } : null
                 }))
               }
-              placeholder="上传一个 mp3，或粘一个地址"
+              placeholder={t("studio.musicPlaceholder")}
             />
             {/*
               Uploading is the answer to "where does music come from".
@@ -1034,25 +1036,24 @@ export function VideoStudio({
                       music: { loop: true, lufs: -16, ...(p.music ?? {}), from: result.url }
                     }));
                   } catch (err) {
-                    setProblem(err instanceof Error ? err.message : "音乐上传失败");
+                    setProblem(err instanceof Error ? err.message : t("studio.err.musicUpload"));
                   } finally {
                     setMusicBusy(0);
                   }
                 }}
               />
               {musicBusy ? (
-                <strong style={{ fontSize: 13 }}>上传中 {musicBusy}%</strong>
+                <strong style={{ fontSize: 13 }}>{t("studio.musicUploading", { n: musicBusy })}</strong>
               ) : null}
             </div>
             <p className="muted" style={{ margin: "4px 0 0", fontSize: 12, lineHeight: 1.7 }}>
-              选一个 mp3 / m4a / wav / ogg，或者一个 mp4 / webm（只取声音，画面不要），最大 200MB。
-              选完自动上传，上面地址栏会跟着变。也可以不上传，直接把现成的地址粘进上面那一栏。
+              {t("studio.musicPickNote")}
             </p>
             {project.music?.from && /\.(mp4|webm|mov)(\?|$)/i.test(project.music.from) ? (
               <p style={{ margin: "6px 0 0", fontSize: 12, lineHeight: 1.7, color: "#6b5312", background: "#fffbe9", padding: "7px 9px", borderRadius: 4 }}>
-                配乐来自一个<strong>视频</strong>文件——出片时只取它的声音，画面不要。
-                这是正常用法：看到哪条片子音乐好听，直接传上来就行。
-                现在用的是旧版 13 秒片头的声轨。
+                {tRich("studio.musicFromVideo", {
+                  video: <strong>{t("studio.musicFromVideoWord")}</strong>
+                })}
               </p>
             ) : null}
             <div style={{ display: "flex", gap: 10, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -1063,16 +1064,16 @@ export function VideoStudio({
                   disabled={!project.music}
                   onChange={(e) => setProject((p) => (p.music ? { ...p, music: { ...p.music, loop: e.target.checked } } : p))}
                 />
-                music 比片子短时循环
+                {t("studio.loopMusic")}
               </label>
               <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-                <span title="每分钟多少拍。只在曲子比片子短、需要循环时才用得上。">每分钟拍数</span>
+                <span title={t("studio.bpmTitle")}>{t("studio.bpm")}</span>
                 <input
                   className="admin-input"
                   style={{ width: 82 }}
                   value={project.music?.bpm ?? ""}
                   disabled={!project.music}
-                  placeholder="自动"
+                  placeholder={t("studio.bpmAuto")}
                   onChange={(e) => setProject((p) => (p.music ? { ...p, music: { ...p.music, bpm: Number(e.target.value) } } : p))}
                 />
               </label>
@@ -1088,42 +1089,49 @@ export function VideoStudio({
             */}
             {project.music ? (
               <p style={{ margin: "6px 0 0", fontSize: 12.5, lineHeight: 1.75 }}>
-                {musicCheck === "busy" ? <span className="muted">正在听这首曲子，量它多长、多快…</span> : null}
+                {musicCheck === "busy" ? <span className="muted">{t("studio.musicMeasuring")}</span> : null}
                 {musicCheck === "failed" ? (
                   <span className="muted">
-                    这首曲子没量成（地址打不开，或者文件太大）。不影响出片，循环接缝会用半秒淡接。
+                    {t("studio.musicUnmeasured")}
                   </span>
                 ) : null}
                 {musicInfo ? (
                   <>
-                    曲子 <strong>{musicInfo.duration.toFixed(1)} 秒</strong>，片子 {total.toFixed(1)} 秒。
+                    {tRich("studio.musicLengths", {
+                      music: <strong>{musicInfo.duration.toFixed(1)}s</strong>,
+                      film: total.toFixed(1)
+                    })}
                     {musicLoops ? (
                       <>
-                        {" "}曲子短，<strong>要循环接上</strong>——
+                        {tRich("studio.musicShort", {
+                          needLoop: <strong>{t("studio.musicShortNeedLoop")}</strong>
+                        })}
                         {musicInfo.confident ? (
                           <>
-                            量出来是每分钟 <strong>{musicInfo.bpm}</strong> 拍，已经替你填好了，
-                            循环会按整拍剪、按一拍交叉淡接，接缝听不出来。
+                            {tRich("studio.musicBpmFound", { bpm: <strong>{musicInfo.bpm}</strong> })}
                           </>
                         ) : (
                           <>
-                            这首曲子<strong>节拍不明显</strong>，没量准，所以
-                            {project.music?.bpm
-                              ? `没动你原来填的 ${project.music.bpm}。`
-                              : "没替你填。"}
-                            不填也能出片，接缝会用半秒淡接；听着别扭的话，自己填个数再试。
+                            {tRich("studio.musicBpmWeak", {
+                              weak: <strong>{t("studio.musicBpmWeakWord")}</strong>,
+                              kept: project.music?.bpm
+                                ? t("studio.musicBpmKept", { bpm: project.music.bpm })
+                                : t("studio.musicBpmNotFilled")
+                            })}
                           </>
                         )}
                       </>
                     ) : (
-                      <> 曲子够长，<strong>不用循环</strong>，拍数填不填都一样。</>
+                      tRich("studio.musicLongEnough", {
+                        noLoop: <strong>{t("studio.musicLongEnoughNoLoop")}</strong>
+                      })
                     )}
                   </>
                 ) : null}
               </p>
             ) : null}
             <p className="muted" style={{ fontSize: 12, margin: "6px 0 0", lineHeight: 1.7 }}>
-              音量会自动归一到 −16 LUFS，跟网站上其它视频一条线，不会忽大忽小。
+              {t("studio.loudnessNote")}
             </p>
             {/*
               Saying what the numbers cost.
@@ -1135,9 +1143,7 @@ export function VideoStudio({
               nothing on this page said so.
             */}
             <p className="muted" style={{ fontSize: 12, margin: "6px 0 0", lineHeight: 1.7 }}>
-              <strong>1920 就是上限</strong>——干净世界的素材本身就是 1920×1080，再往上渲是凭空造像素。
-              首屏是满幅的，在 1920 的屏幕上实际显示到 2400px 宽，所以 1280 的片子会被放大近两倍，
-              横幅上的字会糊。每个访客一进站都要下载它——画质数字越小越好、文件越大。
+              {tRich("studio.resolutionNote", { cap: <strong>{t("studio.resolutionCap")}</strong> })}
             </p>
             {/*
               文件大小只能给实测值，不能给公式。
@@ -1149,13 +1155,14 @@ export function VideoStudio({
               精确的假数字有用。
             */}
             <p className="muted" style={{ fontSize: 12, margin: "6px 0 0", lineHeight: 1.7 }}>
-              <strong>文件多大，主要看画面动得厉不厉害</strong>，不是算出来的。30 秒、1920、画质 18
-              的片子实测在 <strong>9–19MB</strong> 之间：镜头稳、变化少的接近 9，快切和大幅运镜的接近 19。
-              出完看一眼实际大小，觉得大就把画质数字调高一两档再出一次。
+              {tRich("studio.sizeNote", {
+                what: <strong>{t("studio.sizeNoteWhat")}</strong>,
+                range: <strong>{t("studio.sizeNoteRange")}</strong>
+              })}
             </p>
           </div>
           <div>
-            <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>成片文件名</label>
+            <label style={{ display: "block", fontSize: 13, marginBottom: 4 }}>{t("studio.outputName")}</label>
             <input className="admin-input" style={{ width: "100%" }} value={project.output.name} onChange={(e) => patchOutput({ name: e.target.value })} />
             {/*
               Spelling out the files this produces.
@@ -1170,7 +1177,7 @@ export function VideoStudio({
               className="muted"
               style={{ margin: "5px 0 0", fontSize: 11.5, lineHeight: 1.7, fontFamily: "ui-monospace, Menlo, monospace" }}
             >
-              → {project.output.name || "（没填）"}-{project.output.width}.mp4
+              → {project.output.name || t("studio.outputNameEmpty")}-{project.output.width}.mp4
               {project.output.alsoWidth ? `　${project.output.name}-${project.output.alsoWidth}.mp4` : ""}
               {mobileOn
                 ? `　${project.output.name}-${MOBILE.width}x${MOBILE.height}.mp4`
@@ -1178,21 +1185,23 @@ export function VideoStudio({
             </p>
             {project.output.name && project.output.name !== name.replace(/\.json$/, "") ? (
               <p style={{ margin: "6px 0 0", fontSize: 12, lineHeight: 1.7, color: "#6b5312", background: "#fffbe9", padding: "7px 9px", borderRadius: 4 }}>
-                成片名和项目名不一样（项目叫 <strong>{name.replace(/\.json$/, "")}</strong>）。
-                只有一个项目时没关系；<strong>但两个项目用同一个成片名，后出的会把先出的覆盖掉。</strong>
+                {tRich("studio.outputNameMismatch", {
+                  project: <strong>{name.replace(/\.json$/, "")}</strong>,
+                  warn: <strong>{t("studio.outputNameMismatchWarn")}</strong>
+                })}
                 <button
                   className="admin-btn admin-btn-sm"
                   type="button"
                   style={{ marginLeft: 8 }}
                   onClick={() => patchOutput({ name: name.replace(/\.json$/, "") })}
                 >
-                  改成和项目名一致
+                  {t("studio.outputNameFix")}
                 </button>
               </p>
             ) : null}
             <div style={{ marginTop: 12 }}>
               <span style={{ display: "block", fontSize: 13, marginBottom: 5 }}>
-                出片比例
+                {t("studio.ratioLabel")}
                 <AspectRatioHelp />
               </span>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -1234,9 +1243,9 @@ export function VideoStudio({
                 {/* 只负责选中，不做开关 —— 单选组里点第二下把自己关掉，会落到
                     「一个都没选」那种没有意义的状态。要离开自定义，点某个预设。 */}
                 <button type="button" onClick={() => setCustom(true)} style={ratioBtn(custom || !presetMatched)}>
-                  <span style={{ fontWeight: 600 }}>自定义</span>
+                  <span style={{ fontWeight: 600 }}>{t("studio.custom")}</span>
                   <span style={{ display: "block", fontSize: 11.5, opacity: 0.75, marginTop: 3, lineHeight: 1.5 }}>
-                    首屏以外的用途
+                    {t("studio.customNote")}
                   </span>
                 </button>
               </div>
@@ -1244,7 +1253,12 @@ export function VideoStudio({
 
             {custom || !presetMatched ? (
               <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-                {([["宽", "width"], ["高", "height"]] as const).map(([label, key]) => (
+                {(
+                  [
+                    [t("studio.width"), "width"],
+                    [t("studio.height"), "height"]
+                  ] as const
+                ).map(([label, key]) => (
                   <label key={key} style={{ fontSize: 13 }}>
                     {label}
                     <input
@@ -1262,8 +1276,8 @@ export function VideoStudio({
             {project.output.height < project.output.width / 1.9 ? (
               <div style={{ marginTop: 12 }}>
                 <span style={{ display: "block", fontSize: 13, marginBottom: 5 }}>
-                  裁切位置
-                  <span style={{ color: "#777", fontSize: 12, marginLeft: 6 }}>素材上下各切掉一条，这是在选切哪条</span>
+                  {t("studio.cropLabel")}
+                  <span style={{ color: "#777", fontSize: 12, marginLeft: 6 }}>{t("studio.cropHint")}</span>
                 </span>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {CROPS.map((c) => {
@@ -1277,7 +1291,7 @@ export function VideoStudio({
                   })}
                 </div>
                 <p className="muted" style={{ fontSize: 12, margin: "6px 0 0", lineHeight: 1.7 }}>
-                  拿不准就先按「出小样」看一眼——小样是按同样的位置裁的。
+                  {t("studio.cropAdvice")}
                 </p>
               </div>
             ) : null}
@@ -1290,19 +1304,18 @@ export function VideoStudio({
                 style={{ marginTop: 3 }}
               />
               <span>
-                同时出一支手机方形版（1:1，{MOBILE.width}×{MOBILE.height}）
+                {t("studio.alsoSquare", { w: MOBILE.width, h: MOBILE.height })}
                 <span style={{ display: "block", color: "#777", fontSize: 12 }}>
-                  手机是竖屏，横片放进去只剩中间一条。方形几乎不裁。
-                  <strong>但画面里有烧死的字幕就别勾</strong>——方形只保得住中间约 56% 的宽度，
-                  字幕两头会被切掉，变成半截话。那种情况下首屏的「手机版视频」留空就行，
-                  手机沿用桌面那支，和现在一样。
+                  {tRich("studio.alsoSquareNote", {
+                    warn: <strong>{t("studio.alsoSquareWarn")}</strong>
+                  })}
                 </span>
               </span>
             </label>
 
             <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
               <label style={{ fontSize: 13 }}>
-                帧率
+                {t("studio.fps")}
                 <input
                   className="admin-input"
                   style={{ width: 84, display: "block" }}
@@ -1319,9 +1332,9 @@ export function VideoStudio({
                 style={{ marginTop: 3 }}
               />
               <span>
-                首尾加黑场淡入淡出
+                {t("studio.fade")}
                 <span style={{ display: "block", color: "#777", fontSize: 12 }}>
-                  首页片头是循环播的，别勾——每半分钟黑一下像是坏了。看一遍就停的片子才勾。
+                  {t("studio.fadeNote")}
                 </span>
               </span>
             </label>
@@ -1339,7 +1352,7 @@ export function VideoStudio({
         site saves and stops there, and whoever has ffmpeg renders.
       */}
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>4 · 存起来，出片</h3>
+        <h3 style={{ marginTop: 0 }}>{t("studio.step5")}</h3>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <button
@@ -1348,14 +1361,14 @@ export function VideoStudio({
             disabled={Boolean(busy)}
             onClick={save}
           >
-            存项目
+            {t("studio.saveProject")}
           </button>
           <span className="muted" style={{ fontSize: 12.5 }}>
             {available
-              ? "想先收工、回头再出片时按它。按下面三个出片按钮会自动存一次，不用先按这个。"
+              ? t("studio.saveHintGithub")
               : canRenderOnGithub
-                ? "想先收工、回头再出片时按它。按下面的出片按钮会自动存一次，不用先按这个。"
-                : "排好了就按它存下。出片要在装了 ffmpeg 的电脑上做。"}
+                ? t("studio.saveHintLocal")
+                : t("studio.saveHintNoFfmpeg")}
           </span>
         </div>
 
@@ -1373,10 +1386,10 @@ export function VideoStudio({
               }}
             >
               <button className="admin-btn" type="button" disabled={Boolean(busy) || project.clips.length === 0} onClick={() => render("preview")}>
-                出小样（快，360p）
+                {t("studio.renderPreview")}
               </button>
               <button className="admin-btn" type="button" disabled={Boolean(busy) || project.clips.length === 0} onClick={() => render("full")}>
-                出正式版
+                {t("studio.renderFinal")}
               </button>
               <button
                 className="admin-btn admin-btn-primary"
@@ -1384,15 +1397,19 @@ export function VideoStudio({
                 disabled={Boolean(busy) || project.clips.length === 0}
                 onClick={() => render("upload")}
               >
-                出片并上传
+                {t("studio.renderUpload")}
               </button>
               {busy ? <strong style={{ color: "#4a3c96" }}>{busy}</strong> : null}
             </div>
             <p className="muted" style={{ fontSize: 12.5, margin: "10px 0 0", lineHeight: 1.8 }}>
-              <strong>出小样</strong>：几秒钟，360p，只看剪得对不对——顺序、长短、音乐接得顺不顺。确认了再出正式版。<br />
-              <strong>出正式版</strong>：1080p，约半分钟。只存在这台电脑上，网站还看不到。<br />
-              <strong>出片并上传</strong>：出正式版，<strong>并且</strong>传到 Storage、登记进图片视频库。
-              片子还不会自己上首页——要换，去「页面内容 → 首屏 Hero → 视频地址」把新地址粘上。
+              {tRich("studio.renderNote", { preview: <strong>{t("studio.renderPreviewName")}</strong> })}
+              <br />
+              {tRich("studio.renderNoteFinal", { final: <strong>{t("studio.renderFinal")}</strong> })}
+              <br />
+              {tRich("studio.renderNoteUpload", {
+                upload: <strong>{t("studio.renderUpload")}</strong>,
+                and: <strong>{t("studio.renderNoteUploadAnd")}</strong>
+              })}
             </p>
           </>
         ) : canRenderOnGithub ? (
@@ -1422,7 +1439,7 @@ export function VideoStudio({
                 disabled={Boolean(busy) || project.clips.length === 0}
                 onClick={() => void renderOnGithub(true)}
               >
-                出小样（360p）
+                {t("studio.renderPreviewShort")}
               </button>
               <button
                 className="admin-btn admin-btn-primary"
@@ -1430,7 +1447,7 @@ export function VideoStudio({
                 disabled={Boolean(busy) || project.clips.length === 0}
                 onClick={() => void renderOnGithub(false)}
               >
-                出片并上传
+                {t("studio.renderUpload")}
               </button>
               {busy ? <strong style={{ color: "#4a3c96" }}>{busy}</strong> : null}
             </div>
@@ -1453,20 +1470,20 @@ export function VideoStudio({
                        a file that was never going to be there. */
                     runPreview ? (
                       <>
-                        <strong style={{ color: "#1f7a4d" }}>小样出好了。</strong>
+                        <strong style={{ color: "#1f7a4d" }}>{t("studio.previewDone")}</strong>
                         <p className="muted" style={{ margin: "6px 0 0", fontSize: 12.5, lineHeight: 1.8 }}>
-                          用了 {Math.floor(elapsed / 60)} 分 {elapsed % 60} 秒。
-                          <strong>小样没有上传</strong>——它只是 360p，用来看剪得对不对。
-                          点下面的链接进 GitHub，在页面最下面的 Artifacts 里下载来看。
-                          剪对了就按「出片并上传」出 1080p 正式版。
+                          {t("studio.elapsed", { m: Math.floor(elapsed / 60), s: elapsed % 60 })}
+                          {tRich("studio.previewNotUploaded", {
+                            notUploaded: <strong>{t("studio.previewNotUploadedStrong")}</strong>
+                          })}
                         </p>
                       </>
                     ) : (
                       <>
-                        <strong style={{ color: "#1f7a4d" }}>出好了，已经传上去并登记进图片视频库。</strong>
+                        <strong style={{ color: "#1f7a4d" }}>{t("studio.uploadDone")}</strong>
                         <p className="muted" style={{ margin: "6px 0 0", fontSize: 12.5, lineHeight: 1.8 }}>
-                          用了 {Math.floor(elapsed / 60)} 分 {elapsed % 60} 秒。
-                          片子不会自己上首页——要换，去「页面内容 → 首屏 Hero → 视频地址」把下面的地址粘上。
+                          {t("studio.elapsed", { m: Math.floor(elapsed / 60), s: elapsed % 60 })}
+                          {t("studio.uploadDoneNote")}
                         </p>
                         {runFiles.length ? (
                           <ul style={{ margin: "8px 0 0", paddingLeft: 0, listStyle: "none" }}>
@@ -1490,21 +1507,23 @@ export function VideoStudio({
                           </ul>
                         ) : (
                           <p className="muted" style={{ margin: "6px 0 0", fontSize: 12 }}>
-                            地址在「图片视频库」里。
+                            {t("studio.addressInLibrary")}
                           </p>
                         )}
                       </>
                     )
                   ) : (
-                    <strong style={{ color: "#b42318" }}>没出成（{run.conclusion ?? "失败"}）。</strong>
+                    <strong style={{ color: "#b42318" }}>
+                      {t("studio.renderFailedTitle", { reason: run.conclusion ?? t("studio.label.failed") })}
+                    </strong>
                   )
                 ) : (
                   <>
                     <strong style={{ color: "#4a3c96" }}>
-                      GitHub 正在出片…… {Math.floor(elapsed / 60)} 分 {elapsed % 60} 秒
+                      {t("studio.rendering", { m: Math.floor(elapsed / 60), s: elapsed % 60 })}
                     </strong>
                     <p className="muted" style={{ margin: "6px 0 0", fontSize: 12.5, lineHeight: 1.8 }}>
-                      一般三到四分钟。这一页可以关掉，出好了会在「图片视频库」里。
+                      {t("studio.renderingNote")}
                     </p>
                   </>
                 )}
@@ -1516,7 +1535,7 @@ export function VideoStudio({
                       rel="noreferrer"
                       style={{ color: "#4a3c96", textDecoration: "underline" }}
                     >
-                      在 GitHub 上看这一次出片 ↗
+                      {t("studio.viewOnGithub")}
                     </a>
                   </p>
                 ) : null}
@@ -1524,14 +1543,12 @@ export function VideoStudio({
             ) : null}
 
             <p className="muted" style={{ fontSize: 12.5, margin: "10px 0 0", lineHeight: 1.8 }}>
-              这台机器没有 ffmpeg，所以出片交给 GitHub 跑——按下去会先存项目，再让它出片、上传。
-              一次三到四分钟，比在装了 ffmpeg 的电脑上慢（那边约一分钟），但不用你装任何东西。
+              {t("studio.githubNote")}
             </p>
           </>
         ) : (
           <p className="muted" style={{ fontSize: 12.5, margin: "12px 0 0", lineHeight: 1.8 }}>
-            出片的三个按钮在这台机器上用不了，所以没有显示。存好项目后，
-            在装了 ffmpeg 的电脑上打开这一页、在最下面选中这个项目，按钮就在了。
+            {t("studio.noRenderButtons")}
           </p>
         )}
 
@@ -1548,7 +1565,7 @@ export function VideoStudio({
             </ul>
             {result.uploaded ? (
               <div style={{ marginTop: 10, padding: "10px 12px", background: "#f0fbf4", border: "1px solid #bfe6cf", borderRadius: 4 }}>
-                <strong style={{ color: "#1f7a4d" }}>已上传并登记进图片视频库</strong>
+                <strong style={{ color: "#1f7a4d" }}>{t("studio.uploadedToLibrary")}</strong>
                 <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
                   {Object.entries(result.uploaded).map(([k, v]) => (
                     <li key={k} style={{ fontSize: 12, wordBreak: "break-all" }}>

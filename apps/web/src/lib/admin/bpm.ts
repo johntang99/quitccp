@@ -1,4 +1,5 @@
-/**
+
+import { t } from "@/lib/i18n";/**
  * Measures a track's tempo in the browser.
  *
  * BPM exists here for one narrow reason: when the music is shorter than the
@@ -138,18 +139,18 @@ function tempoOf(env: Float64Array): { bpm: number; strength: number } | null {
  */
 export async function measureMusic(url: string, signal?: AbortSignal): Promise<MusicInfo> {
   const response = await fetch(url, { signal });
-  if (!response.ok) throw new Error(`取不到这个文件（${response.status}）`);
+  if (!response.ok) throw new Error(t("studio.bpm.cannotFetch", { status: response.status }));
 
   const declared = Number(response.headers.get("content-length") ?? 0);
   if (declared > MAX_ANALYSE_BYTES) {
-    throw new Error("文件太大，没法在浏览器里测节拍");
+    throw new Error(t("studio.bpm.tooLarge"));
   }
 
   const bytes = await response.arrayBuffer();
 
   const Ctx: typeof AudioContext =
     window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-  if (!Ctx) throw new Error("这个浏览器不支持 Web Audio");
+  if (!Ctx) throw new Error(t("studio.bpm.noWebAudio"));
 
   const ctx = new Ctx();
   let decoded: AudioBuffer;
@@ -173,7 +174,7 @@ export async function measureMusic(url: string, signal?: AbortSignal): Promise<M
   const mono = (await offline.startRendering()).getChannelData(0);
 
   const result = tempoOf(onsetEnvelope(mono));
-  if (!result) throw new Error("这段音频太短，测不出节拍");
+  if (!result) throw new Error(t("studio.bpm.tooShort"));
 
   return {
     duration,

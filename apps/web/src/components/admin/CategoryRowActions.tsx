@@ -142,7 +142,7 @@ export function CategoryRowActions({
             >
               <input type="hidden" name="id" value={id} />
               <button className="admin-btn admin-btn-danger" type="submit" disabled={deleting}>
-                {t(deleting ? "admin.art.delete.deleting" : "admin.art.delete.confirm")}
+                {t(deleting ? "admin.list.delete.deleting" : "admin.list.delete.confirm")}
               </button>
             </form>
           )}
@@ -179,7 +179,7 @@ export function CategoryRowActions({
               : t("admin.cat.deleteTitle")
           }
         >
-          {t("admin.art.delete")}
+          {t("admin.list.delete")}
         </button>
       </div>
       {open && typeof document !== "undefined" ? createPortal(dialog, document.body) : null}

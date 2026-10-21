@@ -199,6 +199,22 @@ async function main() {
 
     changed += 1;
     console.log(`\n  ✗ ${page}`);
+    /*
+     * 先指出字级别的第一个分歧点。
+     *
+     * 下面那个按行走的差异在「一句话被重新切分成不同数量的节点」时会丢失对齐，
+     * 于是打出一串两边都有的字，看着像乱动了一通，其实只是错位。两边去掉空白
+     * 之后第一个不同的位置是没有歧义的 —— 它直接回答「到底哪里不一样」。
+     */
+    {
+      const a = words(before);
+      const b = words(text);
+      let i = 0;
+      while (i < a.length && i < b.length && a[i] === b[i]) i += 1;
+      console.log(`      第一个不同在第 ${i} 个字：`);
+      console.log(`        旧 …${a.slice(Math.max(0, i - 40), i)}【${a.slice(i, i + 60)}】`);
+      console.log(`        新 …${b.slice(Math.max(0, i - 40), i)}【${b.slice(i, i + 60)}】`);
+    }
     /* 按位置比，不按集合比：集合看不见顺序变化，也看不见重复行数变化 ——
        dashboard 第一次就是这么报了一个「变了」却列不出任何差异行的。 */
     const a = before.split("\n");

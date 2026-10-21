@@ -105,13 +105,13 @@ export default async function LatestArticlesPage({ searchParams }: PageProps) {
         <form id="bulk-form" method="post" action="/api/admin/content/articles/bulk" className="admin-toolbar">
           <input type="hidden" name="back" value={chipHref({})} />
           <select className="admin-select" name="action" defaultValue="category">
-            <option value="category">{t("admin.art.bulk.setCategory")}</option>
-            <option value="publish">{t("admin.art.bulk.publish")}</option>
-            <option value="draft">{t("admin.art.bulk.draft")}</option>
-            <option value="archive">{t("admin.art.bulk.archive")}</option>
+            <option value="category">{t("admin.list.bulk.setCategory")}</option>
+            <option value="publish">{t("admin.list.bulk.publish")}</option>
+            <option value="draft">{t("admin.list.bulk.draft")}</option>
+            <option value="archive">{t("admin.list.bulk.archive")}</option>
           </select>
           <select className="admin-select" name="category" defaultValue="">
-            <option value="">{t("admin.art.bulk.pickCategory")}</option>
+            <option value="">{t("admin.list.bulk.pickCategory")}</option>
             {categories.map((c) => (
               <option key={c.slug} value={c.name}>
                 {c.name}

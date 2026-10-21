@@ -207,6 +207,55 @@ if (SHOW_FILES) {
   }
 }
 
+/*
+ * 代码里引用了、但两张表都没有的 key。
+ *
+ * 这是检查链上曾经的一个洞：keyGap 比的是中英两张表的差集，两边都没有的 key
+ * 它看不见 —— 而 t() 对查不到的 key 的处理是**原样返回这串 key**，于是页面上
+ * 出现一行 `admin.vidform.marksHint`。真发生过一次：加 key 的脚本报了语法错，
+ * 文案没写进表，而 i18n:check 照样报「✓ 英文表没有缺项」。
+ *
+ * 只认字面量 t("...")。拼出来的 key（`admin.cat.counted.${kind}` 这种）本来就
+ * 查不出来，单独列出来让人自己过 —— 和 locale:check 对动态表名的处理一个道理：
+ * 看不见的要说出来，不能装看见。
+ */
+async function undefinedKeys() {
+  const zhSrc = readFileSync("apps/web/src/lib/i18n/zh.ts", "utf8");
+  const enSrc = readFileSync("apps/web/src/lib/i18n/en.ts", "utf8");
+  const defined = new Set<string>();
+  for (const src of [zhSrc, enSrc]) {
+    for (const m of src.matchAll(/^\s*"([^"]+)":/gm)) defined.add(m[1]);
+  }
+
+  const used = new Map<string, string>();   // key -> 第一次出现的地方
+  const dynamic: string[] = [];
+  for (const file of walk("apps/web/src")) {
+    if (file.includes("/lib/i18n/")) continue;
+    const text = readFileSync(file, "utf8");
+    const short = file.replace("apps/web/src/", "");
+    for (const m of text.matchAll(/\bt(?:Rich)?\(\s*"([^"]+)"/g)) {
+      if (!used.has(m[1])) used.set(m[1], short);
+    }
+    for (const m of text.matchAll(/\bt(?:Rich)?\(\s*`([^`]*\$\{[^`]*)`/g)) {
+      dynamic.push(`${short}  t(\`${m[1]}\`)`);
+    }
+  }
+
+  const missing = [...used].filter(([k]) => !defined.has(k));
+  console.log("");
+  if (missing.length === 0) {
+    console.log(`  ✓ 代码里引用的 ${used.size} 个 key 都在文案表里`);
+  } else {
+    console.log(`  ✗ ${missing.length} 个 key 代码里用了，两张表都没有 —— 页面上会直接显示这串 key：`);
+    for (const [k, where] of missing) console.log(`      ${k}   ← ${where}`);
+  }
+  if (dynamic.length > 0) {
+    console.log(`  ？ 另有 ${dynamic.length} 处 key 是拼出来的，查不了：`);
+    for (const d of dynamic) console.log(`      ${d}`);
+  }
+  return missing.length;
+}
+
 /* 两张表的差集。 */
 async function keyGap() {
   const zhSrc = readFileSync("apps/web/src/lib/i18n/zh.ts", "utf8");
@@ -233,6 +282,9 @@ async function keyGap() {
   return missing.length;
 }
 
-keyGap().then((missing) => {
-  if (missing > 0) process.exit(1);
-});
+(async () => {
+  const gap = await keyGap();
+  const undef = await undefinedKeys();
+  console.log("");
+  if (gap > 0 || undef > 0) process.exit(1);
+})();

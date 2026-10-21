@@ -44,16 +44,16 @@ export async function ArticleTable({
           <tr>
             {selectable ? <th style={{ width: 28 }} /> : null}
             {numbered ? <th style={{ width: 36 }}>#</th> : null}
-            <th style={{ width: 76 }}>{t("admin.art.col.cover")}</th>
-            <th>{t("admin.art.col.title")}</th>
-            <th>{t("admin.art.col.category")}</th>
+            <th style={{ width: 76 }}>{t("admin.list.col.cover")}</th>
+            <th>{t("admin.list.col.title")}</th>
+            <th>{t("admin.list.col.category")}</th>
             <th>{t("admin.art.col.author")}</th>
-            <th>{t("admin.art.col.status")}</th>
-            <th style={{ width: 44, textAlign: "center" }} title={t("admin.art.col.featured")}>
-              {t("admin.art.col.featuredShort")}
+            <th>{t("admin.list.col.status")}</th>
+            <th style={{ width: 44, textAlign: "center" }} title={t("admin.list.col.featured")}>
+              {t("admin.list.col.featuredShort")}
             </th>
-            <th style={{ width: 62, textAlign: "center" }} title={t("admin.art.col.editorArchive")}>
-              {t("admin.art.col.editorArchiveShort")}
+            <th style={{ width: 62, textAlign: "center" }} title={t("admin.list.col.editorArchive")}>
+              {t("admin.list.col.editorArchiveShort")}
             </th>
             <th>{t("admin.art.col.editor")}</th>
             <th>{t(dateColumn === "updated" ? "admin.art.col.updated" : "admin.art.col.published")}</th>
@@ -98,7 +98,7 @@ export async function ArticleTable({
                         fontSize: 11
                       }}
                     >
-                      {t("admin.art.noImage")}
+                      {t("admin.list.noImage")}
                     </div>
                   )}
                 </td>
@@ -110,17 +110,17 @@ export async function ArticleTable({
                     <div style={{ color: "#8a90a0", fontSize: 12 }}>{row.subtitle}</div>
                   ) : null}
                 </td>
-                <td>{row.category || <span style={{ color: "#b42318" }}>{t("admin.art.uncategorised")}</span>}</td>
+                <td>{row.category || <span style={{ color: "#b42318" }}>{t("admin.list.uncategorised")}</span>}</td>
                 <td>{row.author || <span style={{ color: "#8a90a0" }}>—</span>}</td>
                 <td>
                   <span className={`badge ${status.cls}`}>{status.label}</span>
                 </td>
                 {/* A mark when set, nothing when not: a column of ✗ is noise,
                     and what an editor scans for is the few that are flagged. */}
-                <td style={{ textAlign: "center" }} title={row.featured ? t("admin.art.col.featured") : ""}>
+                <td style={{ textAlign: "center" }} title={row.featured ? t("admin.list.col.featured") : ""}>
                   {row.featured ? <span style={{ color: "#c8102e", fontSize: 15 }}>★</span> : null}
                 </td>
-                <td style={{ textAlign: "center" }} title={row.editorArchive ? t("admin.art.col.editorArchive") : ""}>
+                <td style={{ textAlign: "center" }} title={row.editorArchive ? t("admin.list.col.editorArchive") : ""}>
                   {row.editorArchive ? <span style={{ color: "#1f7a4d", fontSize: 15 }}>✦</span> : null}
                 </td>
                 {/* 编辑 in the masthead sense: the person who handled the piece
@@ -129,8 +129,8 @@ export async function ArticleTable({
                 <td style={{ color: "#8a90a0", whiteSpace: "nowrap" }} title={row.createdBy || undefined}>
                   {actorLabel(row.createdBy, actorNames)}
                   {row.updatedBy && row.updatedBy !== row.createdBy ? (
-                    <div style={{ fontSize: 11 }} title={t("admin.art.lastEditedBy", { email: row.updatedBy })}>
-                      {t("admin.art.changedBy", { name: actorLabel(row.updatedBy, actorNames) })}
+                    <div style={{ fontSize: 11 }} title={t("admin.list.lastEditedBy", { email: row.updatedBy })}>
+                      {t("admin.list.changedBy", { name: actorLabel(row.updatedBy, actorNames) })}
                     </div>
                   ) : null}
                 </td>
@@ -139,7 +139,7 @@ export async function ArticleTable({
                 </td>
                 <td style={{ whiteSpace: "nowrap" }}>
                   <Link className="admin-btn admin-btn-sm" href={`/admin/articles/${row.id}`}>
-                    {t("admin.art.edit")}
+                    {t("admin.list.edit")}
                   </Link>
                   <a
                     className="admin-btn admin-btn-sm"

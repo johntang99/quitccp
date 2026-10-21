@@ -113,7 +113,7 @@ export function DeleteImpact({ kind, id }: { kind: "article" | "video"; id: stri
             /* 每一条直接链到它自己的编辑页。牵连的往往不是文章 —— 问答在
                /admin/faq，视频在 /admin/videos，写死一个入口就是指错地方。 */
             const href = EDIT_PATH[row.kind]?.(row.id);
-            const name = `${KIND_NAME[row.kind] ?? row.kind}${t("admin.art.delete.name", { title: row.label })}`;
+            const name = `${KIND_NAME[row.kind] ?? row.kind}${t("admin.list.delete.name", { title: row.label })}`;
             return (
               <span key={`${row.kind}-${row.id}`} style={{ color: tone.hint }}>
                 {href ? (

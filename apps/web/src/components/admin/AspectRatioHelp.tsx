@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 import { createPortal } from "react-dom";
 
 /**
@@ -25,9 +27,9 @@ import { createPortal } from "react-dom";
 
 /** 实测数据，2026-10-18 在试验台上量的。改这里之前先去 /hero-lab 重新量。 */
 const MEASURED = [
-  { screen: "1366×768 笔记本", r169: "29%", r235: "6%" },
-  { screen: "1920×1080 常见桌面", r169: "20%", r235: "0%" },
-  { screen: "2560×1440 宽屏", r169: "21%", r235: "0%" }
+  { screen: t("ratio.screen.laptop"), r169: "29%", r235: "6%" },
+  { screen: t("ratio.screen.desktop"), r169: "20%", r235: "0%" },
+  { screen: t("ratio.screen.wide"), r169: "21%", r235: "0%" }
 ];
 
 export function AspectRatioHelp() {
@@ -67,7 +69,7 @@ export function AspectRatioHelp() {
           cursor: "pointer"
         }}
       >
-        为什么推荐 2.35？
+        {t("ratio.why")}
       </button>
 
       {/*
@@ -98,7 +100,7 @@ export function AspectRatioHelp() {
             tabIndex={-1}
             role="dialog"
             aria-modal="true"
-            aria-label="为什么首屏片子要出 2.35:1"
+            aria-label={t("ratio.title")}
             /* 点面板本身不该关掉它 —— 只有点外面才算「我看完了」。 */
             onClick={(e) => e.stopPropagation()}
             style={{
@@ -115,37 +117,37 @@ export function AspectRatioHelp() {
             }}
           >
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 19 }}>为什么首屏片子要出 2.35:1</h3>
+              <h3 style={{ margin: 0, fontSize: 19 }}>{t("ratio.title")}</h3>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 style={{ background: "none", border: "none", fontSize: 22, lineHeight: 1, cursor: "pointer", color: "#888", padding: 4 }}
-                aria-label="关闭"
+                aria-label={t("ratio.close")}
               >
                 ×
               </button>
             </div>
 
             <p style={{ margin: "14px 0 0", fontSize: 15 }}>
-              先说结论：<strong>两种比例最后被砍掉的像素一样多。</strong>
-              差别只在一件事——<strong>谁来决定砍哪一块。</strong>
+              {tRich("ratio.conclusion", {
+                same: <strong>{t("ratio.conclusionSame")}</strong>,
+                who: <strong>{t("ratio.conclusionWho")}</strong>
+              })}
             </p>
 
             <Diagram />
 
             <p style={{ margin: "4px 0 0", fontSize: 13.5, color: "#555" }}>
-              首屏是满幅的横条：宽度跟着屏幕走，高度有上限。16:9 的片子比这个条「高」，
-              多出来的部分浏览器自己切掉，<strong>永远从正中间切</strong>——而字幕、台标、人名条
-              恰恰都贴着上下边。2.35 的片子本来就是这个形状，放进去不用切。
+              {tRich("ratio.heroShape", { always: <strong>{t("ratio.heroShapeAlways")}</strong> })}
             </p>
 
-            <h4 style={{ margin: "22px 0 8px", fontSize: 15 }}>各种屏幕上，上下被切掉多少</h4>
+            <h4 style={{ margin: "22px 0 8px", fontSize: 15 }}>{t("ratio.tableTitle")}</h4>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5, fontVariantNumeric: "tabular-nums" }}>
               <thead>
                 <tr style={{ textAlign: "left", color: "#666" }}>
-                  <th style={th}>屏幕</th>
-                  <th style={{ ...th, textAlign: "right" }}>出 16:9</th>
-                  <th style={{ ...th, textAlign: "right" }}>出 2.35</th>
+                  <th style={th}>{t("ratio.col.screen")}</th>
+                  <th style={{ ...th, textAlign: "right" }}>{t("ratio.col.169")}</th>
+                  <th style={{ ...th, textAlign: "right" }}>{t("ratio.col.235")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -159,25 +161,24 @@ export function AspectRatioHelp() {
               </tbody>
             </table>
             <p style={{ margin: "8px 0 0", fontSize: 12.5, color: "#777" }}>
-              实测值，不是算出来的。屏幕越宽，16:9 被切得越狠。
+              {t("ratio.measuredNote")}
             </p>
 
-            <h4 style={{ margin: "22px 0 8px", fontSize: 15 }}>那手机呢</h4>
+            <h4 style={{ margin: "22px 0 8px", fontSize: 15 }}>{t("ratio.phoneTitle")}</h4>
             <p style={{ margin: 0, fontSize: 13.5, color: "#444" }}>
-              手机是竖屏，<strong>横着的片子不管什么比例都要被切掉左右两边</strong>，而且
-              2.35 比 16:9 切得更多（约 65% 对 54%）。这是竖屏的几何决定的，换比例救不了。
-              真要救只有一条路：<strong>另出一支方形（1:1）的手机版</strong>——
-              出片时勾一下就有。但画面里有烧死的字幕就别勾，方形会把字幕两头切掉，变成半截话。
+              {tRich("ratio.phoneBody", {
+                both: <strong>{t("ratio.phoneBodyBoth")}</strong>,
+                square: <strong>{t("ratio.phoneBodySquare")}</strong>
+              })}
             </p>
 
-            <h4 style={{ margin: "22px 0 8px", fontSize: 15 }}>什么时候该选 16:9</h4>
+            <h4 style={{ margin: "22px 0 8px", fontSize: 15 }}>{t("ratio.when169Title")}</h4>
             <p style={{ margin: 0, fontSize: 13.5, color: "#444" }}>
-              片子<strong>不是给首屏用的</strong>时候——比如要发到视频页、投到大屏、或者交给别处使用。
-              那些地方按 16:9 排版，这时候 2.35 反而会留黑边。
+              {tRich("ratio.when169Body", { notHero: <strong>{t("ratio.when169NotHero")}</strong> })}
             </p>
 
             <p style={{ margin: "22px 0 0", fontSize: 13, color: "#777", borderTop: "1px solid #eee", paddingTop: 14 }}>
-              拿不准裁哪一块，先按「出小样」看一眼——小样是按同样的裁切位置出的，几秒钟就好。
+              {t("ratio.footer")}
             </p>
           </div>
         </div>,

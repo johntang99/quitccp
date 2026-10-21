@@ -38,7 +38,7 @@ export function ArticleDeleteButton({ id, title }: { id: string; title: string }
         style={{ marginLeft: 4 }}
         onClick={() => setOpen(true)}
       >
-        {t("admin.art.delete")}
+        {t("admin.list.delete")}
       </button>
 
       {open ? (
@@ -74,7 +74,7 @@ export function ArticleDeleteButton({ id, title }: { id: string; title: string }
               {t("admin.art.delete.title")}
             </h3>
             <p style={{ margin: "0 0 6px", lineHeight: 1.6, wordBreak: "break-word" }}>
-              {t("admin.art.delete.name", { title })}
+              {t("admin.list.delete.name", { title })}
             </p>
             <p style={{ margin: "0 0 12px", color: "#8a90a0", fontSize: 13, lineHeight: 1.6 }}>
               {t("admin.art.delete.warning")}
@@ -99,7 +99,7 @@ export function ArticleDeleteButton({ id, title }: { id: string; title: string }
               >
                 <input type="hidden" name="id" value={id} />
                 <button className="admin-btn admin-btn-danger" type="submit" disabled={submitting}>
-                  {t(submitting ? "admin.art.delete.deleting" : "admin.art.delete.confirm")}
+                  {t(submitting ? "admin.list.delete.deleting" : "admin.list.delete.confirm")}
                 </button>
               </form>
             </div>
