@@ -180,7 +180,11 @@ const isZhOnly = (f: string) => ZH_ONLY.includes(f);
  */
 const CMS_BACKED = [
   "lib/section-nav.ts",   // 栏目标签：真正的来源是 nav/section-tabs.json，这里只是那一行缺失时的兜底
-  "lib/site-data.ts"      // 导航与首页标题：同上，来源是 pages/home.json 与 navigation.json
+  "lib/site-data.ts",     // 导航与首页标题：同上，来源是 pages/home.json 与 navigation.json
+  // 「关于我们」各页的默认内容：页面内容编辑器「补齐默认内容」用的那一份，
+  // 以及 cms_content_entries 还没有这一条时顶上的那份。英文站不翻译中文站的
+  // 机构简介，它会有自己播种的一套。
+  "lib/admin/about-page-defaults.ts"
 ];
 const isTemplate = (f: string) => f.startsWith("components/templates/") || CMS_BACKED.includes(f);
 const templateRows = all.filter((r) => isTemplate(r.file));

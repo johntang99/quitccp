@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { t } from "@/lib/i18n";
 import type { MediaRecord } from "@/lib/admin/types";
 import { formatDateTime } from "@/lib/format";
 
@@ -94,7 +95,7 @@ export function MediaLibrary({
         `/api/admin/content/media/list?type=${tab}&offset=${rows[tab].length}&limit=${PAGE_SIZE}`
       );
       const payload = (await response.json()) as { rows?: MediaRecord[]; error?: string };
-      if (!response.ok) throw new Error(payload.error || "读取失败");
+      if (!response.ok) throw new Error(payload.error || t("admin.media.readFailed"));
       setRows((current) => ({ ...current, [tab]: [...current[tab], ...(payload.rows ?? [])] }));
     } catch {
       /* The button stays; pressing it again retries. */
@@ -120,8 +121,8 @@ export function MediaLibrary({
           <div style={{ display: "flex", gap: 6 }}>
             {(
               [
-                ["image", `图片（${totals.image}）`],
-                ["video", `视频（${totals.video}）`]
+                ["image", t("admin.media.tab.image", { n: totals.image })],
+                ["video", t("admin.media.tab.video", { n: totals.video })]
               ] as const
             ).map(([key, label]) => (
               <button
@@ -140,14 +141,14 @@ export function MediaLibrary({
             ))}
           </div>
           <span style={{ fontSize: 12.5, color: "#777" }}>
-            已载入 {loaded.length} / {totals[tab]}
-            {q ? `，其中 ${shown.length} 条匹配` : ""}
+            {t("admin.media.loaded", { n: loaded.length, total: totals[tab] })}
+            {q ? t("admin.media.matched", { n: shown.length }) : ""}
           </span>
           <input
             className="admin-input"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="在已载入的里按文件名或说明筛选"
+            placeholder={t("admin.media.filterPlaceholder")}
             style={{ maxWidth: 300, marginLeft: "auto" }}
           />
         </div>
@@ -156,7 +157,7 @@ export function MediaLibrary({
       <section className="admin-card">
         {shown.length === 0 ? (
           <p style={{ margin: 0, color: "#777" }}>
-            {q ? "已载入的里没有匹配项，可以先「载入更多」。" : "还没有内容。"}
+            {t(q ? "admin.media.noMatch" : "admin.media.empty")}
           </p>
         ) : (
           <div
@@ -236,7 +237,7 @@ export function MediaLibrary({
                     {row.name}
                   </span>
                   <span style={{ fontSize: 11.5, color: "#777" }}>
-                    {captionOf(row) || "（未填写说明）"}
+                    {captionOf(row) || t("admin.media.noCaption")}
                   </span>
                 </span>
               </button>
@@ -247,7 +248,7 @@ export function MediaLibrary({
         {loaded.length < totals[tab] ? (
           <div style={{ marginTop: 16, textAlign: "center" }}>
             <button type="button" className="admin-btn" onClick={() => void loadMore()} disabled={loading}>
-              {loading ? "载入中…" : `载入更多（还有 ${totals[tab] - loaded.length} 条）`}
+              {loading ? t("admin.media.loading") : t("admin.media.loadMore", { n: totals[tab] - loaded.length })}
             </button>
           </div>
         ) : null}
@@ -310,11 +311,11 @@ function MediaModal({
         body: JSON.stringify({ id: row.id, description: draft })
       });
       const payload = (await response.json()) as { error?: string; description?: string };
-      if (!response.ok) throw new Error(payload.error || "保存失败。");
+      if (!response.ok) throw new Error(payload.error || t("admin.media.saveFailed"));
       onCaption(payload.description ?? draft.trim());
-      setStatus("已保存。");
+      setStatus(t("admin.media.saved"));
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "保存失败。");
+      setStatus(error instanceof Error ? error.message : t("admin.media.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -373,7 +374,7 @@ function MediaModal({
             onClick={onClose}
             style={{ marginLeft: "auto" }}
           >
-            关闭
+            {t("admin.media.close")}
           </button>
         </div>
 
@@ -396,7 +397,7 @@ function MediaModal({
 
         <div style={{ display: "grid", gap: 6 }}>
           <label style={{ fontSize: 12.5, color: "#555" }}>
-            说明（Description）
+            {t("admin.media.description")}
             <textarea
               className="admin-textarea"
               value={draft}
@@ -404,7 +405,7 @@ function MediaModal({
               readOnly={!canWrite}
               rows={3}
               maxLength={500}
-              placeholder={canWrite ? "这张图/这段视频拍的是什么、在哪里、什么时候" : "（无编辑权限）"}
+              placeholder={t(canWrite ? "admin.media.descriptionPlaceholder" : "admin.media.noWritePermission")}
               style={{ width: "100%", marginTop: 4, resize: "vertical" }}
             />
           </label>
@@ -416,7 +417,7 @@ function MediaModal({
                 onClick={() => void save()}
                 disabled={saving || draft === caption}
               >
-                {saving ? "保存中…" : "保存说明"}
+                {t(saving ? "admin.media.saving" : "admin.media.saveDescription")}
               </button>
             ) : null}
             {status ? <span style={{ fontSize: 12, color: "#555" }}>{status}</span> : null}
@@ -429,7 +430,7 @@ function MediaModal({
         </div>
 
         <div style={{ display: "grid", gap: 4 }}>
-          <span style={{ fontSize: 12.5, color: "#555" }}>地址</span>
+          <span style={{ fontSize: 12.5, color: "#555" }}>{t("admin.media.address")}</span>
           <div style={{ display: "flex", gap: 8 }}>
             <input
               ref={urlRef}
@@ -445,7 +446,7 @@ function MediaModal({
               }}
             />
             <button type="button" className="admin-btn" onClick={() => void copy()} style={{ flex: "none" }}>
-              {copied ? "已复制" : "复制"}
+              {t(copied ? "admin.media.copied" : "admin.media.copy")}
             </button>
           </div>
         </div>
