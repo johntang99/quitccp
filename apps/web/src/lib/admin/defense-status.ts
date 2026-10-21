@@ -374,7 +374,7 @@ async function checkSearchBound(): Promise<DefenseCheck> {
       p_t2: null,
       p_t3: null,
       p_t4: null,
-      p_locale: "zh",
+      p_locale: SITE_LOCALE,
       p_limit: 1
     });
     const ms = Date.now() - started;
@@ -611,7 +611,7 @@ async function checkRenderedPage(): Promise<DefenseCheck[]> {
       .from("cms_articles")
       .select("slug, title")
       .eq("status", "published")
-      .eq("locale", "zh")
+      .eq("locale", SITE_LOCALE)
       .order("updated_at", { ascending: false })
       .limit(1);
     const row = data?.[0];

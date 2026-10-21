@@ -4,6 +4,7 @@ import { listArticles } from "@/lib/admin/repository";
 import { searchPublishedArticlesWithMeta } from "@/lib/search-repository";
 import { meiliConfig } from "@/lib/search-index";
 import type { ArticleRecord } from "@/lib/admin/types";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * Figures for 平台概览.
@@ -163,6 +164,23 @@ export interface SearchStatus {
  * So this runs a real query rather than reading a status flag, and compares the
  * index against the database rather than trusting either on its own.
  */
+/**
+ * 后台「站内搜索」那一栏用来试搜的词。
+ *
+ * 它要的是「这个站上一定搜得到东西」的词 —— 搜不到就说明搜索坏了。所以按语言
+ * 各给一个：英文站搜「三退」必然零结果，那一栏会一直显示红色，而搜索其实好好的。
+ * 一个长期报假故障的指示灯，和没有指示灯是一样的。
+ */
+const SEARCH_PROBE_TERMS: Record<string, string> = {
+  zh: "三退",
+  en: "CCP",
+  de: "KPCh",
+  ja: "中国共産党",
+  ko: "중국공산당",
+  ro: "PCC"
+};
+const PROBE_TERM = SEARCH_PROBE_TERMS[SITE_LOCALE] ?? "CCP";
+
 export async function getSearchStatus(): Promise<SearchStatus> {
   const configured = ((process.env.SEARCH_PRIMARY_BACKEND ?? "substring")
     .trim()
@@ -175,7 +193,7 @@ export async function getSearchStatus(): Promise<SearchStatus> {
   let effective: SearchBackendName = configured;
   let probeResults = 0;
   try {
-    const probe = await searchPublishedArticlesWithMeta("三退", { locale: "zh", limit: 5 });
+    const probe = await searchPublishedArticlesWithMeta(PROBE_TERM, { locale: SITE_LOCALE, limit: 5 });
     effective = probe.meta.effectiveBackend as SearchBackendName;
     probeResults = probe.results.length;
   } catch {
@@ -235,7 +253,7 @@ async function countSearchableRows(): Promise<number> {
     ).map(async ([table, localeFiltered]) => {
       try {
         let q = supabase.from(table).select("id", { count: "exact", head: true });
-        if (localeFiltered) q = q.eq("locale", "zh");
+        if (localeFiltered) q = q.eq("locale", SITE_LOCALE);
         const { count } = await q;
         return count ?? 0;
       } catch {

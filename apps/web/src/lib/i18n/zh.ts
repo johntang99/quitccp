@@ -9,6 +9,14 @@
  */
 
 export const zh: Record<string, string> = {
+  "nav.home": "首页",
+  "nav.news": "新闻与报告",
+  "nav.videos": "视频",
+  "nav.services": "我们的服务",
+  "nav.about": "关于我们",
+  "nav.involve": "参与支持",
+  "nav.endccp": "End CCP联署",
+  "nav.resources": "资源馆",
   "nav.menu": "菜单",
   "nav.openMenu": "打开菜单",
   "nav.closeMenu": "关闭菜单",

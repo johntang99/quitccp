@@ -5,6 +5,7 @@ import { ImagePickerModal } from "./ImagePickerModal";
 import { MarkdownEditor, type MarkdownEditorHandle } from "./MarkdownEditor";
 import { warmPages } from "@/lib/admin/warm-pages";
 import { requestSlug, retargetSlugDate, useAutoSlug } from "./use-auto-slug";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * The single article form, used for both creating and editing.
@@ -153,7 +154,7 @@ export function ArticleForm({ initial, categories, authors, mode }: ArticleFormP
     }
     const timer = window.setTimeout(async () => {
       try {
-        const params = new URLSearchParams({ slug, locale: "zh" });
+        const params = new URLSearchParams({ slug, locale: SITE_LOCALE });
         if (v.id) params.set("id", v.id);
         const response = await fetch(`/api/admin/content/articles/slug?${params}`);
         if (response.ok) setSlugCheck(await response.json());

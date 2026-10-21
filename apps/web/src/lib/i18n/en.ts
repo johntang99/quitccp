@@ -1,6 +1,14 @@
 /** English copy. Keys missing here fall back to the Chinese table. */
 
 export const en: Record<string, string> = {
+  "nav.home": "Home",
+  "nav.news": "News & Reports",
+  "nav.videos": "Videos",
+  "nav.services": "Our services",
+  "nav.about": "About us",
+  "nav.involve": "Get involved",
+  "nav.endccp": "End CCP petition",
+  "nav.resources": "Resources",
   "nav.menu": "Menu",
   "nav.openMenu": "Open menu",
   "nav.closeMenu": "Close menu",

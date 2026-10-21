@@ -6,6 +6,7 @@ import {
   type TemplateKind
 } from "@quitccp/content-schema";
 import { SITE_LOCALE } from "@/lib/site-config";
+import { t } from "@/lib/i18n";
 
 export interface RenderablePage {
   section: string;
@@ -37,17 +38,17 @@ export const pageCatalog: RenderablePage[] = routeSeeds.map((seed) => ({
  * when that is unset.
  */
 export const mainNav = [
-  { href: "/", label: "首页" },
-  { href: "/news", label: "新闻与报告" },
-  { href: "/videos", label: "视频" },
-  { href: "/services", label: "我们的服务" },
-  { href: "/about", label: "关于我们" },
-  { href: "/involve", label: "参与支持" },
+  { href: "/", label: t("nav.home") },
+  { href: "/news", label: t("nav.news") },
+  { href: "/videos", label: t("nav.videos") },
+  { href: "/services", label: t("nav.services") },
+  { href: "/about", label: t("nav.about") },
+  { href: "/involve", label: t("nav.involve") },
   /* 指向本站自己的征签页，不是 endccp.com：主导航其余各项都是站内栏目，
      而 /involve/endccp 本来就有联署说明、进度和「参与联署」按钮。顶栏那个
      同名按钮才是直接送去签名站的那一个。 */
-  { href: "/involve/endccp", label: "End CCP联署" },
-  { href: "/resources", label: "资源馆" }
+  { href: "/involve/endccp", label: t("nav.endccp") },
+  { href: "/resources", label: t("nav.resources") }
 ];
 
 export function findPage(section: string, slug?: string): RenderablePage | undefined {

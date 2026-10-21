@@ -3,6 +3,8 @@ import { unstable_cache } from "next/cache";
 import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
 import { SITE_CHROME_TAG, SITE_CHROME_TTL_SECONDS } from "@/lib/site-chrome-cache";
 import { EXTERNAL_SERVICES } from "@/lib/external-services";
+import { t } from "@/lib/i18n";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * The tab row under each section's masthead, as something an editor can change.
@@ -107,13 +109,16 @@ const loadSectionNavOverridesUncached = unstable_cache(
       .from("cms_content_entries")
       .select("data")
       .eq("path", SECTION_NAV_PATH)
-      .eq("locale", "zh")
+      .eq("locale", SITE_LOCALE)
       .maybeSingle();
     if (error) throw error;
     if (!data) return null;
     return (data as { data?: unknown }).data ?? null;
   },
-  ["section-nav-overrides"],
+  /* 缓存键带上 locale：四个站跑在各自的部署里，本来不会共用一个进程内的缓存，
+     但 unstable_cache 的键是写进构建产物的 —— 键相同的两份代码一旦跑在同一个
+     实例上（比如本地同时开中英两个预览站），就会互相拿到对方的导航。 */
+  ["section-nav-overrides", SITE_LOCALE],
   { tags: [SITE_CHROME_TAG], revalidate: SITE_CHROME_TTL_SECONDS }
 );
 
@@ -139,7 +144,7 @@ export const loadSectionNavOverrides = cache(async (): Promise<unknown> => {
  */
 export const SECTION_CONFIG: Record<string, SectionNav> = {
   services: {
-    label: "我们的服务",
+    label: t("nav.services"),
     baseHref: "/services",
     // Services are not implemented here -- every tab goes to the production
     // service or reference page on tuidang.org.
@@ -169,7 +174,7 @@ export const SECTION_CONFIG: Record<string, SectionNav> = {
     ]
   },
   resources: {
-    label: "资源馆",
+    label: t("nav.resources"),
     baseHref: "/resources",
     tabs: [
       { slug: "index", label: "书籍与文集" },
@@ -182,7 +187,7 @@ export const SECTION_CONFIG: Record<string, SectionNav> = {
     ]
   },
   about: {
-    label: "关于我们",
+    label: t("nav.about"),
     baseHref: "/about",
     tabs: [
       { slug: "index", label: "机构简介" },
@@ -206,7 +211,7 @@ export const SECTION_CONFIG: Record<string, SectionNav> = {
     ]
   },
   involve: {
-    label: "参与支持",
+    label: t("nav.involve"),
     baseHref: "/involve",
     tabs: [
       { slug: "index", label: "捐助我们" },
@@ -217,7 +222,7 @@ export const SECTION_CONFIG: Record<string, SectionNav> = {
     ]
   },
   news: {
-    label: "新闻与报告",
+    label: t("nav.news"),
     baseHref: "/news",
     tabs: [
       { slug: "index", label: "全部" },
@@ -230,7 +235,7 @@ export const SECTION_CONFIG: Record<string, SectionNav> = {
     ]
   },
   videos: {
-    label: "视频",
+    label: t("nav.videos"),
     baseHref: "/videos",
     tabs: [
       { slug: "index", label: "全部" },

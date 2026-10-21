@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * The live registry figures, as captured from santui.tuidang.org.
@@ -61,7 +62,7 @@ export async function getSantuiSnapshot(): Promise<SantuiSnapshot | null> {
       .from("cms_content_entries")
       .select("data")
       .eq("path", FEED_PATH)
-      .eq("locale", "zh")
+      .eq("locale", SITE_LOCALE)
       .maybeSingle();
     if (error || !data) return null;
     return isUsable(data.data) ? (data.data as SantuiSnapshot) : null;

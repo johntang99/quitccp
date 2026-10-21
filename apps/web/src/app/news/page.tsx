@@ -5,6 +5,7 @@ import { NewsHeader } from "@/components/public/news/NewsHeader";
 import { NewsHero } from "@/components/public/news/NewsHero";
 import { getNewsHome } from "@/lib/public-content";
 import { t } from "@/lib/i18n";
+import { siteIntlLocale } from "@/lib/format";
 
 /* Bounded even though this route is prerendered: regeneration still opens a
    database connection, and an unbounded render holds it for five minutes. */
@@ -18,7 +19,13 @@ const COMMENTARY = "topics-commentary";
 
 export default async function NewsIndexPage() {
   const home = await getNewsHome();
-  const today = new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
+  /* 按本站的语言格式化。写死 zh-CN 的话，英文站的页眉上会出现
+     「2026年10月21日」—— 而它紧挨着的 NEWSROOM 是英文。 */
+  const today = new Date().toLocaleDateString(siteIntlLocale, {
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
 
   const investigations = home.categories.find((block) => block.slug === INVESTIGATIONS);
   const commentary = home.categories.find((block) => block.slug === COMMENTARY);

@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /** Where the fetched count is parked, same shelf as the santui feed. */
 export const ENDCCP_FEED_PATH = "feeds/endccp.json";
@@ -54,7 +55,7 @@ export async function getEndccpSnapshot(): Promise<EndccpSnapshot | null> {
       .from("cms_content_entries")
       .select("data")
       .eq("path", ENDCCP_FEED_PATH)
-      .eq("locale", "zh")
+      .eq("locale", SITE_LOCALE)
       .maybeSingle();
     if (error || !data) return null;
     const row = data.data as Partial<EndccpSnapshot> | null;
