@@ -6,6 +6,7 @@ import {
   type Capability
 } from "./permissions";
 import type { AdminRole } from "./types";
+import { t } from "@/lib/i18n";
 
 /**
  * The permission tables shown in 用户管理, computed rather than written down.
@@ -31,18 +32,18 @@ const SOMEBODY_ELSE = "another.admin@example.com";
 export const MATRIX_COLUMNS: readonly MatrixColumn[] = [
   {
     key: "owner",
-    label: "所有者",
+    label: t("admin.role.owner"),
     actor: { role: "super_admin", email: OWNER_EMAIL },
-    note: `超级管理员中的 ${OWNER_EMAIL}`
+    note: t("admin.role.ownerNote", { email: OWNER_EMAIL })
   },
   {
     key: "super_admin",
-    label: "超级管理员",
+    label: t("admin.role.superAdmin"),
     actor: { role: "super_admin", email: SOMEBODY_ELSE },
-    note: "所有者以外的超级管理员"
+    note: t("admin.role.superAdminNote")
   },
-  { key: "content_admin", label: "管理员", actor: { role: "content_admin", email: SOMEBODY_ELSE } },
-  { key: "editor", label: "编辑", actor: { role: "editor", email: SOMEBODY_ELSE } }
+  { key: "content_admin", label: t("admin.role.contentAdmin"), actor: { role: "content_admin", email: SOMEBODY_ELSE } },
+  { key: "editor", label: t("admin.role.editor"), actor: { role: "editor", email: SOMEBODY_ELSE } }
 ];
 
 export interface MatrixRow {
@@ -84,37 +85,37 @@ export interface AdminNavLink {
  * the menu, so an editor cannot wander into it.
  */
 export const ADMIN_NAV_LINKS: readonly AdminNavLink[] = [
-  { href: "/admin/dashboard", label: "Dashboard" },
-  { href: "/admin/content", label: "页面内容" },
+  { href: "/admin/dashboard", label: t("admin.nav.dashboard") },
+  { href: "/admin/content", label: t("admin.nav.content") },
   // 文章分类 lives in the article tab bar now; the sidebar still lights up for
   // it, so the reader is never on a page no section claims.
-  { href: "/admin/articles", label: "文章管理", owns: ["/admin/categories"] },
-  { href: "/admin/videos", label: "视频管理", owns: ["/admin/video-categories"] },
-  { href: "/admin/materials", label: "资料管理", owns: ["/admin/material-categories"] },
+  { href: "/admin/articles", label: t("admin.nav.articles"), owns: ["/admin/categories"] },
+  { href: "/admin/videos", label: t("admin.nav.videos"), owns: ["/admin/video-categories"] },
+  { href: "/admin/materials", label: t("admin.nav.materials"), owns: ["/admin/material-categories"] },
   // 常见问答 keeps its categories screen under its own path, so the sidebar
   // stays lit while an editor is in there.
-  { href: "/admin/faq", label: "常见问答", owns: ["/admin/faq/categories"] },
-  { href: "/admin/media", label: "图片视频库" },
+  { href: "/admin/faq", label: t("admin.nav.faq"), owns: ["/admin/faq/categories"] },
+  { href: "/admin/media", label: t("admin.nav.media") },
   // Next to the media library, because that is where its output lands.
-  { href: "/admin/video-studio", label: "影片拼接台" },
-  { href: "/admin/theme", label: "主题与排版", needs: "theme.write" },
-  { href: "/admin/users", label: "用户管理", needs: "users.view" },
+  { href: "/admin/video-studio", label: t("admin.nav.videoStudio") },
+  { href: "/admin/theme", label: t("admin.nav.theme"), needs: "theme.write" },
+  { href: "/admin/users", label: t("admin.nav.users"), needs: "users.view" },
   // The owner's decision, 2026-10-15: everyone who can sign in sees this. It
   // was briefly behind `declarations.read`, which happens to cover all three
   // roles anyone actually holds today -- but the point is that monthly
   // certificate counts are the organisation's own headline number, not
   // privileged information, and a `reviewer` or `viewer` account created next
   // year should see it without anybody remembering to come back here.
-  { href: "/admin/cert-stats", label: "证书统计" },
-  { href: "/admin/audit", label: "审计日志", needs: "audit.read" },
+  { href: "/admin/cert-stats", label: t("admin.nav.certStats") },
+  { href: "/admin/audit", label: t("admin.nav.audit"), needs: "audit.read" },
   // Next to 审计日志 because they are the two "what happened" screens, and
   // deliberately separate: that one is who did what inside the admin, this one
   // is what the public site served. Same permission as the defence panel --
   // an editor can neither act on a 5xx rate nor read it without alarm.
-  { href: "/admin/logs", label: "访问日志", needs: "publish.revalidate" },
-  { href: "/admin/revisions", label: "修订历史", needs: "revisions.restore" },
-  { href: "/admin/account", label: "我的账号" },
-  { href: "/admin/logout", label: "退出", chrome: true }
+  { href: "/admin/logs", label: t("admin.nav.logs"), needs: "publish.revalidate" },
+  { href: "/admin/revisions", label: t("admin.nav.revisions"), needs: "revisions.restore" },
+  { href: "/admin/account", label: t("admin.nav.account") },
+  { href: "/admin/logout", label: t("admin.nav.logout"), chrome: true }
 ];
 
 /** Table 1: which admin pages each principal can open. */
@@ -128,60 +129,60 @@ export const PAGE_ROWS: readonly MatrixRow[] = ADMIN_NAV_LINKS.filter((link) => 
 /** Table 2: what each principal can actually do. */
 export const ACTION_ROWS: readonly MatrixRow[] = [
   {
-    label: "编辑文章 / 视频 / 资料",
-    group: "内容与发布",
+    label: t("admin.perm.editContent"),
+    group: t("admin.perm.group.content"),
     allow: (actor) => can(actor, "content.write")
   },
   {
-    label: "查看三退声明",
-    note: "每次查看都会写入审计日志",
+    label: t("admin.perm.readDeclarations"),
+    note: t("admin.perm.readDeclarationsNote"),
     allow: (actor) => can(actor, "declarations.read")
   },
   {
     // Listed because leaving it out is what let this rule stay invisible until
     // somebody hit it: editors could write anything and publish nothing.
-    label: "把内容设为「已发布」或「已归档」",
+    label: t("admin.perm.publishContent"),
     allow: (actor) => can(actor, "content.publish")
   },
   {
-    label: "管理文章 / 视频 / 资料分类",
+    label: t("admin.perm.manageCategories"),
     allow: (actor) => can(actor, "content.write")
   },
   {
-    label: "编辑页面内容（首页头图等）",
+    label: t("admin.perm.editPages"),
     allow: (actor) => can(actor, "content.write")
   },
   {
-    label: "立即发布（重建公开页面）",
-    note: "让已发布的改动立刻出现在公开页面，不改变任何内容的状态",
+    label: t("admin.perm.revalidate"),
+    note: t("admin.perm.revalidateNote"),
     allow: (actor) => can(actor, "publish.revalidate")
   },
-  { label: "修改主题与排版", group: "站点与记录", allow: (actor) => can(actor, "theme.write") },
-  { label: "修改站点设置", allow: (actor) => can(actor, "settings.write") },
-  { label: "查看审计日志", allow: (actor) => can(actor, "audit.read") },
-  { label: "恢复历史版本", allow: (actor) => can(actor, "revisions.restore") },
-  { label: "打开用户管理", group: "用户管理", allow: (actor) => can(actor, "users.view") },
-  { label: "新建：编辑", allow: (actor) => canManageRole(actor, "editor") },
-  { label: "新建：管理员", allow: (actor) => canManageRole(actor, "content_admin") },
-  { label: "新建：超级管理员", allow: (actor) => canManageRole(actor, "super_admin") },
+  { label: t("admin.perm.theme"), group: t("admin.perm.group.site"), allow: (actor) => can(actor, "theme.write") },
+  { label: t("admin.perm.settings"), allow: (actor) => can(actor, "settings.write") },
+  { label: t("admin.perm.audit"), allow: (actor) => can(actor, "audit.read") },
+  { label: t("admin.perm.revisions"), allow: (actor) => can(actor, "revisions.restore") },
+  { label: t("admin.perm.openUsers"), group: t("admin.perm.group.users"), allow: (actor) => can(actor, "users.view") },
+  { label: t("admin.perm.createEditor"), allow: (actor) => canManageRole(actor, "editor") },
+  { label: t("admin.perm.createContentAdmin"), allow: (actor) => canManageRole(actor, "content_admin") },
+  { label: t("admin.perm.createSuperAdmin"), allow: (actor) => canManageRole(actor, "super_admin") },
   {
-    label: "改名 / 改角色 / 停用 / 重设密码：编辑",
+    label: t("admin.perm.modifyEditor"),
     allow: (actor) => canModifyAccountOfRole(actor, "editor")
   },
   {
-    label: "改名 / 改角色 / 停用 / 重设密码：管理员",
+    label: t("admin.perm.modifyContentAdmin"),
     allow: (actor) => canModifyAccountOfRole(actor, "content_admin")
   },
   {
-    label: "改名 / 改角色 / 停用 / 重设密码：超级管理员",
-    note: "超级管理员之间不能互相修改，只有所有者可以",
+    label: t("admin.perm.modifySuperAdmin"),
+    note: t("admin.perm.modifySuperAdminNote"),
     allow: (actor) => canModifyAccountOfRole(actor, "super_admin")
   },
-  { label: "删除编辑", allow: (actor) => canModifyAccountOfRole(actor, "editor") },
-  { label: "删除管理员", allow: (actor) => canModifyAccountOfRole(actor, "content_admin") },
+  { label: t("admin.perm.deleteEditor"), allow: (actor) => canModifyAccountOfRole(actor, "editor") },
+  { label: t("admin.perm.deleteContentAdmin"), allow: (actor) => canModifyAccountOfRole(actor, "content_admin") },
   {
-    label: "删除超级管理员",
-    note: "只有所有者可以",
+    label: t("admin.perm.deleteSuperAdmin"),
+    note: t("admin.perm.deleteSuperAdminNote"),
     allow: (actor) => canModifyAccountOfRole(actor, "super_admin")
   }
 ];
@@ -193,9 +194,9 @@ export const ACTION_ROWS: readonly MatrixRow[] = [
  * the owner exactly as firmly as they refuse an editor.
  */
 export const INVARIANTS: readonly string[] = [
-  "任何人都不能删除自己的账号——包括所有者。要离开请改用「停用」，这样审计记录仍然挂在一个真实的账号上。",
-  "任何人都不能修改自己的角色，也不能停用自己的账号。",
-  "最后一个还能登录的超级管理员不能被降级、停用或删除，否则没有人能再进入用户管理。",
-  "任何人都看不到别人的密码，包括超级管理员。密码只能重设，不能查看。",
-  "密码至少 8 位。重设密码后，该账号在其他设备上的登录会被全部退出。"
+  t("admin.perm.invariant.noSelfDelete"),
+  t("admin.perm.invariant.noSelfRole"),
+  t("admin.perm.invariant.lastSuperAdmin"),
+  t("admin.perm.invariant.noPasswordView"),
+  t("admin.perm.invariant.passwordLength")
 ];

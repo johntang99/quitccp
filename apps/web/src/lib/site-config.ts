@@ -19,15 +19,37 @@
 export const LOCALES = ["zh", "en", "de", "ja", "ko", "ro"] as const;
 export type Locale = (typeof LOCALES)[number];
 
-function readLocale(): Locale {
-  const raw = (process.env.SITE_LOCALE ?? "zh").trim().toLowerCase();
-  if ((LOCALES as readonly string[]).includes(raw)) return raw as Locale;
+/**
+ * 把环境变量的原始值变成一个语言代码，并说明要不要抱怨。
+ *
+ * 单独抽出来是为了能测：readLocale 读的是 process.env，而模块级的求值只发生
+ * 一次，测试里改环境变量已经来不及了。
+ */
+export function pickLocale(raw: string | undefined | null): { locale: Locale; warn: string | null } {
+  const value = (raw ?? "").trim().toLowerCase();
   /*
-   * 配错了就退回 zh 并喊一声，而不是抛异常。理由同上：一个拼错的环境变量不该让
-   * 整站起不来。日志里这一行是上线前能看到的，而 500 页面是读者先看到的。
+   * 没配 ≠ 配错了。
+   *
+   * 中文站本来就不设这个变量（它是默认语言），而 next.config 为了让客户端包
+   * 也拿到这个值，没配时传的是空字符串 —— 要是把空值也当「配错」，中文站
+   * 每个请求都会在日志里喊一声，真正配错的那一声就淹在里面了。
    */
-  console.warn(`[site-config] SITE_LOCALE="${raw}" 不在 ${LOCALES.join("/")} 里，按 zh 处理`);
-  return "zh";
+  if (!value) return { locale: "zh", warn: null };
+  if ((LOCALES as readonly string[]).includes(value)) return { locale: value as Locale, warn: null };
+  /*
+   * 配错了就退回 zh 并喊一声，而不是抛异常。一个拼错的环境变量不该让整站起
+   * 不来：日志里这一行是上线前能看到的，而 500 页面是读者先看到的。
+   */
+  return {
+    locale: "zh",
+    warn: `[site-config] SITE_LOCALE="${value}" 不在 ${LOCALES.join("/")} 里，按 zh 处理`
+  };
+}
+
+function readLocale(): Locale {
+  const { locale, warn } = pickLocale(process.env.SITE_LOCALE);
+  if (warn) console.warn(warn);
+  return locale;
 }
 
 /** 当前站的语言。整份代码里判断语言只认这一个来源。 */

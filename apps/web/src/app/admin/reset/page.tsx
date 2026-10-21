@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { t } from "@/lib/i18n";
 import { MIN_PASSWORD_LENGTH } from "@/lib/admin/user-admin-repository";
 import { createSupabaseAuthClient } from "@/lib/supabase/auth-client";
 
@@ -27,12 +28,10 @@ export default async function AdminResetPage({ searchParams }: PageProps) {
   if (!email) {
     return (
       <main className="admin-auth">
-        <h1>设置新密码</h1>
-        <p className="users-error">
-          这个页面需要从邮件里的链接打开。链接可能已经失效，或者已经用过了。
-        </p>
+        <h1>{t("admin.reset.title")}</h1>
+        <p className="users-error">{t("admin.reset.needsEmailLink")}</p>
         <p style={{ fontSize: 13 }}>
-          <Link href="/admin/forgot">重新申请一个链接</Link>
+          <Link href="/admin/forgot">{t("admin.reset.requestAgain")}</Link>
         </p>
       </main>
     );
@@ -40,21 +39,21 @@ export default async function AdminResetPage({ searchParams }: PageProps) {
 
   return (
     <main className="admin-auth">
-      <h1>设置新密码</h1>
-      <p style={{ color: "#555", fontSize: 13 }}>账号：{email}</p>
+      <h1>{t("admin.reset.title")}</h1>
+      <p style={{ color: "#555", fontSize: 13 }}>{t("admin.reset.account", { email })}</p>
       {params.error ? <p className="users-error">{decodeURIComponent(params.error)}</p> : null}
       <form method="post" action="/api/admin/auth/reset" style={{ display: "grid", gap: 12 }}>
         <label style={{ display: "grid", gap: 4, fontSize: 13 }}>
-          <span>新密码（至少 {MIN_PASSWORD_LENGTH} 位）</span>
+          <span>{t("admin.reset.newPassword", { n: MIN_PASSWORD_LENGTH })}</span>
           <input className="admin-input" name="newPassword" type="password"
                  minLength={MIN_PASSWORD_LENGTH} required />
         </label>
         <label style={{ display: "grid", gap: 4, fontSize: 13 }}>
-          <span>再输入一次</span>
+          <span>{t("admin.reset.confirmPassword")}</span>
           <input className="admin-input" name="confirmPassword" type="password"
                  minLength={MIN_PASSWORD_LENGTH} required />
         </label>
-        <button className="admin-btn admin-btn-primary" type="submit">保存并登录</button>
+        <button className="admin-btn admin-btn-primary" type="submit">{t("admin.reset.submit")}</button>
       </form>
     </main>
   );

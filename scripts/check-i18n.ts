@@ -16,12 +16,15 @@
  *
  *     npm run i18n:check
  *     npm run i18n:check -- --files   # 按文件列出来
+ *     npm run i18n:check -- --files --top=200   # 不截断
  */
 
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
 const SHOW_FILES = process.argv.includes("--files");
+/* 默认只列前 25 个，翻译期间需要看全量：npm run i18n:check -- --files --top=200 */
+const TOP = Number(process.argv.find((a) => a.startsWith("--top="))?.slice(6)) || 25;
 const HAN = /[一-鿿]/g;
 
 /** 这些地方的中文不算「界面文案」。 */
@@ -177,8 +180,8 @@ console.log(`  死代码       ${sum(deadRows)} 个汉字在 ${deadRows.length} 
 if (SHOW_FILES) {
   for (const [label, rows] of [["公开站界面", publicRows], ["后台界面", adminRows], ["CMS 兜底", templateRows]] as [string, Row[]][]) {
     console.log(`\n--- ${label} ---`);
-    for (const r of rows.slice(0, 25)) console.log(`  ${String(r.chars).padStart(5)}  ${r.file}`);
-    if (rows.length > 25) console.log(`  …另外 ${rows.length - 25} 个文件`);
+    for (const r of rows.slice(0, TOP)) console.log(`  ${String(r.chars).padStart(5)}  ${r.file}`);
+    if (rows.length > TOP) console.log(`  …另外 ${rows.length - TOP} 个文件`);
   }
 }
 

@@ -1,6 +1,8 @@
 node_modules
 .next
 .next-verify
+# 英文预览站的构建产物（npm run preview 用 NEXT_DIST_DIR=.next-en）
+.next-en
 dist
 coverage
 .DS_Store
@@ -34,3 +36,4 @@ quitccp-platform@*
 backups/
 .vercel
 .env*
+.admin-snapshot/

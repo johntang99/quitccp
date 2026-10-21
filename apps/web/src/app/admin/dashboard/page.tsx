@@ -215,7 +215,7 @@ export default async function AdminDashboardPage() {
                 <thead>
                   <tr><th style={{ width: 150 }}>时间</th><th style={{ width: 90 }}>发生了什么</th><th>哪一项</th></tr>
                 </thead>
-                <tbody>
+                <tbody data-snapshot="data">
                   {defenseEvents.slice(0, 12).map((e, i) => {
                     const badge = EVENT_LABEL[e.kind] ?? { text: e.kind, tone: "#667085" };
                     return (
@@ -417,7 +417,7 @@ export default async function AdminDashboardPage() {
                 <thead>
                   <tr><th>搜索词</th><th style={{ width: 70 }}>次数</th><th style={{ width: 110 }}>最近一次</th></tr>
                 </thead>
-                <tbody>
+                <tbody data-snapshot="data">
                   {misses.map((m) => (
                     <tr key={m.query}>
                       <td>
@@ -458,7 +458,7 @@ export default async function AdminDashboardPage() {
             <thead>
               <tr><th>标题</th><th>分类</th><th>状态</th><th>更新时间</th></tr>
             </thead>
-            <tbody>
+            <tbody data-snapshot="data">
               {recent.map((a) => (
                 <tr key={a.id}>
                   <td><Link href={`/admin/articles/${a.id}`}>{a.title}</Link></td>

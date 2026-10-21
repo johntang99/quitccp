@@ -1,3 +1,5 @@
+import { t } from "@/lib/i18n";
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const css = `
     body > header,
@@ -56,9 +58,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <header className="admin-logo-header" aria-label="Admin header">
         <div className="wrap">
           <div className="admin-logo">
-            <span className="admin-logo-mark">退黨</span>
+            {/* 圆形里那两个字是中文站的标记；英文站放不进一个汉字词，
+                所以它也是一条文案，不是装饰。 */}
+            <span className="admin-logo-mark">{t("admin.logoMark")}</span>
             <span className="admin-logo-text">
-              <b>全球退党服务中心</b>
+              <b>{t("site.name")}</b>
             </span>
           </div>
         </div>

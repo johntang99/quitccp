@@ -156,7 +156,29 @@ const nextConfig: NextConfig = {
    *
    * Unset, this is the usual `.next`, so real deploys are unaffected.
    */
-  distDir: process.env.NEXT_DIST_DIR || ".next"
+  distDir: process.env.NEXT_DIST_DIR || ".next",
+
+  /**
+   * 把站点语言也放进客户端包。
+   *
+   * `t()` 在服务端和客户端都要用：语言选择器、移动端菜单、分享区块都是
+   * "use client"。但 Next 只把 `NEXT_PUBLIC_*` 内联进客户端包，`SITE_LOCALE`
+   * 没有这个前缀，于是浏览器里 `process.env.SITE_LOCALE` 是 undefined，
+   * site-config 退回 zh —— 英文站服务端渲染出 "Language"，hydration 之后被
+   * 客户端改成「语种」，React 报 hydration failed。curl 看不出来，只有真的
+   * 用浏览器打开才看得见。
+   *
+   * 这里用 `env` 而不是改名成 `NEXT_PUBLIC_SITE_LOCALE`：改名要在四个 Vercel
+   * 项目里各改一遍，而且服务端那份还得留着，等于一个概念两个变量名 —— 正是
+   * 「在中文站上忙完就忘了别的站」那类错误的温床。`env` 里的值会被内联进
+   * 客户端包，一个变量名两边都对。
+   *
+   * 空字符串而不是 "zh"：没配时让 site-config 的 readLocale 去决定默认值，
+   * 默认值只写在一个地方。
+   */
+  env: {
+    SITE_LOCALE: process.env.SITE_LOCALE || ""
+  }
 };
 
 export default nextConfig;

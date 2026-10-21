@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { t } from "@/lib/i18n";
 import { recordAdminAudit } from "@/lib/admin/repository";
 import { validatePassword } from "@/lib/admin/user-admin-repository";
 import { createSupabaseAuthClient } from "@/lib/supabase/auth-client";
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
     return NextResponse.redirect(url, 303);
   };
 
-  if (next !== confirm) return fail("两次输入的新密码不一致。");
+  if (next !== confirm) return fail(t("admin.reset.mismatch"));
   const invalid = validatePassword(next);
   if (invalid) return fail(invalid);
 

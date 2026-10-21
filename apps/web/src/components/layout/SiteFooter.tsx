@@ -51,7 +51,7 @@ export async function SiteFooter() {
         <div className="foot-grid">
           <div>
             <div className="foot-brand">
-              <span className="seal">退</span>
+              <span className="seal">{t("site.seal")}</span>
               <span>{t("site.name")}</span>
             </div>
             <p style={{ margin: 0, maxWidth: "34ch", lineHeight: 1.9 }}>

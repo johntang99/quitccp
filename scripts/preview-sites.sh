@@ -44,10 +44,25 @@ sleep 1
 
 echo ""
 echo "启动中（首次编译要几十秒）…"
-( cd apps/web && NODE_OPTIONS=--max-http-header-size=65536 \
-    nohup npx next dev -p 4020 > "$ZH_LOG" 2>&1 & )
-( cd apps/web && SITE_LOCALE=en NEXT_DIST_DIR=.next-en NODE_OPTIONS=--max-http-header-size=65536 \
-    nohup npx next dev -p 4021 > "$EN_LOG" 2>&1 & )
+# setsid 而不只是 nohup：nohup 只挡 SIGHUP，挡不住「杀掉整个进程组」。
+# 这两个站是开着的浏览器标签在看的东西，不该因为别的地方停了一个任务就一起没了
+# —— 已经发生过一次，人看到的是 ERR_CONNECTION_REFUSED。macOS 没有 setsid(1)，
+# 所以借 Python 的 os.setsid 把它们放进自己的会话。
+detach() {
+  ( cd apps/web && python3 -c '
+import os, sys, subprocess
+os.setsid()
+log = open(sys.argv[1], "wb")
+subprocess.Popen(sys.argv[2:], stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
+' "$@" )
+}
+
+# env 写在命令里，不写成函数调用的前缀 —— 给 shell 函数加前缀赋值，
+# 在不同 shell 里的作用域行为不一样，会悄悄漏到后面的命令上。
+detach "$ZH_LOG" env NODE_OPTIONS=--max-http-header-size=65536 \
+  npx next dev -p 4020
+detach "$EN_LOG" env SITE_LOCALE=en NEXT_DIST_DIR=.next-en NODE_OPTIONS=--max-http-header-size=65536 \
+  npx next dev -p 4021
 
 # 等两个都答应了再报成功。过早说「好了」，人打开一个还没起来的页面，
 # 只会以为是坏的。
