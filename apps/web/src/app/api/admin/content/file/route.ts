@@ -4,6 +4,7 @@ import { contentPathToRoutes } from "@/lib/content-paths";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { deleteContentFile, getContentFileByPath, upsertContentFile } from "@/lib/admin/content-repository";
 import { SITE_CHROME_TAG } from "@/lib/site-chrome-cache";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 function parseData(raw: unknown): Record<string, unknown> {
   if (typeof raw === "string") {
@@ -28,7 +29,7 @@ export async function GET(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const locale = searchParams.get("locale") || "zh";
+    const locale = searchParams.get("locale") || SITE_LOCALE;
     const path = searchParams.get("path") || "";
     if (!path) return NextResponse.json({ error: "Missing path" }, { status: 400 });
 
@@ -56,7 +57,7 @@ export async function PUT(request: Request) {
       content?: unknown;
       note?: string;
     };
-    const locale = body.locale?.trim() || "zh";
+    const locale = body.locale?.trim() || SITE_LOCALE;
     const path = body.path?.trim() || "";
     if (!path) return NextResponse.json({ error: "Missing path" }, { status: 400 });
     const data = parseData(body.content);
@@ -98,7 +99,7 @@ export async function DELETE(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const locale = searchParams.get("locale") || "zh";
+    const locale = searchParams.get("locale") || SITE_LOCALE;
     const path = searchParams.get("path") || "";
     if (!path) return NextResponse.json({ error: "Missing path" }, { status: 400 });
 

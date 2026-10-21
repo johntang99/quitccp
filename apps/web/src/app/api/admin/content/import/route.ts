@@ -3,6 +3,7 @@ import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin
 import { importPrototypeContent, upsertContentFile } from "@/lib/admin/content-repository";
 import { revalidatePath } from "next/cache";
 import { contentPathToRoutes } from "@/lib/content-paths";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 function parseEntries(raw: unknown): Array<{ path: string; data: Record<string, unknown> }> {
   if (!Array.isArray(raw)) return [];
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
       mode?: "prototype" | "manual";
       entries?: Array<{ path: string; data: Record<string, unknown> }>;
     };
-    const locale = body.locale?.trim() || "zh";
+    const locale = body.locale?.trim() || SITE_LOCALE;
     const overwrite = Boolean(body.overwrite);
     const mode = body.mode || "prototype";
 

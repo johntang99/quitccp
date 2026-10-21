@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { getConfiguredPrimaryBackend } from "@/lib/search-repository";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * Liveness for the two things a page needs: the database, and whichever search
@@ -42,7 +43,7 @@ async function checkSupabase(): Promise<HealthItem> {
     const { error } = await supabase
       .from("cms_articles")
       .select("id", { head: true, count: "exact" })
-      .eq("locale", "zh")
+      .eq("locale", SITE_LOCALE)
       .limit(1);
     if (error) {
       return { status: "error", detail: `supabase query failed: ${error.message}` };
@@ -80,7 +81,7 @@ async function checkSubstringSearch(): Promise<HealthItem> {
     const { error } = await supabase
       .from("cms_articles")
       .select("id")
-      .eq("locale", "zh")
+      .eq("locale", SITE_LOCALE)
       .eq("status", "published")
       .ilike("title", "%退党%")
       .limit(1);
@@ -103,7 +104,7 @@ async function checkPgSearch(): Promise<HealthItem> {
     const supabase = createSupabaseAdminClient();
     const { error } = await supabase.rpc("search_articles_trgm", {
       p_query: "退党",
-      p_locale: "zh",
+      p_locale: SITE_LOCALE,
       p_limit: 1,
       p_offset: 0
     });

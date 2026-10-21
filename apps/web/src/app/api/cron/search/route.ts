@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminSessionUser } from "@/lib/admin/auth";
 import { syncSearchIndex } from "@/lib/search-index";
 import { pruneSearchMisses } from "@/lib/search-misses";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * Keeps the search index in step with the database.
@@ -61,7 +62,9 @@ export async function GET(request: Request) {
   const startedAt = Date.now();
   try {
     const result = await syncSearchIndex({
-      locales: ["zh"],
+      /* 只同步本站的语言。四个站各跑各的 cron，各自维护自己的索引 ——
+         一个站去同步别的站的内容，既多跑一遍，又会写到不属于它的索引里。 */
+      locales: [SITE_LOCALE],
       // A full pass moves 16,000 documents inside one 300s function, so it takes
       // larger batches; the incremental pass usually has a handful.
       batchSize: full ? 400 : 200,

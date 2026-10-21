@@ -2,6 +2,7 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { can } from "@/lib/admin/permissions";
 import { listSettings } from "@/lib/admin/repository";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 interface AdminSettingsPageProps {
   searchParams: Promise<{ searchSync?: string; indexed?: string; index?: string; message?: string }>;
@@ -88,7 +89,7 @@ export default async function AdminSettingsPage({ searchParams }: AdminSettingsP
           手动触发一次索引同步。需要已配置 <code>MEILI_HOST</code> 与对应密钥环境变量。
         </p>
         <form method="post" action="/api/admin/content/search/sync" style={{ display: "grid", gap: 10 }}>
-          <input className="admin-input" name="locales" defaultValue="zh" placeholder="zh 或 zh,en" />
+          <input className="admin-input" name="locales" defaultValue={SITE_LOCALE} placeholder="zh 或 zh,en" />
           <input className="admin-input" name="batchSize" defaultValue="200" placeholder="每批大小（建议 100-500）" />
           <button className="admin-btn admin-btn-primary" type="submit">
             立即同步搜索索引

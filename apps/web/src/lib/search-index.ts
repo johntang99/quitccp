@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * What goes into the search index, and how it gets there.
@@ -155,9 +156,10 @@ export function toSearchDocument(
     body: String(row.body_plain ?? row.body_markdown ?? ""),
     href,
     slug,
-    // cms_videos has no locale column. Every video on this site is Chinese, and
-    // the search filters on locale, so an absent value would hide all of them.
-    locale: String(row.locale ?? "zh"),
+    /* 037 之前 cms_videos 没有 locale 列，所以这里要兜一个值，否则搜索按
+       locale 过滤会把所有视频都滤掉。现在那一列有了，兜底退为纯粹的保险 ——
+       取当前站而不是写死 zh，免得英文站的视频被算成中文的。 */
+    locale: String(row.locale ?? SITE_LOCALE),
     status: String(row.status ?? "draft"),
     published_at: row.published_at ? String(row.published_at) : null,
     synced_at: syncedAt

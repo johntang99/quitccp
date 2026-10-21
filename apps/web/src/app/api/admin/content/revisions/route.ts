@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSessionUser } from "@/lib/admin/auth";
 import { listContentRevisions } from "@/lib/admin/content-repository";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 export async function GET(request: Request) {
   const user = await getAdminSessionUser();
@@ -8,7 +9,7 @@ export async function GET(request: Request) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const locale = searchParams.get("locale") || "zh";
+    const locale = searchParams.get("locale") || SITE_LOCALE;
     const path = searchParams.get("path") || "";
     const limit = Number(searchParams.get("limit") || "20");
     if (!path) return NextResponse.json({ error: "Missing path" }, { status: 400 });

@@ -1,5 +1,6 @@
 import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
 import { SIMPLIFIED_TO_TRADITIONAL, TRADITIONAL_TO_SIMPLIFIED } from "@/lib/zh-variants";
+import { SITE_LOCALE } from "@/lib/site-config";
 import { synonymsOf } from "@/lib/search-synonyms";
 
 /**
@@ -125,8 +126,20 @@ export function termVariants(term: string, withSynonyms = true): string[] {
   // traditional should still reach an article that says 退黨.
   for (const synonym of withSynonyms ? synonymsOf(term) : [term]) {
     forms.add(synonym);
-    forms.add(mapChars(synonym, TRADITIONAL_TO_SIMPLIFIED));
-    forms.add(mapChars(synonym, SIMPLIFIED_TO_TRADITIONAL));
+    /*
+     * 繁简互通只给中文站。
+     *
+     * 那张字符表是按汉字建的，对拉丁文字是恒等映射 —— 英文站上每个词都会被
+     * 展开成三个一模一样的形式，于是每个 ILIKE 条件平白变成三个 OR。功能上
+     * 没错，代价是白跑：搜一句三个词的英文，条件数从 3 变成 9。
+     *
+     * 德文、罗马尼亚文将来要的是另一套折叠（ä/ö/ü/ß、ă/ș/ț），不是这一套；
+     * 到时在这里按语言分支，而不是把汉字表硬套上去。
+     */
+    if (SITE_LOCALE === "zh") {
+      forms.add(mapChars(synonym, TRADITIONAL_TO_SIMPLIFIED));
+      forms.add(mapChars(synonym, SIMPLIFIED_TO_TRADITIONAL));
+    }
   }
   return [...forms].filter(Boolean);
 }
@@ -506,7 +519,7 @@ export async function searchEverythingBySubstring(
 ): Promise<SubstringSearchOutcome> {
   const terms = splitTerms(query);
   if (terms.length === 0) return { results: [], truncated: false };
-  const locale = options.locale ?? "zh";
+  const locale = options.locale ?? SITE_LOCALE;
   const limit = options.limit ?? 30;
 
   const settled = await Promise.allSettled(

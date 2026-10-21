@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { readFormData } from "@/lib/admin/form-request";
 import { syncSearchIndex } from "@/lib/search-index";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * 重建搜索索引 — the manual full sync in 站点设置.
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
   const formData = await readFormData(request);
   if (!formData) return NextResponse.json({ error: "Expected form data" }, { status: 400 });
 
-  const locales = parseLocales(String(formData.get("locales") ?? "zh"));
+  const locales = parseLocales(String(formData.get("locales") ?? SITE_LOCALE));
   const batchSize = parseBatchSize(String(formData.get("batchSize") ?? "300"));
   // Offered because a change to the document shape leaves the old documents
   // behind under their previous ids, and they would never be overwritten.

@@ -5,6 +5,7 @@ import { listArticles, listCategories, upsertArticleRecord } from "@/lib/admin/r
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import { explainSaveFailure } from "@/lib/admin/save-errors";
 import { warmPathsForArticle } from "@/lib/admin/warm-paths";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /*
  * Long enough for the retries to finish.
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
   const slug = String(formData.get("slug") ?? "");
   const title = String(formData.get("title") ?? "");
   const section = String(formData.get("section") ?? "news");
-  const locale = String(formData.get("locale") ?? "zh");
+  const locale = String(formData.get("locale") ?? SITE_LOCALE);
   const status = String(formData.get("status") ?? "draft") as
     | "draft"
     | "review"

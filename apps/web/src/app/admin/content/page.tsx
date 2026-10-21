@@ -1,6 +1,7 @@
 import { AdminShell } from "@/components/admin/AdminShell";
 import { ContentExplorer } from "@/components/admin/ContentExplorer";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 interface AdminContentPageProps {
   searchParams: Promise<{ path?: string; locale?: string }>;
@@ -10,7 +11,7 @@ export default async function AdminContentPage({ searchParams }: AdminContentPag
   const user = await requireAdminSessionUser();
   const query = await searchParams;
   const initialPath = query.path;
-  const initialLocale = query.locale ?? "zh";
+  const initialLocale = query.locale ?? SITE_LOCALE;
 
   return (
     <AdminShell user={user}>

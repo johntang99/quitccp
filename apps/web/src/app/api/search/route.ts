@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { pgTrgmSearchSql } from "@/lib/search";
 import { searchPublishedArticlesWithMeta } from "@/lib/search-repository";
 import { getAdminSessionUser } from "@/lib/admin/auth";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * Which backend answered a search, and what it returned. A diagnostic, for the
@@ -40,7 +41,7 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q") ?? "";
-  const locale = searchParams.get("locale") ?? "zh";
+  const locale = searchParams.get("locale") ?? SITE_LOCALE;
   /* Clamped rather than trusted: a signed-in admin is not a threat, but an
      unbounded limit is still a way to make one query cost far more than it
      should, by accident as easily as on purpose. */

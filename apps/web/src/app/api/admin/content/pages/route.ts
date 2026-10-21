@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { adminCanWrite, getAdminSessionUser, requireAdminMfa } from "@/lib/admin/auth";
 import { listPages, upsertPageRecord } from "@/lib/admin/repository";
 import { revalidatePage } from "@/lib/admin/revalidate-pages";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 export async function GET() {
   const user = await getAdminSessionUser();
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
   const blocksJson = String(formData.get("blocksJson") ?? "[]");
 
   const saved = await upsertPageRecord(
-    { id, section, slug, title, locale: "zh", status, blocksJson },
+    { id, section, slug, title, locale: SITE_LOCALE, status, blocksJson },
     user.email
   );
   /* Clear it now rather than letting it expire: the route is `revalidate =

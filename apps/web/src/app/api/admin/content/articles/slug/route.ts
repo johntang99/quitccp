@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSessionUser } from "@/lib/admin/auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * Is this slug free, and if not, what is?
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
   const slug = (searchParams.get("slug") ?? "").trim();
   // The article being edited does not clash with itself.
   const selfId = (searchParams.get("id") ?? "").trim();
-  const locale = (searchParams.get("locale") ?? "zh").trim();
+  const locale = (searchParams.get("locale") ?? SITE_LOCALE).trim();
   if (!slug) return NextResponse.json({ slug: "", available: false, suggestion: "" });
 
   const supabase = createSupabaseAdminClient();

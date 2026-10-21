@@ -5,6 +5,7 @@ import {
   samplePage,
   type TemplateKind
 } from "@quitccp/content-schema";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 export interface RenderablePage {
   section: string;
@@ -23,7 +24,7 @@ export const pageCatalog: RenderablePage[] = routeSeeds.map((seed) => ({
   title: seed.title,
   template: seed.template,
   summary: `${seed.title} - ${seed.template}`,
-  locale: "zh",
+  locale: SITE_LOCALE,
   contentPath: pageRouteToContentPath(seed.section, seed.slug),
   content: prototypePageContentSeeds.find((row) => row.section === seed.section && row.slug === seed.slug)?.data ?? {}
 }));

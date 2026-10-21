@@ -1,5 +1,6 @@
 import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
 import { searchEverythingBySubstring, type SearchResultType } from "@/lib/search-substring";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 export interface SearchArticleResult {
   id: string;
@@ -302,7 +303,7 @@ export async function searchPublishedArticlesWithMeta(
     };
   }
 
-  const locale = options.locale ?? "zh";
+  const locale = options.locale ?? SITE_LOCALE;
   const limit = options.limit ?? 20;
   const offset = options.offset ?? 0;
   const primaryBackend = getConfiguredPrimaryBackend();

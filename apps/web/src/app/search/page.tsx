@@ -5,6 +5,7 @@ import { searchPublishedArticlesWithMeta, type SearchArticleResult } from "@/lib
 import type { SearchResultType } from "@/lib/search-substring";
 import { SearchHighlight } from "@/components/public/SearchHighlight";
 import { recordSearchMiss } from "@/lib/search-misses";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /**
  * A full-text scan over 120MB of prose can take the better part of a minute for
@@ -60,7 +61,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const page = Math.max(1, Number(resolved.page ?? "1") || 1);
 
   const execution = query
-    ? await searchPublishedArticlesWithMeta(query, { locale: "zh", limit: MAX_RESULTS })
+    ? await searchPublishedArticlesWithMeta(query, { locale: SITE_LOCALE, limit: MAX_RESULTS })
     : null;
   const all = execution?.results ?? [];
   // The search gave up on the slow tier partway. Saying 没有匹配结果 here would
