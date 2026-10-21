@@ -68,7 +68,7 @@ export async function VideoTable({
             const status = STATUS[row.status] ?? STATUS.draft;
             const host = hostOf(row.sourceUrl);
             return (
-              <tr key={row.id}>
+              <tr key={row.id} data-snapshot="data">
                 {selectable ? (
                   <td>
                     <input type="checkbox" name="ids" value={row.id} form={bulkFormId} />

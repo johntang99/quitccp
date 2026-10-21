@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { t } from "@/lib/i18n";
 import { useRouter } from "next/navigation";
 
 /**
@@ -29,15 +30,15 @@ export function SelfCheckButton() {
       if (test) {
         setMsg(
           json.sent
-            ? `测试邮件已发往 ${json.to}`
-            : `没发出去：检查 Vercel 里的 RESEND_API_KEY、RESEND_FROM、ALERT_EMAIL_TO`
+            ? t("admin.selfcheck.mailSent", { to: json.to })
+            : t("admin.selfcheck.mailFailed")
         );
       } else {
-        setMsg("已重新检查");
+        setMsg(t("admin.selfcheck.rechecked"));
       }
       router.refresh();
     } catch (err) {
-      setMsg(`失败：${err instanceof Error ? err.message : String(err)}`);
+      setMsg(t("admin.selfcheck.failed", { error: err instanceof Error ? err.message : String(err) }));
     } finally {
       setBusy("");
     }
@@ -46,16 +47,16 @@ export function SelfCheckButton() {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
       <button className="admin-btn admin-btn-sm" type="button" disabled={!!busy} onClick={() => run(false)}>
-        {busy === "check" ? "检查中…" : "立即检查"}
+        {t(busy === "check" ? "admin.selfcheck.checking" : "admin.selfcheck.checkNow")}
       </button>
       <button
         className="admin-btn admin-btn-sm"
         type="button"
         disabled={!!busy}
         onClick={() => run(true)}
-        title="发一封测试邮件，确认报警链路通畅"
+        title={t("admin.selfcheck.mailTitle")}
       >
-        {busy === "mail" ? "发送中…" : "试发报警邮件"}
+        {t(busy === "mail" ? "admin.selfcheck.sending" : "admin.selfcheck.sendMail")}
       </button>
       {msg ? <span style={{ fontSize: 13, color: "var(--ink-dim)" }}>{msg}</span> : null}
     </span>

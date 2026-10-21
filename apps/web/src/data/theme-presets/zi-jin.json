@@ -111,8 +111,6 @@
     "gutter": "32px"
   },
   "_preset": {
-    "id": "zi-jin",
-    "name": "紫金（当前）",
-    "description": "现行配色：紫底金字，米白正文底。"
+    "id": "zi-jin"
   }
 }

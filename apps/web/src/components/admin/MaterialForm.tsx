@@ -1,5 +1,6 @@
 "use client";
 import { useAutoSlug } from "./use-auto-slug";
+import { t } from "@/lib/i18n";
 
 import { useEffect, useRef, useState } from "react";
 import { ImagePickerModal } from "./ImagePickerModal";
@@ -150,7 +151,7 @@ export function MaterialForm({ initial, categories, mode }: MaterialFormProps) {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         <label style={{ display: "grid", gap: 4 }}>
-          标题（Title）
+          {t("admin.form.title")}
           <input
             className="admin-input"
             name="title"
@@ -160,7 +161,7 @@ export function MaterialForm({ initial, categories, mode }: MaterialFormProps) {
           />
         </label>
         <label style={{ display: "grid", gap: 4 }}>
-          网址代号（Slug）
+          {t("admin.mat.slug")}
           <input
             className="admin-input"
             name="slug"
@@ -173,46 +174,46 @@ export function MaterialForm({ initial, categories, mode }: MaterialFormProps) {
           />
           <span style={{ fontSize: 12, color: "#888" }}>
             {mode === "edit"
-              ? "改它会改变公开网址，原链接会失效。"
+              ? t("admin.mat.slugHintEdit")
               : slugTouched
-                ? "已手动修改，不再跟随标题。"
-                : "跟随标题自动生成，你也可以自己改。"}
+                ? t("admin.mat.slugHintTouched")
+                : t("admin.mat.slugHintAuto")}
           </span>
         </label>
       </div>
 
       <label style={{ display: "grid", gap: 4 }}>
-        简介（Summary）
+        {t("admin.mat.summary")}
         <textarea className="admin-textarea" name="summary" defaultValue={initial.summary} style={{ minHeight: 70 }} />
       </label>
 
       <fieldset style={{ border: "1px solid #e8e8e8", borderRadius: 6, padding: 14 }}>
-        <legend style={{ fontSize: 13, color: "#555" }}>预览图（Preview image）</legend>
+        <legend style={{ fontSize: 13, color: "#555" }}>{t("admin.mat.preview")}</legend>
         <div style={{ display: "grid", gridTemplateColumns: "150px 1fr", gap: 14, alignItems: "start" }}>
           <button
             type="button"
             onClick={() => setPicker("cover")}
             style={{ padding: 0, border: "1px solid #ececec", background: "none", cursor: "pointer", lineHeight: 0 }}
-            title="更换预览图"
+            title={t("admin.mat.replacePreview")}
           >
             {coverImage ? (
               <img src={coverImage} alt="" style={{ width: 148, height: 148, objectFit: "contain", background: "#fafafa", display: "block" }} />
             ) : (
-              <span style={{ display: "grid", placeItems: "center", width: 148, height: 148, fontSize: 12, color: "#999" }}>未设置</span>
+              <span style={{ display: "grid", placeItems: "center", width: 148, height: 148, fontSize: 12, color: "#999" }}>{t("sf.unset")}</span>
             )}
           </button>
           <div style={{ display: "grid", gap: 8 }}>
             <button className="admin-btn" type="button" onClick={() => setPicker("cover")} style={{ justifySelf: "start" }}>
-              选择图片…
+              {t("sf.pickImage")}
             </button>
             <input
               className="admin-input"
               value={coverImage}
-              placeholder="图片地址"
+              placeholder={t("admin.mat.imageUrlPlaceholder")}
               onChange={(event) => setCoverImage(event.target.value)}
             />
             <label style={{ display: "grid", gap: 4, fontSize: 13 }}>
-              图片说明（Alt，给读屏软件用）
+              {t("admin.mat.alt")}
               <input className="admin-input" name="coverImageAlt" defaultValue={initial.coverImageAlt} />
             </label>
           </div>
@@ -220,24 +221,24 @@ export function MaterialForm({ initial, categories, mode }: MaterialFormProps) {
       </fieldset>
 
       <fieldset style={{ border: "1px solid #e8e8e8", borderRadius: 6, padding: 14 }}>
-        <legend style={{ fontSize: 13, color: "#555" }}>下载文件（Files）</legend>
+        <legend style={{ fontSize: 13, color: "#555" }}>{t("admin.mat.files")}</legend>
         <p style={{ margin: "0 0 10px", fontSize: 12, color: "#777" }}>
-          每一个文件一行。可直接上传（最大 200MB，ZIP／PDF／图片等），也可粘贴外部链接。没有链接的行不会显示在页面上。
+          {t("admin.mat.filesHint")}
         </p>
         <div style={{ display: "grid", gap: 8 }}>
-          {files.length === 0 ? <p style={{ margin: 0, fontSize: 13, color: "#777" }}>还没有文件。</p> : null}
+          {files.length === 0 ? <p style={{ margin: 0, fontSize: 13, color: "#777" }}>{t("admin.mat.noFiles")}</p> : null}
           {files.map((file, index) => (
             <div key={index} style={{ display: "grid", gridTemplateColumns: "1fr 2fr 80px auto auto", gap: 8, alignItems: "center" }}>
               <input
                 className="admin-input"
                 value={file.label}
-                placeholder="按钮文字，如「传单套件（ZIP）」"
+                placeholder={t("admin.mat.fileLabelPlaceholder")}
                 onChange={(event) => updateFile(index, { label: event.target.value })}
               />
               <input
                 className="admin-input"
                 value={file.url}
-                placeholder="文件地址"
+                placeholder={t("admin.mat.fileUrlPlaceholder")}
                 onChange={(event) => {
                   const url = event.target.value;
                   // Fill the format from the address unless someone typed one.
@@ -247,11 +248,11 @@ export function MaterialForm({ initial, categories, mode }: MaterialFormProps) {
               <input
                 className="admin-input"
                 value={file.kind}
-                placeholder="格式"
+                placeholder={t("admin.mat.fileFormatPlaceholder")}
                 onChange={(event) => updateFile(index, { kind: event.target.value })}
               />
               <label className="admin-btn" style={{ padding: "3px 8px", fontSize: 12, cursor: "pointer" }}>
-                上传…
+                {t("admin.mat.upload")}
                 <input
                   type="file"
                   style={{ display: "none" }}
@@ -269,7 +270,7 @@ export function MaterialForm({ initial, categories, mode }: MaterialFormProps) {
                 style={{ padding: "3px 8px", fontSize: 12 }}
                 onClick={() => setFiles((rows) => rows.filter((_, i) => i !== index))}
               >
-                删除
+                {t("sf.remove")}
               </button>
               {progress[index] !== undefined ? (
                 <div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
@@ -289,14 +290,14 @@ export function MaterialForm({ initial, categories, mode }: MaterialFormProps) {
               style={{ padding: "3px 10px", fontSize: 12 }}
               onClick={() => setFiles((rows) => [...rows, { label: "", url: "", kind: "" }])}
             >
-              添加文件
+              {t("admin.mat.addFile")}
             </button>
           </div>
         </div>
       </fieldset>
 
       <fieldset style={{ border: "1px solid #e8e8e8", borderRadius: 6, padding: 14 }}>
-        <legend style={{ fontSize: 13, color: "#555" }}>分类（Categories）</legend>
+        <legend style={{ fontSize: 13, color: "#555" }}>{t("admin.mat.categories")}</legend>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 14 }}>
           {categories.map((category) => (
             <label key={category.id} style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 14 }}>
@@ -313,53 +314,61 @@ export function MaterialForm({ initial, categories, mode }: MaterialFormProps) {
             </label>
           ))}
         </div>
-        <p style={{ margin: "10px 0 0", fontSize: 12, color: "#777" }}>第一个勾选的分类作为主分类，决定它出现在哪个卡片下。</p>
+        <p style={{ margin: "10px 0 0", fontSize: 12, color: "#777" }}>{t("admin.mat.primaryCategoryNote")}</p>
       </fieldset>
 
       <div style={{ display: "grid", gap: 4 }}>
-        <span style={{ fontSize: 13, color: "#555" }}>正文（可留空）</span>
+        <span style={{ fontSize: 13, color: "#555" }}>{t("admin.mat.body")}</span>
         <input type="hidden" name="bodyMarkdown" value={body} />
         <MarkdownEditor ref={editor} value={body} onChange={setBody} onPickImage={() => setPicker("body")} />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, alignItems: "end" }}>
         <label style={{ display: "grid", gap: 4 }}>
-          发布时间（Published at）
+          {t("admin.mat.publishedAt")}
           <input className="admin-input" type="datetime-local" name="publishedAt" defaultValue={toLocalInput(initial.publishedAt)} />
         </label>
         <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <input type="checkbox" name="featured" value="1" defaultChecked={initial.featured} />
-          重要（Featured）
+          {t("admin.mat.featured")}
         </label>
         <div />
       </div>
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <button className="admin-btn admin-btn--primary" name="status" value="published" type="submit">
-          发表
+          {t("admin.mat.publish")}
         </button>
         <button className="admin-btn" name="status" value="draft" type="submit">
-          存草稿
+          {t("admin.mat.saveDraft")}
         </button>
         <button className="admin-btn" name="status" value="archived" type="submit">
-          归档
+          {t("admin.mat.archive")}
         </button>
         <a className="admin-btn" href="/admin/materials">
-          取消
+          {t("admin.cancel")}
         </a>
         <span style={{ alignSelf: "center", fontSize: 13, color: "#777" }}>
-          当前状态：{initial.status === "published" ? "已发布" : initial.status === "draft" ? "草稿" : "已归档"}
-          {mode === "new" ? "（尚未保存）" : ""}
+          {t("admin.mat.currentStatus", {
+            status: t(
+              initial.status === "published"
+                ? "admin.status.published"
+                : initial.status === "draft"
+                  ? "admin.status.draft"
+                  : "admin.status.archived"
+            )
+          })}
+          {mode === "new" ? t("admin.mat.notSavedYet") : ""}
         </span>
       </div>
 
       <ImagePickerModal
         open={picker !== null}
-        fieldLabel={picker === "cover" ? "预览图" : "正文图片"}
+        fieldLabel={t(picker === "cover" ? "admin.mat.previewField" : "admin.form.bodyImage")}
         onClose={() => setPicker(null)}
         onSelect={(url) => {
           if (picker === "cover") setCoverImage(url);
-          else editor.current?.insertAtCaret(`\n\n![图片说明](${url})\n\n`);
+          else editor.current?.insertAtCaret(`\n\n![${t("admin.form.insertedImageAlt")}](${url})\n\n`);
           setPicker(null);
         }}
       />

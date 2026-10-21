@@ -57,7 +57,7 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
               </tr>
             ) : (
               rows.map((row) => (
-                <tr key={row.id}>
+                <tr key={row.id} data-snapshot="data">
                   <td>{row.sortOrder}</td>
                   <td>{row.name}</td>
                   <td>{row.slug}</td>

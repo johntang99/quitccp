@@ -26,8 +26,22 @@ function git(args: string): string {
   return execSync(`git ${args}`, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
 }
 
-/** 空白压平：源码里换行加缩进的一句话，搬进文案表是一行。 */
-const flat = (s: string) => s.replace(/\s+/g, " ").trim();
+/**
+ * 空白压平：源码里换行加缩进的一句话，搬进文案表是一行。
+ *
+ * 两个汉字之间的空白还要再去掉。JSX 里一句话跨行写，渲染时换行变成一个空格：
+ *
+ *     配置的是「{x}」，
+ *     实际由「{y}」在回答。
+ *
+ * 渲染出来是「…」， 实际由「…」，中间多一个空格。搬进文案表时自然写成不带
+ * 空格的一句，于是按连续子串找就对不上 —— 而那一个空格不是文案，是换行的
+ * 痕迹。中文词之间不写空格，所以这里可以安全地去掉；拉丁文之间的空格照旧。
+ * admin:snapshot 判定成败时用的是同一条规则。
+ */
+const CJK = "\\u3000-\\u303f\\u4e00-\\u9fff\\uff00-\\uffef";
+const BETWEEN_CJK = new RegExp(`(?<=[${CJK}])\\s+(?=[${CJK}])`, "g");
+const flat = (s: string) => s.replace(/\s+/g, " ").replace(BETWEEN_CJK, "").trim();
 
 /** 一张表里的 key → 值。 */
 function parseTable(src: string): Map<string, string> {

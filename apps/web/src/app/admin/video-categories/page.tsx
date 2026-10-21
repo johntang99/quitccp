@@ -64,7 +64,7 @@ export default async function VideoCategoriesPage({ searchParams }: PageProps) {
               </tr>
             ) : (
               rows.map((row) => (
-                <tr key={row.id}>
+                <tr key={row.id} data-snapshot="data">
                   <td>{row.sortOrder}</td>
                   <td>{row.name}</td>
                   <td style={{ fontFamily: "ui-monospace, Menlo, monospace", wordBreak: "break-all" }}>{row.slug}</td>

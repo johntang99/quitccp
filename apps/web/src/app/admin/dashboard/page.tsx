@@ -130,9 +130,11 @@ export default async function AdminDashboardPage() {
           <div className="dash-head">
             <h3 style={{ margin: 0 }}>{t("admin.dash.defense.title")}</h3>
             {defense ? (
+              /* 这一枚随探针结果变（全部正常／有问题），是状态不是文案。 */
               <span
                 className="dash-badge"
                 style={{ color: WORST_LABEL[defense.worst].tone, borderColor: WORST_LABEL[defense.worst].tone }}
+                data-snapshot="data"
               >
                 {WORST_LABEL[defense.worst].text}
               </span>
@@ -149,10 +151,14 @@ export default async function AdminDashboardPage() {
               <div className="dash-sync">
                 {defense.checks.map((c) => (
                   <div key={c.key}>
-                    <b style={{ color: CHECK_LABEL[c.state].tone }}>{c.value}</b>
+                    {/* 值和状态后缀每小时一变（HIT／STALE、测不到），标成数据；
+                        左边的 c.label 是文案，留着被 admin:snapshot 看住。 */}
+                    <b style={{ color: CHECK_LABEL[c.state].tone }} data-snapshot="data">{c.value}</b>
                     <span>
                       {c.label}
-                      {c.state === "ok" ? "" : `　${CHECK_LABEL[c.state].text}`}
+                      <span data-snapshot="data">
+                        {c.state === "ok" ? "" : `　${CHECK_LABEL[c.state].text}`}
+                      </span>
                     </span>
                   </div>
                 ))}
@@ -188,7 +194,10 @@ export default async function AdminDashboardPage() {
                     return groups;
                   }, new Map<string, typeof defense.checks>())
               ).map(([remedy, group]) => (
-                <p className="dash-alert" key={group[0].key}>
+                /* 整段标成数据：有没有它取决于当下哪项探针在报警。里面的处置办法
+                   是文案，但它只在出问题时才渲染，本来就不会每次都被抓到 ——
+                   那几句由 npm run zh:unchanged 在源码层面把关。 */
+                <p className="dash-alert" key={group[0].key} data-snapshot="data">
                   <b>{group.map((c) => `${c.label}：${c.value}`).join("　｜　")}</b>
                   <br />
                   {remedy}
@@ -276,36 +285,46 @@ export default async function AdminDashboardPage() {
         </p>
         {search.state === "down" ? (
           <p className="dash-alert">
-            <b>搜索查不到任何结果。</b>试搜一个全站都有的词也返回空，说明搜索链路出了问题，
-            而不是没有相关内容。请检查：
-            <br />1. Supabase 是否正常（数据库不可达时搜索会整体失败）。
-            <br />2. Vercel 环境变量 <code>SEARCH_PRIMARY_BACKEND</code> 是否被改成了无效值。
-            <br />3. 在本浏览器打开 <code>/api/search?q=三退</code> 看返回的 backend 字段是哪一个（需登录后台，退出后会返回 401）。
+            <b>{t("admin.dash.search.downTitle")}</b>
+            {t("admin.dash.search.downBody")}
+            <br />
+            {t("admin.dash.search.down1")}
+            <br />
+            {tRich("admin.dash.search.down2", { env: <code>SEARCH_PRIMARY_BACKEND</code> })}
+            <br />
+            {tRich("admin.dash.search.down3", {
+              url: <code>/api/search?q={encodeURIComponent(PROBE_TERM)}</code>
+            })}
           </p>
         ) : null}
         {search.state === "fallback" ? (
           <p className="dash-alert">
-            <b>配置的是「{BACKEND_LABEL[search.configured] ?? search.configured}」，
-            实际由「{BACKEND_LABEL[search.effective] ?? search.effective}」在回答。</b>
-            说明首选后端连不上，搜索已自动降级——结果仍然可用，但质量和速度会下降。
+            <b>
+              {t("admin.dash.search.fallbackTitle", {
+                configured: BACKEND_LABEL[search.configured] ?? search.configured,
+                effective: BACKEND_LABEL[search.effective] ?? search.effective
+              })}
+            </b>
+            {t("admin.dash.search.fallbackBody")}
             {search.configured === "meilisearch"
-              ? "　请检查 Meilisearch 服务是否还在运行、MEILI_HOST 是否可达。"
+              ? t("admin.dash.search.fallbackMeili")
               : ""}
           </p>
         ) : null}
         {misses.length > 0 ? (
           <>
-            <h4 style={{ margin: "18px 0 6px", fontSize: 14 }}>读者搜了却没找到的词</h4>
+            <h4 style={{ margin: "18px 0 6px", fontSize: 14 }}>{t("admin.dash.misses.title")}</h4>
             <p className="dash-note" style={{ marginTop: 0 }}>
-              只记录「没有任何结果」的搜索，并且只保留词本身和次数——不记录是谁搜的、
-              从哪里搜的、什么时候搜的，{MISS_RETENTION_DAYS} 天不再出现就自动删除。
-              这里出现次数多的词，通常意味着站内缺这类内容，或者用词和读者的说法对不上
-              （后者可以加进同义词表）。
+              {t("admin.dash.misses.note", { days: MISS_RETENTION_DAYS })}
             </p>
             <div style={{ overflowX: "auto" }}>
               <table className="admin-table perm-table" style={{ maxWidth: 560 }}>
                 <thead>
-                  <tr><th>搜索词</th><th style={{ width: 70 }}>次数</th><th style={{ width: 110 }}>最近一次</th></tr>
+                  <tr>
+                    <th>{t("admin.dash.misses.col.term")}</th>
+                    <th style={{ width: 70 }}>{t("admin.dash.misses.col.hits")}</th>
+                    <th style={{ width: 110 }}>{t("admin.dash.misses.col.lastSeen")}</th>
+                  </tr>
                 </thead>
                 <tbody data-snapshot="data">
                   {misses.map((m) => (
@@ -324,10 +343,15 @@ export default async function AdminDashboardPage() {
         ) : null}
         {search.state === "drifted" ? (
           <p className="dash-alert">
-            <b>索引里有 {search.indexed ?? "?"} 条，数据库里有 {search.expected} 条，对不上。</b>
-            索引过期时搜索不会报错，只会搜不到新内容——这正是之前出过的问题。
-            请到 <Link href="/admin/settings">站点设置</Link> 点一次「重建搜索索引」，
-            或等每周的全量同步。
+            <b>
+              {t("admin.dash.search.driftedTitle", {
+                indexed: search.indexed ?? "?",
+                expected: search.expected
+              })}
+            </b>
+            {tRich("admin.dash.search.driftedBody", {
+              link: <Link href="/admin/settings">{t("admin.settings.title")}</Link>
+            })}
           </p>
         ) : null}
       </section>

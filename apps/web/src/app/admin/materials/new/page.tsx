@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/admin/AdminShell";
+import { t } from "@/lib/i18n";
 import { MaterialForm } from "@/components/admin/MaterialForm";
 import { MaterialTabs } from "@/components/admin/MaterialTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
@@ -11,7 +12,7 @@ export default async function NewMaterialPage() {
   return (
     <AdminShell user={user}>
       <MaterialTabs active="new" />
-      <h2 style={{ margin: "0 0 14px" }}>新建资料</h2>
+      <h2 style={{ margin: "0 0 14px" }}>{t("admin.mat.newTitle")}</h2>
       <MaterialForm
         mode="new"
         categories={categories.rows.map((row) => ({ id: row.id, name: row.name, slug: row.slug }))}

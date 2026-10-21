@@ -161,6 +161,10 @@ export function MediaLibrary({
           </p>
         ) : (
           <div
+            /* 这一格一格是上传上来的文件：文件名和编辑填的说明。标成数据区，
+               免得「界面上还剩多少中文」把文件名算成没翻译的文案 —— 一个中文
+               文件名在英文站的媒体库里是正常的，它就是那个文件的名字。 */
+            data-snapshot="data"
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))",

@@ -1,41 +1,43 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 import { FONT_ROLES, type Theme, themeToCss } from "@/lib/theme-css";
 import { THEME_PRESETS } from "@/lib/theme-presets";
 
 const FONT_LABELS: Record<string, string> = {
-  "serif-sc": "思源宋体 简（网页字体）",
-  "system-sc": "系统黑体（苹方 / 微软雅黑）",
-  "system-serif-sc": "系统宋体（宋体 / SimSun）",
-  "plex-mono": "IBM Plex Mono（仅数字与英文）",
+  "serif-sc": t("theme.font.serif-sc"),
+  "system-sc": t("theme.font.system-sc"),
+  "system-serif-sc": t("theme.font.system-serif-sc"),
+  "plex-mono": t("theme.font.plex-mono"),
 };
 
 const COLOR_LABELS: Record<string, string> = {
-  paper: "页面底色", card: "卡片底色", ink: "正文字色", ink2: "深紫字色",
-  inkSoft: "次级字色", muted: "弱化字色", rule: "分隔线", ruleDark: "深底分隔线",
-  seal: "主色（印章紫）", sealDeep: "主色·深", plumDeep: "深紫底", plumMid: "中紫底",
-  plumMenu: "导航紫", gold: "金色", goldLight: "金色·浅",
-  lavender: "淡紫", lavenderLight: "淡紫·浅",
+  paper: t("theme.color.paper"), card: t("theme.color.card"), ink: t("theme.color.ink"), ink2: t("theme.color.ink2"),
+  inkSoft: t("theme.color.inkSoft"), muted: t("theme.color.muted"), rule: t("theme.color.rule"), ruleDark: t("theme.color.ruleDark"),
+  seal: t("theme.color.seal"), sealDeep: t("theme.color.sealDeep"), plumDeep: t("theme.color.plumDeep"), plumMid: t("theme.color.plumMid"),
+  plumMenu: t("theme.color.plumMenu"), gold: t("theme.color.gold"), goldLight: t("theme.color.goldLight"),
+  lavender: t("theme.color.lavender"), lavenderLight: t("theme.color.lavenderLight"),
 };
 
 const SURFACE_LABELS: Record<string, string> = {
-  onGold: "金底上的字", bandDeep: "暗色卡片底", bandDeepest: "最深底",
-  inkBand: "深色分隔线", inkDim: "弱化字（浅底）", inkMid: "次级字（浅底）",
-  goldInk: "深金字", goldMuted: "柔和金", creamText: "米色字（深底）",
-  creamRule: "米色分隔线", lavRule: "淡紫分隔线", lavTint: "淡紫块",
-  lavText: "淡紫字", lavMuted: "淡紫·弱", lavDim: "淡紫·更弱",
-  sealBright: "亮紫", gradMid: "渐变·中", gradTop: "渐变·亮",
-  apricot: "杏色（视频页底色）",
+  onGold: t("theme.surface.onGold"), bandDeep: t("theme.surface.bandDeep"), bandDeepest: t("theme.surface.bandDeepest"),
+  inkBand: t("theme.surface.inkBand"), inkDim: t("theme.surface.inkDim"), inkMid: t("theme.surface.inkMid"),
+  goldInk: t("theme.surface.goldInk"), goldMuted: t("theme.surface.goldMuted"), creamText: t("theme.surface.creamText"),
+  creamRule: t("theme.surface.creamRule"), lavRule: t("theme.surface.lavRule"), lavTint: t("theme.surface.lavTint"),
+  lavText: t("theme.surface.lavText"), lavMuted: t("theme.surface.lavMuted"), lavDim: t("theme.surface.lavDim"),
+  sealBright: t("theme.surface.sealBright"), gradMid: t("theme.surface.gradMid"), gradTop: t("theme.surface.gradTop"),
+  apricot: t("theme.surface.apricot"),
 };
 
 const SIZE_LABELS: Record<string, string> = {
-  display: "头条大标题", h2: "栏目标题 H2", h3: "卡片小标 H3",
-  item: "列表标题", body: "正文", small: "说明 / 日期", label: "标签 / 眉题",
+  display: t("theme.size.display"), h2: t("theme.size.h2"), h3: t("theme.size.h3"),
+  item: t("theme.size.item"), body: t("theme.size.body"), small: t("theme.size.small"), label: t("theme.size.label"),
 };
 
-const LH_LABELS: Record<string, string> = { heading: "标题行距", item: "列表行距", body: "正文行距" };
-const TR_LABELS: Record<string, string> = { heading: "标题字距", body: "正文字距", label: "标签字距" };
+const LH_LABELS: Record<string, string> = { heading: t("theme.lh.heading"), item: t("theme.lh.item"), body: t("theme.lh.body") };
+const TR_LABELS: Record<string, string> = { heading: t("theme.tr.heading"), body: t("theme.tr.body"), label: t("theme.tr.label") };
 
 function set(theme: Theme, path: string[], value: string): Theme {
   const next = structuredClone(theme) as Record<string, unknown>;
@@ -99,7 +101,7 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
     try {
       const parsed = JSON.parse(text);
       if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-        throw new Error("顶层必须是一个对象 { }");
+        throw new Error(t("theme.err.notObject"));
       }
       // Keep the doc blocks and anything the paste omitted; the server merges
       // over the defaults again on save, so a partial object can never strip tokens.
@@ -123,16 +125,16 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
       setSaved(json.theme);
       setTheme(json.theme);
-      setStatus("已保存，全站已生效。");
+      setStatus(t("theme.saved"));
     } catch (err) {
-      setStatus(`保存失败：${err instanceof Error ? err.message : String(err)}`);
+      setStatus(t("theme.saveFailed", { error: err instanceof Error ? err.message : String(err) }));
     } finally {
       setBusy(false);
     }
   }
 
   async function reset() {
-    if (!confirm("恢复为系统默认主题？已保存的自定义配色将被删除。")) return;
+    if (!confirm(t("theme.confirmReset"))) return;
     setBusy(true);
     try {
       const res = await fetch("/api/admin/content/theme", { method: "DELETE" });
@@ -140,9 +142,9 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
       setSaved(json.theme);
       setTheme(json.theme);
-      setStatus("已恢复默认主题。");
+      setStatus(t("theme.resetDone"));
     } catch (err) {
-      setStatus(`恢复失败：${err instanceof Error ? err.message : String(err)}`);
+      setStatus(t("theme.resetFailed", { error: err instanceof Error ? err.message : String(err) }));
     } finally {
       setBusy(false);
     }
@@ -178,9 +180,7 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
           <section className="admin-card">
             <h3>JSON</h3>
             <p className="theme-hint">
-              与表单是同一份设置，改哪边都一样。保存后写入数据库（cms_site_settings 的 site.theme），
-              <strong>不会修改代码里的 theme.json 文件</strong>——那个文件是随代码发布的默认值，
-              只有「恢复默认」才会回到它。缺少的字段会自动用默认值补齐。
+              {tRich("theme.jsonNote", { noFile: <strong>{t("theme.jsonNoteNoFile")}</strong> })}
             </p>
             <textarea
               className="theme-json"
@@ -188,13 +188,13 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
               value={draftJson}
               onChange={(e) => applyJson(e.target.value)}
             />
-            {jsonError ? <p className="theme-json-error">JSON 有误：{jsonError}</p> : null}
+            {jsonError ? <p className="theme-json-error">{t("theme.jsonError", { error: jsonError })}</p> : null}
           </section>
         ) : (
         <>
         <section className="admin-card">
-          <h3>预设</h3>
-          <p className="theme-hint">套用预设会替换下面所有颜色，保存后才会生效。</p>
+          <h3>{t("theme.presets")}</h3>
+          <p className="theme-hint">{t("theme.presetsHint")}</p>
           <div className="theme-presets">
             {THEME_PRESETS.map((preset) => (
               <button
@@ -212,22 +212,22 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
                   <i style={{ background: preset.colors.gold }} />
                   <i style={{ background: preset.colors.paper }} />
                 </span>
-                <b>{preset._preset.name}</b>
-                <small>{preset._preset.description}</small>
+                <b>{t(`theme.preset.${preset._preset.id}.name`)}</b>
+                <small>{t(`theme.preset.${preset._preset.id}.desc`)}</small>
               </button>
             ))}
           </div>
         </section>
 
         <section className="admin-card">
-          <h3>字体</h3>
+          <h3>{t("theme.fonts")}</h3>
           <p className="theme-hint">
-            字体在构建时打包，只能从下面几种里选，不能自行填写字体名。
+            {t("theme.fontsHint")}
           </p>
           <div className="theme-grid">
             {(["heading", "body", "mono"] as const).map((role) => (
               <label key={role} className="theme-field">
-                <span>{role === "heading" ? "标题" : role === "body" ? "正文" : "数字 / 英文"}</span>
+                <span>{t(role === "heading" ? "theme.role.heading" : role === "body" ? "theme.role.body" : "theme.role.numeric")}</span>
                 <select
                   value={theme.typography.fonts[role]}
                   onChange={(e) => setTheme(set(theme, ["typography", "fonts", role], e.target.value))}
@@ -242,7 +242,7 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
         </section>
 
         <section className="admin-card">
-          <h3>字号与行距</h3>
+          <h3>{t("theme.sizes")}</h3>
           <div className="theme-grid">
             {Object.entries(theme.typography.size).map(([key, value]) => (
               <label key={key} className="theme-field">
@@ -275,7 +275,7 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
               </label>
             ))}
             <label className="theme-field">
-              <span>正文每行宽度</span>
+              <span>{t("theme.measure")}</span>
               <input
                 type="text"
                 value={theme.typography.measure.body}
@@ -286,22 +286,22 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
         </section>
 
         <section className="admin-card">
-          <h3>主要颜色</h3>
+          <h3>{t("theme.primaryColors")}</h3>
           {colorRow("colors", COLOR_LABELS)}
         </section>
 
         <section className="admin-card">
-          <h3>次要颜色</h3>
-          <p className="theme-hint">新闻与视频版面用到的深浅层次。</p>
+          <h3>{t("theme.secondaryColors")}</h3>
+          <p className="theme-hint">{t("theme.secondaryHint")}</p>
           {colorRow("surfaces", SURFACE_LABELS)}
         </section>
 
         <section className="admin-card">
-          <h3>圆角、阴影与间距</h3>
+          <h3>{t("theme.shapes")}</h3>
           <div className="theme-grid">
             {Object.entries(theme.shape).map(([key, value]) => (
               <label key={key} className="theme-field">
-                <span>{key === "radius" ? "圆角" : "阴影"}</span>
+                <span>{t(key === "radius" ? "theme.radius" : "theme.shadow")}</span>
                 <input
                   type="text"
                   value={value}
@@ -311,7 +311,7 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
             ))}
             {Object.entries(theme.spacing).map(([key, value]) => (
               <label key={key} className="theme-field">
-                <span>{key === "wrap" ? "内容最大宽度" : key === "sectionY" ? "版块上下留白" : "左右边距"}</span>
+                <span>{t(key === "wrap" ? "theme.wrap" : key === "sectionY" ? "theme.sectionY" : "theme.gutter")}</span>
                 <input
                   type="text"
                   value={value}
@@ -328,11 +328,11 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
       <div className="theme-preview">
         <div className="theme-toolbar">
           <select value={previewPath} onChange={(e) => setPreviewPath(e.target.value)}>
-            <option value="/">首页</option>
-            <option value="/news">新闻与报告</option>
-            <option value="/videos">视频</option>
-            <option value="/resources">资源馆</option>
-            <option value="/about">关于我们</option>
+            <option value="/">{t("theme.preview.home")}</option>
+            <option value="/news">{t("theme.preview.news")}</option>
+            <option value="/videos">{t("theme.preview.videos")}</option>
+            <option value="/resources">{t("theme.preview.resources")}</option>
+            <option value="/about">{t("theme.preview.about")}</option>
           </select>
           <span className="theme-spacer" />
           {status ? <span className="theme-status">{status}</span> : null}
@@ -341,14 +341,14 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
             onClick={() => (view === "json" ? setView("form") : openJson())}
             disabled={busy}
           >
-            {view === "json" ? "表单编辑" : "JSON 编辑"}
+            {t(view === "json" ? "theme.editForm" : "theme.editJson")}
           </button>
-          <button type="button" onClick={reset} disabled={busy}>恢复默认</button>
+          <button type="button" onClick={reset} disabled={busy}>{t("theme.reset")}</button>
           <button type="button" className="theme-save" onClick={save} disabled={busy || !dirty}>
-            {busy ? "保存中…" : dirty ? "保存并生效" : "已是最新"}
+            {t(busy ? "theme.saving" : dirty ? "theme.saveAndApply" : "theme.upToDate")}
           </button>
         </div>
-        <iframe ref={frame} src={previewPath} title="主题预览" />
+        <iframe ref={frame} src={previewPath} title={t("theme.previewTitle")} />
       </div>
     </div>
   );

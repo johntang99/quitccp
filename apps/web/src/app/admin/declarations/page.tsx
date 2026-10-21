@@ -1,4 +1,6 @@
 import { AdminShell } from "@/components/admin/AdminShell";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 import { canAccessDeclarations, requireAdminSessionUser } from "@/lib/admin/auth";
 import { listDeclarationsForAdmin } from "@/lib/admin/declarations-repository";
 import { formatDateTime } from "@/lib/format";
@@ -18,13 +20,13 @@ interface DeclarationsPageProps {
 const STATUS_LABEL: Record<string, string> = {
   pending_review: "待审核",
   published: "已公开",
-  rejected: "已拒绝"
+  rejected: t("admin.decl.status.rejected")
 };
 
 const CERT_STATUS_LABEL: Record<string, string> = {
-  issued: "已签发",
-  revoked: "已作废",
-  pending: "待处理"
+  issued: t("admin.decl.cert.issued"),
+  revoked: t("admin.decl.cert.revoked"),
+  pending: t("admin.decl.cert.pending")
 };
 
 function formatSequence(value: string | null): string {
@@ -41,10 +43,9 @@ export default async function AdminDeclarationsPage({ searchParams }: Declaratio
     return (
       <AdminShell user={user}>
         <section className="admin-card">
-          <h2 style={{ marginTop: 0 }}>三退声明队列</h2>
+          <h2 style={{ marginTop: 0 }}>{t("admin.decl.title")}</h2>
           <p>
-            你的角色（{user.role}）无权查看声明队列。声明属于服务域的敏感数据，仅限
-            super_admin 访问。
+            {t("admin.decl.noPermission", { role: user.role })}
           </p>
         </section>
       </AdminShell>
@@ -91,13 +92,13 @@ export default async function AdminDeclarationsPage({ searchParams }: Declaratio
   return (
     <AdminShell user={user}>
       <section className="admin-card">
-        <h2 style={{ marginTop: 0 }}>三退声明队列</h2>
+        <h2 style={{ marginTop: 0 }}>{t("admin.decl.title")}</h2>
         <p>
-          公开提交的声明先进入 <b>待审核</b>，经人工确认后才会在站点上公开。
-          待审核 <b>{result.pendingCount}</b> 条，当前筛选共 {result.total} 条。
+          {tRich("admin.decl.intro", { pending: <b>{t("admin.decl.introPending")}</b> })}
+          {tRich("admin.decl.counts", { pending: <b>{result.pendingCount}</b>, total: result.total })}
         </p>
         <p className="muted">
-          声明正文属于敏感数据，默认折叠。展开、筛选与处理都会记入服务审计日志
+          {t("admin.decl.sensitiveNote")}
           （service_audit_logs）。
         </p>
 
@@ -114,28 +115,28 @@ export default async function AdminDeclarationsPage({ searchParams }: Declaratio
 
         <form className="admin-toolbar" method="get">
           <select className="admin-select" name="status" defaultValue={filters.status ?? ""}>
-            <option value="">全部状态</option>
-            <option value="pending_review">待审核</option>
-            <option value="published">已公开</option>
-            <option value="rejected">已拒绝</option>
+            <option value="">{t("admin.list.allStatuses")}</option>
+            <option value="pending_review">{t("admin.decl.status.pending_review")}</option>
+            <option value="published">{t("admin.decl.status.published")}</option>
+            <option value="rejected">{t("admin.decl.status.rejected")}</option>
           </select>
           <select className="admin-select" name="source" defaultValue={filters.source ?? ""}>
-            <option value="">全部来源</option>
-            <option value="public">public（网站提交）</option>
-            <option value="staff">staff（内部录入）</option>
-            <option value="legacy">legacy（历史迁移）</option>
+            <option value="">{t("admin.decl.allSources")}</option>
+            <option value="public">{t("admin.decl.source.public")}</option>
+            <option value="staff">{t("admin.decl.source.staff")}</option>
+            <option value="legacy">{t("admin.decl.source.legacy")}</option>
           </select>
           <select
             className="admin-select"
             name="wantsCertificate"
             defaultValue={filters.wantsCertificate ?? ""}
           >
-            <option value="">是否申请证明（全部）</option>
-            <option value="1">仅申请了证明</option>
+            <option value="">{t("admin.decl.certFilterAll")}</option>
+            <option value="1">{t("admin.decl.certFilterOnly")}</option>
           </select>
           <input className="admin-input" name="pageSize" defaultValue={String(result.pageSize)} />
           <button className="admin-btn" type="submit">
-            筛选
+            {t("admin.decl.filter")}
           </button>
         </form>
       </section>
@@ -144,23 +145,23 @@ export default async function AdminDeclarationsPage({ searchParams }: Declaratio
         <table className="admin-table">
           <thead>
             <tr>
-              <th>编号</th>
-              <th>署名 / 地区</th>
-              <th>退出组织</th>
-              <th>声明内容</th>
-              <th>状态</th>
-              <th>证明</th>
-              <th>操作</th>
+              <th>{t("admin.decl.col.id")}</th>
+              <th>{t("admin.decl.col.name")}</th>
+              <th>{t("admin.decl.col.orgs")}</th>
+              <th>{t("admin.decl.col.statement")}</th>
+              <th>{t("admin.list.col.status")}</th>
+              <th>{t("admin.decl.col.cert")}</th>
+              <th>{t("admin.vid.col.actions")}</th>
             </tr>
           </thead>
           <tbody>
             {result.rows.length === 0 ? (
               <tr>
-                <td colSpan={7}>没有符合条件的声明</td>
+                <td colSpan={7}>{t("admin.decl.empty")}</td>
               </tr>
             ) : (
               result.rows.map((row) => (
-                <tr key={row.id}>
+                <tr key={row.id} data-snapshot="data">
                   <td style={{ whiteSpace: "nowrap" }}>
                     {formatSequence(row.sequenceNumber)}
                     <br />
@@ -171,14 +172,14 @@ export default async function AdminDeclarationsPage({ searchParams }: Declaratio
                   <td>
                     {row.alias}
                     <br />
-                    <span className="muted">{row.region ?? "未填写"}</span>
+                    <span className="muted">{row.region ?? t("admin.decl.noRegion")}</span>
                   </td>
                   <td>{row.organizationScopes.join("、") || "-"}</td>
                   <td style={{ maxWidth: 360 }}>
                     {/* Collapsed by default so a page of the queue cannot leak
                         many statements at once to a passing screen or capture. */}
                     <details>
-                      <summary style={{ cursor: "pointer" }}>查看全文（{row.statement.length} 字）</summary>
+                      <summary style={{ cursor: "pointer" }}>{t("admin.decl.viewFull", { n: row.statement.length })}</summary>
                       <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.8, marginBottom: 0 }}>
                         {row.statement}
                       </p>
@@ -189,7 +190,7 @@ export default async function AdminDeclarationsPage({ searchParams }: Declaratio
                     {row.wantsCertificate ? (
                       <>
                         <br />
-                        <span className="muted">已申请证明</span>
+                        <span className="muted">{t("admin.decl.certRequested")}</span>
                       </>
                     ) : null}
                   </td>
@@ -210,14 +211,14 @@ export default async function AdminDeclarationsPage({ searchParams }: Declaratio
                             <input type="hidden" name="certificateId" value={row.certificate.id} />
                             <input type="hidden" name="returnTo" value={currentQuery} />
                             <button className="admin-btn" type="submit">
-                              作废
+                              {t("admin.decl.revoke")}
                             </button>
                           </form>
                         ) : null}
                       </>
                     ) : row.status !== "published" ? (
                       <span className="muted">
-                        {row.status === "rejected" ? "不可签发" : "需先通过审核"}
+                        {t(row.status === "rejected" ? "admin.decl.cannotIssue" : "admin.decl.needsReview")}
                       </span>
                     ) : (
                       <form
@@ -230,11 +231,11 @@ export default async function AdminDeclarationsPage({ searchParams }: Declaratio
                         <input
                           className="admin-input"
                           name="holderName"
-                          placeholder="证明上的姓名"
+                          placeholder={t("admin.decl.certNamePlaceholder")}
                           defaultValue={row.alias}
                         />
                         <button className="admin-btn" type="submit">
-                          签发证明
+                          {t("admin.decl.issueCert")}
                         </button>
                       </form>
                     )}
@@ -248,12 +249,12 @@ export default async function AdminDeclarationsPage({ searchParams }: Declaratio
                         name="decision"
                         defaultValue={row.status === "pending_review" ? "publish" : "return_to_pending"}
                       >
-                        <option value="publish">通过并公开</option>
-                        <option value="reject">拒绝</option>
-                        <option value="return_to_pending">退回待审</option>
+                        <option value="publish">{t("admin.decl.action.publish")}</option>
+                        <option value="reject">{t("admin.decl.action.reject")}</option>
+                        <option value="return_to_pending">{t("admin.decl.action.return")}</option>
                       </select>
                       <button className="admin-btn admin-btn-primary" type="submit" style={{ marginLeft: 6 }}>
-                        提交
+                        {t("admin.decl.submit")}
                       </button>
                     </form>
                   </td>
@@ -266,11 +267,11 @@ export default async function AdminDeclarationsPage({ searchParams }: Declaratio
         <div className="admin-toolbar" style={{ marginTop: 12 }}>
           {page > 1 ? (
             <a className="admin-btn" href={pageHref(page - 1)}>
-              上一页
+              {t("admin.decl.prevPage")}
             </a>
           ) : null}
           <span className="muted">
-            第 {page} / {totalPages} 页
+            {t("admin.decl.pageOf", { page, total: totalPages })}
           </span>
           {page < totalPages ? (
             <a className="admin-btn" href={pageHref(page + 1)}>

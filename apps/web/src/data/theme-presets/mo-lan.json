@@ -111,8 +111,6 @@
     "gutter": "32px"
   },
   "_preset": {
-    "id": "mo-lan",
-    "name": "墨蓝",
-    "description": "把紫换成更冷的墨蓝，金色保持不变，正文底略偏灰。"
+    "id": "mo-lan"
   }
 }

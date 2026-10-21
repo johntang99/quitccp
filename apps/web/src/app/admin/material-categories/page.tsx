@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/admin/AdminShell";
+import { t } from "@/lib/i18n";
 import { MaterialCategoryDeleteButton } from "@/components/admin/MaterialCategoryDeleteButton";
 import { MaterialTabs } from "@/components/admin/MaterialTabs";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
@@ -24,14 +25,12 @@ export default async function MaterialCategoriesPage({ searchParams }: PageProps
     <AdminShell user={user}>
       <MaterialTabs active="categories" />
       <section className="admin-card">
-        <h2 style={{ marginTop: 0 }}>资料分类 Material categories</h2>
+        <h2 style={{ marginTop: 0 }}>{t("admin.mcat.title")}</h2>
         <p>
-          可新增、重命名、排序。改完按该行的「保存」。
-          分类名称可用中文，slug 请用小写英文（它出现在网址里）。
-          「说明」是下载页上该分类卡片下的那段文字。
+          {t("admin.mcat.intro1")}
         </p>
         <p style={{ margin: "6px 0 0", color: "#8a6d1f" }}>
-          分类下面还有已发布资料时不能删除 —— 资料一旦没有分类，就会从下载页上消失。
+          {t("admin.mcat.intro2")}
         </p>
         {params.error ? (
           <p style={{ margin: "8px 0 0", color: "#b42318", background: "#fef3f2", padding: "8px 10px" }}>
@@ -45,7 +44,7 @@ export default async function MaterialCategoriesPage({ searchParams }: PageProps
         ) : null}
         {!ready ? (
           <p style={{ margin: "8px 0 0", color: "#8a6d1f", background: "#fffbe9", padding: "8px 10px" }}>
-            还没有资料分类表。请先执行
+            {t("admin.mcat.noTable")}
             <code> supabase/content/migrations/017_materials.sql</code>。
           </p>
         ) : null}
@@ -64,11 +63,11 @@ export default async function MaterialCategoriesPage({ searchParams }: PageProps
                 letterSpacing: ".04em"
               }}
             >
-              <span>排序</span>
+              <span>{t("admin.mcat.col.order")}</span>
               <span>Slug</span>
-              <span>名称</span>
-              <span>说明</span>
-              <span>已发布</span>
+              <span>{t("admin.mcat.col.name")}</span>
+              <span>{t("admin.mcat.col.summary")}</span>
+              <span>{t("admin.mcat.col.published")}</span>
               <span />
             </div>
 
@@ -90,7 +89,7 @@ export default async function MaterialCategoriesPage({ searchParams }: PageProps
                 <span style={{ color: "#555" }}>{row.count}</span>
                 <span style={{ display: "flex", gap: 6 }}>
                   <button className="admin-btn" type="submit">
-                    保存
+                    {t("admin.mcat.save")}
                   </button>
                   {/* Confirms first, and posts on its own so the row's unsaved
                       edits are not carried along with a delete. */}
@@ -98,18 +97,18 @@ export default async function MaterialCategoriesPage({ searchParams }: PageProps
                 </span>
               </form>
             ))}
-            {rows.length === 0 ? <p style={{ color: "#888", margin: 0 }}>还没有分类。</p> : null}
+            {rows.length === 0 ? <p style={{ color: "#888", margin: 0 }}>{t("admin.mcat.empty")}</p> : null}
           </section>
 
           <section className="admin-card" style={{ marginTop: 14 }}>
-            <h3 style={{ marginTop: 0 }}>新增分类</h3>
+            <h3 style={{ marginTop: 0 }}>{t("admin.mcat.addTitle")}</h3>
             <form
               method="post"
               action="/api/admin/content/materials/category"
               style={{ display: "grid", gridTemplateColumns: "72px 150px 180px 1fr auto", gap: 10, alignItems: "end" }}
             >
               <label>
-                排序
+                {t("admin.mcat.col.order")}
                 {/* 10, 20, 30… so a new one can be slipped between two existing
                     rows without renumbering the rest. */}
                 <input className="admin-input" name="sortOrder" defaultValue={(rows.length + 1) * 10} />
@@ -119,15 +118,15 @@ export default async function MaterialCategoriesPage({ searchParams }: PageProps
                 <input className="admin-input" name="slug" required placeholder="kind-words" />
               </label>
               <label>
-                名称
-                <input className="admin-input" name="name" required placeholder="良言善语" />
+                {t("admin.mcat.col.name")}
+                <input className="admin-input" name="name" required placeholder={t("admin.mcat.namePlaceholder")} />
               </label>
               <label>
-                说明（可留空）
-                <input className="admin-input" name="summary" placeholder="下载页上这张卡片下面的那句话" />
+                {t("admin.mcat.summaryLabel")}
+                <input className="admin-input" name="summary" placeholder={t("admin.mcat.summaryPlaceholder")} />
               </label>
               <button className="admin-btn admin-btn-primary" type="submit">
-                新增
+                {t("admin.mcat.add")}
               </button>
             </form>
           </section>

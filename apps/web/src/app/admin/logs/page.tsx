@@ -1,4 +1,6 @@
 import { AdminShell } from "@/components/admin/AdminShell";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { can } from "@/lib/admin/permissions";
 import { recentLogHours, type LogHourRow } from "@/lib/admin/log-rollup";
@@ -46,8 +48,8 @@ export default async function AdminLogsPage() {
     return (
       <AdminShell user={user}>
         <section className="admin-card">
-          <h2 style={{ marginTop: 0 }}>访问日志</h2>
-          <p className="dash-note">这个页面只对站点管理员开放。</p>
+          <h2 style={{ marginTop: 0 }}>{t("admin.logs.title")}</h2>
+          <p className="dash-note">{t("admin.logs.adminOnly")}</p>
         </section>
       </AdminShell>
     );
@@ -77,34 +79,33 @@ export default async function AdminLogsPage() {
   return (
     <AdminShell user={user}>
       <section className="admin-card">
-        <h2 style={{ marginTop: 0 }}>访问日志</h2>
+        <h2 style={{ marginTop: 0 }}>{t("admin.logs.title")}</h2>
         <p className="dash-note">
-          公开站点每小时服务了什么。原始日志存在 Cloudflare R2，保留 14 天；这里是从中汇总出来的
-          每小时计数，永久保留 —— 所以「上周二正常吗」这种问题一年后还答得出来，而「某一条请求长什么样」
-          要在 14 天内用 <code>scripts/read-drain-logs.mjs</code> 去查原始记录。
-          时间一律 UTC，和存档的分区方式一致。这里不含任何读者 IP。
+          {tRich("admin.logs.intro", { script: <code>scripts/read-drain-logs.mjs</code> })}
         </p>
 
         {rows.length === 0 ? (
           <p className="dash-alert">
-            <b>还没有汇总数据。</b>可能是 Vercel 的 Log Drain 还没建起来（见
-            <code>workers/vercel-log-drain/README.md</code>），也可能是每小时的汇总任务还没跑过第一次 ——
-            它在每小时的第 12 分运行。后台首页「站点防护」面板里的「日志存档」那一项会说是哪一种。
+            <b>{t("admin.logs.noData")}</b>
+            {tRich("admin.logs.noDataBody", {
+              readme: <code>workers/vercel-log-drain/README.md</code>
+            })}
           </p>
         ) : (
           <>
             <div className="dash-stats">
-              <div className="dash-stat"><b>{num(requests)}</b><span>近 24 小时请求</span></div>
-              <div className="dash-stat"><b>{hitRate === null ? "—" : `${hitRate}%`}</b><span>CDN 缓存命中</span></div>
+              <div className="dash-stat"><b>{num(requests)}</b><span>{t("admin.logs.requests24h")}</span></div>
+              <div className="dash-stat"><b>{hitRate === null ? "—" : `${hitRate}%`}</b><span>{t("admin.logs.cdnHit")}</span></div>
               <div className="dash-stat"><b>{num(notFound)}</b><span>4xx</span></div>
-              <div className="dash-stat"><b>{num(errors)}</b><span>5xx 与错误行</span></div>
-              <div className="dash-stat"><b>{bytes(archived)}</b><span>近 {rows.length} 小时存档</span></div>
+              <div className="dash-stat"><b>{num(errors)}</b><span>{t("admin.logs.errors")}</span></div>
+              <div className="dash-stat"><b>{bytes(archived)}</b><span>{t("admin.logs.archived", { n: rows.length })}</span></div>
             </div>
             {errors > 0 ? (
               <p className="dash-alert">
-                <b>近 24 小时有 {num(errors)} 条 5xx 或错误记录。</b>
-                正常值是 0。用 <code>node scripts/read-drain-logs.mjs --hours 24 --status 500</code>
-                　看是哪些请求 —— 原始记录只保留 14 天，过了就查不到了。
+                <b>{t("admin.logs.errorAlert", { n: num(errors) })}</b>
+                {tRich("admin.logs.errorAlertBody", {
+                  cmd: <code>node scripts/read-drain-logs.mjs --hours 24 --status 500</code>
+                })}
               </p>
             ) : null}
           </>
@@ -114,20 +115,20 @@ export default async function AdminLogsPage() {
       {rows.length > 0 ? (
         <>
           <section className="admin-card">
-            <h3 style={{ marginTop: 0 }}>逐小时</h3>
+            <h3 style={{ marginTop: 0 }}>{t("admin.logs.hourly")}</h3>
             <div style={{ overflowX: "auto" }}>
               <table className="admin-table" style={{ fontVariantNumeric: "tabular-nums" }}>
                 <thead>
                   <tr>
-                    <th style={{ width: 110 }}>小时 (UTC)</th>
-                    <th style={{ width: 200 }}>请求</th>
+                    <th style={{ width: 110 }}>{t("admin.logs.col.hour")}</th>
+                    <th style={{ width: 200 }}>{t("admin.logs.col.requests")}</th>
                     <th style={{ width: 60 }}>2xx</th>
                     <th style={{ width: 60 }}>3xx</th>
                     <th style={{ width: 60 }}>4xx</th>
                     <th style={{ width: 60 }}>5xx</th>
-                    <th style={{ width: 90 }}>缓存命中</th>
-                    <th style={{ width: 80 }}>其他行</th>
-                    <th style={{ width: 80 }}>存档</th>
+                    <th style={{ width: 90 }}>{t("admin.logs.col.cacheHit")}</th>
+                    <th style={{ width: 80 }}>{t("admin.logs.col.otherRows")}</th>
+                    <th style={{ width: 80 }}>{t("admin.logs.col.archived")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -135,7 +136,7 @@ export default async function AdminLogsPage() {
                     const servedRow = row.cache_hit + row.cache_miss + row.cache_other;
                     const rate = servedRow > 0 ? Math.round((row.cache_hit / servedRow) * 100) : null;
                     return (
-                      <tr key={row.hour}>
+                      <tr key={row.hour} data-snapshot="data">
                         <td>{hourLabel(row.hour)}</td>
                         <td>
                           {/* A bar rather than a chart library: one number per
@@ -169,22 +170,23 @@ export default async function AdminLogsPage() {
               </table>
             </div>
             <p className="dash-note">
-              「其他行」是没有 <code>proxy</code> 字段的记录 —— 主要是构建日志。单独计数是因为一次部署
-              能在一分钟内产生几百行，混进请求数里会让每次发布看起来都像一次流量高峰。
+              {tRich("admin.logs.otherRowsNote", { field: <code>proxy</code> })}
             </p>
           </section>
 
           <section className="admin-card">
-            <h3 style={{ marginTop: 0 }}>访问最多的路由（近 {rows.length} 小时）</h3>
+            <h3 style={{ marginTop: 0 }}>{t("admin.logs.topRoutes", { n: rows.length })}</h3>
             <p className="dash-note" style={{ marginTop: 0 }}>
-              是<b>路由模式</b>不是具体网址 —— <code>news/[slug]</code> 而不是 15,374 篇文章里的某一篇。
-              否则每小时的前十名都是十篇不同的文章，看不出流量落在站点的哪一块。
+              {tRich("admin.logs.topRoutesNote", {
+                pattern: <b>{t("admin.logs.topRoutesPattern")}</b>,
+                example: <code>news/[slug]</code>
+              })}
             </p>
             <table className="admin-table" style={{ maxWidth: 560, fontVariantNumeric: "tabular-nums" }}>
-              <thead><tr><th>路由</th><th style={{ width: 90 }}>次数</th></tr></thead>
+              <thead><tr><th>{t("admin.logs.col.route")}</th><th style={{ width: 90 }}>{t("admin.logs.col.count")}</th></tr></thead>
               <tbody>
                 {topRoutes.map(([route, n]) => (
-                  <tr key={route}><td><code>{route}</code></td><td>{num(n)}</td></tr>
+                  <tr key={route} data-snapshot="data"><td><code>{route}</code></td><td>{num(n)}</td></tr>
                 ))}
               </tbody>
             </table>

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { t } from "@/lib/i18n";
+import { formatTime } from "@/lib/format";
 
 /**
  * Drops every cached public page at once. A last resort, not a publish step.
@@ -26,9 +28,7 @@ export function RevalidateButton() {
 
   async function run() {
     const ok = window.confirm(
-      "这会丢弃全站所有页面的缓存，之后每个被访问的页面都要重新查数据库生成一次。\n\n" +
-        "保存文章、视频、页面、资料、分类后，相关页面已经会自动更新，不需要用这个。\n\n" +
-        "只有在某个页面明显卡住了旧内容、又找不出原因时才用它。确定要继续吗？"
+      t("admin.revalidate.confirm")
     );
     if (!ok) return;
 
@@ -38,9 +38,9 @@ export function RevalidateButton() {
       const res = await fetch("/api/admin/content/revalidate", { method: "POST" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-      setMsg(`已刷新 ${new Date(json.at).toLocaleTimeString("zh-CN")}`);
+      setMsg(t("admin.revalidate.done", { at: formatTime(json.at) }));
     } catch (err) {
-      setMsg(`刷新失败：${err instanceof Error ? err.message : String(err)}`);
+      setMsg(t("admin.revalidate.failed", { error: err instanceof Error ? err.message : String(err) }));
     } finally {
       setBusy(false);
     }
@@ -48,8 +48,8 @@ export function RevalidateButton() {
 
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-      <button className="admin-btn" type="button" onClick={run} disabled={busy} title="仅在页面卡住旧内容时使用">
-        {busy ? "刷新中…" : "强制刷新全站缓存"}
+      <button className="admin-btn" type="button" onClick={run} disabled={busy} title={t("admin.revalidate.title")}>
+        {t(busy ? "admin.revalidate.busy" : "admin.revalidate.label")}
       </button>
       {msg ? <span style={{ fontSize: 13, color: "var(--ink-dim)" }}>{msg}</span> : null}
     </span>

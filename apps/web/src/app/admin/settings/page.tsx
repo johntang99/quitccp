@@ -1,4 +1,6 @@
 import { AdminShell } from "@/components/admin/AdminShell";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { can } from "@/lib/admin/permissions";
 import { listSettings } from "@/lib/admin/repository";
@@ -15,8 +17,8 @@ export default async function AdminSettingsPage({ searchParams }: AdminSettingsP
     return (
       <AdminShell user={user}>
         <section className="admin-card">
-          <h2 style={{ marginTop: 0 }}>站点设置</h2>
-          <p>你的账号没有权限打开这个页面。需要管理员或超级管理员权限。</p>
+          <h2 style={{ marginTop: 0 }}>{t("admin.settings.title")}</h2>
+          <p>{t("admin.users.noPermission")}</p>
         </section>
       </AdminShell>
     );
@@ -31,15 +33,15 @@ export default async function AdminSettingsPage({ searchParams }: AdminSettingsP
   return (
     <AdminShell user={user}>
       <section className="admin-card">
-        <h2 style={{ marginTop: 0 }}>站点设置</h2>
-        <p>用于维护 header/footer/nav/SEO 等全局 JSON 配置。</p>
+        <h2 style={{ marginTop: 0 }}>{t("admin.settings.title")}</h2>
+        <p>{t("admin.settings.intro")}</p>
         {searchSyncState === "ok" ? (
           <p style={{ color: "#0f766e", marginTop: 8 }}>
-            搜索索引同步成功：index={searchSyncIndex || "articles"}，写入 {searchSyncIndexed || "0"} 条记录。
+            {t("admin.settings.syncOk", { index: searchSyncIndex || "articles", n: searchSyncIndexed || "0" })}
           </p>
         ) : null}
         {searchSyncState === "error" ? (
-          <p style={{ color: "#b91c1c", marginTop: 8 }}>搜索索引同步失败：{searchSyncMessage || "unknown_error"}</p>
+          <p style={{ color: "#b91c1c", marginTop: 8 }}>{t("admin.settings.syncFailed", { error: searchSyncMessage || "unknown_error" })}</p>
         ) : null}
       </section>
 
@@ -48,18 +50,19 @@ export default async function AdminSettingsPage({ searchParams }: AdminSettingsP
           <thead>
             <tr>
               <th>Key</th>
-              <th>值</th>
-              <th>更新时间</th>
+              <th>{t("admin.settings.col.value")}</th>
+              <th>{t("admin.settings.col.updated")}</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={3}>暂无设置</td>
+                <td colSpan={3}>{t("admin.settings.empty")}</td>
               </tr>
             ) : (
               rows.map((row) => (
-                <tr key={row.id}>
+                /* 设置项的值是数据：里面有自检结果，每小时一变。 */
+                <tr key={row.id} data-snapshot="data">
                   <td>{row.settingKey}</td>
                   <td>
                     <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>{row.valueJson}</pre>
@@ -73,27 +76,27 @@ export default async function AdminSettingsPage({ searchParams }: AdminSettingsP
       </section>
 
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>新增/更新设置</h3>
+        <h3 style={{ marginTop: 0 }}>{t("admin.settings.upsertTitle")}</h3>
         <form method="post" action="/api/admin/content/settings" style={{ display: "grid", gap: 10 }}>
-          <input className="admin-input" name="id" placeholder="id (可留空自动生成)" />
+          <input className="admin-input" name="id" placeholder={t("admin.settings.idPlaceholder")} />
           <input className="admin-input" name="settingKey" placeholder="site.header / site.nav / seo.default" required />
           <textarea className="admin-textarea" name="valueJson" defaultValue={"{}"} />
           <button className="admin-btn admin-btn-primary" type="submit">
-            保存设置
+            {t("admin.settings.save")}
           </button>
         </form>
       </section>
 
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>搜索索引（Meilisearch）</h3>
+        <h3 style={{ marginTop: 0 }}>{t("admin.settings.searchTitle")}</h3>
         <p style={{ marginTop: 0 }}>
-          手动触发一次索引同步。需要已配置 <code>MEILI_HOST</code> 与对应密钥环境变量。
+          {tRich("admin.settings.searchNote", { host: <code>MEILI_HOST</code> })}
         </p>
         <form method="post" action="/api/admin/content/search/sync" style={{ display: "grid", gap: 10 }}>
-          <input className="admin-input" name="locales" defaultValue={SITE_LOCALE} placeholder="zh 或 zh,en" />
-          <input className="admin-input" name="batchSize" defaultValue="200" placeholder="每批大小（建议 100-500）" />
+          <input className="admin-input" name="locales" defaultValue={SITE_LOCALE} placeholder={t("admin.settings.localesPlaceholder")} />
+          <input className="admin-input" name="batchSize" defaultValue="200" placeholder={t("admin.settings.batchPlaceholder")} />
           <button className="admin-btn admin-btn-primary" type="submit">
-            立即同步搜索索引
+            {t("admin.settings.syncNow")}
           </button>
         </form>
       </section>

@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { t } from "@/lib/i18n";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin-client";
 import type { AdminRole } from "./types";
 
@@ -28,13 +29,13 @@ export const MIN_PASSWORD_LENGTH = 8;
 
 export function validatePassword(password: string): string | null {
   if (password.length < MIN_PASSWORD_LENGTH) {
-    return `密码至少 ${MIN_PASSWORD_LENGTH} 位。`;
+    return t("admin.users.err.passwordShort", { n: MIN_PASSWORD_LENGTH });
   }
   return null;
 }
 
 export function validateEmail(email: string): string | null {
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "邮箱格式不正确。";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return t("admin.users.err.badEmail");
   return null;
 }
 
@@ -105,7 +106,7 @@ export async function createAdminUser(input: {
     .select("id")
     .eq("email", email)
     .maybeSingle();
-  if (existing) return { ok: false, error: "这个邮箱已经有账号了。" };
+  if (existing) return { ok: false, error: t("admin.users.err.emailTaken") };
 
   const { error: authError } = await supabase.auth.admin.createUser({
     email,
@@ -158,7 +159,7 @@ export async function setUserPassword(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const supabase = createSupabaseAdminClient();
   const id = await authIdByEmail(email);
-  if (!id) return { ok: false, error: "这个账号还没有登录身份，无法设置密码。" };
+  if (!id) return { ok: false, error: t("admin.users.err.noIdentity") };
   const { error } = await supabase.auth.admin.updateUserById(id, { password });
   if (error) return { ok: false, error: error.message };
   return { ok: true };
@@ -173,7 +174,7 @@ export async function deleteAdminUser(
     .select("email")
     .eq("id", id)
     .maybeSingle();
-  if (!row) return { ok: false, error: "账号不存在。" };
+  if (!row) return { ok: false, error: t("admin.users.err.notFound") };
 
   const authId = await authIdByEmail(String(row.email));
   if (authId) await supabase.auth.admin.deleteUser(authId);

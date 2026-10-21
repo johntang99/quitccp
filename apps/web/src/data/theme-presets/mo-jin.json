@@ -111,8 +111,6 @@
     "gutter": "32px"
   },
   "_preset": {
-    "id": "mo-jin",
-    "name": "墨金",
-    "description": "更克制的深墨底配旧金，适合长文阅读与打印。"
+    "id": "mo-jin"
   }
 }

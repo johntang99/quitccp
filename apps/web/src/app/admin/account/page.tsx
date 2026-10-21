@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/admin/AdminShell";
+import { t } from "@/lib/i18n";
 import { requireAdminSessionUser } from "@/lib/admin/auth";
 import { ROLE_LABELS } from "@/lib/admin/permissions";
 import { MIN_PASSWORD_LENGTH } from "@/lib/admin/user-admin-repository";
@@ -15,7 +16,7 @@ export default async function AdminAccountPage({ searchParams }: PageProps) {
   return (
     <AdminShell user={user}>
       <section className="admin-card">
-        <h2 style={{ marginTop: 0 }}>我的账号</h2>
+        <h2 style={{ marginTop: 0 }}>{t("admin.account.title")}</h2>
         <p>
           {user.email}　·　{ROLE_LABELS[user.role] ?? user.role}
         </p>
@@ -24,27 +25,26 @@ export default async function AdminAccountPage({ searchParams }: PageProps) {
       </section>
 
       <section className="admin-card">
-        <h3 style={{ marginTop: 0 }}>修改密码</h3>
+        <h3 style={{ marginTop: 0 }}>{t("admin.account.changePassword")}</h3>
         <p className="dash-note">
-          需要先输入当前密码。改完之后，你在其他设备上的登录会被退出。
-          没有人能看到你的密码——管理员也只能重设，看不到。
+          {t("admin.account.note")}
         </p>
         <form method="post" action="/api/admin/account/password" className="account-form">
           <label>
-            <span>当前密码</span>
+            <span>{t("admin.account.current")}</span>
             <input className="admin-input" name="currentPassword" type="password" required />
           </label>
           <label>
-            <span>新密码（至少 {MIN_PASSWORD_LENGTH} 位）</span>
+            <span>{t("admin.account.new", { n: MIN_PASSWORD_LENGTH })}</span>
             <input className="admin-input" name="newPassword" type="password"
                    minLength={MIN_PASSWORD_LENGTH} required />
           </label>
           <label>
-            <span>再输入一次</span>
+            <span>{t("admin.account.again")}</span>
             <input className="admin-input" name="confirmPassword" type="password"
                    minLength={MIN_PASSWORD_LENGTH} required />
           </label>
-          <button className="admin-btn admin-btn-primary" type="submit">保存新密码</button>
+          <button className="admin-btn admin-btn-primary" type="submit">{t("admin.account.save")}</button>
         </form>
       </section>
     </AdminShell>

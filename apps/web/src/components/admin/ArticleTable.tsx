@@ -71,7 +71,14 @@ export async function ArticleTable({
           {rows.map((row, index) => {
             const status = STATUS[row.status] ?? STATUS.draft;
             return (
-              <tr key={row.id}>
+              /*
+               * data-snapshot="data"：这一行装的是库里的东西（标题、分类、作者）,
+               * 不是界面文案。admin:snapshot 用它把这段排除掉 —— 编辑一存新稿，
+               * 整张表的行就全部错位，不排除的话那个检查天天报假差异。
+               * 行内也有几句文案（「未分类」、状态标签），它们由
+               * npm run zh:unchanged 在源码层面把关。
+               */
+              <tr key={row.id} data-snapshot="data">
                 {selectable ? (
                   <td>
                     <input type="checkbox" name="ids" value={row.id} form="bulk-form" />

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { t } from "@/lib/i18n";
+import { tRich } from "@/lib/i18n/rich";
 import { MarkdownEditor } from "./MarkdownEditor";
 import { ImagePickerModal } from "./ImagePickerModal";
 import type { FaqCategoryRecord, FaqRecord } from "@/lib/admin/faq-repository";
@@ -44,20 +46,20 @@ export function FaqForm({ faq, categories, canPublish }: FaqFormProps) {
 
       <section className="admin-card" style={{ display: "grid", gap: 12 }}>
         <label>
-          问题（Question）
+          {t("admin.faq.question")}
           <input
             className="admin-input"
             name="question"
             value={question}
             onChange={(event) => onQuestion(event.target.value)}
-            placeholder="例如：三退是否安全？"
+            placeholder={t("admin.faq.questionPlaceholder")}
             required
           />
         </label>
 
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 200px 150px 120px", gap: 12, alignItems: "end" }}>
           <label>
-            网址标识（Slug）
+            {t("admin.faq.slug")}
             <input
               className="admin-input"
               name="slug"
@@ -70,14 +72,14 @@ export function FaqForm({ faq, categories, canPublish }: FaqFormProps) {
             />
           </label>
           <label>
-            分类（Category）
+            {t("admin.faq.category")}
             <select
               className="admin-select"
               name="categoryId"
               value={categoryId}
               onChange={(event) => setCategoryId(event.target.value)}
             >
-              {categories.length === 0 ? <option value="">（尚未建立分类）</option> : null}
+              {categories.length === 0 ? <option value="">{t("admin.faq.noCategories")}</option> : null}
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -86,16 +88,16 @@ export function FaqForm({ faq, categories, canPublish }: FaqFormProps) {
             </select>
           </label>
           <label>
-            状态（Status）
+            {t("admin.faq.status")}
             <select
               className="admin-select"
               name="status"
               value={status}
               onChange={(event) => setStatus(event.target.value)}
             >
-              <option value="draft">草稿</option>
-              {canPublish ? <option value="published">已发布</option> : null}
-              {canPublish ? <option value="archived">已归档</option> : null}
+              <option value="draft">{t("admin.status.draft")}</option>
+              {canPublish ? <option value="published">{t("admin.status.published")}</option> : null}
+              {canPublish ? <option value="archived">{t("admin.status.archived")}</option> : null}
             </select>
           </label>
           {/*
@@ -106,7 +108,7 @@ export function FaqForm({ faq, categories, canPublish }: FaqFormProps) {
             does it once.
           */}
           <label>
-            排序（Order）
+            {t("admin.faq.order")}
             <input
               className="admin-input"
               name="position"
@@ -114,46 +116,44 @@ export function FaqForm({ faq, categories, canPublish }: FaqFormProps) {
               inputMode="numeric"
               step={1}
               value={position}
-              placeholder={faq ? "" : "留空＝最后"}
+              placeholder={faq ? "" : t("admin.faq.orderPlaceholder")}
               onChange={(event) => setPosition(event.target.value)}
             />
           </label>
         </div>
         <p className="muted" style={{ margin: 0, fontSize: 12.5, lineHeight: 1.7 }}>
-          <strong>排序</strong>：同一分类里数字小的排前面，从 0 开始；留空就排到这个分类的最后。
-          数字不必连续——用 10、20、30 留出空档，以后往中间插一条就不用把后面的全改一遍。
-          两条填了同一个数字时，先建立的排前面。
+          {tRich("admin.faq.orderNote", { order: <strong>{t("admin.faq.orderNoteWord")}</strong> })}
         </p>
         {!canPublish ? (
           <p style={{ margin: 0, color: "#8a6d1f", fontSize: 13 }}>
-            你的权限可以保存草稿；发布请由管理员操作。
+            {t("admin.faq.draftOnly")}
           </p>
         ) : null}
       </section>
 
       <section className="admin-card" style={{ display: "grid", gap: 10 }}>
-        <strong>答案（Markdown）</strong>
+        <strong>{t("admin.faq.answer")}</strong>
         <MarkdownEditor value={answer} onChange={setAnswer} onPickImage={() => setPicking(true)} />
         <span style={{ color: "#777", fontSize: 12 }}>
-          与文章正文用的是同一个编辑器：空行分段，`## 小标题`、`**加粗**`、`[文字](链接)`。
+          {t("admin.faq.answerNote")}
         </span>
       </section>
 
       <div style={{ display: "flex", gap: 10 }}>
         <button className="admin-btn admin-btn-primary" type="submit">
-          保存
+          {t("admin.faq.save")}
         </button>
         <a className="admin-btn" href="/admin/faq">
-          返回列表
+          {t("admin.faq.backToList")}
         </a>
       </div>
 
       <ImagePickerModal
         open={picking}
-        fieldLabel="答案插图"
+        fieldLabel={t("admin.faq.imageField")}
         onClose={() => setPicking(false)}
         onSelect={(url) => {
-          setAnswer((current) => `${current}\n\n![图片说明](${url})\n`);
+          setAnswer((current) => `${current}\n\n![${t("admin.form.insertedImageAlt")}](${url})\n`);
           setPicking(false);
         }}
       />

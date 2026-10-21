@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { t } from "@/lib/i18n";
 import { createPortal } from "react-dom";
 
 /**
@@ -66,13 +67,13 @@ export function MaterialCategoryDeleteButton({ id, name, count }: { id: string; 
         }}
       >
         <h3 id={`delcat-h-${id}`} style={{ margin: "0 0 10px", fontSize: 17 }}>
-          {blocked ? "这个分类还不能删" : "删除这个分类？"}
+          {t(blocked ? "admin.mcat.cannotDelete" : "admin.mcat.confirmDelete")}
         </h3>
         <p style={{ margin: "0 0 6px", lineHeight: 1.6, wordBreak: "break-word" }}>「{name}」</p>
         <p style={{ margin: "0 0 18px", color: "#8a90a0", fontSize: 13, lineHeight: 1.6 }}>
           {blocked
-            ? `下面还有 ${count} 份已发布资料。资料一旦没有分类，就会从下载页上消失，所以请先把它们改到别的分类。`
-            : "这个分类下面没有资料，删掉不影响任何页面。"}
+            ? t("admin.mcat.blockedBody", { n: count })
+            : t("admin.mcat.emptyBody")}
         </p>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button
@@ -82,7 +83,7 @@ export function MaterialCategoryDeleteButton({ id, name, count }: { id: string; 
             onClick={() => setOpen(false)}
             disabled={submitting}
           >
-            {blocked ? "知道了" : "取消"}
+            {t(blocked ? "admin.mcat.understood" : "admin.cancel")}
           </button>
           {blocked ? null : (
             <form
@@ -92,7 +93,7 @@ export function MaterialCategoryDeleteButton({ id, name, count }: { id: string; 
             >
               <input type="hidden" name="id" value={id} />
               <button className="admin-btn admin-btn-danger" type="submit" disabled={submitting}>
-                {submitting ? "正在删除…" : "确认删除"}
+                {t(submitting ? "admin.list.delete.deleting" : "admin.list.delete.confirm")}
               </button>
             </form>
           )}
@@ -107,9 +108,9 @@ export function MaterialCategoryDeleteButton({ id, name, count }: { id: string; 
         className="admin-btn admin-btn-danger"
         type="button"
         onClick={() => setOpen(true)}
-        title={blocked ? `还有 ${count} 份资料在这个分类下，不能删` : "删除这个分类"}
+        title={blocked ? t("admin.mcat.deleteBlockedTitle", { n: count }) : t("admin.mcat.deleteTitle")}
       >
-        删除
+        {t("admin.list.delete")}
       </button>
       {open && typeof document !== "undefined" ? createPortal(dialog, document.body) : null}
     </>

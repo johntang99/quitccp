@@ -1,4 +1,5 @@
 import type { AdminRole, AdminUser } from "./types";
+import { t } from "@/lib/i18n";
 
 /**
  * Who may do what.
@@ -165,9 +166,9 @@ export function assignableRoles(actor: Pick<AdminUser, "role">): AdminRole[] {
 export const ROLE_ORDER: readonly AdminRole[] = ["super_admin", "content_admin", "editor"];
 
 export const ROLE_LABELS: Record<string, string> = {
-  super_admin: "超级管理员",
-  content_admin: "管理员",
-  editor: "编辑",
-  reviewer: "审校（已停用）",
-  viewer: "只读（已停用）"
+  super_admin: t("admin.role.superAdmin"),
+  content_admin: t("admin.role.contentAdmin"),
+  editor: t("admin.role.editor"),
+  reviewer: t("admin.role.reviewer"),
+  viewer: t("admin.role.viewer")
 };

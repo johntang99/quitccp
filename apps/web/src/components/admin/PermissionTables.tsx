@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { t } from "@/lib/i18n";
 import {
   ACTION_ROWS,
   INVARIANTS,
@@ -15,7 +16,22 @@ import {
  * changes with it, which is the only way a printed matrix stays true.
  */
 
-function Table({ caption, rows }: { caption: string; rows: readonly MatrixRow[] }) {
+/*
+ * `isPages` 是个显式的 prop，不是从 caption 里猜的。
+ *
+ * 原来这里写的是 `caption.includes("页面") ? "页面" : "操作"` —— 靠标题里有没有
+ * 那两个字来决定第一列叫什么。标题一翻成英文，这个判断就永远走 else 分支，
+ * 两张表的第一列都会变成「操作」。翻译把这个隐含依赖逼了出来。
+ */
+function Table({
+  caption,
+  rows,
+  isPages = false
+}: {
+  caption: string;
+  rows: readonly MatrixRow[];
+  isPages?: boolean;
+}) {
   return (
     <div style={{ overflowX: "auto" }}>
       <table className="admin-table perm-table">
@@ -31,7 +47,7 @@ function Table({ caption, rows }: { caption: string; rows: readonly MatrixRow[] 
         </caption>
         <thead>
           <tr>
-            <th>{caption.includes("页面") ? "页面" : "操作"}</th>
+            <th>{t(isPages ? "admin.perm.colPage" : "admin.perm.colAction")}</th>
             {MATRIX_COLUMNS.map((column) => (
               <th key={column.key}>{column.label}</th>
             ))}
@@ -58,7 +74,7 @@ function Table({ caption, rows }: { caption: string; rows: readonly MatrixRow[] 
                   <td
                     key={column.key}
                     style={{ color: allowed ? "#1f7a4d" : "#b4232c", fontWeight: 600 }}
-                    title={allowed ? "允许" : "拒绝"}
+                    title={t(allowed ? "admin.perm.allowed" : "admin.perm.denied")}
                   >
                     {allowed ? "✓" : "✗"}
                   </td>
@@ -77,7 +93,7 @@ export function PermissionTables() {
   return (
     <>
       <p style={{ color: "#5a6072", marginTop: 0, fontSize: 13 }}>
-        下面两张表由系统的权限代码直接生成，不是手写的说明。改了权限规则，这里会跟着变。
+        {t("admin.perm.generatedNote")}
       </p>
       <ul style={{ color: "#5a6072", margin: "0 0 16px", paddingLeft: 20, fontSize: 13 }}>
         {MATRIX_COLUMNS.filter((column) => column.note).map((column) => (
@@ -87,11 +103,11 @@ export function PermissionTables() {
         ))}
       </ul>
 
-      <Table caption="可以打开哪些页面" rows={PAGE_ROWS} />
+      <Table caption={t("admin.perm.tablePages")} rows={PAGE_ROWS} isPages />
       <div style={{ height: 22 }} />
-      <Table caption="可以做哪些操作" rows={ACTION_ROWS} />
+      <Table caption={t("admin.perm.tableActions")} rows={ACTION_ROWS} />
 
-      <h4 style={{ marginBottom: 8 }}>对所有人都成立的规则</h4>
+      <h4 style={{ marginBottom: 8 }}>{t("admin.perm.invariantsTitle")}</h4>
       <ul style={{ color: "#5a6072", margin: 0, paddingLeft: 20, lineHeight: 1.8, fontSize: 13 }}>
         {INVARIANTS.map((line) => (
           <li key={line}>{line}</li>
