@@ -4,6 +4,7 @@ import { CommentaryBand, InvestigationsBand } from "@/components/public/news/New
 import { NewsHeader } from "@/components/public/news/NewsHeader";
 import { NewsHero } from "@/components/public/news/NewsHero";
 import { getNewsHome } from "@/lib/public-content";
+import { t } from "@/lib/i18n";
 
 /* Bounded even though this route is prerendered: regeneration still opens a
    database connection, and an unbounded render holds it for five minutes. */
@@ -40,7 +41,7 @@ export default async function NewsIndexPage() {
       <div className="news-shell news-body">
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 4 }}>
           <span style={{ fontFamily: "var(--serif)", fontWeight: 700, fontSize: "clamp(24px, 2.6vw, 32px)" }}>
-            按栏目浏览
+            {t("news.browseBySection")}
           </span>
           <span style={{ flexGrow: 1, height: 1, background: "var(--ink-band)" }} aria-hidden="true" />
           <span
@@ -53,7 +54,7 @@ export default async function NewsIndexPage() {
               whiteSpace: "nowrap"
             }}
           >
-            {home.categories.filter((block) => block.lead).length} 个栏目
+            {t("news.sectionCount", { n: home.categories.filter((block) => block.lead).length })}
           </span>
         </div>
 

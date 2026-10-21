@@ -5,6 +5,7 @@ import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { t } from "@/lib/i18n";
 
 export interface MobileNavItem {
   href: string;
@@ -96,7 +97,7 @@ export function MobileNav({
         ref={button}
         type="button"
         className="navbtn"
-        aria-label={open ? "关闭菜单" : "打开菜单"}
+        aria-label={open ? t("nav.closeMenu") : t("nav.openMenu")}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
@@ -106,7 +107,7 @@ export function MobileNav({
           <span />
           <span />
         </span>
-        <span className="navbtn-label">菜单</span>
+        <span className="navbtn-label">{t("nav.menu")}</span>
       </button>
 
       {/* Portalled to <body>, and rendered only while open.

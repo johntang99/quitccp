@@ -11,7 +11,7 @@ import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
 import type { RenderablePage } from "./site-data";
 import { extractNewsSlugFromHref, toNewsArticleSlug } from "./news-linking";
 import { SITE_LOCALE } from "@/lib/site-config";
-import { formatNumber } from "@/lib/format";
+import { compareText, formatNumber } from "@/lib/format";
 import { t } from "@/lib/i18n";
 
 const fallbackCatalog: RenderablePage[] = routeSeeds.map((seed) => {
@@ -1425,14 +1425,28 @@ export interface NewsCategoryTab {
  * reader with nowhere to go.
  */
 export const getNewsCategoryTabs = cache(async (): Promise<NewsCategoryTab[]> => {
-  const fallback = NEWS_CATEGORIES.map((row) => ({ slug: row.slug, name: row.name }));
+  /* 兜底里的名字是中文的，对别的站没有意义 —— 与其给英文读者一排中文标签，
+     不如什么都不给。 */
+  const fallback = SITE_LOCALE === "zh" ? NEWS_CATEGORIES.map((row) => ({ slug: row.slug, name: row.name })) : [];
   try {
     const supabase = createSupabasePublicClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("cms_article_categories")
       .select("slug, name, sort_order")
       .eq("locale", SITE_LOCALE)
       .eq("is_news_listing", true);
+    /*
+     * 「读不到」和「这个站确实没有栏目」是两回事，以前混在一起了。
+     *
+     * 原来只看 rows.length === 0 就退回兜底。可是 data 为 null（查询出错）也会
+     * 落到这一支 —— 更要命的是，新开的英文站本来就一条栏目都没有，于是它的标签
+     * 栏显示的是一整排中文，而那恰恰是兜底写死的中文名。兜底是给「昨天的名字
+     * 好过没有标签」准备的，不该变成一个新站的唯一来源。
+     *
+     * 所以先看 error：读出错才用兜底；读成功但没有行，就是这个站还没建栏目，
+     * 如实显示空标签栏。
+     */
+    if (error) return fallback;
     const rows = (data ?? [])
       .map((row) => ({
         slug: String(row.slug),
@@ -1440,8 +1454,8 @@ export const getNewsCategoryTabs = cache(async (): Promise<NewsCategoryTab[]> =>
         order: Number(row.sort_order ?? 0)
       }))
       .filter((row) => row.slug && row.name);
-    if (rows.length === 0) return fallback;
-    rows.sort((a, b) => a.order - b.order || a.name.localeCompare(b.name, "zh-Hans-CN"));
+    if (rows.length === 0) return [];
+    rows.sort((a, b) => a.order - b.order || compareText(a.name, b.name));
     return rows.map((row) => ({ slug: row.slug, name: row.name }));
   } catch {
     /* See the note above: yesterday's names beat no tabs at all. */
