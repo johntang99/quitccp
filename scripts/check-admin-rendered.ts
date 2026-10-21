@@ -23,6 +23,18 @@
 
 const BASE = process.env.RENDERED_BASE ?? "http://localhost:4021";
 
+/*
+ * 防火墙挑战页的绕行票。
+ *
+ * 本地不需要，打生产必须有 —— 没有它，取回来的每一页都是挑战页，差异会是
+ * 「整站文案全变了」。只在非 localhost 时附带：本地根本没有那道防护，多发
+ * 一个头没意义。
+ */
+const PROBE = process.env.PROBE_BYPASS_SECRET?.trim();
+const REMOTE = !/^https?:\/\/(localhost|127\.0\.0\.1)/.test(BASE);
+const probeHeaders: Record<string, string> = PROBE && REMOTE ? { "x-quitccp-probe": PROBE } : {};
+
+
 const PAGES = [
   "/admin/dashboard", "/admin/content", "/admin/articles", "/admin/articles/new",
   "/admin/articles/latest", "/admin/articles/stats", "/admin/categories",
@@ -108,11 +120,11 @@ async function login(): Promise<string> {
       else jar.push(pair);
     }
   };
-  take(await fetch(`${BASE}/admin/login`));
+  take(await fetch(`${BASE}/admin/login`, { headers: probeHeaders }));
   const res = await fetch(`${BASE}/api/admin/auth/login`, {
     method: "POST",
     body: new URLSearchParams({ email, password }),
-    headers: { cookie: jar.join("; "), "content-type": "application/x-www-form-urlencoded" },
+    headers: { cookie: jar.join("; "), "content-type": "application/x-www-form-urlencoded", ...probeHeaders },
     redirect: "manual"
   });
   take(res);
@@ -131,7 +143,7 @@ async function main() {
   let unreachable = 0;
 
   for (const page of PAGES) {
-    const res = await fetch(BASE + page, { headers: { cookie }, redirect: "manual" });
+    const res = await fetch(BASE + page, { headers: { cookie, ...probeHeaders }, redirect: "manual" });
     if (res.status !== 200) {
       console.log(`  ？ ${page} → ${res.status}`);
       unreachable += 1;

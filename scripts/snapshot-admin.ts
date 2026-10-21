@@ -23,6 +23,20 @@
  * 权限变了。2026-10-21 把测试账号从 editor 提成 content_admin 时就是这样。
  *
  * 遇到这种差异，确认它只是权限带来的，然后重拍一次基线。
+ *
+ * ## 拿生产跟基线对（SNAPSHOT_BASE=https://www.tuidang.org）
+ *
+ * 这是上线后最直接的一条验证：同一份代码、同一个库，生产渲染出来的中文应该
+ * 和本机基线逐字相同。2026-10-21 这样对出 30 页里 28 页一字不差。
+ *
+ * 另外两页的差异都来自环境，不是文案：
+ *
+ *   - 总览的站内搜索：生产没有设 MEILI_HOST，走的是数据库子串，于是显示
+ *     「正常（数据库直查）」；本机有 MEILI_HOST，显示索引条目数。
+ *   - 影片拼接台：线上（Vercel）没有 ffmpeg，页面会多出一条「这里可以排
+ *     片子，但出不了片」。
+ *
+ * 所以对生产时，这两页的差异要逐条看懂，不能当成「文案被改了」。
  */
 
 import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
@@ -31,6 +45,18 @@ import path from "node:path";
 const BASE = process.env.SNAPSHOT_BASE ?? "http://localhost:4020";
 const CHECK = process.argv.includes("--check");
 const DIR = path.join(process.cwd(), ".admin-snapshot");
+
+/*
+ * 防火墙挑战页的绕行票。
+ *
+ * 本地不需要，打生产必须有 —— 没有它，取回来的每一页都是挑战页，差异会是
+ * 「整站文案全变了」。只在非 localhost 时附带：本地根本没有那道防护，多发
+ * 一个头没意义。
+ */
+const PROBE = process.env.PROBE_BYPASS_SECRET?.trim();
+const REMOTE = !/^https?:\/\/(localhost|127\.0\.0\.1)/.test(BASE);
+const probeHeaders: Record<string, string> = PROBE && REMOTE ? { "x-quitccp-probe": PROBE } : {};
+
 
 /* 编辑每天走的路径优先，但一次全拍 —— 拍的成本是零，漏拍的成本是上线后才发现。 */
 const PAGES = [
@@ -160,11 +186,11 @@ async function login(): Promise<string> {
       else jar.push(pair);
     }
   };
-  take(await fetch(`${BASE}/admin/login`));
+  take(await fetch(`${BASE}/admin/login`, { headers: probeHeaders }));
   const res = await fetch(`${BASE}/api/admin/auth/login`, {
     method: "POST",
     body: new URLSearchParams({ email, password }),
-    headers: { cookie: jar.join("; "), "content-type": "application/x-www-form-urlencoded" },
+    headers: { cookie: jar.join("; "), "content-type": "application/x-www-form-urlencoded", ...probeHeaders },
     redirect: "manual"
   });
   take(res);
@@ -183,7 +209,7 @@ async function main() {
   let changed = 0;
   let captured = 0;
   for (const page of PAGES) {
-    const res = await fetch(BASE + page, { headers: { cookie }, redirect: "manual" });
+    const res = await fetch(BASE + page, { headers: { cookie, ...probeHeaders }, redirect: "manual" });
     if (res.status !== 200) {
       console.log(`  ？ ${page} → ${res.status}（跳过）`);
       continue;
