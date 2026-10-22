@@ -258,6 +258,10 @@ export const en: Record<string, string> = {
   "video.pageOf": "Page {page} of {pages} · {total} films",
   "video.prev": "← Previous",
   "video.next": "Next →",
+  /* 页头字标。只有没有整套横幅图的语言用得上（见 site-config 的 SITE_LOGO_IMAGE）。
+     照机构自己英文站的排法：上行金色大字，下行一句小字。 */
+  "header.wordmarkTop": "GLOBAL SERVICE CENTER",
+  "header.wordmarkSub": "for QUITTING THE CHINESE COMMUNIST PARTY",
   "header.aria.logo": "Global Service Center for Quitting the Chinese Communist Party",
   "header.donate": "Donate",
   "header.endccp": "End CCP petition",

@@ -66,23 +66,47 @@ export const LOCALE_LABELS: Record<Locale, string> = {
 };
 
 /**
- * 页头那张横幅 logo。
+ * 页头的标识。
  *
- * 它是整套标识 —— 印章加字标，而字标上印着组织名。中文站那张写的是
- * 「全球退黨服務中心」，放在英文站的页头上就成了一句读者看不懂的话，而且它是
- * 整页最显眼的东西。
+ * 中文站那张是整套标识做成的一张图 —— 印章加字标，字标上印着「全球退黨服務
+ * 中心」。那六个字放在英文站的页头上，就是整页最显眼的位置摆着一句英文读者
+ * 看不懂的话。
  *
- * 所以按语言选图。素材还没有的语言先用中文那张 —— 一张外文 logo 不好看，
- * 但比一个破图标好：破图标会让人以为整个站坏了。
+ * 但英文站不能照搬「换一张宽图」的办法：机构的英文标识本来就不是一张宽图。
+ * 他们自己的英文站（global.tuidang.org）页头摆的是那枚圆形金印，旁边用文字
+ * 排出 GLOBAL SERVICE CENTER / for QUITTING THE CHINESE COMMUNIST PARTY。
+ * 印章是方的，塞进 1020×156 的横幅位置会被拉成一条。
  *
- * 新站上线清单里有一条就是「把这一语言的 logo 放进 public/logo/」。
+ * 所以这里不只给地址，还说清楚它是哪一种：
+ *
+ *   banner  整套标识已经在图里，页头只放这张图（中文站）
+ *   mark    只有印章，字标由页头用文字排出来（英文站）
+ *
+ * 新开一个语言的站，要么给一张该语言的 banner，要么就用 mark —— 后者只要
+ * 印章和两行文案，不需要做图。没有配置的语言退回中文那张：一张外文 logo
+ * 不好看，但比一个破图标好，破图标会让人以为整个站坏了。
  */
-const LOGO_BY_LOCALE: Partial<Record<Locale, string>> = {
-  zh: "/logo/banner-2022-1.webp"
-  // en / de / ja / ko / ro：素材到位后在这里加一行
+export interface SiteLogo {
+  src: string;
+  /** 图片自身的像素尺寸。写错会让浏览器按错的比例预留位置，页头在加载时跳一下。 */
+  width: number;
+  height: number;
+  kind: "banner" | "mark";
+}
+
+const LOGO_BY_LOCALE: Partial<Record<Locale, SiteLogo>> = {
+  zh: { src: "/logo/banner-2022-1.webp", width: 1020, height: 156, kind: "banner" },
+  /* 机构英文站页头在用的那枚金印，从他们自己的站上取的原件。 */
+  en: { src: "/logo/seal-en.webp", width: 256, height: 256, kind: "mark" }
+  // de / ja / ko / ro：素材到位后在这里加一行
 };
 
-export const SITE_LOGO: string = LOGO_BY_LOCALE[SITE_LOCALE] ?? "/logo/banner-2022-1.webp";
+const FALLBACK_LOGO: SiteLogo = { src: "/logo/banner-2022-1.webp", width: 1020, height: 156, kind: "banner" };
+
+export const SITE_LOGO_IMAGE: SiteLogo = LOGO_BY_LOCALE[SITE_LOCALE] ?? FALLBACK_LOGO;
+
+/** 老名字，仍然有地方按地址引用。 */
+export const SITE_LOGO: string = SITE_LOGO_IMAGE.src;
 
 /** 这个站有没有自己的 logo。没有的话值得在上线清单上提醒一次。 */
 export const HAS_OWN_LOGO: boolean = Boolean(LOGO_BY_LOCALE[SITE_LOCALE]);

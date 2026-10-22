@@ -263,6 +263,10 @@ export const zh: Record<string, string> = {
   "video.pageOf": "第 {page} / {pages} 页 · 共 {total} 部",
   "video.prev": "← 上一页",
   "video.next": "下一页 →",
+  /* 页头字标。只有没有整套横幅图的语言用得上（见 site-config 的 SITE_LOGO_IMAGE）。
+     照机构自己英文站的排法：上行金色大字，下行一句小字。 */
+  "header.wordmarkTop": "全球退党服务中心",
+  "header.wordmarkSub": "GLOBAL SERVICE CENTER FOR QUITTING THE CCP",
   "header.aria.logo": "全球退党服务中心 Global Service Center for Quitting the Chinese Communist Party",
   "header.donate": "捐助",
   "header.endccp": "End CCP联署",

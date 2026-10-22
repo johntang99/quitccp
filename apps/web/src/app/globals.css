@@ -3805,6 +3805,43 @@ body:has(.hero--full-bleed) > header .search {
 }
 
 /* --------------------------------------------------------------------------
+   印章 + 字标的排法。
+
+   给没有整套横幅图的语言用 —— 现在是英文站。中文站那张图里已经有字标了，
+   走上面的 .brand-logo。
+
+   排法照机构自己的英文站：圆印在左，右边上行金色大字、下行一句小字，两行
+   左对齐。印章是方的，所以用 aspect-ratio 锁住，不跟着文字高度变形。
+
+   字标是文字不是图，所以它跟着页头的字号走，在手机上会自己缩；而且换一种
+   语言只要改两条文案。
+   -------------------------------------------------------------------------- */
+/* .brand 本身在 base.css 里已经是 flex、gap:15px，这里不重复。 */
+.brand-seal { height: 54px; width: 54px; aspect-ratio: 1; display: block; flex: none; }
+.brand-wordmark { display: flex; flex-direction: column; gap: 2px; line-height: 1.15; }
+.brand-wordmark-top {
+  font-size: clamp(17px, 1.5vw, 22px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--gold, #f2d38a);
+}
+.brand-wordmark-sub {
+  font-size: clamp(10px, 0.85vw, 12px);
+  letter-spacing: 0.055em;
+  color: rgba(255, 255, 255, 0.86);
+}
+@media (max-width: 980px) {
+  .brand-seal { height: 44px; width: 44px; }
+}
+/* 手机上字标那两行比印章宽得多，挤在同一行会把右边的按钮推下去。
+   和横幅一样，让整条品牌区独占一行。 */
+@media (max-width: 600px) {
+  .brand-seal { height: 40px; width: 40px; }
+  .brand-wordmark-top { font-size: 16px; }
+  .brand-wordmark-sub { font-size: 10px; }
+}
+
+/* --------------------------------------------------------------------------
    Phone menu.
 
    The base stylesheet hides .nav-links below 980px and offered nothing in its

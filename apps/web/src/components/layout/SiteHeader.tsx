@@ -6,7 +6,7 @@ import { getPublicNav } from "@/lib/public-settings";
 import { EXTERNAL_LINK_PROPS, EXTERNAL_SERVICES } from "@/lib/external-services";
 import { LanguagePicker } from "@/components/layout/LanguagePicker";
 import { t } from "@/lib/i18n";
-import { SITE_LOGO } from "@/lib/site-config";
+import { SITE_LOGO_IMAGE } from "@/lib/site-config";
 
 export async function SiteHeader() {
   const navItems = await getPublicNav();
@@ -16,15 +16,30 @@ export async function SiteHeader() {
       <div className="brandbar">
         <div className="wrap brandbar-in">
           <Link href="/" className="brand">
-            {/* The banner is the full lockup -- seal and wordmark -- so the
-                organisation's name lives in the alt text rather than beside it. */}
+            {/*
+              两种标识排法，取决于这个站有没有整套做成一张图的横幅。
+
+              中文站有：印章和字标都在图里，组织名就留在 alt 里，不用再排一遍。
+
+              英文站没有 —— 机构的英文标识本来就是「圆印 + 两行字」，他们自己
+              的英文站也是这么摆的。所以这里把印章和字标分开排，而不是把一张
+              方印塞进横幅的位置拉成一条。字标是文字不是图：换一种语言只要改
+              两条文案，不用做图。
+            */}
             <img
-              className="brand-logo"
-              src={SITE_LOGO}
-              width={1020}
-              height={156}
-              alt={t("header.aria.logo")}
+              className={SITE_LOGO_IMAGE.kind === "mark" ? "brand-seal" : "brand-logo"}
+              src={SITE_LOGO_IMAGE.src}
+              width={SITE_LOGO_IMAGE.width}
+              height={SITE_LOGO_IMAGE.height}
+              alt={SITE_LOGO_IMAGE.kind === "mark" ? "" : t("header.aria.logo")}
+              aria-hidden={SITE_LOGO_IMAGE.kind === "mark" ? true : undefined}
             />
+            {SITE_LOGO_IMAGE.kind === "mark" ? (
+              <span className="brand-wordmark">
+                <span className="brand-wordmark-top">{t("header.wordmarkTop")}</span>
+                <span className="brand-wordmark-sub">{t("header.wordmarkSub")}</span>
+              </span>
+            ) : null}
           </Link>
           <div className="brand-cta">
             {/* Where the topbar's row of six languages used to be. A dropdown
