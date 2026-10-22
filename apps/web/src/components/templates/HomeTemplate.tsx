@@ -1,4 +1,5 @@
 import { getHomeNews, getHomeVideo, type HomeNewsLive, type HomeVideoLive } from "@/lib/public-content";
+import { SITE_LOCALE } from "@/lib/site-config";
 import { getHomepageHeroContent } from "@/lib/public-settings";
 import { NoWrapTitles } from "@/components/public/NoWrapTitles";
 import { formatYi, getSantuiSnapshot, toFeedRow } from "@/lib/santui";
@@ -26,6 +27,22 @@ import { resolveHomeContent } from "./home-content";
  *
  * Content is deliberately NOT editable in the CMS: real declarations belong to
  * the feed, not to an editor. Only the section's layout is configurable.
+ *
+ * ## 2026-10-22：加了门槛，因为英文站一直在显示它们
+ *
+ * 三退数据的同步是中文站专属的（cron-locale 里的 SANTUI_LOCALES 只有 zh），
+ * 所以英文站永远拿不到快照，每一次都掉到这里 —— 公开的英文首页上挂着八条
+ * 带编号、带姓名地区的「声明」，而它们是编的。上面那句「显示它们的部署是
+ * 配置错了」，说的正是这个情况，只是没有任何东西去拦。
+ *
+ * 现在拦住了，门槛两条，缺一不可：
+ *
+ *   1. 只有中文站。这几条是中文写的，在别的语言的站上不可能是对的 ——
+ *      就算哪天英文站有了自己的数据源，也该用它自己的语言写。
+ *   2. 只在非生产环境。一个全新装好、还没跑过同步的生产站，正确的样子是
+ *      这一块空着，不是编几条出来充数。
+ *
+ * 两条都不满足时，这一块整个不渲染 —— 宁可少一块，不可假装有记录。
  */
 const streamEntries = [
   {
@@ -303,14 +320,19 @@ export async function HomeTemplate({ content }: TemplatePageData) {
     text: asString(row.text),
     at: asString(row.at)
   }));
-  // Real declarations first. The CMS rows, and failing those the placeholders,
-  // only stand in while the santui snapshot is missing or has never been run.
+  /*
+   * 先用真实数据；没有就用 CMS 里的行；再没有，才轮到上面那组写死的占位 ——
+   * 而占位有门槛：只有中文站、且不是生产环境。理由写在 streamEntries 上面。
+   */
+  const placeholdersAllowed = SITE_LOCALE === "zh" && process.env.NODE_ENV !== "production";
   const streamRows =
     santui && santui.declarations.length > 0
       ? santui.declarations.map(toFeedRow)
       : legacyStream.length > 0
         ? legacyStream
-        : streamEntries;
+        : placeholdersAllowed
+          ? streamEntries
+          : [];
 
   const { hero, services, news, channels, video, voices, network, resources, about, involve } = home;
 
@@ -375,7 +397,9 @@ export async function HomeTemplate({ content }: TemplatePageData) {
     </div>
   );
 
-  const registryStream = (
+  /* 一条都没有就不渲染这一块：一个空的滚动条看起来像坏了，而且它的标题
+     「实时登记册」在没有任何记录时是句空话。 */
+  const registryStream = streamRows.length === 0 ? null : (
     <div className="reg-right">
       <div className="stream">
         <div className="stream-hd">

@@ -75,7 +75,13 @@ export async function getArticleStats(actorEmail: string): Promise<ArticleStats>
     ],
     byCategory: categories
       .map((row) => ({ name: row.name, slug: row.slug, count: row.articleCount }))
-      .sort((a, b) => b.count - a.count),
+      /*
+       * 数量相同时按 slug 排，顺序才稳定。只按 count 排的话，并列的几项谁前谁后
+       * 取决于上游怎么把它们交过来 —— 刷新一次就可能换位置，看着像有人动过数据。
+       * 2026-10-22 是后台快照先发现的：特别报道和三退洪声条数相同，两次抓取的
+       * 顺序不一样。
+       */
+      .sort((a, b) => b.count - a.count || a.slug.localeCompare(b.slug)),
     gaps: [
       { key: "no-cover", label: t("admin.art.gap.noCover"), count: noCover, href: "/admin/articles?gap=no-cover" },
       { key: "no-author", label: t("admin.stats.gap.noAuthorLong"), count: noAuthor, href: "/admin/articles?gap=no-author" },
