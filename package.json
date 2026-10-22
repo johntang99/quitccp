@@ -59,7 +59,8 @@
     "migrate:downloads": "tsx scripts/migrate-resource-downloads.ts",
     "dedupe:en:videos": "tsx scripts/dedupe-en-video-posts.ts",
     "clean:en": "tsx scripts/clean-en-import.ts",
-    "fix:en:covers": "tsx scripts/fix-en-video-covers.ts"
+    "fix:en:covers": "tsx scripts/fix-en-video-covers.ts",
+    "fix:en:links": "tsx scripts/fix-en-id-links.ts"
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",

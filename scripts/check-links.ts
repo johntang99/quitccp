@@ -19,6 +19,7 @@
  * ## 怎么查
  *
  * 从几个入口出发，把站内页面抓一遍，收集所有 href，逐个请求，列出非 200 的。
+ * 跳转跟到底 —— 「301 跳过去再 404」看起来是正常跳转，读者看到的却是 404。
  * 只查站内链接：外站的死活不归这个站管，而且逐个去打别人的服务器不礼貌。
  *
  * ## href 原样发出去，不要再编码一次
@@ -93,13 +94,42 @@ async function main() {
 
   console.log(`\n  从 ${seen.size} 个页面上收集到 ${foundOn.size} 个站内链接，逐个查……\n`);
 
-  const broken: { href: string; status: number; from: string[] }[] = [];
+  const broken: { href: string; status: number; from: string[]; via?: string }[] = [];
   let checked = 0;
   for (const [href, from] of foundOn) {
-    const res = await fetch(BASE + href, { headers, redirect: "manual" });
+    let at = href;
+    let res = await fetch(BASE + at, { headers, redirect: "manual" });
     checked += 1;
-    /* 3xx 不算断：旧地址跳新地址是这个站的正常行为。 */
-    if (res.status >= 400) broken.push({ href, status: res.status, from: [...from] });
+
+    /*
+     * 跳转要跟到底，不能看见 3xx 就放过。
+     *
+     * 第一版的规则是「3xx 不算断，旧地址跳新地址是这个站的正常行为」。前半句
+     * 对，后半句漏了一种情况：跳过去之后那一页不存在。
+     *
+     * 2026-10-22 英文站首页登记册那块就是这样 —— 推广位指向 /news/a/690040，
+     * 那是中文文章的旧 ID，301 解析得好好的，落点是中文文章的 slug，而那篇在
+     * 英文站上不存在。读者点下去看到的是 404，而这个脚本报的是「189 个链接
+     * 全部可达」。
+     *
+     * 一个只验证「跳转存在」而不验证「跳到哪」的检查，比不检查更坏：它让人
+     * 以为查过了。
+     */
+    const chain: string[] = [];
+    while (res.status >= 300 && res.status < 400 && chain.length < 5) {
+      const to = res.headers.get("location");
+      if (!to) break;
+      /* 跳到站外就到此为止 —— 别人的站不归这个站管。 */
+      const next = internal(to);
+      if (!next) break;
+      chain.push(next);
+      at = next;
+      res = await fetch(BASE + at, { headers, redirect: "manual" });
+    }
+
+    if (res.status >= 400) {
+      broken.push({ href, status: res.status, from: [...from], via: chain.join(" → ") || undefined });
+    }
   }
 
   if (broken.length === 0) {
@@ -108,7 +138,7 @@ async function main() {
   }
   console.log(`  ✗ ${broken.length} 个断链（共查了 ${checked} 个）：\n`);
   for (const b of broken.sort((a, z) => z.from.length - a.from.length)) {
-    console.log(`  ${b.status}  ${b.href}`);
+    console.log(`  ${b.status}  ${b.href}${b.via ? `  （跳转到 ${b.via}）` : ""}`);
     console.log(`        出现在：${b.from.slice(0, 4).join("、")}${b.from.length > 4 ? ` 等 ${b.from.length} 页` : ""}`);
   }
   console.log("");

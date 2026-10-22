@@ -216,11 +216,21 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
       substats: orSample(substats, d.registry.substats),
       streamHeading: asString(registryRow.streamHeading, d.registry.streamHeading),
       liveLabel: asString(registryRow.liveLabel, d.registry.liveLabel),
-      // Cleared deliberately means "show the statistics again", so these three
-      // fall back to "" rather than to the default banner.
-      asideImage: asString(registryRow.asideImage, d.registry.asideImage),
-      asideImageAlt: asString(registryRow.asideImageAlt, d.registry.asideImageAlt),
-      asideHref: asString(registryRow.asideHref, d.registry.asideHref),
+      /*
+       * 右侧那张推广图。清空 = 改回显示三项统计，所以兜底是空字符串，不是
+       * 那张默认横幅 —— 注释一直这么写，代码却没有：兜底写的是
+       * d.registry.asideImage，而默认值是中文样例里那张
+       * 《为什么会有人类》的中文横幅，链接是 www.tuidang.org 上的中文原文。
+       *
+       * 在英文站上的后果不是「多了张中文图」：英文首页登记册那块显示一张
+       * 中文横幅，点进去跳到中文文章的 slug，而那篇在英文站不存在 —— 301
+       * 跳过去再 404。links:check 看不见，因为它把 3xx 当作正常、不跟到底。
+       *
+       * 这三项和别的样例文案一样走 sampleText：中文站顶样例，别的站空就是空。
+       */
+      asideImage: asString(registryRow.asideImage, sampleText(d.registry.asideImage)),
+      asideImageAlt: asString(registryRow.asideImageAlt, sampleText(d.registry.asideImageAlt)),
+      asideHref: asString(registryRow.asideHref, sampleText(d.registry.asideHref)),
       feedCount: Math.max(1, Math.min(20, asNumber(registryRow.feedCount, d.registry.feedCount)))
     },
     services: {
