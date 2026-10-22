@@ -242,7 +242,10 @@ export const en: Record<string, string> = {
   "video.newest": "Newest",
   "video.oldest": "Oldest",
   "video.aria.series": "Video series",
-  "video.allVideos": "All videos",
+  /* 「视频首页」，不是「全部视频」—— /videos 和 /videos/archive 的两个按钮
+     并排放在同一行，原来都译成 All videos，读者看到两个一模一样的按钮指向
+     不同的地方。新闻那边用的是 News home / All news，这里照同一个办法。 */
+  "video.allVideos": "Videos home",
   "video.allInSection": "All videos",
   "video.allFilms": "All films",
   "video.range": "Showing {from}–{to} of {total}",

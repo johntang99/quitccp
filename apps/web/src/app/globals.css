@@ -4159,12 +4159,24 @@ body:has(.hero--full-bleed) > header .search {
  * 不会读成一串。1280px 以下再把字号一起收，1150px 往下就收不住了 —— 那时
  * 恢复横向滚动，和加这个栏目之前的行为一样。
  */
-.news-tabs { position: relative; display: flex; gap: 17px; border-top: 1px solid rgba(255,255,255,0.14); padding-bottom: clamp(40px, 5vw, 72px); overflow-x: auto; scrollbar-width: none; }
+/*
+ * 放不下就换行，不要藏起来。
+ *
+ * 这个栏原来是 overflow-x:auto 且藏了滚动条。中文站 13 个标签挤一挤能放下，
+ * 英文站不行 —— 机构真实的英文分类有 17 个，排出来要 2600px，而能用的只有
+ * 1248px。藏滚动条的后果是：标签在「Vide…」处被切掉，后面 8 个栏目在页面上
+ * 完全不存在，鼠标用户没有任何迹象知道还有东西。
+ *
+ * 换行之后一个都不少。手机上仍然横向滚动 —— 窄屏上 19 个标签换行会堆成一面
+ * 墙，而横向滑动在手机上本来就是看得懂的动作。
+ */
+.news-tabs { position: relative; display: flex; flex-wrap: wrap; column-gap: 17px; row-gap: 0; border-top: 1px solid rgba(255,255,255,0.14); padding-bottom: clamp(40px, 5vw, 72px); overflow-x: auto; scrollbar-width: none; }
+@media (max-width: 700px) { .news-tabs { flex-wrap: nowrap; } }
 .news-tabs > a { font-size: 15px; }
 /* 断点而不是 clamp()：.news-shell 到 1440px 就封顶了，而 vw 会一直涨 —— 用
    vw 算出来的间距在 1440 以上反而越来越宽，正好是放不下的那一档。 */
-@media (max-width: 1400px) { .news-tabs { gap: 14px; } .news-tabs > a { font-size: 14px; } }
-@media (max-width: 1300px) { .news-tabs { gap: 12px; } .news-tabs > a { font-size: 13px; } }
+@media (max-width: 1400px) { .news-tabs { column-gap: 14px; } .news-tabs > a { font-size: 14px; } }
+@media (max-width: 1300px) { .news-tabs { column-gap: 12px; } .news-tabs > a { font-size: 13px; } }
 .news-tabs::-webkit-scrollbar { display: none; }
 
 /* The hero card lifts over the header's lower edge. */
