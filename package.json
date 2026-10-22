@@ -55,7 +55,8 @@
     "culture:subcategories": "tsx scripts/seed-culture-subcategories.ts",
     "audio:rehost": "tsx scripts/rehost-article-audio.ts",
     "test:studio": "node scripts/test-video-studio.mjs",
-    "measure:saves": "node --env-file=.env.local scripts/measure-admin-saves.mjs"
+    "measure:saves": "node --env-file=.env.local scripts/measure-admin-saves.mjs",
+    "migrate:downloads": "tsx scripts/migrate-resource-downloads.ts"
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",
