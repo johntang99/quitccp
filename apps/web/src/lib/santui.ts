@@ -49,10 +49,63 @@ export function formatYi(total: number): string {
   return `${(Math.floor(total / 1e6) / 100).toFixed(2)} 亿`;
 }
 
+/**
+ * 同一个数字，按这个站的语言写。
+ *
+ * 大数字在不同语言里的断法不一样：中文按「亿」，英文按 million。把
+ * 466,911,794 直接写成「4.66 亿」放在英文站上，英文读者读不出大小。
+ *
+ * 认不出这个语言该怎么断的，返回空字符串 —— 由 CMS 里编辑自己填的那个数顶上。
+ * 编一个说法比显示一个旧数字更糟：旧数字至少还是个数字，编的说法是错的。
+ */
+export function formatRegistryCount(total: number): string {
+  if (!Number.isFinite(total) || total <= 0) return "";
+  if (SITE_LOCALE === "zh") return formatYi(total);
+  /* 和「亿」一样截断不进位：这个数是个下限，每一条背后都是一份真实声明，
+     进位等于替没声明的人声明了。 */
+  if (SITE_LOCALE === "en") return `${Math.floor(total / 1e6)} million`;
+  return "";
+}
+
 function isUsable(value: unknown): value is SantuiSnapshot {
   if (typeof value !== "object" || value === null) return false;
   const row = value as Record<string, unknown>;
   return typeof row.total === "number" && row.total > 0 && Array.isArray(row.declarations);
+}
+
+/**
+ * 登记册的总数，不分站读。
+ *
+ * 这个数字是全球总数，四个语言的站显示的是同一个数。但只有中文站去抓
+ * （cron-locale 里的 SANTUI_LOCALES），快照写进 cms_content_entries 时带的是
+ * locale='zh'。而 getSantuiSnapshot() 按本站的 locale 读 —— 于是英文站永远
+ * 拿不到，首页上一直显示内容条目里那个手填的约数。
+ *
+ * 那个手填的数是建站时敲进去的，不会自己变。中文站显示实时的 466,911,794，
+ * 英文站显示一个停在某天的「466 million」，而两边说的是同一件事。
+ *
+ * 所以总数全局读：优先本站自己的那条（哪天英文站也有了自己的数据源，它说了
+ * 算），没有就拿最新写入的那条。
+ *
+ * 只取数字，不取 declarations —— 那些声明是中文写的，属于写它们的那个站。
+ */
+export async function getRegistryTotal(): Promise<{ total: number; fetchedAt: string } | null> {
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data, error } = await supabase
+      .from("cms_content_entries")
+      .select("data, locale, updated_at")
+      .eq("path", FEED_PATH)
+      .order("updated_at", { ascending: false });
+    if (error || !data || data.length === 0) return null;
+    const rows = data.filter((row) => isUsable(row.data));
+    if (rows.length === 0) return null;
+    const own = rows.find((row) => row.locale === SITE_LOCALE);
+    const snap = ((own ?? rows[0]).data as SantuiSnapshot);
+    return { total: snap.total, fetchedAt: snap.fetchedAt };
+  } catch {
+    return null;
+  }
 }
 
 export async function getSantuiSnapshot(): Promise<SantuiSnapshot | null> {

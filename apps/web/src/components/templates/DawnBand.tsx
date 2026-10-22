@@ -136,11 +136,16 @@ export function DawnBand({ registry, services, voices, feed, updatedAt, total, e
               {/* 4.67 亿 leads the sentence as its subject: same face and size
                   as the words after it, told apart by weight and colour. */}
               {total ? <strong className="dawn-count-yi">{registry.count}</strong> : null}
+              {/* 中文是「4.67 亿人已公开声明」，连着写；英文是「467 million
+                  people have…」，中间要一个空格。连接符由各语言自己给，不从
+                  文字里猜 —— 猜的办法是「后面第一个字是不是汉字」，而那在
+                  日文、韩文、以及任何以数字或引号开头的译法上都会猜错。 */}
+              {total ? t("home.countJoin") : null}
               {registry.countLabel}
             </p>
             {updatedAt ? (
               <p className="count-source">
-                来源：全球退党服务中心登记册 · 更新于{" "}
+                {t("home.countSource")}{" "}
                 <time dateTime={updatedAt}>{updatedAt.slice(0, 10)}</time>
                 {registry.noteHref ? (
                   <>

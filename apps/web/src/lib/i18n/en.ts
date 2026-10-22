@@ -96,6 +96,8 @@ export const en: Record<string, string> = {
   "audio.unmute": "Unmute",
   "audio.aria.volume": "Volume",
   "audio.error": "Can't play this — please use the download link.",
+  "home.countSource": "Source: the Global Service Center register · updated",
+  "home.countJoin": " ",
   "home.endccpLink": "End CCP petition →",
   "video.featuredTag": "Featured",
   "faq.filter.statements": "Statements",

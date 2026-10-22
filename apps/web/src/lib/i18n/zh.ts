@@ -104,6 +104,11 @@ export const zh: Record<string, string> = {
   "audio.unmute": "取消静音",
   "audio.aria.volume": "音量",
   "audio.error": "无法播放，请改用下载链接。",
+  /* 登记册那行的出处。原来写死在 DawnBand 里，英文站上显示的是中文。 */
+  "home.countSource": "来源：全球退党服务中心登记册 · 更新于",
+  /* 大数字和它后面那句说明之间要不要空格。中文「4.67 亿人已公开声明」不要，
+     英文「467 million people have…」要 —— 这件事各语言自己说了算，不能猜。 */
+  "home.countJoin": "",
   "home.endccpLink": "打倒中共恶魔连署 →",
   "video.featuredTag": "本期推荐",
   "faq.filter.statements": "关于声明",

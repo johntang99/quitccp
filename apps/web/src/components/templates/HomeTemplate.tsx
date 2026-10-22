@@ -3,7 +3,7 @@ import { t } from "@/lib/i18n";
 import { SITE_LOCALE } from "@/lib/site-config";
 import { getHomepageHeroContent } from "@/lib/public-settings";
 import { NoWrapTitles } from "@/components/public/NoWrapTitles";
-import { formatYi, getSantuiSnapshot, toFeedRow } from "@/lib/santui";
+import { formatRegistryCount, getRegistryTotal, getSantuiSnapshot, toFeedRow } from "@/lib/santui";
 import { HeroBackgroundVideo, HeroGallery, HeroVideo } from "@/components/public/HeroMedia";
 import { DawnBand } from "./DawnBand";
 import { BroadsheetBand } from "./BroadsheetBand";
@@ -289,10 +289,13 @@ export async function HomeTemplate({ content }: TemplatePageData) {
   // The editor still owns the headings, the labels and which four columns show.
   const endccpSnapshot = await getEndccpSnapshot();
   const endccpCount = endccpSnapshot ? formatEndccpCount(endccpSnapshot.count) : "";
-  const [liveNews, liveVideo, santui] = await Promise.all([
+  const [liveNews, liveVideo, santui, registryTotal] = await Promise.all([
     getHomeNews(home.channels.cards.map((card) => card.title)),
     getHomeVideo(),
-    getSantuiSnapshot()
+    /* 本站自己的快照，只为了下面那条声明流 —— 声明是中文写的，属于写它们的站。 */
+    getSantuiSnapshot(),
+    /* 总数是全球数字，哪个站抓到都一样，所以不分站读。 */
+    getRegistryTotal()
   ]);
 
   // The hero also has a legacy shape (payload.hero + payload.subtitle) and a
@@ -345,9 +348,13 @@ export async function HomeTemplate({ content }: TemplatePageData) {
   const heroUsesVideo = hero.variant === "full-bleed-video";
   const isCardOverlay = hero.variant === "full-bleed" || heroUsesVideo;
   const heroLayout = isCardOverlay ? "full-bleed" : hero.variant;
-  // The headline figure is santui's, not ours; the CMS value is the fallback
-  // for a machine that has never synced.
-  const liveCount = santui ? formatYi(santui.total) : "";
+  /*
+   * 头条数字取登记册的实时值，CMS 里那个只是没同步过时的兜底。
+   *
+   * 取的是全局的总数，不是本站快照 —— 英文站没有自己的快照，用本站快照就等于
+   * 永远走兜底，首页上挂着一个建站那天手敲进去的约数。
+   */
+  const liveCount = registryTotal ? formatRegistryCount(registryTotal.total) : "";
   const registry = liveCount ? { ...home.registry, count: liveCount } : home.registry;
 
   const heroActions = (
@@ -505,8 +512,8 @@ export async function HomeTemplate({ content }: TemplatePageData) {
           services={services}
           voices={voices}
           feed={streamRows}
-          updatedAt={santui?.fetchedAt ?? null}
-          total={santui?.total ?? null}
+          updatedAt={registryTotal?.fetchedAt ?? null}
+          total={registryTotal?.total ?? null}
           endccpCount={endccpCount}
         />
       ) : null}

@@ -279,19 +279,34 @@ export function markdownToBodyRows(
     }
     flushQuote();
 
-    if (/^###\s+/.test(line)) {
+    /*
+     * 标题按 # 的个数来认，一到六级都认。
+     *
+     * 原来是两条分支：/^###\s+/ 和 /^#{1,2}\s+/。看着覆盖了一到三级，其实
+     * 四级以上一条都不认 —— 「#### 标题」里第三个 # 后面跟的是 #、不是空格，
+     * 两条都不匹配，于是整行按正文走，读者看到的是「#### 标题」连井号一起。
+     *
+     * 没早点发现，是因为后面那条「短行多半是小标题」的猜测把大部分漏网的
+     * 捡了回去：`### 中国贩卖器官利润丰厚` 短，猜中了，剥掉井号成了 h3。
+     * 于是中文站上一千五百篇看着都正常。英文站露馅是因为搬进来的文章里有
+     * 一行 `##### The rules also cover certain investments made through
+     * foreign subsidiaries controlled by American companies.` —— 一百多字，
+     * 猜测认为这不是标题，井号就露出来了。
+     *
+     * 靠猜来认标题，就是「短的能对、长的不能对」，而对错取决于文章怎么写。
+     * 标记本来就说清楚了，照标记来。
+     *
+     * 级别映射到这个站只有的两档：一二级是 h2，三级往下都是 h3。文章正文里
+     * 不该出现比小标题更深的层级，真出现了也按小标题排，比排成正文强。
+     */
+    const heading = line.match(/^(#{1,6})\s+(.*)$/);
+    if (heading) {
       flushParagraph();
-      const text = stripInlineMarkdown(line.replace(/^###\s+/, ""));
-      if (text) rows.push({ type: "h3", text });
-      continue;
-    }
-    if (/^#{1,2}\s+/.test(line)) {
-      flushParagraph();
-      const raw = line.replace(/^#{1,2}\s+/, "");
+      const raw = heading[2];
       const text = options.keepInline
         ? preserveSupportedInlineMarkdown(raw)
         : stripInlineMarkdown(raw);
-      if (text) rows.push({ type: "h2", text });
+      if (text) rows.push({ type: heading[1].length <= 2 ? "h2" : "h3", text });
       continue;
     }
     /*
