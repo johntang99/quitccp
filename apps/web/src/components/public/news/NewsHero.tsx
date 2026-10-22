@@ -85,7 +85,7 @@ export function NewsHero({ featured, latest }: { featured: NewsCard[]; latest: N
                   borderRadius: 3
                 }}
               >
-                头条
+                {t("news.leadChip")}
               </span>
             </div>
             <Kicker card={lead} featured />
@@ -155,10 +155,10 @@ export function NewsHero({ featured, latest }: { featured: NewsCard[]; latest: N
                 style={{ width: 7, height: 7, borderRadius: "50%", background: T.goldDeep, boxShadow: "0 0 0 4px rgba(201,160,78,0.22)" }}
                 aria-hidden="true"
               />
-              最新发布
+              {t("news.justPublished")}
             </span>
             <a href="/news/archive" style={{ fontSize: 13, color: T.seal, textDecoration: "none" }}>
-              全部 →
+              {t("news.allArrow")}
             </a>
           </div>
           <div style={{ display: "flex", flexDirection: "column", position: "relative", paddingLeft: 18 }}>

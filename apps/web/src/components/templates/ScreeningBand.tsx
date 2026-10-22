@@ -1,4 +1,5 @@
 import type { HomeContent } from "@quitccp/content-schema";
+import { t } from "@/lib/i18n";
 import { externalLinkProps } from "@/lib/external-services";
 
 /**
@@ -50,7 +51,7 @@ export function ScreeningBand({ video }: { video: HomeContent["video"] }) {
           <a
             className="screening-poster"
             href={featured.href}
-            aria-label={`播放：${featured.title}`}
+            aria-label={t("video.playLabel", { title: featured.title })}
             {...externalLinkProps(featured.href)}
           >
             {featured.image ? <img src={featured.image} alt="" /> : null}

@@ -766,7 +766,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
               <div>
                 <div className="cat-hd">
                   <h2>{asString(commentary.title, "专题报导与时政评论")}</h2>
-                  <a href={asString(commentary.moreHref, "/news/commentary")}>{asString(commentary.moreLabel, "全部 →")}</a>
+                  <a href={asString(commentary.moreHref, "/news/commentary")}>{asString(commentary.moreLabel, t("news.allArrow"))}</a>
                 </div>
                 <div className="arch">
                   {commentaryItems.map((row, index) => (
@@ -788,7 +788,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
               <div>
                 <div className="cat-hd">
                   <h2>{asString(announcements.title, "机构公告与声明")}</h2>
-                  <a href={asString(announcements.moreHref, "/news/announcement-claims")}>{asString(announcements.moreLabel, "全部 →")}</a>
+                  <a href={asString(announcements.moreHref, "/news/announcement-claims")}>{asString(announcements.moreLabel, t("news.allArrow"))}</a>
                 </div>
                 <div className="arch">
                   {announcementItems.map((row, index) => (

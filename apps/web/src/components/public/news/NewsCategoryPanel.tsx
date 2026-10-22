@@ -1,4 +1,5 @@
 import type { NewsCategoryBlock } from "@/lib/public-content";
+import { t } from "@/lib/i18n";
 import { T, articleHref, day } from "./newsTokens";
 
 function RestList({ block, topRule }: { block: NewsCategoryBlock; topRule: boolean }) {
@@ -105,7 +106,7 @@ export function NewsCategoryPanel({
               <span style={{ fontFamily: T.serif, fontWeight: 700, fontSize: 22 }}>{block.name}</span>
               <span style={{ fontFamily: T.mono, fontSize: 13, letterSpacing: "0.18em", color: T.gold, whiteSpace: "nowrap" }}>{block.en}</span>
             </span>
-            <span style={{ fontSize: 13, color: "#fff" }}>更多 →</span>
+            <span style={{ fontSize: 13, color: "#fff" }}>{t("news.moreArrow")}</span>
           </span>
           <span
             style={{ position: "absolute", left: 26, right: 26, bottom: 20, display: "flex", flexDirection: "column", gap: 6 }}
@@ -148,7 +149,7 @@ export function NewsCategoryPanel({
           <span style={{ fontFamily: T.mono, fontSize: 13, letterSpacing: "0.18em", color: T.seal, whiteSpace: "nowrap" }}>{block.en}</span>
         </span>
         <a href={`/news/${block.slug}`} style={{ fontSize: 13, color: T.seal, textDecoration: "none", whiteSpace: "nowrap" }}>
-          更多 →
+          {t("news.moreArrow")}
         </a>
       </div>
 

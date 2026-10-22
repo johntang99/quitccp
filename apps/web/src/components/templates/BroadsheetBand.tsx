@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { siteIntlLocale } from "@/lib/format";
 import type { HomeContent } from "@quitccp/content-schema";
 import { externalLinkProps } from "@/lib/external-services";
 
@@ -163,13 +164,16 @@ export function BroadsheetBand({ news, channels }: BroadsheetBandProps) {
  * centimetres away in this same band.
  */
 function dateline(now: Date = new Date()): string {
+  /* 语言跟着站走。原来写死 zh-CN，英文站的报头上印的是
+     「2026年10月22日 · 星期四」—— 整条带子只有这一处是中文。
+     lib/format 里的 siteIntlLocale 本来就是为这件事准备的，只是这里没用上。 */
   const options: Intl.DateTimeFormatOptions = { timeZone: "America/New_York" };
-  const day = new Intl.DateTimeFormat("zh-CN", {
+  const day = new Intl.DateTimeFormat(siteIntlLocale, {
     ...options,
     year: "numeric",
     month: "long",
     day: "numeric"
   }).format(now);
-  const weekday = new Intl.DateTimeFormat("zh-CN", { ...options, weekday: "long" }).format(now);
+  const weekday = new Intl.DateTimeFormat(siteIntlLocale, { ...options, weekday: "long" }).format(now);
   return `${day} · ${weekday}`;
 }

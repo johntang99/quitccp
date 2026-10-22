@@ -256,16 +256,20 @@ const HOME_EN: Record<string, string | null> = {
 };
 
 /**
- * 整块关掉的区块：enabled 设为 false，并且把列表清空。
+ * 首页这三块不关，只把里面的中文样例清空。
  *
- * 只关开关不清列表是不够的 —— 中文的标题、人名、引语还留在数据里，编辑哪天
- * 打开开关，中文就回来了，而且没人会想到去看。
+ * 2026-10-22 实测纠正的一个判断：news / video / channels 的内容**是实时从库里
+ * 查的**（getHomeNews、getHomeVideo，都按 locale 过滤），CMS 里那串条目只是
+ * 没有实时数据时的兜底。所以英文站发了第一篇文章，首页会自己填上 —— 我验过：
+ * 发一篇，首页立刻出现。
+ *
+ * 当初我把三块整个关掉，是因为它们显示着中文样例。那判断只对了一半：该清的是
+ * 样例，不是开关。关掉的代价是等英文有了内容，编辑得先找到一个藏在 JSON 里的
+ * 开关才能让首页显示新闻 —— 没人会想到去找。
+ *
+ * 清空仍然必要：中文标题、人名留在数据里，哪天兜底被触发，中文就回来了。
  */
-const HOME_DISABLE: Record<string, string[]> = {
-  news: ["items"],
-  video: ["items", "series"],
-  channels: ["cards"]
-};
+const HOME_CLEAR = ["news.items", "video.items", "video.series", "channels.cards"];
 
 /** 这些子对象整个清掉：它们是「某一篇具体的中文内容」。 */
 const HOME_DROP = ["news.lead", "video.featured", "registry.asideImage", "hero.video", "hero.gallery", "hero.image"];
@@ -2268,7 +2272,7 @@ const SERVICES_IMMIGRATION_EN: Record<string, string | null> = {
 /* ── 页面清单 ─────────────────────────────────────────────────────── */
 
 const PAGES: PagePlan[] = [
-  { path: "pages/home.json", en: HOME_EN, disable: HOME_DISABLE, drop: HOME_DROP },
+  { path: "pages/home.json", en: HOME_EN, clear: HOME_CLEAR, drop: HOME_DROP },
   { path: "pages/services-index.json", en: SERVICES_EN },
   {
     path: "pages/videos-index.json",

@@ -1,4 +1,5 @@
 import { NoWrapTitles } from "@/components/public/NoWrapTitles";
+import { SITE_LOCALE } from "@/lib/site-config";
 import { t } from "@/lib/i18n";
 import { ArticleTools } from "@/components/public/ArticleTools";
 import { ShareBlock } from "@/components/public/ShareBlock";
@@ -40,7 +41,15 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
     label?: string;
     head?: string[];
     rows?: string[][];
-  }> = shouldUseFallbackBody
+    /*
+     * 没有正文时顶上的那几段，是一份中文排版演示稿（讲字重、行高、思源宋体），
+     * 不是文章内容。它只在中文站有意义 —— 英文站套用它，读者看到的是一篇
+     * 正文为中文排版说明的英文文章。
+     *
+     * 和首页那组伪造声明同一类：占位内容读起来像真内容。门槛也照那边来 ——
+     * 只有中文站用得上；别的站没有正文就什么都不显示。
+     */
+  }> = shouldUseFallbackBody && SITE_LOCALE === "zh"
     ? [
           {
             type: "p",
@@ -94,12 +103,12 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
     ? toQrCode(`${(process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "")}/a/${shortCode}`)
     : null;
   const breadcrumb = asRecord(payload.breadcrumb);
-  const currentLabel = asString(breadcrumb.current, asString(payload.tag, "新闻与报告"));
+  const currentLabel = asString(breadcrumb.current, asString(payload.tag, t("nav.news")));
   const currentHref = asString(breadcrumb.currentHref);
   // Not a real category name. This default shows whenever the payload carries
   // no tag, so naming an actual section here mislabels every such article --
   // which is exactly what happened.
-  const articleTag = asString(payload.tag, "新闻与报告");
+  const articleTag = asString(payload.tag, t("nav.news"));
   const heroFigure = asRecord(payload.heroFigure);
   const heroFigureImage = asString(heroFigure.image);
   const heroCaptionLines = asStringArray(heroFigure.captionLines, []);
@@ -152,11 +161,11 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
           <article className="article-surface">
             <p className="crumb" style={{ color: "var(--muted)" }}>
               <a href={asString(breadcrumb.homeHref, "/")} style={{ color: "var(--muted)" }}>
-                {asString(breadcrumb.homeLabel, "首页")}
+                {asString(breadcrumb.homeLabel, t("nav.home"))}
               </a>
               <span>/</span>
               <a href={asString(breadcrumb.sectionHref, "/news")} style={{ color: "var(--muted)" }}>
-                {asString(breadcrumb.sectionLabel, "新闻与报告")}
+                {asString(breadcrumb.sectionLabel, t("nav.news"))}
               </a>
               <span>/</span>
               {currentHref ? (
@@ -182,7 +191,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
               <figure style={{ margin: "0 0 34px" }}>
                 <img
                   src={heroFigureImage}
-                  alt={asString(heroFigure.alt, "文章主图")}
+                  alt={asString(heroFigure.alt, t("article.heroAlt"))}
                   style={{ width: "100%", aspectRatio: "16 / 9", objectFit: "cover", background: "var(--rule)" }}
                 />
                 {heroCaptionLines.length > 0 ? (
@@ -258,7 +267,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
                   const src = asString(row.src);
                   if (!src) return null;
                   return (
-                    <ArticleAudio key={`audio-${index}`} src={src} label={asString(row.label, "下载")} />
+                    <ArticleAudio key={`audio-${index}`} src={src} label={asString(row.label, t("article.download"))} />
                   );
                 }
 
@@ -291,7 +300,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
                 <figure>
                   <img
                     src={inlineFigureImage}
-                    alt={asString(inlineFigure.alt, "文章配图")}
+                    alt={asString(inlineFigure.alt, t("article.inlineAlt"))}
                     style={{ width: "100%", aspectRatio: "3 / 2", objectFit: "cover", background: "var(--rule)" }}
                   />
                   {inlineFigureCaptionLines.length > 0 ? (
@@ -335,7 +344,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
             ) : null}
             {relatedItems.length > 0 ? (
               <div className="article-related" style={{ marginTop: 56 }}>
-                <p className="eyebrow">{asString(relatedSection.eyebrow, "相关报导")}</p>
+                <p className="eyebrow">{asString(relatedSection.eyebrow, t("article.relatedEyebrow"))}</p>
                 <div className="arch">
                   {relatedItems.map((item, index) => (
                     <article key={item.title} className="arow" style={index === 0 ? { paddingTop: 0 } : undefined}>
@@ -358,15 +367,15 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
           </article>
           <aside className="side">
             <div className="panel panel--seal">
-              <h4>{asString(ctaPanel.title, "你也可以声明")}</h4>
-              <p>{asString(ctaPanel.body, "登记一份声明约需三分钟，可以完全匿名，全程免费。")}</p>
+              <h4>{asString(ctaPanel.title, t("article.ctaTitle"))}</h4>
+              <p>{asString(ctaPanel.body, t("article.ctaBody"))}</p>
               <a className="btn btn--seal btn--sm" href={asString(ctaPanel.buttonHref, "/services/declare")}>
                 <span className="stamp">{asString(ctaPanel.buttonStamp, t("seal.quit"))}</span>
-                {asString(ctaPanel.buttonLabel, "我要三退")}
+                {asString(ctaPanel.buttonLabel, t("article.ctaButton"))}
               </a>
             </div>
             <div className="panel">
-              <h4>{asString(sectionPanel.title, "本文栏目")}</h4>
+              <h4>{asString(sectionPanel.title, t("article.sectionPanel"))}</h4>
               <ul>
                 {sectionLinks.map((link) => (
                   <li key={link.label}>
@@ -376,9 +385,9 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
               </ul>
             </div>
             <div className="panel">
-              <h4 id="article-reuse">{asString(reusePanel.title, "转载条款")}</h4>
+              <h4 id="article-reuse">{asString(reusePanel.title, t("article.reuseTitle"))}</h4>
               <p style={{ fontSize: 13.5, color: "var(--ink-soft)", lineHeight: "var(--lh-body)", margin: 0 }}>
-                {asString(reusePanel.body, "本文可自由转载、翻译与再制作，无需事先取得授权，注明来源即可。")}
+                {asString(reusePanel.body, t("article.reuseBody"))}
               </p>
             </div>
           </aside>

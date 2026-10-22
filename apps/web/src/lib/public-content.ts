@@ -659,6 +659,26 @@ async function loadRenderableArticle(
 
   try {
     const supabase = createSupabasePublicClient();
+    /*
+     * 文章页的骨架 —— 面包屑、「本文栏目」、转载条款、底部的声明入口 —— 按本站
+     * 的 pages/news-article.json 来，取不到才退回代码里那份原型。
+     *
+     * 原来只读原型，而原型是中文的。于是英文站发出来的文章，正文是英文，周围
+     * 一圈全是中文：首页 / 本文栏目 / 你也可以声明 / 转载条款。而且改不掉 ——
+     * 英文站后台里那条 news-article.json 明明是英文的，页面就是不理它。
+     *
+     * 2026-10-22 发第一篇英文文章时才发现。之前发现不了：英文站一篇文章都没有，
+     * 而量「还剩多少中文」的那把尺子只量了 16 个固定页面，文章页不在其中。
+     */
+    const { data: skeleton } = await supabase
+      .from("cms_content_entries")
+      .select("data")
+      .eq("locale", SITE_LOCALE)
+      .eq("path", "pages/news-article.json")
+      .maybeSingle();
+    if (skeleton?.data && typeof skeleton.data === "object") {
+      fallback.content = skeleton.data as Record<string, unknown>;
+    }
     const listMapped = await findVirtualNewsArticle(normalizedSlug);
     const { data, error } = await supabase
       .from("cms_articles")

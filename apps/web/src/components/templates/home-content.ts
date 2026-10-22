@@ -1,4 +1,5 @@
 import { homeContentDefaults, type HomeContent } from "@quitccp/content-schema";
+import { SITE_LOCALE } from "@/lib/site-config";
 import { asObjectArray, asRecord, asString, asStringArray } from "./content-utils";
 
 /**
@@ -39,6 +40,25 @@ function links(value: unknown, fallback: { label: string; href: string }[]) {
 
 export function resolveHomeContent(payload: Record<string, unknown>): HomeContent {
   const d = homeContentDefaults;
+
+  /*
+   * 这些默认值是中文的样例内容 —— 样例文章标题、样例栏目、样例引语。
+   *
+   * 原来的规则是「CMS 里这一项是空的，就用默认值」。在中文站上那是对的：
+   * 一个还没配好的区块，拿样例顶着比空着好看。但在别的语言的站上，那意味着
+   * 一篇英文首页中间插进来一排中文标题，而且编辑在后台怎么删都删不掉 ——
+   * 他把列表清空，页面就换上样例，看起来像没保存。
+   *
+   * 所以样例只在中文站顶。别的站上，空就是空：区块在，等编辑填。
+   *
+   * 2026-10-22 发第一篇英文文章时查出来的：首页一打开 news 区块，470 个汉字
+   * 一起回来了。
+   */
+  const sample = SITE_LOCALE === "zh";
+  /** 空列表时该不该拿样例顶上。 */
+  const orSample = <T,>(rows: T[], fallback: T[]): T[] => (rows.length > 0 ? rows : sample ? fallback : []);
+  /** 单个字符串的同款：中文站用样例，别的站留空。 */
+  const sampleText = (fallback: string | undefined): string => (sample ? fallback ?? "" : "");
 
   const heroRow = asRecord(payload.hero);
   const registryRow = asRecord(payload.registry);
@@ -161,10 +181,10 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
       eyebrow: asString(heroRow.eyebrow, d.hero.eyebrow),
       title: asString(heroRow.title, d.hero.title),
       body: asString(heroRow.body, d.hero.body),
-      actions: heroActions.length > 0 ? heroActions : d.hero.actions,
+      actions: orSample(heroActions, d.hero.actions),
       image: asString(heroRow.image, d.hero.image),
       imageAlt: asString(heroRow.imageAlt, d.hero.imageAlt),
-      gallery: heroGallery.length > 0 ? heroGallery : d.hero.gallery,
+      gallery: orSample(heroGallery, d.hero.gallery),
       video: {
         // `src` falls back to "" rather than the default, so clearing it in the
         // CMS genuinely removes the video instead of resurrecting a default.
@@ -193,7 +213,7 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
       countLabel: asString(registryRow.countLabel, d.registry.countLabel),
       noteLabel: asString(registryRow.noteLabel, d.registry.noteLabel),
       noteHref: asString(registryRow.noteHref, d.registry.noteHref),
-      substats: substats.length > 0 ? substats : d.registry.substats,
+      substats: orSample(substats, d.registry.substats),
       streamHeading: asString(registryRow.streamHeading, d.registry.streamHeading),
       liveLabel: asString(registryRow.liveLabel, d.registry.liveLabel),
       // Cleared deliberately means "show the statistics again", so these three
@@ -209,7 +229,7 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
       heading: asString(servicesRow.heading, d.services.heading),
       moreLabel: asString(servicesRow.moreLabel, d.services.moreLabel),
       moreHref: asString(servicesRow.moreHref, d.services.moreHref),
-      cards: serviceCards.length > 0 ? serviceCards : d.services.cards
+      cards: orSample(serviceCards, d.services.cards)
     },
     news: {
       ...meta(newsRow, d.news),
@@ -222,20 +242,20 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
       listMoreLabel: asString(newsRow.listMoreLabel, d.news.listMoreLabel),
       listMoreHref: asString(newsRow.listMoreHref, d.news.listMoreHref),
       lead: {
-        tag: asString(newsLead.tag, d.news.lead.tag),
-        title: asString(newsLead.title, d.news.lead.title),
-        body: asString(newsLead.body, d.news.lead.body),
-        meta: asString(newsLead.meta, d.news.lead.meta),
-        href: asString(newsLead.href, d.news.lead.href),
-        image: asString(newsLead.image, d.news.lead.image),
-        kicker: asString(newsLead.kicker, d.news.lead.kicker)
+        tag: asString(newsLead.tag, sampleText(d.news.lead.tag)),
+        title: asString(newsLead.title, sampleText(d.news.lead.title)),
+        body: asString(newsLead.body, sampleText(d.news.lead.body)),
+        meta: asString(newsLead.meta, sampleText(d.news.lead.meta)),
+        href: asString(newsLead.href, sampleText(d.news.lead.href)),
+        image: asString(newsLead.image, sampleText(d.news.lead.image)),
+        kicker: asString(newsLead.kicker, sampleText(d.news.lead.kicker))
       },
-      items: newsItems.length > 0 ? newsItems : d.news.items
+      items: orSample(newsItems, d.news.items)
     },
     channels: {
       ...meta(channelsRow, d.channels),
       heading: asString(channelsRow.heading, d.channels.heading),
-      cards: channelCards.length > 0 ? channelCards : d.channels.cards
+      cards: orSample(channelCards, d.channels.cards)
     },
     video: {
       ...meta(videoRow, d.video),
@@ -244,24 +264,26 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
       lede: asString(videoRow.lede, d.video.lede),
       moreLabel: asString(videoRow.moreLabel, d.video.moreLabel),
       moreHref: asString(videoRow.moreHref, d.video.moreHref),
-      series: videoSeries.length > 0 ? videoSeries : d.video.series,
+      series: orSample(videoSeries, d.video.series),
+      /* 「本期推荐」那一格的默认值也是中文样例（《铁证如山》那支片子），
+         同样只在中文站顶。英文站没填就空着，区块自己会收起来。 */
       featured: {
-        tag: asString(videoFeatured.tag, d.video.featured.tag),
-        title: asString(videoFeatured.title, d.video.featured.title),
-        body: asString(videoFeatured.body, d.video.featured.body),
-        image: asString(videoFeatured.image, d.video.featured.image),
-        href: asString(videoFeatured.href, d.video.featured.href),
+        tag: asString(videoFeatured.tag, sampleText(d.video.featured.tag)),
+        title: asString(videoFeatured.title, sampleText(d.video.featured.title)),
+        body: asString(videoFeatured.body, sampleText(d.video.featured.body)),
+        image: asString(videoFeatured.image, sampleText(d.video.featured.image)),
+        href: asString(videoFeatured.href, sampleText(d.video.featured.href)),
         // Chip text: clearing it should hide the chip, not resurrect a
         // runtime the video may no longer have.
         duration: asString(videoFeatured.duration),
-        meta: featuredMeta.length > 0 ? featuredMeta : d.video.featured.meta,
-        primaryLabel: asString(videoFeatured.primaryLabel, d.video.featured.primaryLabel),
-        primaryHref: asString(videoFeatured.primaryHref, d.video.featured.primaryHref),
-        secondaryLabel: asString(videoFeatured.secondaryLabel, d.video.featured.secondaryLabel),
-        secondaryHref: asString(videoFeatured.secondaryHref, d.video.featured.secondaryHref)
+        meta: orSample(featuredMeta, d.video.featured.meta),
+        primaryLabel: asString(videoFeatured.primaryLabel, sampleText(d.video.featured.primaryLabel)),
+        primaryHref: asString(videoFeatured.primaryHref, sampleText(d.video.featured.primaryHref)),
+        secondaryLabel: asString(videoFeatured.secondaryLabel, sampleText(d.video.featured.secondaryLabel)),
+        secondaryHref: asString(videoFeatured.secondaryHref, sampleText(d.video.featured.secondaryHref))
       },
       latestLabel: asString(videoRow.latestLabel, d.video.latestLabel),
-      items: videoItems.length > 0 ? videoItems : d.video.items,
+      items: orSample(videoItems, d.video.items),
       footNote: asString(videoRow.footNote, d.video.footNote),
       footMark: asString(videoRow.footMark, d.video.footMark)
     },
@@ -272,7 +294,7 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
       lede: asString(voicesRow.lede, d.voices.lede),
       moreLabel: asString(voicesRow.moreLabel, d.voices.moreLabel),
       moreHref: asString(voicesRow.moreHref, d.voices.moreHref),
-      items: voiceItems.length > 0 ? voiceItems : d.voices.items
+      items: orSample(voiceItems, d.voices.items)
     },
     network: {
       ...meta(networkRow, d.network),
@@ -290,7 +312,7 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
       heading: asString(resourcesRow.heading, d.resources.heading),
       moreLabel: asString(resourcesRow.moreLabel, d.resources.moreLabel),
       moreHref: asString(resourcesRow.moreHref, d.resources.moreHref),
-      items: resourceItems.length > 0 ? resourceItems : d.resources.items
+      items: orSample(resourceItems, d.resources.items)
     },
     about: {
       ...meta(aboutRow, d.about),
@@ -299,14 +321,14 @@ export function resolveHomeContent(payload: Record<string, unknown>): HomeConten
       lede: asString(aboutRow.lede, d.about.lede),
       moreLabel: asString(aboutRow.moreLabel, d.about.moreLabel),
       moreHref: asString(aboutRow.moreHref, d.about.moreHref),
-      cells: aboutCells.length > 0 ? aboutCells : d.about.cells
+      cells: orSample(aboutCells, d.about.cells)
     },
     involve: {
       ...meta(involveRow, d.involve),
       eyebrow: asString(involveRow.eyebrow, d.involve.eyebrow),
       heading: asString(involveRow.heading, d.involve.heading),
       lede: asString(involveRow.lede, d.involve.lede),
-      items: involveItems.length > 0 ? involveItems : d.involve.items
+      items: orSample(involveItems, d.involve.items)
     }
   };
 }

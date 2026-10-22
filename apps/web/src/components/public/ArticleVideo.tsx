@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { t } from "@/lib/i18n";
 import { isFileUrl, toEmbedUrl, youtubeIdOf } from "@/lib/video-host";
 
 /**
@@ -49,7 +50,7 @@ export function ArticleVideo({ src, caption }: { src: string; caption: string })
           <button
             type="button"
             onClick={() => setPlaying(true)}
-            aria-label={caption ? `播放：${caption}` : "播放视频"}
+            aria-label={caption ? t("video.playLabel", { title: caption }) : t("video.play")}
             style={{
               position: "relative",
               width: "100%",

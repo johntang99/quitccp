@@ -57,7 +57,7 @@ export function NewsArchiveBand({ items }: { items: NewsCard[] }) {
             {/* The band shows six; the rest were unreachable until this listing
                 existed. */}
             <a href="/news/editor-archive" style={{ fontSize: 14, color: T.gold, textDecoration: "none", whiteSpace: "nowrap" }}>
-              全部 →
+              {t("news.allArrow")}
             </a>
           </span>
         </div>

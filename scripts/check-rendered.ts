@@ -66,7 +66,7 @@ const ADMIN_PAGES = [
   "/admin/account", "/admin/settings", "/admin/declarations"
 ];
 
-const PAGES = PUBLIC_MODE ? PUBLIC_PAGES : ADMIN_PAGES;
+const PAGES: string[] = PUBLIC_MODE ? [...PUBLIC_PAGES] : [...ADMIN_PAGES];
 
 /**
  * 去掉标了 data-snapshot="data" 的区块。
@@ -159,9 +159,38 @@ async function login(): Promise<string> {
 const HAN = /[一-鿿]/g;
 const HAN_ONE = /[一-鿿]/;
 
+/**
+ * 公开站那一档，再加一篇真实文章。
+ *
+ * 固定的 16 页量不到文章页 —— 而文章页恰恰是读者看得最多的一页，它的骨架
+ * （面包屑、本文栏目、转载条款、底部的声明入口）又是另一套来源。2026-10-22
+ * 发第一篇英文文章时才发现那一圈全是中文，而当时这把尺子显示「0 个汉字」。
+ *
+ * 所以不写死某个 slug（文章会被删、会改名），而是从 /news 上现找一篇。
+ * 一篇都没有就说出来，不要假装量过。
+ */
+async function findAnArticle(): Promise<string | null> {
+  const res = await fetch(`${BASE}/news`, { headers: probeHeaders });
+  if (!res.ok) return null;
+  const html = await res.text();
+  const m = [...html.matchAll(/href="(\/news\/[^"?#]+)"/g)].map((x) => x[1]);
+  /* 栏目页也长在 /news/ 下面，挑一个不在栏目清单里的。 */
+  const sections = new Set([
+    "/news/announcements", "/news/investigations", "/news/commentary",
+    "/news/solidarity", "/news/stories", "/news/notable", "/news/article"
+  ]);
+  return m.find((href) => !sections.has(href) && href.split("/").length === 3) ?? null;
+}
+
 async function main() {
   /* 公开站不用登录；后台每一页都要。 */
   const cookie = PUBLIC_MODE ? "" : await login();
+
+  if (PUBLIC_MODE) {
+    const article = await findAnArticle();
+    if (article) PAGES.push(article);
+    else console.log("  ！ /news 上找不到文章，这一轮没量到文章页 —— 那一页的中文量不出来。");
+  }
   const rows: { page: string; han: number; sample: string }[] = [];
   let unreachable = 0;
 
