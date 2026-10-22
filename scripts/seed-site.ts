@@ -336,6 +336,25 @@ async function main() {
 
   console.log(`\n========== 给 ${locale} 站播骨架${apply ? "" : "（预演）"} ==========\n`);
 
+  /*
+   * 英文站的文章与视频分类不在这里播。
+   *
+   * 这个脚本最初照搬中文站的 18 个文章分类和 14 个视频分类 —— 那是在还不知道
+   * global.tuidang.org 存在的时候。后来确认英文站有自己的一套（Terror in China、
+   * Religious Persecution…33 支《铁证如山》），分类改由 import:en 与
+   * import:en:videos 按真实内容建，空的那些删掉了。
+   *
+   * 但这个脚本还在播，于是我为了改子菜单重跑一次 seed:site，被删掉的 18 个空
+   * 分类又全回来了 —— 标签栏里又多出一排点进去什么都没有的栏目。
+   *
+   * 所以这里按站排除。资料与问答分类仍然播：英文站那边没有现成的，中文站的
+   * 结构还是最好的起点。
+   */
+  const seedsOwnTaxonomy = new Set(["en"]);
+  const skipTables = seedsOwnTaxonomy.has(locale)
+    ? new Set(["cms_article_categories", "cms_video_categories"])
+    : new Set<string>();
+
   const plan: { what: string; table: string; rows: Record<string, unknown>[]; onConflict: string }[] = [
     {
       what: "文章分类",
@@ -405,6 +424,10 @@ async function main() {
   ];
 
   for (const step of plan) {
+    if (skipTables.has(step.table)) {
+      console.log(`  － ${step.what}（${step.table}）：跳过，${locale} 站用自己的那套（见上方说明）`);
+      continue;
+    }
     /* 先看现在有什么：预演要说得出「哪些是新建、哪些会被覆盖」。 */
     const keyCol = step.onConflict.startsWith("slug") ? "slug" : "path";
     const { data: existing, error: readError } = await db

@@ -104,10 +104,18 @@ export function MaterialCategoryDeleteButton({ id, name, count }: { id: string; 
 
   return (
     <>
+      {/*
+       * 这个 title 在「可以删」和「还有 N 份资料，不能删」之间切换 —— 随这一
+       * 分类下有多少份资料而变，是状态不是文案。标成数据区，否则编辑每新建
+       * 一份资料，admin:snapshot 就报一次「文案变了」。2026-10-22 就是这样：
+       * 编辑往原本为空的「真相广播与音频」里放了一份，按钮从「删除这个分类」
+       * 变成「还有 1 份资料在这个分类下，不能删」。
+       */}
       <button
         className="admin-btn admin-btn-danger"
         type="button"
         onClick={() => setOpen(true)}
+        data-snapshot="data"
         title={blocked ? t("admin.mcat.deleteBlockedTitle", { n: count }) : t("admin.mcat.deleteTitle")}
       >
         {t("admin.list.delete")}
