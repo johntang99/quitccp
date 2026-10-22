@@ -1,4 +1,5 @@
 import { createSupabasePublicClient } from "@/lib/supabase/admin-client";
+import { t } from "@/lib/i18n";
 import { SIMPLIFIED_TO_TRADITIONAL, TRADITIONAL_TO_SIMPLIFIED } from "@/lib/zh-variants";
 import { SITE_LOCALE } from "@/lib/site-config";
 import { synonymsOf } from "@/lib/search-synonyms";
@@ -51,10 +52,13 @@ export interface SubstringSearchResult {
   score: number;
 }
 
+/* 搜索结果卡片上那一行的类型名。和顶部导航用同一套 key，两处对不上会让人以为
+   是两个不同的东西。原来写死中文 —— 英文站的搜索结果每条都挂着「新闻与报告」，
+   而同一页的筛选器已经是 News & Reports。 */
 const TYPE_LABEL: Record<SearchResultType, string> = {
-  article: "新闻与报告",
-  video: "视频",
-  material: "资料"
+  article: t("search.typeArticle"),
+  video: t("search.typeVideo"),
+  material: t("search.typeMaterial")
 };
 
 /** PostgREST `or=` is comma-separated, so a comma in the query would split it. */

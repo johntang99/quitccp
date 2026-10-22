@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { formatNumber } from "@/lib/format";
+import { t } from "@/lib/i18n";
 import { notFound } from "next/navigation";
 import { NewsListingPage } from "@/components/public/news/NewsListingPage";
 import type { NewsSort } from "@/lib/public-content";
@@ -55,7 +57,7 @@ export async function generateMetadata({
   if (!listing) return {};
   return {
     title: `${listing.name}（第 ${listing.page} 页）`,
-    description: `${listing.name}——全球退党服务中心的${listing.total.toLocaleString("zh-CN")}篇报导与资料。`,
+    description: t("news.listingDescription", { name: listing.name, site: t("site.name"), total: formatNumber(listing.total) }),
     /* Page one is the canonical for the set; deeper pages point at themselves
        so they are not read as duplicates of it. */
     alternates: { canonical: listing.page === 1 ? `/news/${slug}` : `/news/${slug}/${listing.page}` }

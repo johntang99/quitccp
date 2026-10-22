@@ -256,7 +256,7 @@ function Pager({
         {page > 1 ? (
           <a className="news-cat-step" href={href(page - 1)} rel="prev">{t("news.prev")}</a>
         ) : (
-          <span className="news-cat-step" aria-disabled="true" style={{ color: "var(--lav-muted)" }}>← 上一页</span>
+          <span className="news-cat-step" aria-disabled="true" style={{ color: "var(--lav-muted)" }}>{t("news.prev")}</span>
         )}
         {pageNumbers(page, pageCount).map((entry, index) =>
           entry === "gap" ? (

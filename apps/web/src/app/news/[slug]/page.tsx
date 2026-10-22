@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { formatNumber } from "@/lib/format";
+import { t } from "@/lib/i18n";
 import { notFound, permanentRedirect } from "next/navigation";
 import { findSlugRedirect, publicPath } from "@/lib/slug-redirects";
 import { NewsListingPage } from "@/components/public/news/NewsListingPage";
@@ -88,7 +90,7 @@ export async function generateMetadata({
   if (listing) {
     return {
       title: listing.name,
-      description: `${listing.name}——全球退党服务中心的${listing.total.toLocaleString("zh-CN")}篇报导与资料。`,
+      description: t("news.listingDescription", { name: listing.name, site: t("site.name"), total: formatNumber(listing.total) }),
       alternates: { canonical: `/news/${slug}` }
     };
   }
