@@ -179,6 +179,22 @@ const HOME_EN: Record<string, string | null> = {
   "services.cards[1].body":
     "We collect and verify cases of human-rights abuse, preserve first-hand accounts from those involved, and submit them to parliaments, institutions and the press.",
   "services.cards[1].ctaLabel": "Go to the newsroom →",
+  /*
+   * 链接也得改，不只是文案。
+   *
+   * 这些 href 是跟着中文站的栏目 slug 来的（worldwide-investigation、
+   * topics-commentary…）。英文站有自己的一套栏目，那些 slug 根本不存在 ——
+   * 页面照常渲染、文案也对，点下去才是 404。npm run links:check 就是为这个
+   * 加的；2026-10-22 它一次查出 11 条。
+   */
+  "services.cards[1].links[0].href": "/news/religious-persecution",
+  "services.cards[1].links[1].href": "/news/terror-in-china",
+  "services.cards[1].links[2].href": "/news/tuidang",
+  "services.cards[1].links[3].href": "/news/international-support",
+  "services.cards[1].links[4].href": "/news/global-infiltration",
+  "services.cards[1].links[5].href": "/news/endccp",
+  "services.cards[2].links[4].href": "/news/tuidang-statements",
+  "voices.moreHref": "/news/tuidang-statements",
   "services.cards[1].links[0].label": "Case files",
   "services.cards[1].links[1].label": "Investigation reports",
   "services.cards[1].links[2].label": "First-hand accounts",
@@ -1205,6 +1221,7 @@ const INVOLVE_ENDCCP_EN: Record<string, string | null> = {
   "relatedPanel.title": "Related",
   "relatedPanel.links[0].label": "Full text of the petition",
   "relatedPanel.links[1].label": "Announcements and statements",
+  "relatedPanel.links[1].href": "/news/tuidang-statements",
   "relatedPanel.links[2].label": "Collecting signatures in person",
   "relatedPanel.links[3].label": "Petition materials to download"
 };
@@ -1953,6 +1970,8 @@ const NEWS_INDEX_EN: Record<string, string | null> = {
   "notableSection.moreLabel": "All testimony →",
 
   "sectionPanel.title": "Sections",
+  "announcementsSection.moreHref": "/news/tuidang-statements",
+  "sectionPanel.links[0].href": "/news/tuidang-statements",
   "sectionPanel.links[0].label": "Announcements and statements",
   "sectionPanel.links[1].label": "WOIPFG investigation reports",
   "sectionPanel.links[2].label": "Features and commentary",

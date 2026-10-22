@@ -47,6 +47,8 @@ export function ScreeningBand({ video }: { video: HomeContent["video"] }) {
           {video.lede ? <p className="screening-lede">{video.lede}</p> : null}
         </div>
 
+        {/* 没有推荐片就不渲染 —— 否则是一个带 ▶ 的空壳。 */}
+        {featured.title ? (
         <div className="screening-feature">
           <a
             className="screening-poster"
@@ -97,6 +99,7 @@ export function ScreeningBand({ video }: { video: HomeContent["video"] }) {
             </div>
           </div>
         </div>
+        ) : null}
 
         <div className="screening-latest">
           <div className="screening-latest-head">

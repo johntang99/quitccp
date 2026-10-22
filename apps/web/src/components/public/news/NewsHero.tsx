@@ -24,7 +24,7 @@ function FeaturedTag({ size = 12 }: { size?: number }) {
       title={t("video.flaggedImportant")}
     >
       <span aria-hidden="true">★</span>
-      重要
+      {t("news.important")}
     </span>
   );
 }
@@ -109,7 +109,7 @@ export function NewsHero({ featured, latest }: { featured: NewsCard[]; latest: N
                 {lead.summary}
               </p>
             ) : null}
-            <span style={{ fontSize: 14, color: T.seal }}>阅读全文 →</span>
+            <span style={{ fontSize: 14, color: T.seal }}>{t("news.readFullArrow")}</span>
           </a>
         ) : null}
 

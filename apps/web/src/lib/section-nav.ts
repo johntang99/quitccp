@@ -68,10 +68,22 @@ export function mergeSectionNav(
     const labels = asRecord(override.tabs);
     const order = Array.isArray(override.order) ? override.order.map(String) : null;
 
-    let tabs = config.tabs.map((tab) => {
-      const label = labels[tab.slug];
-      return typeof label === "string" && label.trim() ? { ...tab, label: label.trim() } : tab;
-    });
+    /*
+     * 标签留空 = 这个站没有这一项，整条去掉。
+     *
+     * 原来只有「改名」没有「去掉」：代码里写死的那排子菜单对每个站都一样，
+     * 而英文站没有「退一步海阔天空」「文化艺术」这两个视频栏目 —— 标签栏里
+     * 挂着它们，点下去 404。改名改不掉一个不存在的栏目。
+     *
+     * 用空字符串表示，而不是另起一个字段：编辑在后台把名字删空，意思本来
+     * 就是「不要这一项」。
+     */
+    let tabs = config.tabs
+      .filter((tab) => !(tab.slug in labels && typeof labels[tab.slug] === "string" && !String(labels[tab.slug]).trim()))
+      .map((tab) => {
+        const label = labels[tab.slug];
+        return typeof label === "string" && label.trim() ? { ...tab, label: label.trim() } : tab;
+      });
 
     if (order) {
       const known = new Map(tabs.map((tab) => [tab.slug, tab]));

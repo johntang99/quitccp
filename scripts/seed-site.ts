@@ -234,7 +234,9 @@ const SECTION_TABS = {
         faq: "Questions & answers",
         privacy: "Safety & privacy",
         immigration: "Immigration policy",
-        coverage: "Withdrawal & immigration coverage"
+        /* 这一条在 section-nav 里写死指向 /services/faq/c/xgbd —— 一个中文站的
+           问答分类。英文站还没有问答内容，留空去掉，等有了再加回来。 */
+        coverage: ""
       },
       label: "Statements & certificates"
     },
@@ -271,12 +273,13 @@ const SECTION_TABS = {
         index: "All",
         frontline: "Tuidang Frontline",
         "party-culture": "Breaking Party Culture",
-        "step-back": "A Step Back",
+        /* 英文站没有这两个视频栏目。留空 = 去掉这一项，见 mergeSectionNav。 */
+        "step-back": "",
         jiuping: "Nine Commentaries",
         ironclad: "Ironclad Evidence",
         awakening: "Journey of Awakening",
         "hope-road": "The Road of Hope",
-        culture: "Culture & the arts"
+        culture: ""
       },
       label: "Videos"
     }

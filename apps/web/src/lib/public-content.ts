@@ -1586,11 +1586,23 @@ export async function getNewsHome(): Promise<NewsHome> {
   try {
     const supabase = createSupabasePublicClient();
 
+    /*
+     * 本站实际的栏目，不是写死的那张中文清单。
+     *
+     * 原来是 .in("slug", NEWS_CATEGORIES...)，而 NEWS_CATEGORIES 里全是中文站的
+     * slug（announcement-claims、withdrawal-news…）。英文站的栏目叫
+     * terror-in-china、religious-persecution，一个都匹配不上 —— 于是下面每个
+     * 栏目都走 `if (!id)` 那一支，lead 恒为 null，页面上是「Browse by section,
+     * 0 sections」，而标签栏里明明列着 18 个栏目，每个都有文章。
+     *
+     * 判据改成 is_news_listing —— 和标签栏、和 /news/<slug> 路由用的是同一个，
+     * 三处看到的栏目从此一致。
+     */
     const { data: categoryRows } = await supabase
       .from("cms_article_categories")
       .select("id, slug, name")
       .eq("locale", SITE_LOCALE)
-      .in("slug", NEWS_CATEGORIES.map((row) => row.slug));
+      .eq("is_news_listing", true);
     const categoryById = new Map(
       (categoryRows ?? []).map((row) => [String(row.id), String(row.name)])
     );
@@ -1686,8 +1698,18 @@ export async function getNewsHome(): Promise<NewsHome> {
       })
     );
 
+    /*
+     * 一篇都没标「重要」时，头条位用最新的几篇顶上。
+     *
+     * 原来是空数组，页面上就是一整块白 —— 中文站看不出来（编辑一直在标），
+     * 英文站刚搬进内容、还没人标过，首屏正中间一块空白。
+     *
+     * 「还没人挑头条」的正确表现是「先给最新的」，不是「什么都不给」。
+     */
+    const heroRows = featuredRows.length > 0 ? featuredRows : latestRows.slice(0, 3);
+
     return {
-      featured: featuredRows.map((row) => toNewsCard(row, kickers.get(String(row.slug)) ?? "")),
+      featured: heroRows.map((row) => toNewsCard(row, kickers.get(String(row.slug)) ?? "")),
       latest: latestRows.map((row) => toNewsCard(row, kickers.get(String(row.slug)) ?? "")),
       archive: archiveRows.map((row) => toNewsCard(row, kickers.get(String(row.slug)) ?? "")),
       categories
@@ -2341,10 +2363,22 @@ export async function getMaterialCategories(): Promise<PublicMaterialCategory[]>
         .select("slug, name, summary, sort_order")
         .eq("locale", SITE_LOCALE)
         .order("sort_order", { ascending: true }),
+      /*
+       * 数这个站自己的资料。
+       *
+       * 原来没有 locale 条件 —— 而计数是按 slug 归并的，中英文的资料分类
+       * slug 一模一样（boards、leaflets、placards…）。于是英文站的资料下载页
+       * 上写着「11 items」「14 items」，点进去一条都没有：数的是中文站的。
+       *
+       * 这一处 locale:check 看不见：它查的是 .from() 后面有没有跟 locale 条件，
+       * 而这里的表是通过 !inner 连进来的，不是直接 from。
+       */
       supabase
         .from("cms_material_category_map")
-        .select("cms_material_categories!inner(slug), cms_materials!inner(status)")
+        .select("cms_material_categories!inner(slug, locale), cms_materials!inner(status, locale)")
         .eq("cms_materials.status", "published")
+        .eq("cms_materials.locale", SITE_LOCALE)
+        .eq("cms_material_categories.locale", SITE_LOCALE)
     ]);
     if (error || mapError) return [];
 

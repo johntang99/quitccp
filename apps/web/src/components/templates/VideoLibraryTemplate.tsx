@@ -138,6 +138,9 @@ export function VideoLibraryTemplate({ title, section, slug, content }: Template
         <InteriorHead section={section} slug={slug} title={title} subtitle={subtitle} />
         <InteriorTabs section={section} slug={slug} />
         <div style={{ background: "var(--grad-band2)", color: "var(--paper)" }}>
+          {/* 没有推荐片就整块不渲染。原来照渲染，于是英文站（一支影片都没有）
+              的页面上是一个带 ▶ 的灰框、一个空标题、两段空文字。 */}
+          {featuredTitle ? (
           <section className="sec" style={{ padding: "56px 0 0" }}>
             <div className="wrap">
               <article className="vhero">
@@ -166,9 +169,13 @@ export function VideoLibraryTemplate({ title, section, slug, content }: Template
               </article>
             </div>
           </section>
+          ) : null}
 
           {sections.map((group, groupIndex) => {
             const items = asObjectArray(group.items);
+            /* 这一栏目没有影片就不渲染。只剩标题和「All films →」的一节，
+               读者点进去也是空的 —— 不如先不出现。 */
+            if (items.length === 0) return null;
             return (
               <section className="sec" style={{ padding: "56px 0" }} key={`${asString(group.title)}-${groupIndex}`}>
                 <div className="wrap">
