@@ -32,6 +32,21 @@ import { SITE_LOCALE, type Locale } from "@/lib/site-config";
  */
 export const SANTUI_LOCALES = ["zh"] as const satisfies readonly Locale[];
 
+/**
+ * 汇总访问日志的任务在哪些站跑。
+ *
+ * 原始日志不是这个仓库写的 —— 是 Vercel 的 log drain 推到一个 Worker、再写进
+ * R2 的。那个 drain 在 Vercel 后台绑定在具体项目上，现在只绑了中文站。
+ *
+ * 而 R2 里的路径是 logs/年/月/日/时/，不带站名：读的时候分不出哪条属于哪个站。
+ * 于是英文站跑这个任务，读到的是中文站的日志，写成一行 locale='en' —— 英文
+ * 后台的日志面板上会显示中文站的流量，而且看不出有什么不对。中文站那行不会被
+ * 污染（主键带 locale），但「看起来对的假数据」比空着更糟。
+ *
+ * 哪天给英文站也配了 drain，在这里加一个 'en' 就行。
+ */
+export const LOG_ROLLUP_LOCALES = ["zh"] as const satisfies readonly Locale[];
+
 export function skipUnlessLocale(allowed: readonly Locale[]): NextResponse | null {
   if (allowed.includes(SITE_LOCALE)) return null;
   return NextResponse.json({

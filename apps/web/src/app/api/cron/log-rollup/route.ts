@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSessionUser } from "@/lib/admin/auth";
 import { rollupHour } from "@/lib/admin/log-rollup";
+import { LOG_ROLLUP_LOCALES, skipUnlessLocale } from "@/lib/cron-locale";
 
 /**
  * Rolls the log archive up into `cms_log_hourly`, hourly.
@@ -33,6 +34,11 @@ async function authorise(request: Request): Promise<string | null> {
 export async function GET(request: Request) {
   const denied = await authorise(request);
   if (denied) return NextResponse.json({ error: denied }, { status: 401 });
+
+  /* 原始日志只有配了 log drain 的那个站会产生，而 R2 里的路径不带站名 ——
+     别的站跑这个任务，读到的是人家的日志。见 cron-locale 里的说明。 */
+  const skip = skipUnlessLocale(LOG_ROLLUP_LOCALES);
+  if (skip) return skip;
 
   /* `?hours=` so a hole can be backfilled by hand without a deploy -- the only
      window in which that is possible is the 14 days R2 keeps the raw objects. */

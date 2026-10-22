@@ -39,6 +39,28 @@ fi
 
 SKIP_KEYS="SITE_LOCALE NEXT_PUBLIC_SITE_URL CERT_STATS_URL PROBE_BYPASS_SECRET CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_API_TOKEN GITHUB_RENDER_REPO GITHUB_RENDER_TOKEN VERCEL_DRAIN_SIGNATURE_SECRET"
 
+# Vercel 自己注入的那些，不是项目变量，一条都不能抄过去。
+#
+# vercel env pull 吐出来的是「这个环境里最终能看到的全部变量」，里面混着
+# Vercel 构建时自动注入的 VERCEL / VERCEL_ENV / VERCEL_URL / VERCEL_GIT_* /
+# VERCEL_OIDC_TOKEN，以及 Turborepo 和 Nx 的 TURBO_* / NX_DAEMON。
+#
+# 第一版没有滤掉它们，45 条真变量抄成了 81 条。后果不是「多几条没用的」：
+#   VERCEL_OIDC_TOKEN 是分钟级的短时效令牌，抄过去就被冻成了一个静态的死值；
+#   VERCEL_ENV / VERCEL_TARGET_ENV / VERCEL 会盖掉 Vercel 在新项目里注入的
+#   真值，于是新项目以为自己是源项目的那次构建。
+# 这些都不会报错，只会在以后某个时刻安静地做错事。
+SYSTEM_PREFIXES="VERCEL_ NX_ TURBO_"
+SYSTEM_EXACT="VERCEL"
+
+is_system() {
+  case " $SYSTEM_EXACT " in *" $1 "*) return 0;; esac
+  for pre in $SYSTEM_PREFIXES; do
+    case "$1" in "$pre"*) return 0;; esac
+  done
+  return 1
+}
+
 TOKEN_FILE="$HOME/Library/Application Support/com.vercel.cli/auth.json"
 [ -f "$TOKEN_FILE" ] || TOKEN_FILE="$HOME/.local/share/com.vercel.cli/auth.json"
 if [ ! -f "$TOKEN_FILE" ]; then
@@ -57,7 +79,7 @@ echo ""
 echo "从 $SRC 复制到 $DST"
 echo ""
 
-copied=0; skipped=0; empty=""
+copied=0; skipped=0; sysskip=0; empty=""
 
 for ENVIRONMENT in production preview; do
   echo "── $ENVIRONMENT ──"
@@ -72,6 +94,7 @@ for ENVIRONMENT in production preview; do
     # vercel env pull 写的是 KEY="value"，去掉外层引号
     val="${val%\"}"; val="${val#\"}"
 
+    if is_system "$key"; then sysskip=$((sysskip+1)); continue; fi
     case " $SKIP_KEYS " in *" $key "*) echo "  － 跳过 $key"; skipped=$((skipped+1)); continue;; esac
     if [ -z "$val" ]; then empty="$empty $key"; continue; fi
 
@@ -97,7 +120,7 @@ print(f[0].get("error",{}).get("message","?") if f else d.get("error",{}).get("m
 done
 
 echo ""
-echo "复制 $copied 条，按规则跳过 $skipped 条"
+echo "复制 $copied 条，按规则跳过 $skipped 条，Vercel 自己的系统变量跳过 $sysskip 条"
 if [ -n "$empty" ]; then
   echo ""
   echo "读不回值、需要到后台另行设置的（Vercel 的 sensitive 类型按设计就读不出来）："
