@@ -49,10 +49,25 @@ export function DawnBand({ registry, services, voices, feed, updatedAt, total, e
    * 真实数字已经是 548 万 —— 差了一倍多，而且没人会想起来去改。占位符让编辑
    * 继续掌握整句话怎么写、数字摆在哪，只是不用再去维护数字本身。
    *
-   * 取不到数字时连同前后的空格一起去掉，而不是留下一个空洞或者「{{endccp}}」。
+   * 取不到数字时，**整句**去掉，不是只去掉占位符。
+   *
+   * 原来只删占位符和它两边的空格。中文「已有 {{endccp}} 人签署。」会变成
+   * 「已有人签署。」—— 勉强读得过去。英文 「… on the CCP's abuses.
+   * {{endccp}} people have signed.」变成「…abuses.people have signed.」：
+   * 句号后面直接粘上半句话，读者看到的是一处明显的故障。
+   *
+   * 一句话里有一个数字，数字没了这句话就没意义了。所以按句子切开，把含
+   * 占位符的那一句整个丢掉，其余原样。中英文的句号都认。
    */
-  const fillCount = (text: string) =>
-    endccpCount ? text.replace(/\{\{\s*endccp\s*\}\}/g, endccpCount) : text.replace(/\s*\{\{\s*endccp\s*\}\}\s*/g, "");
+  const fillCount = (text: string) => {
+    if (endccpCount) return text.replace(/\{\{\s*endccp\s*\}\}/g, endccpCount);
+    return text
+      .split(/(?<=[。！？])|(?<=[.!?])\s+/)
+      .filter((sentence) => !/\{\{\s*endccp\s*\}\}/.test(sentence))
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
   // The 见证 card only appears when there is something to show in it; without
   // it the row stays the three cards it was.
   const showWitness = voices.enabled && voices.items.length > 0;
@@ -94,7 +109,22 @@ export function DawnBand({ registry, services, voices, feed, updatedAt, total, e
               ) : (
                 <>
                   <span className="dawn-figure-num">{splitCount(registry.count).value}</span>
-                  <span className="dawn-figure-unit">{splitCount(registry.count).unit}</span>
+                  {/*
+                   * 单位是一个字（「亿」「万」）还是一个词（million、Mio.）——
+                   * 两者该用完全不同的字号。原来只有一套，是照「亿」定的，
+                   * 最大 176px；英文站的 "million" 七个字母按那个字号排，
+                   * 直接压到右边的卡片上。
+                   *
+                   * 按长度分，而不是按语言：德文 Mio.、罗马尼亚文 mil. 都是词，
+                   * 日文「億」是字 —— 长度正好分得开，而且以后加语言不用再改。
+                   */}
+                  <span
+                    className={`dawn-figure-unit${
+                      splitCount(registry.count).unit.length > 2 ? " dawn-figure-unit--word" : ""
+                    }`}
+                  >
+                    {splitCount(registry.count).unit}
+                  </span>
                 </>
               )}
             </p>

@@ -72,13 +72,30 @@ const HOME_EN: Record<string, string | null> = {
   title: "Home",
   subtitle: "Founded 2005 · Headquartered in New York · 100+ service points worldwide",
 
-  /* 开场。不挂具体新闻，讲机构在做什么。 */
+  /*
+   * 开场：一张整幅图配一篇真新闻。
+   *
+   * 原来是不挂具体新闻的一段机构简介 —— 当时英文站一篇文章都没有，挂谁都
+   * 不合适。现在有了，就按中文站的做法来：头条是一条真实报导。
+   *
+   * 挑的是费城市议会表彰三退运动那一条 —— 机构自己的里程碑，而且它说的
+   * 4.66 亿和首页登记册上的数字是同一个，两块内容互相印证。
+   *
+   * hero.actions[0] 原来指向一篇中文文章（从中文站抄过来没改 href）。英文
+   * 读者点「Make a statement」会落到一篇中文报导上。改成三退登记站。
+   */
+  "hero.variant": "full-bleed",
   "hero.eyebrow": "Founded 2005 · 100+ service points worldwide",
-  "hero.title": "Everyone who wants out should be able to put it on record.",
+  "hero.title": "466 million people have stepped away from the Party.",
   "hero.body":
-    "The Global Service Center for Quitting the Chinese Communist Party records public statements withdrawing from the Party, the Youth League and the Young Pioneers, and issues certificates of withdrawal. We also document human-rights abuses and support volunteers at more than a hundred service points. In twenty years we have recorded over 460 million statements.",
+    "In September 2026 the Philadelphia City Council issued a citation supporting the movement to quit the Chinese Communist Party, honouring the millions of people who have publicly left it. The Global Service Center has recorded those statements since 2005 — every one of them submitted by the person themselves, kept in full, and open to anyone who wants to check.",
+  "hero.image":
+    "https://global.tuidang.org/wp-content/uploads/2026/09/Philadelphia-rally.png",
+  "hero.imageAlt": "A rally in Philadelphia marking 466 million withdrawals from the Chinese Communist Party",
+  "hero.actions[0].href": "https://santui.tuidang.org",
   "hero.actions[0].label": "Make a statement",
-  "hero.actions[1].label": "What we do",
+  "hero.actions[1].href": "/news/philadelphia-rally-marks-466-million-people-withdrawing-from-chinas-communist-party",
+  "hero.actions[1].label": "Read the report",
 
   /* 关于我们 */
   "about.eyebrow": "About us · Support us",
@@ -105,22 +122,37 @@ const HOME_EN: Record<string, string | null> = {
   "involve.items[0].title": "Make a statement",
   "involve.items[0].body":
     "Submit under your own name or anonymously. It takes a few minutes, and you can request a certificate afterwards.",
+  /*
+   * glyph 不设。
+   *
+   * 中文站那四个字是印章（退/义/署/载），卡片左上角还有一个自动编号 01、02…
+   * 「01 退」读得通。我当初把 glyph 填成 1、2、3、4，于是英文站上是「01 1」
+   * 「02 2」—— 同一个数字印了两遍。
+   *
+   * 要置空，不能不写：不写等于不覆盖，中文站那四个印章字就留在英文站上了。
+   * 这一点是硬检查（译完不该有汉字）当场指出来的 —— 我第一次改成了直接删掉
+   * 这四行。
+   */
+  "involve.items[0].glyph": null,
+  "involve.items[1].glyph": null,
+  "involve.items[2].glyph": null,
+  "involve.items[3].glyph": null,
   "involve.items[0].ctaLabel": "Start now",
-  "involve.items[0].glyph": "1",
+
   "involve.items[1].title": "Become a volunteer",
   "involve.items[1].body":
     "Help at a service point in your city, or work online on translation and archiving.",
   "involve.items[1].ctaLabel": "Sign up",
-  "involve.items[1].glyph": "2",
+
   "involve.items[2].title": "Sign the petition",
   "involve.items[2].body": "Add your name to the End CCP petition and tell your government where you stand.",
   "involve.items[2].ctaLabel": "Sign the petition",
-  "involve.items[2].glyph": "3",
+
   "involve.items[3].title": "Download materials",
   "involve.items[3].body":
     "Display boards, leaflets, placards and audio-visual material, free to use.",
   "involve.items[3].ctaLabel": "Go to downloads",
-  "involve.items[3].glyph": "4",
+
 
   /* 全球网络 */
   "network.eyebrow": "Global network",
@@ -288,7 +320,9 @@ const HOME_EN: Record<string, string | null> = {
 const HOME_CLEAR = ["news.items", "video.items", "video.series", "channels.cards"];
 
 /** 这些子对象整个清掉：它们是「某一篇具体的中文内容」。 */
-const HOME_DROP = ["news.lead", "video.featured", "registry.asideImage", "hero.video", "hero.gallery", "hero.image"];
+/* hero.image 不再丢：英文站的头条要用它。video/gallery 仍然丢 —— 那是中文站
+   那支片子和那组人物照，和英文站的头条无关。 */
+const HOME_DROP = ["news.lead", "video.featured", "registry.asideImage", "hero.video", "hero.gallery"];
 
 
 /* ── 三退登记与证明（/services） ──────────────────────────────────── */
@@ -450,6 +484,8 @@ const RESOURCES_EN: Record<string, string | null> = {
   "featuredBook.imageAlt": "Cover of Nine Commentaries on the Communist Party",
   "featuredBook.tocHeading": "Contents",
   "featuredBook.formats[0].label": "Read online",
+  /* 这个 href 原来跟着中文站指向 /videos/jiuping —— 英文站没有那个视频栏目。 */
+  "featuredBook.formats[3].href": "/videos",
   "featuredBook.formats[3].label": "Audio and video",
   "featuredBook.formats[4].label": "Translations and downloads",
   "featuredBook.toc[0].index": "1",

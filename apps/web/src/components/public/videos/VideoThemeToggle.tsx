@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { t } from "@/lib/i18n";
 
 const THEMES = [
-  { key: "dark", label: "深色", swatch: "var(--pl-menu)" },
-  { key: "white", label: "白色", swatch: "var(--card)" },
-  { key: "grey", label: "杏色", swatch: "var(--apricot)" }
+  { key: "dark", label: t("video.bgDark"), swatch: "var(--pl-menu)" },
+  { key: "white", label: t("video.bgWhite"), swatch: "var(--card)" },
+  { key: "grey", label: t("video.bgApricot"), swatch: "var(--apricot)" }
 ] as const;
 
 const STORAGE_KEY = "quitccp.videoTheme";
@@ -44,7 +45,7 @@ export function VideoThemeToggle() {
   return (
     <div
       role="group"
-      aria-label="背景颜色"
+      aria-label={t("video.bgAria")}
       style={{
         display: "flex",
         alignItems: "center",
@@ -55,7 +56,7 @@ export function VideoThemeToggle() {
         border: "1px solid var(--border)"
       }}
     >
-      <span style={{ fontSize: 13, color: "var(--muted)", padding: "0 8px 0 10px" }}>背景</span>
+      <span style={{ fontSize: 13, color: "var(--muted)", padding: "0 8px 0 10px" }}>{t("video.bg")}</span>
       {THEMES.map((option) => {
         const on = theme === option.key;
         return (

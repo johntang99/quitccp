@@ -2431,6 +2431,15 @@ body:has(.hero--full-bleed) > header .search {
   font-size: clamp(64px, 12.2vw, 176px);
   color: var(--dawn-gold);
 }
+/* 单位是一个词而不是一个字（million、Mio.、mil.）。上面那个字号是照「亿」
+   定的，一个汉字占一格；七个字母按同样的字号排，会盖到右边的卡片上。
+   词用小得多的字号，并且压到基线上，像一个量词跟在数字后面。 */
+.dawn-figure-unit--word {
+  font-size: clamp(20px, 2.6vw, 40px);
+  font-weight: 600;
+  letter-spacing: .01em;
+  margin-left: -6px;
+}
 .dawn-figure-rule {
   display: block;
   height: 1px;

@@ -283,7 +283,7 @@ export function PanelDuo({ shelves }: { shelves: VideoLibraryShelf[] }) {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
                 <span style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
                   <span style={{ fontFamily: SERIF, fontWeight: 700, fontSize: 24, color: "var(--title)" }}>{shelf.name}</span>
-                  <span style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--acc)" }}>{shelf.total} 部</span>
+                  <span style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--acc)" }}>{t("video.filmCount", { n: shelf.total })}</span>
                 </span>
                 <a href={`/videos/${shelf.slug}`} style={{ fontSize: 13, color: "var(--acc)", textDecoration: "none" }}>
                   {t("video.allArrow")}
@@ -421,7 +421,7 @@ export function PanelPairs({ shelves }: { shelves: VideoLibraryShelf[] }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
               <span style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
                 <span style={{ fontFamily: SERIF, fontWeight: 700, fontSize: 24, color: "var(--title)" }}>{shelf.name}</span>
-                <span style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--acc)" }}>{shelf.total} 部</span>
+                <span style={{ fontFamily: "var(--sans)", fontWeight: 500, fontSize: 13, color: "var(--acc)" }}>{t("video.filmCount", { n: shelf.total })}</span>
               </span>
               <a href={`/videos/${shelf.slug}`} style={{ fontSize: 13, color: "var(--acc)", textDecoration: "none" }}>
                 {t("video.allArrow")}

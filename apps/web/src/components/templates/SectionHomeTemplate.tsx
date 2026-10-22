@@ -448,7 +448,9 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
           label: asString(row.label),
           href: asString(row.href)
         })))
-      : [{ label: "影音版", href: "/videos/jiuping" }];
+      /* 兜底指向影音库首页，不是某个具体栏目 —— 栏目是各站自己定的，
+         写死一个 slug 在别的站上就是 404。 */
+      : [{ label: t("book.audioVideo"), href: "/videos" }];
     const featuredToc = asObjectArray(featuredBook.toc).map((row) => ({
       index: asString(row.index),
       title: asString(row.title),

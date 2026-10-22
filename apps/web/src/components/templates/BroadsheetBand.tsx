@@ -94,7 +94,8 @@ export function BroadsheetBand({ news, channels }: BroadsheetBandProps) {
           </div>
         </div>
 
-        {channels.enabled ? (
+        {/* 一张卡片都没有就不渲染 —— 否则页面上是一个孤零零的「Series」标题。 */}
+        {channels.enabled && channels.cards.length > 0 ? (
           <>
             <div className="bsheet-band">
               <span className="bsheet-band-rule" aria-hidden="true" />

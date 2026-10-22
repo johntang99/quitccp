@@ -259,8 +259,10 @@ function withLiveVideo(video: HomeContent["video"], live: HomeVideoLive): HomeCo
       meta: [live.featureCategory, feature.episode, minutes].filter(Boolean),
       primaryHref: href,
       secondaryHref: seriesHref ?? "/videos/archive",
+      /* 用文案表里的模板，不要字符串拼接 —— 中文是「查看全部X」，英文是
+         「See all X →」，词序和空格都不一样，拼不出来。 */
       secondaryLabel: live.featureCategory
-        ? `查看全部${live.featureCategory}`
+        ? t("video.seeAll", { cat: live.featureCategory })
         : video.featured.secondaryLabel
     },
     items:

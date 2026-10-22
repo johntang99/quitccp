@@ -27,6 +27,7 @@
     "seed:site": "tsx scripts/seed-site.ts",
     "seed:pages": "tsx scripts/seed-page-content.ts",
     "import:en": "tsx scripts/import-global-tuidang.ts",
+    "import:en:videos": "tsx scripts/import-global-tuidang-videos.ts",
     "links:check": "tsx scripts/check-links.ts",
     "admin:snapshot": "tsx scripts/snapshot-admin.ts",
     "i18n:check": "tsx scripts/check-i18n.ts",
