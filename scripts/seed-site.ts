@@ -35,6 +35,20 @@
  * 1. **默认预演。** 和这个仓库里其他动库的脚本一样，--apply 才真跑。
  * 2. **永远不碰 zh。** --locale zh 直接拒绝执行。中文站是生产，编辑每天在用，
  *    一个建站脚本没有任何理由往它身上写东西。
+ *
+ * ## 播完之后：板块名要等最多一小时才生效
+ *
+ * nav/section-tabs.json 被 unstable_cache 按 SITE_CHROME_TAG 缓存着，TTL 一小时。
+ * 后台保存那条路径会顺手 revalidateTag，这个脚本直接写库，绕过了它 —— 于是
+ * 「播完了」和「页面上看得见」之间隔着最多一小时。2026-10-22 就是这样：库里
+ * 已经是 All / Tuidang Frontline，/videos 上还挂着「全部 / 三退前线」。
+ *
+ * 要立刻生效，就走后台那条路把它再存一次：
+ *
+ *     PUT /api/admin/content/file
+ *     { locale, path: "nav/section-tabs.json", content: "<原样的 JSON 字符串>" }
+ *
+ * 分类不受影响（没有这层缓存），页面正文也不受影响（各页自己 revalidate 300 秒）。
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -234,6 +248,37 @@ const SECTION_TABS = {
         tools: "Uncensored access"
       },
       label: "Resources"
+    },
+    /*
+     * news 和 videos 这两排，section-nav.ts 里是写死的中文 —— 那个文件自己的
+     * 注释就说过：「在后台把分类改了名，改不到这里」。覆盖掉它们，顺便也让
+     * 这两排跟着后台走。
+     */
+    news: {
+      tabs: {
+        index: "All",
+        announcements: "Announcements & statements",
+        investigations: "WOIPFG investigation reports",
+        commentary: "Features & commentary",
+        solidarity: "International solidarity",
+        stories: "Tuidang news & stories",
+        notable: "Notable withdrawals"
+      },
+      label: "News & reports"
+    },
+    videos: {
+      tabs: {
+        index: "All",
+        frontline: "Tuidang Frontline",
+        "party-culture": "Breaking Party Culture",
+        "step-back": "A Step Back",
+        jiuping: "Nine Commentaries",
+        ironclad: "Ironclad Evidence",
+        awakening: "Journey of Awakening",
+        "hope-road": "The Road of Hope",
+        culture: "Culture & the arts"
+      },
+      label: "Videos"
     }
   }
 } as const;

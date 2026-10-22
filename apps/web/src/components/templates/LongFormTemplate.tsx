@@ -5,6 +5,7 @@ import {
   externalLinkProps
 } from "@/lib/external-services";
 import { InteriorHead, InteriorTabs } from "./InteriorScaffold";
+import { t } from "@/lib/i18n";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString, asStringArray } from "./content-utils";
 import { servicesDefaults } from "@quitccp/content-schema";
@@ -17,7 +18,7 @@ export function LongFormTemplate({ title, section, slug, content, faqGroups }: T
   if (section === "services" && slug === "faq") {
     const heading = asString(payload.title, "三退问答");
     const subtitle = asString(payload.subtitle, "关于声明、证明与安全的常见问题。");
-    const filters = asStringArray(payload.filters, ["全部", "关于声明", "关于证明", "安全与隐私", "移民相关"]);
+    const filters = asStringArray(payload.filters, [t("filter.all"), t("faq.filter.statements"), t("faq.filter.certificates"), t("faq.filter.safety"), t("faq.filter.immigration")]);
     const faqs = asObjectArray(payload.faqs).map((row) => ({
       question: asString(row.question),
       answer: asString(row.answer),
@@ -120,7 +121,7 @@ export function LongFormTemplate({ title, section, slug, content, faqGroups }: T
                 <h4>{asString(readyPanel.title, "准备好了？")}</h4>
                 <p>{asString(readyPanel.body, "登记一份声明约需三分钟，可以完全匿名，全程免费。")}</p>
                 <a className="btn btn--seal btn--sm" href={asString(readyPanel.buttonHref, "/services/declare")}>
-                  <span className="stamp">{asString(readyPanel.buttonStamp, "退")}</span>
+                  <span className="stamp">{asString(readyPanel.buttonStamp, t("seal.quit"))}</span>
                   {asString(readyPanel.buttonLabel, "我要三退")}
                 </a>
               </div>
@@ -134,7 +135,7 @@ export function LongFormTemplate({ title, section, slug, content, faqGroups }: T
                   links={asObjectArray(fullFaqPanel.links)}
                 />
               )}
-              <LinkPanel title={asString(linksPanel.title, "还有问题")} links={asObjectArray(linksPanel.links)} />
+              <LinkPanel title={asString(linksPanel.title, t("panel.moreQuestions"))} links={asObjectArray(linksPanel.links)} />
             </aside>
           </div>
         </section>
@@ -184,7 +185,7 @@ export function LongFormTemplate({ title, section, slug, content, faqGroups }: T
                   {asString(toolsPanel.buttonLabel, "免翻墙链接")}
                 </a>
               </div>
-              <LinkPanel title={asString(linksPanel.title, "相关")} links={asObjectArray(linksPanel.links)} />
+              <LinkPanel title={asString(linksPanel.title, t("panel.related"))} links={asObjectArray(linksPanel.links)} />
             </aside>
           </div>
         </section>
@@ -499,7 +500,7 @@ export function LongFormTemplate({ title, section, slug, content, faqGroups }: T
                 </a>
               </div>
               <div className="panel">
-                <h4>{asString(relatedPanel.title, "相关")}</h4>
+                <h4>{asString(relatedPanel.title, t("panel.related"))}</h4>
                 <ul>
                   {relatedLinks.map((link) => (
                     <li key={link.label}>
@@ -632,7 +633,7 @@ export function LongFormTemplate({ title, section, slug, content, faqGroups }: T
             </div>
             <aside className="side">
               <div className="panel">
-                <h4>相关</h4>
+                <h4>{t("panel.related")}</h4>
                 <ul>
                   {relatedLinks.map((row) => (
                     <li key={`${row.label}-${row.href}`}>
@@ -699,7 +700,7 @@ export function LongFormTemplate({ title, section, slug, content, faqGroups }: T
             </div>
             <aside className="side">
               <div className="panel">
-                <h4>相关</h4>
+                <h4>{t("panel.related")}</h4>
                 <ul>
                   {relatedLinks.map((row) => (
                     <li key={`${row.label}-${row.href}`}>

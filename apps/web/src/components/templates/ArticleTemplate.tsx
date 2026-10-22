@@ -1,4 +1,5 @@
 import { NoWrapTitles } from "@/components/public/NoWrapTitles";
+import { t } from "@/lib/i18n";
 import { ArticleTools } from "@/components/public/ArticleTools";
 import { ShareBlock } from "@/components/public/ShareBlock";
 import { toQrCode } from "@/lib/qr";
@@ -360,7 +361,7 @@ export function ArticleTemplate({ title, content }: TemplatePageData) {
               <h4>{asString(ctaPanel.title, "你也可以声明")}</h4>
               <p>{asString(ctaPanel.body, "登记一份声明约需三分钟，可以完全匿名，全程免费。")}</p>
               <a className="btn btn--seal btn--sm" href={asString(ctaPanel.buttonHref, "/services/declare")}>
-                <span className="stamp">{asString(ctaPanel.buttonStamp, "退")}</span>
+                <span className="stamp">{asString(ctaPanel.buttonStamp, t("seal.quit"))}</span>
                 {asString(ctaPanel.buttonLabel, "我要三退")}
               </a>
             </div>

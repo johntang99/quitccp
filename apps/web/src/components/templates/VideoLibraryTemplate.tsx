@@ -1,4 +1,5 @@
 import { InteriorHead, InteriorTabs } from "./InteriorScaffold";
+import { t } from "@/lib/i18n";
 import type { TemplatePageData } from "./types";
 import { asObjectArray, asRecord, asString, asStringArray } from "./content-utils";
 
@@ -100,7 +101,7 @@ export function VideoLibraryTemplate({ title, section, slug, content }: Template
   const featured = asRecord(payload.featured);
   const featuredTitle = asString(featured.title);
   const featuredHref = resolveVideoHref(asString(featured.href), featuredTitle, 0);
-  const featuredTag = asString(featured.tag, "本期推荐");
+  const featuredTag = asString(featured.tag, t("video.featuredTag"));
   const featuredSummary = asString(featured.summary);
   const featuredMeta = asString(featured.meta);
   const featuredImage = asString(

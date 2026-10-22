@@ -1,4 +1,5 @@
 import { getHomeNews, getHomeVideo, type HomeNewsLive, type HomeVideoLive } from "@/lib/public-content";
+import { t } from "@/lib/i18n";
 import { SITE_LOCALE } from "@/lib/site-config";
 import { getHomepageHeroContent } from "@/lib/public-settings";
 import { NoWrapTitles } from "@/components/public/NoWrapTitles";
@@ -383,7 +384,7 @@ export async function HomeTemplate({ content }: TemplatePageData) {
           {registry.noteLabel}
         </a>
         <a className="count-note" href={EXTERNAL_SERVICES.endccp} {...EXTERNAL_LINK_PROPS}>
-          打倒中共恶魔连署 →
+          {t("home.endccpLink")}
         </a>
       </div>
       <div className="substats">
@@ -415,7 +416,7 @@ export async function HomeTemplate({ content }: TemplatePageData) {
               </div>
               <p className="entry-body">{entry.text}</p>
               <div className="entry-foot">
-                <span className="seal seal--sm">退</span>
+                <span className="seal seal--sm">{t("seal.quit")}</span>
                 <span>
                   {"kind" in entry && entry.kind ? `${entry.kind} · ` : ""}
                   {entry.name}

@@ -1,4 +1,5 @@
 import type { HomeContent } from "@quitccp/content-schema";
+import { t } from "@/lib/i18n";
 import { EXTERNAL_LINK_PROPS, EXTERNAL_SERVICES, externalLinkProps } from "@/lib/external-services";
 import { WitnessCard } from "@/components/public/WitnessCard";
 import { RegistryCounter } from "@/components/public/RegistryCounter";
@@ -127,7 +128,7 @@ export function DawnBand({ registry, services, voices, feed, updatedAt, total, e
                 联署入口一起消失。 */}
             <p className="count-source">
               <a href={EXTERNAL_SERVICES.endccp} {...EXTERNAL_LINK_PROPS}>
-                打倒中共恶魔连署 →
+                {t("home.endccpLink")}
               </a>
             </p>
           </div>

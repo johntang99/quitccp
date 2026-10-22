@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { t } from "@/lib/i18n";
 
 /**
  * An image that opens full size when it is clicked.
@@ -49,7 +50,7 @@ export function FigureZoom({
 
   return (
     <>
-      <button type="button" className="zoomfig" onClick={() => setOpen(true)} aria-label={`放大查看：${label}`}>
+      <button type="button" className="zoomfig" onClick={() => setOpen(true)} aria-label={t("figure.zoomLabel", { label })}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt={alt} />
         <span className="zoomfig-hint" aria-hidden="true">
@@ -57,7 +58,7 @@ export function FigureZoom({
             <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" strokeWidth="2" />
             <path d="M11 8.4v5.2M8.4 11h5.2M15.8 15.8 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
-          点击放大
+          {t("figure.zoomHint")}
         </span>
       </button>
 
@@ -79,7 +80,7 @@ export function FigureZoom({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={src} alt={alt} />
           {caption ? <p className="zoomdlg-cap">{caption}</p> : null}
-          <button type="button" className="zoomdlg-x" onClick={() => setOpen(false)} aria-label="关闭">
+          <button type="button" className="zoomdlg-x" onClick={() => setOpen(false)} aria-label={t("figure.close")}>
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>

@@ -2419,7 +2419,7 @@ export async function getMaterial(slug: string): Promise<PublicMaterial | null> 
  * news categories, where a bare 文章 says nothing about which library it means.
  */
 export const CULTURE_FILTERS = [
-  { key: "all", label: "全部", slug: "culture" },
+  { key: "all", label: t("filter.all"), slug: "culture" },
   { key: "article", label: "传统文化文章", slug: "" },
   { key: "poetry", label: "诗词", slug: "culture-poetry" },
   { key: "music", label: "歌曲", slug: "culture-music" }

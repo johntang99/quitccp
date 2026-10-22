@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { t } from "@/lib/i18n";
 import type { Route } from "next";
 import { InteriorHead, InteriorTabs } from "./InteriorScaffold";
 import type { TemplatePageData } from "./types";
@@ -41,7 +42,7 @@ const NEWS_SUBMENU_PAGE_SIZE = 10;
 export function ListArchiveTemplate({ title, section, slug, content, query }: TemplatePageData) {
   const payload = asRecord(content);
   const pageSubtitle = asString(payload.subtitle, "列表/归档页，支持筛选、分页与排序。");
-  const filterLabels = asStringArray(payload.filters, ["全部", "最新发布", "热门阅读"]);
+  const filterLabels = asStringArray(payload.filters, [t("filter.all"), t("filter.latest"), t("filter.popular")]);
   const dynamicItems = asObjectArray(payload.items).map((row) => ({
     slug: asString(row.slug),
     href: asString(row.href),
@@ -81,10 +82,20 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
     };
     const cultureTitle = asString(payload.title, "中华传统文化");
     const cultureSubtitle = asString(payload.subtitle, "传统故事、历史人物与文化专题。");
-    const cultureFilterDefaults = ["全部", "传统故事", "历史人物", "诗词", "节气与民俗", "良言善语"];
+    const cultureFilterDefaults = [
+      t("filter.all"),
+      t("filter.culture.stories"),
+      t("filter.culture.figures"),
+      t("filter.culture.poetry"),
+      t("filter.culture.seasons"),
+      t("filter.culture.kindWords")
+    ];
     const cultureFilterRaw = asStringArray(payload.filters, []);
+    /* 这一页收到的如果是列表页那套通用筛选（全部／最新发布／热门阅读），
+       说明内容条目里根本没填 filters，用本页自己的那一套。 */
+    const genericFilters = [t("filter.all"), t("filter.latest"), t("filter.popular")].join("|");
     const cultureFilters =
-      cultureFilterRaw.length === 0 || cultureFilterRaw.join("|") === "全部|最新发布|热门阅读"
+      cultureFilterRaw.length === 0 || cultureFilterRaw.join("|") === genericFilters
         ? cultureFilterDefaults
         : cultureFilterRaw;
     const firstFilterValue = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] ?? "" : value ?? "");
@@ -96,7 +107,15 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
       }
     };
     const requestedFilter = safeDecode(firstFilterValue(query?.filter)).trim();
-    const activeFilter = cultureFilters.includes(requestedFilter) ? requestedFilter : "全部";
+    /*
+     * 「全部」是第一项，按位置认，不按字面认。
+     *
+     * 原来写的是 activeFilter === "全部" —— 标签既当显示文字又当哨兵值。换个
+     * 语言，哨兵就永远匹配不上，这一页会一条都显示不出来。和 PermissionTables
+     * 当初靠 caption.includes("页面") 判断自己是哪张表是同一类毛病。
+     */
+    const allFilter = cultureFilters[0] ?? "";
+    const activeFilter = cultureFilters.includes(requestedFilter) ? requestedFilter : allFilter;
     const cultureRows = asObjectArray(payload.items).length
       ? asObjectArray(payload.items).map((row) => ({
           slug: asString(row.slug),
@@ -108,8 +127,13 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
           image: asString(row.image, "https://picsum.photos/seed/culture/400/260")
         }))
       : [];
+    /*
+     * 下面这些判断认的是中文的分类名和中文篇名。英文站现在一条文化文章都没有，
+     * 所以不碍事；等英文编辑开始发稿，这里要改成按分类 slug 判断，而不是按
+     * 显示出来的名字。
+     */
     const matchesCultureFilter = (row: { tag: string; title: string }) => {
-      if (activeFilter === "全部") return true;
+      if (activeFilter === allFilter) return true;
       if (activeFilter === "传统故事") return row.tag.includes("传统故事");
       if (activeFilter === "历史人物") return row.tag.includes("历史人物") || row.title.includes("乌台") || row.title.includes("范仲淹");
       if (activeFilter === "诗词") return row.tag.includes("诗词");
@@ -206,8 +230,8 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
                   <article className="arow">
                     <div>
                       <span className="tag">{activeFilter}</span>
-                      <h3>该分类暂无内容</h3>
-                      <p>请切换到其他分类查看。</p>
+                      <h3>{t("list.emptyCategory")}</h3>
+                      <p>{t("list.emptyCategoryHint")}</p>
                     </div>
                   </article>
                 )}
@@ -254,7 +278,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
                 </a>
               </div>
               <div className="panel">
-                <h4>{asString(relatedPanel.title, "相关")}</h4>
+                <h4>{asString(relatedPanel.title, t("panel.related"))}</h4>
                 <ul>
                   {relatedLinks.map((link) => (
                     <li key={link.label}>
@@ -357,7 +381,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
             <aside className="side">
               <CtaPanel panel={joinPanel} fallbackHref="/involve/volunteer" />
               <LinkPanel
-                title={asString(storyRelated.title, "相关")}
+                title={asString(storyRelated.title, t("panel.related"))}
                 links={asObjectArray(storyRelated.links)}
               />
             </aside>
@@ -920,7 +944,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
                   </a>
                 </div>
                 <div className="panel">
-                  <h4>{asString(relatedPanel.title, "相关")}</h4>
+                  <h4>{asString(relatedPanel.title, t("panel.related"))}</h4>
                   <ul>
                     {relatedLinks.map((link) => (
                       <li key={link.label}>
@@ -1100,7 +1124,7 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
                   </p>
                 </div>
                 <div className="panel">
-                  <h4>{asString(relatedPanel.title, "相关")}</h4>
+                  <h4>{asString(relatedPanel.title, t("panel.related"))}</h4>
                   <ul>
                     {relatedLinks.map((link) => (
                       <li key={link.label}>
@@ -1280,12 +1304,12 @@ export function ListArchiveTemplate({ title, section, slug, content, query }: Te
                     <h4>{asString(ctaPanel.title, "你也可以声明")}</h4>
                     <p>{asString(ctaPanel.body)}</p>
                     <a className="btn btn--seal btn--sm" href={asString(ctaPanel.buttonHref, "/services/declare")}>
-                      <span className="stamp">{asString(ctaPanel.buttonStamp, "退")}</span>
+                      <span className="stamp">{asString(ctaPanel.buttonStamp, t("seal.quit"))}</span>
                       {asString(ctaPanel.buttonLabel, "我要三退")}
                     </a>
                   </div>
                   <div className="panel">
-                    <h4>{asString(relatedPanel.title, "相关")}</h4>
+                    <h4>{asString(relatedPanel.title, t("panel.related"))}</h4>
                     <ul>
                       {relatedLinks.map((link) => (
                         <li key={link.label}>

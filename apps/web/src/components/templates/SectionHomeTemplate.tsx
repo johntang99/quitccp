@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { t } from "@/lib/i18n";
 import {
   faqLink,
   EXTERNAL_LINK_PROPS,
@@ -196,7 +197,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
                 const href = serviceLink(label, asString(primaryAction.href, "/services/declare"));
                 return (
                   <a className="btn btn--seal" href={href} {...externalLinkProps(href)}>
-                    <span className="stamp">{asString(primaryAction.stamp, "退")}</span>
+                    <span className="stamp">{asString(primaryAction.stamp, t("seal.quit"))}</span>
                     {label}
                   </a>
                 );
@@ -308,7 +309,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
                       href={href}
                       {...externalLinkProps(href)}
                     >
-                      {row.variant === "seal" ? <span className="stamp">{asString(certSection.actionStamp, "退")}</span> : null}
+                      {row.variant === "seal" ? <span className="stamp">{asString(certSection.actionStamp, t("seal.quit"))}</span> : null}
                       {row.label}
                     </a>
                   );
@@ -328,7 +329,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
                 </p>
               </div>
               <div className="panel">
-                <h4>{asString(certRelatedPanel.title, "相关")}</h4>
+                <h4>{asString(certRelatedPanel.title, t("panel.related"))}</h4>
                 <ul>
                   {certRelatedLinks.map((row) => {
                     const href = serviceLink(row.label, row.href);
@@ -833,7 +834,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
                 </a>
               </div>
               <div className="panel">
-                <h4>{asString(relatedPanel.title, "相关")}</h4>
+                <h4>{asString(relatedPanel.title, t("panel.related"))}</h4>
                 <ul>
                   {relatedLinks.map((link) => (
                     <li key={link.label}>
@@ -1105,7 +1106,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
                 </a>
               </div>
               <div className="panel">
-                <h4>{asString(relatedPanel.title, "相关")}</h4>
+                <h4>{asString(relatedPanel.title, t("panel.related"))}</h4>
                 <ul>
                   {relatedLinks.map((link) => (
                     <li key={link.label}>
@@ -1576,7 +1577,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
                 <h4>{asString(ctaPanel.title, "找不到附近的服务点？")}</h4>
                 <p>{asString(ctaPanel.body, "你也可以在线声明，或通过电话与邮件提交。全部方式效力相同。")}</p>
                 <a className="btn btn--seal btn--sm" href={asString(ctaPanel.buttonHref, "/services/declare")} {...externalLinkProps(asString(ctaPanel.buttonHref, "/services/declare"))}>
-                  <span className="stamp">退</span>
+                  <span className="stamp">{t("seal.quit")}</span>
                   {asString(ctaPanel.buttonLabel, "在线声明")}
                 </a>
               </div>
@@ -1864,7 +1865,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
             </div>
             <aside className="side">
               <div className="panel">
-                <h4>{asString(relatedPanel.title, "相关")}</h4>
+                <h4>{asString(relatedPanel.title, t("panel.related"))}</h4>
                 <ul>
                   {relatedLinks.map((row) => (
                     <li key={`${row.label}-${row.href}`}>
@@ -1954,7 +1955,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
                   <CmsMarkdown value={donate.body} />
                 </div>
                 <a className="btn btn--seal" href={donateHref} {...externalLinkProps(donateHref)}>
-                  <span className="stamp">退</span>
+                  <span className="stamp">{t("seal.quit")}</span>
                   {asString(donate.buttonLabel, "前往捐助")}
                 </a>
                 {asString(donate.footnote) ? (
@@ -2210,7 +2211,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
               {/* The signing form lives on endccp.com, not here. Editable in
                   the CMS so the address can move without a deploy. */}
               <CtaPanel panel={sign} fallbackHref="https://endccp.com/" />
-              <LinkPanel title={asString(related.title, "相关")} links={asObjectArray(related.links)} />
+              <LinkPanel title={asString(related.title, t("panel.related"))} links={asObjectArray(related.links)} />
             </aside>
           </div>
         </section>
@@ -2239,7 +2240,7 @@ export async function SectionHomeTemplate({ title, section, slug, content, query
             </div>
             <aside className="side">
               <CtaPanel panel={donate} fallbackHref="/involve" />
-              <LinkPanel title={asString(related.title, "相关")} links={asObjectArray(related.links)} />
+              <LinkPanel title={asString(related.title, t("panel.related"))} links={asObjectArray(related.links)} />
             </aside>
           </div>
         </section>

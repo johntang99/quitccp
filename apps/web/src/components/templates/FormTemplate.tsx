@@ -1,4 +1,5 @@
 import { ServiceHandoff } from "@/components/public/ServiceHandoff";
+import { t } from "@/lib/i18n";
 import { externalLinkProps } from "@/lib/external-services";
 import { involveDefaults, servicesDefaults } from "@quitccp/content-schema";
 import { InteriorHead, InteriorTabs } from "./InteriorScaffold";
@@ -191,7 +192,7 @@ export function FormTemplate({ title, section, slug, content }: TemplatePageData
                 <h4>{asString(readyPanel.title, "还没有声明？")}</h4>
                 <p>{asString(readyPanel.body)}</p>
                 <a className="btn btn--seal btn--sm" href={asString(readyPanel.buttonHref, "/services/declare")}>
-                  <span className="stamp">{asString(readyPanel.buttonStamp, "退")}</span>
+                  <span className="stamp">{asString(readyPanel.buttonStamp, t("seal.quit"))}</span>
                   {asString(readyPanel.buttonLabel, "先去声明")}
                 </a>
               </div>
@@ -237,7 +238,7 @@ export function FormTemplate({ title, section, slug, content }: TemplatePageData
                 items={asStringArray(antiFraudPanel.items, [])}
               />
               <LinkPanel
-                title={asString(relatedPanel.title, "相关")}
+                title={asString(relatedPanel.title, t("panel.related"))}
                 links={asObjectArray(relatedPanel.links)}
               />
             </aside>
@@ -403,14 +404,14 @@ export function FormTemplate({ title, section, slug, content }: TemplatePageData
                   <input type="text" placeholder={asString(form.contactPlaceholder)} />
                 </div>
                 <a className="btn btn--seal" href={submitHref} {...externalLinkProps(submitHref)}>
-                  <span className="stamp">退</span>
+                  <span className="stamp">{t("seal.quit")}</span>
                   {asString(form.submitLabel, "提交报名")}
                 </a>
               </div>
             </div>
             <aside className="side">
               <CtaPanel panel={stories} fallbackHref="/involve/stories" />
-              <LinkPanel title={asString(related.title, "相关")} links={asObjectArray(related.links)} />
+              <LinkPanel title={asString(related.title, t("panel.related"))} links={asObjectArray(related.links)} />
             </aside>
           </div>
         </section>
