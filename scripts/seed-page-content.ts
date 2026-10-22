@@ -1049,6 +1049,1163 @@ const RESOURCES_CULTURE_EN: Record<string, string | null> = {
   "relatedPanel.links[1].label": "The Return magazine"
 };
 
+
+/* ── 数字与统计方法（/about/numbers） ───────────────────────────── */
+
+const ABOUT_NUMBERS_EN: Record<string, string | null> = {
+  title: "How this figure is counted",
+  subtitle:
+    "We publish our method in full: what counts, how duplicates are removed, how often the figure updates, and what it cannot tell you. Anyone can judge from that what the number means and where its limits are.",
+  "stats[0].label": "Statements recorded",
+  "stats[1].label": "Added per day, on average",
+  "stats[2].label": "Updates",
+  "stats[2].value": "every 10 minutes",
+  "stats[3].label": "Recording began",
+  "actions[0].label": "Download the yearly figures (CSV)",
+
+  "sections[0].heading": "What counts",
+  "sections[0].paragraphs[0]":
+    "Each statement submitted publicly counts as one record. Where a single statement names several people — a family declaring together, for instance — it counts as the number of people named.",
+  "sections[0].paragraphs[1]":
+    "Statements may be submitted through the website, at a service point, by telephone or email, or passed on by a volunteer. All of them use the same numbering; none is counted separately.",
+  "sections[1].heading": "How duplicates are removed",
+  "sections[1].paragraphs[0]":
+    "Identical statements submitted under the same name within a short period are merged into one. But because we ask for no identity documents, we cannot rule out one person making several statements under different names. That is a known limit of this figure, and we do not hide it.",
+  "sections[2].heading": "How often it updates",
+  "sections[2].paragraphs[0]":
+    "The counter on the home page syncs with the register every ten minutes. It shows the running total of records, not an estimate.",
+  "sections[3].heading": "What the figure does not mean",
+  "sections[3].paragraphs[0]":
+    "It is not a count of people who oppose the CCP, and it is not any kind of opinion poll. It means one thing: this many statements have been submitted, recorded and kept.",
+  "sections[3].paragraphs[1]": "Being clear about the limits matters more to us than making the number sound bigger.",
+  "sections[4].heading": "Getting the data",
+  "sections[4].paragraphs[0]":
+    "Figures by year, month-on-month change and regional breakdown are in the annual report, free to download and cite. Researchers who need finer data are welcome to write to us.",
+
+  "citationPanel.label": "For the press",
+  "citationPanel.title": "Citing this",
+  "citationPanel.body":
+    "Yes, cite it freely. Please give the source and the date you took the figure, since it changes daily.",
+  "relatedLinks[0].label": "Global network",
+  "relatedLinks[1].label": "Annual report (PDF)",
+  "relatedLinks[2].label": "Research enquiries"
+};
+
+/* ── 全球网络（/about/network） ─────────────────────────────────── */
+
+const ABOUT_NETWORK_EN: Record<string, string | null> = {
+  title: "More than a hundred service points, kept running by volunteers",
+  subtitle:
+    "Service points sit near tourist sites, community centres and transport hubs. Volunteers help people register on the spot, answer questions about certificates and immigration, and pass on statements made on paper.",
+  "stats[0].label": "Service points worldwide",
+  "stats[1].label": "Countries and territories",
+  "stats[2].label": "Registered volunteers",
+  "stats[3].label": "Cost of recording a statement",
+  "filters[0]": "All",
+  "filters[1]": "North America",
+  "filters[2]": "Europe",
+  "filters[3]": "Asia-Pacific",
+  "filters[4]": "Oceania",
+  "pager[3]": "Next →",
+
+  "mapBlock.label": "Map",
+  "mapBlock.text":
+    "An interactive map goes here. Selecting a service point shows its address, opening hours and how to get in touch. Whether street-level locations are published is decided case by case, on safety grounds.",
+
+  "locations[0].title": "New York · Flushing",
+  "locations[0].tag": "North America",
+  "locations[0].meta": "daily, 10:00–18:00",
+  "locations[0].body":
+    "Around Main Street and Roosevelt Avenue, staffed by volunteers every day. You can make a statement, apply for a certificate and collect one here.",
+  "locations[1].title": "Taipei · Taipei Main Station",
+  "locations[1].tag": "Asia-Pacific",
+  "locations[1].meta": "daily, 11:00–19:00",
+  "locations[1].body":
+    "On the station forecourt, running for more than ten years. Help with registering on the spot and with questions about certificates.",
+  "locations[2].title": "South Korea · Jeju",
+  "locations[2].tag": "Asia-Pacific",
+  "locations[2].meta": "follows the cruise timetable",
+  "locations[2].body":
+    "Volunteers take turns at the harbour, the duty-free shops and the main sights, mainly meeting cruise passengers.",
+  "locations[3].title": "London · Chinatown",
+  "locations[3].tag": "Europe",
+  "locations[3].meta": "Saturdays and Sundays, 12:00–18:00",
+  "locations[3].body": "A weekend stall in Chinatown, with help available in Chinese and English.",
+
+  "offeringsPanel.title": "What a service point can do",
+  "offeringsPanel.items[0]": "Record a statement on the spot",
+  "offeringsPanel.items[1]": "Apply for and collect a certificate",
+  "offeringsPanel.items[2]": "Questions about certificates and immigration",
+  "offeringsPanel.items[3]": "Pass on a statement made on paper",
+  "offeringsPanel.items[4]": "Pick up materials",
+
+  "setupPanel.title": "Starting one in your city",
+  "setupPanel.links[0].label": "Become a volunteer",
+  "setupPanel.links[1].label": "Download boards and leaflets",
+  "setupPanel.links[2].label": "Contact us",
+
+  "ctaPanel.title": "No service point near you?",
+  "ctaPanel.body":
+    "You can make a statement online, or by telephone or email. All of them carry the same weight.",
+  "ctaPanel.buttonLabel": "Make a statement online"
+};
+
+/* ── ENDCCP 征签（/involve/endccp） ─────────────────────────────── */
+
+const INVOLVE_ENDCCP_EN: Record<string, string | null> = {
+  title: "The End CCP petition",
+  subtitle:
+    "A public petition open to people everywhere, telling governments and international bodies where they stand on the CCP's abuses of human rights.",
+  "intro.body":
+    "## What the petition says\n\nThe petition asks governments to confront the CCP's treatment of people of faith, dissidents and ethnic minorities, and to act against those responsible for the persecution. The full text is public; please read it before you sign.\n\n## How to sign\n\nYou can sign online, or on paper at a service point or at an event. Signatories choose whether their name is shown — if you choose not to, we count you in the total and display nothing.",
+  "stats[0].label": "Signatures",
+  "stats[1].label": "Countries and territories",
+  "stats[2].label": "Added per year, on average",
+  "stats[2].value": "1 million+",
+  "stats[3].label": "Launched",
+  "actions.title": "Past campaigns",
+  "signPanel.title": "Add your name",
+  "signPanel.body": "Please read the full text before signing. You may sign anonymously.",
+  "signPanel.buttonLabel": "Go and sign",
+  "relatedPanel.title": "Related",
+  "relatedPanel.links[0].label": "Full text of the petition",
+  "relatedPanel.links[1].label": "Announcements and statements",
+  "relatedPanel.links[2].label": "Collecting signatures in person",
+  "relatedPanel.links[3].label": "Petition materials to download"
+};
+
+/* ── 义工故事（/involve/stories） ──────────────────────────────── */
+
+const INVOLVE_STORIES_EN: Record<string, string | null> = {
+  title: "The people at the service points",
+  subtitle:
+    "Reports from the ground, volunteers in their own words, and longer pieces followed over time. Includes everything from the former Tuidang Volunteers and Volunteer Profiles sections.",
+  "joinPanel.title": "You can join them",
+  "joinPanel.body": "However much time you have is fine — in your own city, or online.",
+  "joinPanel.buttonLabel": "Become a volunteer",
+  "relatedPanel.title": "Related",
+  "relatedPanel.links[0].label": "Global network",
+  "relatedPanel.links[1].label": "Volunteer films",
+  "relatedPanel.links[2].label": "Tuidang news and stories"
+};
+
+
+/* ── 公开与问责（/about/accountability） ───────────────────────── */
+
+const ABOUT_ACCOUNTABILITY_EN: Record<string, string | null> = {
+  title: "How to check us",
+  subtitle:
+    "We are a 501(c)(3) non-profit registered in the United States, EIN 03-0581933, filing with the Internal Revenue Service as required. Form 990 is a public record by law: anyone can look it up on the IRS site by EIN, or read the same filing on ProPublica, Charity Navigator and other third-party sites. We do not republish those documents here — the reason is below.",
+
+  "summaryCells[0].title": "Registration and legal status",
+  "summaryCells[0].body":
+    "A non-profit registered in the United States; donations are tax-deductible. EIN 03-0581933.",
+  "summaryCells[1].title": "Who we file with",
+  "summaryCells[1].value": "The IRS",
+  "summaryCells[1].body":
+    "Form 990 is filed annually with the IRS and becomes a public record by law. Reading it does not go through us and does not need our consent.",
+  "summaryCells[2].title": "Safety and threats",
+  "summaryCells[2].value": "Public file",
+  "summaryCells[2].body":
+    "This organisation has received bomb threats and other threatening letters on several occasions. Those incidents, the reports made and what followed are on the record.",
+  "summaryLinks[0].label": "IRS tax-exempt organisation search (by EIN 03-0581933)",
+  "summaryLinks[3].label": "How we count",
+
+  "proseSections[0].heading": "Why there are no documents to download here",
+  "proseSections[0].paragraphs[0]":
+    "We do prepare and keep full accounts and annual reports. We do not publish them together on this site, and the reason is the people in them: documents like these name staff, volunteers and donors and show who dealt with whom, and many of those people have family in mainland China. Cross-border pressure on Chinese people abroad is a long-standing fact, and gathering all of this on one site would simply save the other side the work.",
+  "proseSections[0].paragraphs[1]":
+    "That is not the same as not being open. Under United States law the Form 990 of a 501(c)(3) is itself a public record: it sits with the IRS, is published by the IRS, does not pass through our hands and is not ours to control — which makes it easier to check, and harder to dispute, than a PDF we posted ourselves. The link above goes to the official search.",
+  "proseSections[0].paragraphs[2]":
+    "Funders, auditors, government bodies and anyone else with a proper reason can ask for the full annual report or accounts through Contact us, and we will provide them through the usual process.",
+  "proseSections[1].heading": "Governance",
+  "proseSections[1].paragraphs[0]":
+    "The board is the highest decision-making body; its members, their responsibilities and their terms are public. There are very few paid staff, and most of the work is done by volunteers.",
+  "proseSections[2].heading": "Security incidents",
+  "proseSections[2].paragraphs[0]":
+    "Since 2025 the centre has received several letters threatening bomb attacks, and extortion letters, all reported to law enforcement. We have chosen to put these on the public record — what the letters said, how they were reported and what has happened since.",
+  "proseSections[2].paragraphs[1]":
+    "An organisation that records the attacks on itself is easier to check than one that only shows its achievements.",
+  "proseSections[3].heading": "Privacy and data",
+  "proseSections[3].paragraphs[0]":
+    "We collect no personal information beyond the statement itself and ask for no identity documents. Our servers are in the United States, with encryption and access controls. See our privacy and data-protection notice.",
+
+  "downloadsPanel.title": "Check through official channels",
+  "downloadsPanel.links[0].label": "IRS tax-exempt organisation search (by EIN 03-0581933)",
+  "downloadsPanel.links[3].label": "How we count",
+  "downloadsPanel.links[4].label": "Privacy and data protection",
+  "thirdPartyPanel.title": "Third-party records",
+  "thirdPartyPanel.links[2].label": "IRS tax-exempt organisation search"
+};
+
+/* ── 其他支持方式（/involve/other-ways） ───────────────────────── */
+
+const INVOLVE_OTHER_WAYS_EN: Record<string, string | null> = {
+  title: "Ways to help that cost nothing",
+  subtitle:
+    "Beyond donating and volunteering, a few other things help just as much — and some of them cost no money and not much time.",
+  "intro.body":
+    "## Employer matching\n\nMany employers run matching-gift schemes, which may match your donation or even double it. We are a 501(c)(3) registered in the United States and meet the requirements of most such schemes.\n\n## Cheques and bank transfers\n\nIf paying online is difficult, you can post a cheque to our New York office or send a bank transfer. Write to us for the account details — and do not trust account details from any other source.\n\n## Legacy gifts\n\nIf you are considering including the centre in a will or trust, write to us and we will provide the legal information you need.\n\n## Professional skills\n\nHelp with law, accountancy, security, translation and design is often worth more to us than the same amount in money.",
+  "actCards[0].title": "Make a statement",
+  "actCards[0].body": "The most direct way. Anonymous if you wish, and it takes minutes.",
+  "actCards[1].title": "Download and hand out materials",
+  "actCards[1].body": "Display boards, leaflets and audio-visual material, free to print and use.",
+  "actCards[2].title": "Repost our reporting",
+  "actCards[2].body": "No permission needed in advance — just credit the source.",
+  "actCards[3].title": "Pass on a way around the firewall",
+  "actCards[3].body": "For people inside China, often all that is missing is an address that will open.",
+  "donatePanel.title": "Donate",
+  "donatePanel.body": "US$20 a month keeps a service point running for about a week.",
+  "donatePanel.buttonLabel": "Donate",
+  "relatedPanel.title": "Related",
+  "relatedPanel.links[0].label": "Become a volunteer",
+  "relatedPanel.links[1].label": "Contact us"
+};
+
+/* ── 安全与隐私说明（/services/privacy） ───────────────────────── */
+
+const SERVICES_PRIVACY_EN: Record<string, string | null> = {
+  title: "Safety and privacy",
+  subtitle:
+    "You do not need to provide any identity document, and you may remain entirely anonymous. This page sets out what we collect, what we do not, where the data is held, and where the risk actually lies.",
+  "intro.body":
+    "## What we do not collect\n\nNo real name, no identity document, no address and no other information that could identify you.\n\n## What we do collect\n\nOnly the name you sign with, a region if you choose to give one, the text of the statement, and the time it was submitted.\n\n## Where the risk actually lies\n\nThe risk is usually in the network connection and in traces left on your own device, rather than in the form itself.",
+  "sections[0].heading": "What we do not collect",
+  "sections[0].body":
+    "No real name, no identity document, no address and no other information that could identify you.",
+  "sections[1].heading": "What we do collect",
+  "sections[1].body":
+    "Only the name you sign with, a region if you choose to give one, the text of the statement, and the time it was submitted.",
+  "sections[2].heading": "Where the risk actually lies",
+  "sections[2].body":
+    "The risk is usually in the network connection and in traces left on your own device, rather than in the form itself.",
+  "alertPanel.title": "The most important thing first",
+  "alertPanel.body":
+    "No website or tool can promise complete safety. We set out what we do and where the limits are, and leave the judgement to you.",
+  "highlightsPanel.title": "In short",
+  "highlightsPanel.items[0]": "No identity document needed",
+  "highlightsPanel.items[1]": "You may be entirely anonymous",
+  "highlightsPanel.items[2]": "Data is never sold or passed on",
+  "highlightsPanel.items[3]": "No advertising trackers",
+  "toolsPanel.title": "Reaching us from a restricted network",
+  "toolsPanel.body":
+    "If you are somewhere the network is controlled, read about safe access before deciding how to reach this site.",
+  "toolsPanel.buttonLabel": "Uncensored access",
+  "linksPanel.title": "Related",
+  "linksPanel.links[0].label": "Is withdrawing safe?",
+  "linksPanel.links[1].label": "Make a statement online",
+  "linksPanel.links[2].label": "Change your details"
+};
+
+
+/* ── 查验证明（/services/verify） ──────────────────────────────── */
+
+const SERVICES_VERIFY_EN: Record<string, string | null> = {
+  title: "Verify a certificate of withdrawal",
+  subtitle:
+    "Enter the certificate number to see the date it was issued and its status. The service is open to everyone: an institution can check for itself without contacting us.",
+  "intro.body":
+    "## What a result means\n\n**Valid.** The number was issued by this centre, the record exists, and the certificate has not been cancelled.\n\n**No such number.** The number is not among those issued. It may have been mistyped, or it may not have come from this centre.\n\n**Cancelled.** The number was issued but has since been cancelled, for instance because details were corrected or the certificate was reissued.\n\n## What verification checks\n\nVerification confirms that this centre did issue the certificate. It does not confirm the identity of the person named.",
+
+  "handoff.eyebrow": "Verify online",
+  "handoff.heading": "Check a number in the verification system",
+  "handoff.body":
+    "The service is open to everyone, with no registration and no authorisation. A result shows only whether the number was issued by this centre, the date, and the status — never the text of the statement or any other personal information.",
+  "handoff.actions[0].label": "Verify a certificate",
+  "handoff.actions[0].stamp": "Check",
+  "handoff.actions[0].note":
+    "You will need the certificate number (16 digits beginning TD), the holder's name and date of birth. It currently covers certificates issued after 18 August 2020.",
+  "handoff.actions[2].label": "Check on a statement",
+  "handoff.actions[2].note":
+    "Statements and certificates are two different systems. To check on a statement, use the lookup password you were given when you submitted it, not a certificate number.",
+  "handoff.destinationNote":
+    "The link opens service.tuidang.org in a new window. That is the centre's certificate verification system; it looks different from this site, and that is normal.",
+
+  "verifyForm.eyebrow": "Verify online",
+  "verifyForm.numberLabel": "Certificate number",
+  "verifyForm.numberHint": "In the form TD-2026-0071824. Please enter it in full.",
+  "verifyForm.nameLabel": "Name on the certificate",
+  "verifyForm.nameHint": "Used as a cross-check. It must match the printed name exactly.",
+  "verifyForm.namePlaceholder": "Enter the name",
+  "verifyForm.buttonLabel": "Verify",
+  "verifyForm.buttonStamp": "Check",
+
+  "scopeSection.resultHeading": "What a result means",
+  "scopeSection.scopeHeading": "What verification checks",
+  "scopeSection.scopeBody":
+    "Verification confirms that this centre did issue the certificate. It does not confirm the identity of the person named.",
+  "resultMeaning[0].heading": "Valid.",
+  "resultMeaning[0].body":
+    "The number was issued by this centre, the record exists, and the certificate has not been cancelled.",
+  "resultMeaning[1].heading": "No such number.",
+  "resultMeaning[1].body":
+    "The number is not among those issued. It may have been mistyped, or it may not have come from this centre.",
+  "resultMeaning[2].heading": "Cancelled.",
+  "resultMeaning[2].body":
+    "The number was issued but has since been cancelled, for instance because details were corrected or the certificate was reissued.",
+
+  "antiFraudPanel.title": "What to look for",
+  "antiFraudPanel.items[0]": "A unique number, bottom right",
+  "antiFraudPanel.items[1]": "Chinese and English side by side",
+  "antiFraudPanel.items[2]": "The centre's seal",
+  "antiFraudPanel.items[3]": "Verifiable online, on this page",
+
+  "institutionNotice.title": "A note for receiving institutions",
+  "institutionNotice.body":
+    "This service is open to everyone, with no registration and no authorisation. A result shows only whether the number was issued by this centre, the date, and the status — never the text of the statement or any other personal information.",
+
+  "relatedPanel.title": "Related",
+  "relatedPanel.links[0].label": "Applying for a certificate",
+  "relatedPanel.links[1].label": "How is a certificate verified?",
+  "relatedPanel.links[2].label": "Contact us to confirm",
+  "relatedPanel.links[3].label": "A note for receiving institutions (PDF)"
+};
+
+/* ── 信息变更（/services/contact） ─────────────────────────────── */
+
+const SERVICES_CONTACT_EN: Record<string, string | null> = {
+  title: "Changes and contact",
+  subtitle:
+    "Correct the details on a statement, replace a lost certificate, or ask about your record. Handled by hand at the centre.",
+  "intro.body":
+    "## How requests are handled, and how long they take\n\nEvery request is checked and handled by a volunteer, which usually takes a few working days. When details are corrected, a certificate is reissued with a new number; the old number is cancelled, and verifying it will show that it was cancelled and point to the new one.\n\n## About statements already published\n\nIf a name or contact detail is wrong, we can correct it. But the text of a statement that has been published is not deleted — keeping the exact wording and the time of every statement is the point of this register. If your situation is unusual, say so above and we will look at it specifically.",
+
+  "handoff.eyebrow": "Send a request",
+  "handoff.heading": "Use the contact form",
+  "handoff.body":
+    "Correcting the details on a statement, replacing a lost certificate or asking about a record all go through the centre's contact form, and are checked and handled by a volunteer.",
+  "handoff.actions[0].label": "Contact us",
+  "handoff.actions[0].stamp": "Send",
+  "handoff.actions[0].note":
+    "Please give the certificate number. If you do not have it, tell us the name you signed with, roughly when, and how you submitted (website, service point, telephone, or passed on by a volunteer), so a volunteer can find the record.",
+  "handoff.actions[1].label": "Questions about a statement",
+  "handoff.actions[1].note":
+    "If what you need to correct is a statement rather than a certificate, get in touch through the Tuidang site.",
+  "handoff.destinationNote": "The link opens the contact page on www.tuidang.org in a new window.",
+
+  "processingSections[0].heading": "How requests are handled, and how long they take",
+  "processingSections[0].body":
+    "Every request is checked and handled by a volunteer, which usually takes a few working days. When details are corrected, a certificate is reissued with a new number; the old number is cancelled, and verifying it will show that it was cancelled and point to the new one.",
+  "processingSections[1].heading": "About statements already published",
+  "processingSections[1].body":
+    "If a name or contact detail is wrong, we can correct it. But the text of a statement that has been published is not deleted — keeping the exact wording and the time of every statement is the point of this register. If your situation is unusual, say so above and we will look at it specifically.",
+
+  "onsitePanel.title": "In person",
+  "onsitePanel.body":
+    "Any of our hundred-plus service points can help with changes and replacements, with no appointment needed.",
+  "onsitePanel.buttonLabel": "Find a service point",
+
+  "contactPanel.title": "Get in touch directly",
+  "contactPanel.orgName": "Global Service Center for Quitting the Chinese Communist Party",
+  "contactPanel.links[0].label": "Questions about certificates",
+  "contactPanel.links[1].label": "Service points and volunteers",
+  "contactPanel.links[2].label": "Press and interviews",
+
+  "reminderPanel.title": "A reminder",
+  "reminderPanel.body":
+    "The fee for a certificate is paid only on the centre's official application page. We never take payment through a private account or an intermediary, and we will never call or text you asking for a card number, a verification code or a password."
+};
+
+
+/* ── 影音各栏目页（/videos/*） ────────────────────────────────── */
+
+/*
+ * 七页同构：标题、简介、一支「本期推荐」、一格样例影片、再利用说明。
+ * 推荐与样例指的都是具体的中文影片，英文站一支都没有 —— 丢掉、清空。
+ * 再利用说明七页一模一样，所以抽出来共用，省得七份各写一遍、日后各改各的。
+ */
+const VIDEO_REUSE_EN: Record<string, string | null> = {
+  "reuseNote.title": "Every film may be freely downloaded, reposted and re-edited",
+  "reuseNote.body":
+    "No permission needed in advance — just credit the source. If the embedded player will not load, which is common where the network is restricted, use one of the other platform links below or download the MP4 directly.",
+  "reuseNote.linkLabel": "About safe access",
+  /* 这一排在五页上一模一样，所以放在共用的这份里。 */
+  "platformLinks[0].label": "Gan Jing World",
+  "platformLinks[2].label": "Wangmen (reachable inside China)",
+  "platformLinks[3].label": "Download MP4"
+};
+
+const VIDEO_SECTION_PAGES: {
+  path: string;
+  title: string;
+  subtitle: string;
+  more?: string;
+  /** 这一页自己多出来的文案（比如 others 的筛选）。 */
+  extra?: Record<string, string | null>;
+}[] = [
+  {
+    path: "pages/videos-frontline.json",
+    title: "Tuidang Frontline",
+    subtitle:
+      "From the service points: volunteers at work and interviews with the people they meet. First-hand footage from more than a hundred service points worldwide, added to continually.",
+    more: "Load more"
+  },
+  {
+    path: "pages/videos-ironclad.json",
+    title: "Ironclad Evidence",
+    subtitle:
+      "The filmed editions of the WOIPFG investigations. Thirty-two episodes, presenting the recorded evidence one piece at a time and setting out how it fits together and where it came from.",
+    more: "See all 32 episodes",
+    extra: {
+      episodesTitle: "Episodes (selected)",
+      "introNote.title": "About this series",
+      "introNote.body":
+        "The series is produced by the World Organization to Investigate the Persecution of Falun Gong (WOIPFG) and reposted here. WOIPFG has been gathering evidence since 2006 and has published 866 investigative recordings and more than 4,000 documents. Each episode states when and how its evidence was obtained, and the reference numbers of the documents involved.",
+      "introNote.linkLabel": "WOIPFG investigation reports"
+    }
+  },
+  {
+    path: "pages/videos-jiuping.json",
+    title: "Nine Commentaries",
+    subtitle:
+      "Video and audio editions of the Nine Commentaries on the Communist Party, Disintegrating the Party Culture, How the Specter of Communism Is Ruling Our World, and The Ultimate Goal of Communism.",
+    extra: {
+      episodesTitle: "The nine commentaries",
+      secondaryGridTitle: "Other series"
+    }
+  },
+  {
+    path: "pages/videos-step-back.json",
+    title: "A Step Back",
+    subtitle:
+      "Interviews with people who once worked inside the system, or who lived through a turning point, on how they left and what happened afterwards.",
+    more: "Load more interviews"
+  },
+  {
+    path: "pages/videos-awakening.json",
+    title: "Journey of Awakening",
+    subtitle:
+      "A documentary series filmed over many years, following this movement and the people in it across two decades."
+  },
+  {
+    path: "pages/videos-party-culture.json",
+    title: "Breaking Party Culture",
+    subtitle:
+      "How Party culture worked its way into language, schooling, thinking and everyday life. A series made to accompany the book Disintegrating the Party Culture.",
+    extra: { episodesTitle: "All episodes" }
+  },
+  {
+    path: "pages/videos-others.json",
+    title: "Other series",
+    subtitle:
+      "Rallies and marches, international conferences and forums, audio programmes, and anything that does not belong to one of the series above.",
+    more: "Load more",
+    extra: {
+      "filters[0]": "All",
+      "filters[1]": "Rallies and marches",
+      "filters[2]": "Conferences and forums",
+      "filters[3]": "Voices of Tuidang (audio)",
+      "filters[4]": "Culture"
+    }
+  }
+];
+
+
+/* ── 杂志《回归》各期（/resources/magazine/*） ──────────────────── */
+
+/*
+ * 十页同构：标题、本期专题、「本期概要」与「阅读方式」两段、底下三个相关链接。
+ * 后两段和相关链接十页完全一样，抽出来共用。
+ *
+ * 刊名《回归》译作 The Return —— 与建站脚本里 nav/section-tabs 的译法一致，
+ * 两处对不上会让读者以为是两本刊物。
+ */
+const MAGAZINE_SHARED_EN: Record<string, string | null> = {
+  "sections[0].heading": "In this issue",
+  "sections[1].heading": "How to read it",
+  "sections[1].body":
+    "You can go back to the magazine's home page for the current issue, and get the PDF, the EPUB and material to share from the downloads area.",
+  "relatedLinks[0].label": "Back to the magazine",
+  "relatedLinks[1].label": "Downloads",
+  "relatedLinks[2].label": "Press and media"
+};
+
+const MAGAZINE_ISSUES: { path: string; title: string; subtitle: string; summary: string }[] = [
+  {
+    path: "pages/resources-magazine-2024-autumn.json",
+    title: "The Return, Autumn 2024",
+    subtitle: "In focus: culture and belief.",
+    summary:
+      "On recovering and rebuilding traditional culture where it meets, and collides with, modern values."
+  },
+  {
+    path: "pages/resources-magazine-2024-winter.json",
+    title: "The Return, Winter 2024",
+    subtitle: "In focus: a younger generation, and its choices.",
+    summary:
+      "How younger people's understanding has shifted as their information environment changed, and what they did about it."
+  },
+  {
+    path: "pages/resources-magazine-2025-spring.json",
+    title: "The Return, Spring 2025",
+    subtitle: "In focus: service points abroad.",
+    summary:
+      "How service points organise themselves, handle risk and talk to the public."
+  },
+  {
+    path: "pages/resources-magazine-2025-summer.json",
+    title: "The Return, Summer 2025",
+    subtitle: "In focus: Party culture and everyday language.",
+    summary:
+      "Through vocabulary, narrative and habits of thought, how Party culture still shapes ordinary life."
+  },
+  {
+    path: "pages/resources-magazine-2025-autumn.json",
+    title: "The Return, Autumn 2025",
+    subtitle: "In focus: why I said it publicly.",
+    summary:
+      "Public statements and interviews alongside them, showing how people in very different circumstances came to decide."
+  },
+  {
+    path: "pages/resources-magazine-2025-winter.json",
+    title: "The Return, Winter 2025",
+    subtitle: "Cover story: the people at the service points.",
+    summary:
+      "Volunteers on the ground and the running of service points: what keeps a long-term effort going."
+  },
+  {
+    path: "pages/resources-magazine-2026-spring.json",
+    title: "The Return, Spring 2026",
+    subtitle: "Cover story: twenty years, 460 million statements.",
+    summary:
+      "The turning points of twenty years, reports from the service points, and news of international support."
+  },
+  {
+    path: "pages/resources-magazine-archive.json",
+    title: "The Return: back issues",
+    subtitle: "Every issue of The Return, by year.",
+    summary: "A quick way into past issues, for research and for citing over the long term."
+  }
+];
+
+
+/* ── 三本书的详情页（/resources/*） ────────────────────────────── */
+
+/* 书名用通行英译，与 /resources 首页上的那份对齐。 */
+const BOOK_PAGES: { path: string; title: string; subtitle: string; about: string; reading: string; links: string[] }[] = [
+  {
+    path: "pages/resources-book-jieti-dangwenhua.json",
+    title: "Disintegrating the Party Culture",
+    subtitle: "Recognising how Party culture formed, through language, schooling and behaviour.",
+    about:
+      "The book sets out how Party culture works its way into everyday speech, into social attitudes and into judgements of right and wrong, so that a reader can recognise those framings and step out of them.",
+    reading:
+      "This page is the way in to the book; downloadable editions are in the resources section, and service points use it for reading and discussion in person.",
+    links: ["Back to books and writings", "Materials to download", "Chinese traditional culture"]
+  },
+  {
+    path: "pages/resources-book-mogui-shijie.json",
+    title: "How the Specter of Communism Is Ruling Our World",
+    subtitle: "The historical reach of communist ideology, and how it works today.",
+    about:
+      "The book traces how communism spread through politics, culture and society, and uses specific cases to explain its effect on the modern order.",
+    reading:
+      "It reads well alongside our features and commentary; editions suited to sharing online and in print are in the downloads section.",
+    links: ["Back to books and writings", "Features and commentary", "Downloads"]
+  },
+  {
+    path: "pages/resources-book-gongchanzhuyi-zhongji.json",
+    title: "The Ultimate Goal of Communism",
+    subtitle: "What communism is finally for, traced through its ideas and its practice.",
+    about:
+      "Following both the historical record and what can be observed now, the book explains the logic of communism's final aim, and what individuals and societies can do in response.",
+    reading:
+      "This page gathers the reading in one place; the full material is in the downloads area, for sharing onward and for teaching.",
+    links: ["Back to books and writings", "News and reports", "Downloads"]
+  }
+];
+
+
+/* ── 免翻墙链接（/resources/tools） ────────────────────────────── */
+
+/*
+ * 这一页讲的是怎么在受管控的网络下安全访问。措辞要准：说「更安全」不说
+ * 「安全」，说「可能留下痕迹」不说「不会留下痕迹」—— 把边界说清楚比把话说满
+ * 重要，读者据此判断自身处境。中文原文就是这么写的，英文照这个分寸来。
+ */
+const RESOURCES_TOOLS_EN: Record<string, string | null> = {
+  title: "Uncensored access",
+  subtitle:
+    "Several ways to reach this site, and Tuidang material, from a restricted network. Weigh up your own situation before choosing one.",
+  "intro.body":
+    "## Which one to choose\n\nIf you only want to read — a mirror address is the simplest. Nothing to install, and no software left on your device.\n\nIf you need reliable access over time — use the app. Mirror addresses stop working; the app updates its routes itself. But it stays on your device.\n\nIf reaching any website is difficult — subscribe by email. The content comes to your inbox and you never connect to this site at all.\n\n## Clearing traces afterwards\n\nBrowsing history, downloads and caches can all leave traces. If someone else may look at your device, clear your browsing data afterwards.\n\nIf you install the app, think about whether having it on your device is safe for you.\n\n## Passing these on\n\nYou can write a mirror address down, put it in a text message, or tell someone in person, and let them decide for themselves whether to use it.\n\n## If none of the addresses will open\n\nAddresses being blocked is normal. Get in touch any of the ways below and we will give you one that currently works.",
+
+  "accessCards[0].kicker": "Option one",
+  "accessCards[0].title": "Mirror addresses",
+  "accessCards[0].body":
+    "Alternative addresses, usually needing nothing installed. Note one or two down, and refresh them from time to time.",
+  "accessCards[0].buttonLabel": "See the mirror list",
+  "accessCards[1].kicker": "Option two",
+  "accessCards[1].title": "Wangmen and other apps",
+  "accessCards[1].body":
+    "Once installed, it reaches this site and related material directly — the choice for reliable access over time.",
+  "accessCards[1].buttonLabel": "Download the app",
+  "accessCards[2].kicker": "Option three",
+  "accessCards[2].title": "Email subscription",
+  "accessCards[2].body":
+    "No website at all: summaries and links arrive in your inbox.",
+  "accessCards[2].buttonLabel": "Subscribe",
+  "accessCards[3].kicker": "Option four",
+  "accessCards[3].title": "Text-only version",
+  "accessCards[3].body": "A low-bandwidth page, for slow or temporary connections.",
+  "accessCards[3].buttonLabel": "Go to the text-only version",
+
+  "guideSections[0].heading": "Which one to choose",
+  "guideSections[0].paragraphs[0]":
+    "If you only want to read — a mirror address is the simplest. Nothing to install, and no software left on your device.",
+  "guideSections[0].paragraphs[1]":
+    "If you need reliable access over time — use the app. Mirror addresses stop working; the app updates its routes itself. But it stays on your device.",
+  "guideSections[0].paragraphs[2]":
+    "If reaching any website is difficult — subscribe by email. The content comes to your inbox and you never connect to this site at all.",
+  "guideSections[1].heading": "Clearing traces afterwards",
+  "guideSections[1].paragraphs[0]":
+    "Browsing history, downloads and caches can all leave traces. If someone else may look at your device, clear your browsing data afterwards.",
+  "guideSections[1].paragraphs[1]":
+    "If you install the app, think about whether having it on your device is safe for you.",
+  "guideSections[2].heading": "Passing these on",
+  "guideSections[2].paragraphs[0]":
+    "You can write a mirror address down, put it in a text message, or tell someone in person, and let them decide for themselves whether to use it.",
+  "guideSections[3].heading": "If none of the addresses will open",
+  "guideSections[3].paragraphs[0]":
+    "Addresses being blocked is normal. Get in touch any of the ways below and we will give you one that currently works.",
+
+  "noticePanel.title": "Weigh up your situation first",
+  "noticePanel.body":
+    "No tool can promise complete safety. If you are unsure whether your device is safe, avoid leaving anything identifiable behind.",
+  "safetyPanel.title": "Your safety",
+  "safetyPanel.body":
+    "We ask for no identity documents and record nothing that identifies you. The full account is on the safety and privacy page.",
+  "safetyPanel.buttonLabel": "Safety and privacy",
+  "reminderPanel.title": "A reminder",
+  "reminderPanel.body":
+    "This centre never asks for your identity documents, banking details or passwords through any tool. If a page asks you for those, it is not ours.",
+
+  "relatedPanel.title": "Related",
+  "relatedPanel.links[0].label": "Mirror address updates",
+  "relatedPanel.links[1].label": "Make a statement online",
+  "relatedPanel.links[2].label": "Is withdrawing safe?",
+  "relatedPanel.links[3].label": "Downloads",
+  "relatedPanel.links[4].label": "Contact us"
+};
+
+
+/* ── 杂志《回归》主页（/resources/magazine） ──────────────────── */
+
+const RESOURCES_MAGAZINE_EN: Record<string, string | null> = {
+  title: "The Return",
+  subtitle:
+    "A monthly published by the Global Service Center for Quitting the Chinese Communist Party, built around people's stories, with current affairs, economics, history and culture alongside. Available online and as a digital edition.",
+  "intro.body":
+    "## About The Return\n\nThe Return is published by the Global Service Center for Quitting the Chinese Communist Party. It began on 18 October 2025 and appears monthly. It is built around people's stories — the lives worth recording along the way back — together with writing on the current affairs, economics, history and culture readers care about, and each month a Tuidang report and stories from volunteers.\n\n## Subscribing and reading\n\nThe Return is available online and as a digital edition, published for a general readership on a membership basis. The online edition can be read directly; the digital edition is posted issue by issue. Subscriptions, sharing and submissions are all welcome.",
+
+  "featuredIssue.title": "The Return: recording this chapter",
+  "featuredIssue.body":
+    "The Return is published by the Global Service Center for Quitting the Chinese Communist Party and began on 18 October 2025. It is built around people's stories — the lives and events worth recording along the way back — together with writing on current affairs, economics, history and culture, and each month a Tuidang report and stories from volunteers. Its opening editorial put it this way: an end to the CCP, and a return — to China, to tradition, to common sense, to a normal society.",
+  "featuredIssue.note":
+    "The Return is a membership publication, available online and as a digital edition. A printed edition will follow when the time is right.",
+  "featuredIssue.yearLine": "Founded October 2025 · monthly · online and digital editions",
+  "featuredIssue.imageAlt": "Cover of the first issue of The Return",
+  "featuredIssue.actions[0].label": "Online edition",
+  "featuredIssue.actions[1].label": "Digital edition",
+  "featuredIssue.actions[2].label": "Become a member",
+
+  "issuesSection.eyebrow": "Digital edition",
+  "issuesSection.title": "Back issues, online",
+  "issues[0].title": "The Return, first issue",
+  "issues[0].summary": "Read online",
+  "issues[0].archiveText": "The Return\\nFirst issue",
+  "issues[1].title": "The Return, second issue",
+  "issues[1].summary": "Read online",
+  "issues[1].archiveText": "The Return\\nSecond issue",
+  "issues[2].title": "The Return, third issue",
+  "issues[2].summary": "Read online",
+  "issues[2].archiveText": "The Return\\nThird issue",
+  "issues[3].title": "The Return, fourth issue",
+  "issues[3].summary": "Read online",
+  "issues[3].archiveText": "The Return\\nFourth issue",
+  "issues[4].title": "The Return, fifth issue",
+  "issues[4].summary": "Read online",
+  "issues[4].archiveText": "The Return\\nFifth issue",
+  "issues[5].title": "The Return, sixth issue",
+  "issues[5].summary": "Read online",
+  "issues[5].archiveText": "The Return\\nSixth issue",
+  "issues[6].title": "The Return, seventh issue",
+  "issues[6].summary": "Read online",
+  "issues[6].archiveText": "The Return\\nSeventh issue",
+  "issues[7].title": "The Return, eighth issue",
+  "issues[7].summary": "Read online",
+  "issues[7].archiveText": "The Return\\nEighth issue",
+  "issues[8].title": "The Return, ninth issue",
+  "issues[8].summary": "Read online",
+  "issues[8].archiveText": "The Return\\nNinth issue",
+  "issues[9].title": "The Return, tenth issue",
+  "issues[9].summary": "Read online",
+  "issues[9].archiveText": "The Return\\nTenth issue",
+  "issues[10].title": "The Return, eleventh issue",
+  "issues[10].summary": "Read online",
+  "issues[10].archiveText": "The Return\\nEleventh issue",
+
+  "proseSections[0].heading": "About The Return",
+  "proseSections[0].body":
+    "The Return is published by the Global Service Center for Quitting the Chinese Communist Party. It began on 18 October 2025 and appears monthly. It is built around people's stories — the lives worth recording along the way back — together with writing on the current affairs, economics, history and culture readers care about, and each month a Tuidang report and stories from volunteers.",
+  "proseSections[1].heading": "Subscribing and reading",
+  "proseSections[1].body":
+    "The Return is available online and as a digital edition, published for a general readership on a membership basis. The online edition can be read directly; the digital edition is posted issue by issue. Subscriptions, sharing and submissions are all welcome.",
+
+  "requestPanel.title": "Subscribe to The Return",
+  "requestPanel.body": "The Return is a membership publication. Subscriptions, sharing and submissions are all welcome.",
+  "requestPanel.buttonLabel": "Subscribe",
+
+  "relatedPanel.title": "Related",
+  "relatedPanel.links[0].label": "The Return website",
+  "relatedPanel.links[1].label": "Books and writings",
+  "relatedPanel.links[2].label": "Downloads",
+  "relatedPanel.links[3].label": "Press and media"
+};
+
+/* ── 媒体与记者（/resources/press） ───────────────────────────── */
+
+const RESOURCES_PRESS_EN: Record<string, string | null> = {
+  title: "Press and media",
+  subtitle:
+    "Our profile, how the figures are compiled, licensable photographs and how to reach us — for journalists and researchers.",
+
+  "kitSection.eyebrow": "Press kit",
+  "kitSection.title": "Material to download",
+  "kitItems[0].title": "One-page profile",
+  "kitItems[0].badge": "PDF · Chinese / English",
+  "kitItems[0].body": "How we began, what we do, our size and our legal status, in Chinese and English.",
+  "kitItems[1].title": "Data and method",
+  "kitItems[1].badge": "Explainer",
+  "kitItems[1].body": "What counts, how duplicates are removed, and the known limits.",
+  "kitItems[2].title": "Licensable photographs",
+  "kitItems[2].badge": "Flickr library",
+  "kitItems[2].body":
+    "Events, service points and certificate presentations over the years, at high resolution, with the photographer credit required.",
+  "kitItems[3].title": "Logo and typeface",
+  "kitItems[3].badge": "coming soon",
+  "kitItems[3].body": "Our logo, colours and how to use them.",
+
+  "faqSection.eyebrow": "Common questions",
+  "faqSection.title": "Interviews and citation",
+  "faqs[0].question": "Where do your figures come from?",
+  "faqs[0].answer[0]":
+    "Every figure comes from statements people submitted themselves. The system counts submissions after removing duplicates, and keeps the original text and timestamp.",
+  "faqs[0].answer[1]": "What counts and how is set out on the Numbers and method page.",
+  "faqs[1].question": "May we use your text and photographs?",
+  "faqs[1].answer[0]":
+    "Yes. Everything on this site may be quoted, reposted and translated without permission in advance; just credit the source. Please keep the photographer's credit on images.",
+  "faqs[2].question": "Can interviews be anonymous?",
+  "faqs[2].answer[0]":
+    "Yes. Where someone has safety concerns we can arrange an anonymous interview and agree the wording before publication.",
+  "faqs[3].question": "Do you take paid partnerships with commercial media?",
+  "faqs[3].answer[0]":
+    "We do not do advertising partnerships, but we welcome interviews and fact-checking on matters of public interest.",
+
+  "noticePanel.title": "Please do check us",
+  "noticePanel.body":
+    "The text, images and figures on this site may be quoted and reposted freely, as a rule without permission in advance. Please keep the source and the photographer's credit. For original files or help arranging an interview, write to the editors.",
+
+  "ctaPanel.title": "Interviews, fact-checking and data",
+  "ctaPanel.body":
+    "We can provide high-resolution originals, the archive, help interpreting the figures, and introductions for interviews.",
+  "ctaPanel.primaryLabel": "Contact the editors",
+  "ctaPanel.secondaryLabel": "See the method"
+};
+
+
+/* ── 法律页（/legal/*） ───────────────────────────────────────── */
+
+/*
+ * ⚠️ 这两页是有法律效力的文本，下面的英文应当视为**草稿**，不是定稿。
+ *
+ * 服务条款里的管辖条款（纽约州法）、赔偿条款，以及隐私政策里关于数据保存
+ * 与安全的措辞，都该由懂美国法的人过一眼再上线。翻译时的原则是**贴着原文
+ * 走**，不润色、不补充、不替原文把话说圆 —— 一份法律文本里，译者的"改进"
+ * 就是在改变承诺。原文说"不能保证完全安全"，英文也只说这句。
+ *
+ * 原文里的瑕疵也照样留着：条款编号从 10 直接跳到 12，没有第 11 条。那是
+ * 中文原文就有的，不是漏译；要补该由内容组补，不该由翻译悄悄顺平。
+ */
+const LEGAL_TERMS_EN: Record<string, string | null> = {
+  title: "Terms of Service",
+  subtitle:
+    "The conditions for using this site and applying for a certificate of withdrawal, the copyright notice and the limits of our liability.",
+  "intro.body":
+    "## 1. General rules and definitions\n\n" +
+    "The Global Service Center for Quitting the Chinese Communist Party provides you with the following websites: *.tuidang.org and endccp.com, referred to together below as the Global Service Center website. You are welcome to browse our site. These terms set out the conditions for entering and using it. Please read them carefully; by entering and using our site you agree to accept these terms and our privacy policy.\n\n" +
+    "## 2. Use of the site and its content\n\n" +
+    "Except where stated otherwise, the Global Service Center website may modify, suspend or discontinue the site at any time and for any reason, without prior notice and without incurring any cost. The site may be unreachable during maintenance, because of equipment failure, or for other reasons. Apart from documents the Global Service Center website permits you to read, copy, download and print, and audio and video programmes it permits you to view, listen to and download (together, \"downloaded content\"), no part of the site may be copied or transmitted in any form or by any means, including photocopying and recording. When downloading documents and audio-visual material from the Global Service Center website you must observe the following conditions: (a) downloaded content may be used only for personal, non-commercial purposes; (b) downloaded content may not be modified, and downloaded audio-visual material may not be copied; (c) copyright, trademark and other proprietary notices may not be removed from downloaded content.\n\n" +
+    "## 3. Applying for a certificate of withdrawal\n\n" +
+    "We require that a certificate of withdrawal from the Party, the Youth League or the Young Pioneers be applied for with the consent of, or voluntarily by, the person concerned. Please use your true and legally valid identity, so that the certificate we provide is valid as proof that you have left the organisations of the Chinese Communist Party. You may not apply in someone else's name. The personal information you submit will not be made public by the Global Service Center website, but will be retained as evidence, and may be used where necessary to attest that your withdrawal is genuine and valid. Please check that the information you enter is correct; if it is wrong you may apply to have the certificate amended, and we will provide that service once our staff have reviewed the request.\n\n" +
+    "## 4. Copyright and trademarks\n\n" +
+    "The Global Service Center website reserves all copyright. The site, its content and its information belong to the Global Service Center website, its affiliated entities and other organisations whose rights it has acquired. Unauthorised copying and distribution violates United States copyright law, trademark law, international conventions and other intellectual property law. Copyright and trademarks in other products belong to their respective owners.\n\n" +
+    "## 5. Accuracy and safety of content, and changes to the site\n\n" +
+    "The Global Service Center website endeavours to provide timely and accurate information, but we cannot always ensure that accuracy, nor can we ensure that downloading content from the site, directly or indirectly, is always safe. You must decide for yourself whether material you wish to download may contain computer viruses or other possible harm. The Global Service Center website reserves the right to change content, product descriptions and other information, and need not notify anyone before doing so. The Global Service Center website adds to and updates the site's information and downloadable content from time to time.\n\n" +
+    "## 6. Personal data policy\n\n" +
+    "The document \"Global Service Center website — Privacy Policy\" explains how the Global Service Center website collects and uses users' personal data.\n\n" +
+    "## 7. No warranty as to content\n\n" +
+    "The Global Service Center website gives no warranty, including as to the following: (i) that all information is correct, accurate, reliable and complete; (ii) that the site will function without interruption or error; (iii) that errors will be corrected; (iv) that the site or its servers are free of viruses or other harmful components.\n\n" +
+    "## 8. Links to third-party sites, and third parties and their products\n\n" +
+    "For your convenience, the Global Service Center website may contain links to third-party sites. The Global Service Center website is not responsible for the content of those sites. All sites other than the Global Service Center website are independent of the Global Service Center, which has no control over them. Providing a link to a third-party site does not mean the Global Service Center endorses its content, and the Global Service Center is not responsible for your use of those sites or their content.\n\n" +
+    "## 9. Governing law\n\n" +
+    "These terms are governed by and construed in accordance with the law of the State of New York, United States.\n\n" +
+    "## 10. Indemnity\n\n" +
+    "By using the Global Service Center website you agree that, where a third party brings a claim because you have breached these terms, you will indemnify the Global Service Center website against its direct and indirect losses, costs and expenses of defence (such as legal fees).\n\n" +
+    "## 12. Further information\n\n" +
+    "If you have any questions about these terms, please contact the Global Service Center for Quitting the CCP at:  \n" +
+    "Telephone: 1-718-888-9552  \n" +
+    "Email: office@tuidang.org  \n" +
+    "Address: 40-48 Main Street, Suite 201, Flushing, NY 11354"
+};
+
+const LEGAL_PRIVACY_EN: Record<string, string | null> = {
+  title: "Privacy Policy",
+  subtitle:
+    "What we collect when you apply for a certificate of withdrawal, how we use it, and how we protect it.",
+  "intro.body":
+    "## Introduction\n\n" +
+    "The Global Service Center for Quitting the Chinese Communist Party (\"we\" or \"our\") respects the privacy of our users (\"user\" or \"you\"). This privacy policy explains how we collect, use, disclose and protect your information once you have agreed to apply for a certificate of withdrawal.\n\n" +
+    "## What we collect\n\n" +
+    "During the certificate application we collect the following.\n\n" +
+    "### a) Personal details\n\n" +
+    "Personally identifying information you give us voluntarily during the application, such as your name, age, sex, date of birth and email address. All of it must be true and accurate. This site accepts no responsibility for problems that arise later, in an immigration application or any other matter, because the information was entered incorrectly.\n\n" +
+    "### b) Payment information\n\n" +
+    "When you pay for an application, the site collects data relating to that payment, namely:\n" +
+    "1. the last four digits of the card number;\n" +
+    "2. the card issuer, such as Visa or Mastercard.\n\n" +
+    "This is used only to reconcile bank payment records, for the use of the site's customer service.\n\n" +
+    "## How certificate information is used\n\n" +
+    "We do not use your information in any way other than to verify your certificate of withdrawal.\n\n" +
+    "## Disclosure of certificate information\n\n" +
+    "We do not share your information with anyone else in any way.\n\n" +
+    "## Email and communications\n\n" +
+    "If you no longer wish to receive letters, emails or other communications from us, please contact us. On hearing from you we will stop sending email in future.\n\n" +
+    "## Information security\n\n" +
+    "We use administrative, technical and physical safeguards to help protect your personal information. We have taken reasonable steps to secure the personal information you provide to us. Please be aware, however, that despite our efforts no security measure anywhere is perfect or impenetrable, and no method of data transmission can be guaranteed against interception or other kinds of misuse. Any information disclosed over a network is vulnerable to interception and misuse by unauthorised parties. We therefore cannot guarantee complete security if you provide personal information."
+};
+
+
+/* ── 新闻中心首页（/news） ──────────────────────────────────────── */
+
+/*
+ * 这一页上的条目全是具体的中文文章 —— 头条、各栏目的卡片、简讯、调查报告 ——
+ * 一律清空。栏目名沿用建站时 nav/section-tabs 的那套英文，三处要对得上：
+ * 导航、这一页的栏目卡、以及文章分类表。
+ */
+const NEWS_INDEX_EN: Record<string, string | null> = {
+  title: "News and reports",
+  subtitle:
+    "Announcements, investigation reports, features and commentary, international solidarity and Tuidang news. Everything carries its source and date, and is free to repost and translate.",
+  "filters[0]": "Latest",
+  "filters[1]": "This week",
+  "filters[2]": "This month",
+  "filters[3]": "Film only",
+  "filters[4]": "Reports and documents only",
+  "pager[5]": "Next →",
+
+  "announcementsSection.title": "Announcements and statements",
+  "announcementsSection.moreLabel": "All →",
+  "investigationsSection.title": "WOIPFG investigation reports",
+  "investigationsSection.lede":
+    "Published independently by the World Organization to Investigate the Persecution of Falun Gong and reposted here. WOIPFG has been gathering evidence since 2006 and has published 866 investigative recordings and more than 4,000 documents.",
+  "investigationsSection.moreLabel": "All investigation reports →",
+  "commentarySection.title": "Features and commentary",
+  "commentarySection.moreLabel": "All →",
+  "solidaritySection.title": "International solidarity",
+  "solidaritySection.moreLabel": "All solidarity coverage →",
+  "storiesSection.title": "Tuidang news and stories",
+  "storiesSection.moreLabel": "All Tuidang news →",
+  "notableSection.title": "Notable withdrawals",
+  "notableSection.moreLabel": "All testimony →",
+
+  "sectionPanel.title": "Sections",
+  "sectionPanel.links[0].label": "Announcements and statements",
+  "sectionPanel.links[1].label": "WOIPFG investigation reports",
+  "sectionPanel.links[2].label": "Features and commentary",
+  "sectionPanel.links[3].label": "International solidarity",
+  "sectionPanel.links[4].label": "Tuidang news and stories",
+  "sectionPanel.links[5].label": "Notable withdrawals",
+
+  "yearPanel.title": "By year",
+  "yearPanel.links[3].label": "2005–2023 archive",
+
+  "archiveSection.title": "The archive",
+  "archiveSection.moreLabel": "Advanced search →",
+  "archiveSection.note":
+    "Everything on this site may be downloaded, reposted, translated and re-edited without permission in advance; just credit the source. Please keep the photographer's credit on images.",
+  "archiveSection.noteLinkLabel": "Press and media",
+  "archiveSection.cards[0].title": "By year",
+  "archiveSection.cards[0].body": "About 2,800 pieces since 2005. Browse year by year.",
+  "archiveSection.cards[1].title": "By section",
+  "archiveSection.cards[1].body": "The full list and tags for all six sections.",
+  "archiveSection.cards[2].title": "Reports and documents only",
+  "archiveSection.cards[2].body": "Investigation reports, annual reports and policy documents.",
+  "archiveSection.cards[3].title": "Film and audio only",
+  "archiveSection.cards[3].body": "Films, documentaries and audio programmes.",
+
+  "reusePanel.title": "Reposting",
+  "reusePanel.body":
+    "Everything on this site may be downloaded, reposted and re-edited without permission in advance; just credit the source.",
+  "reusePanel.buttonLabel": "Go to Resources"
+};
+
+/* ── 名人退党（/news/notable） ─────────────────────────────────── */
+
+/*
+ * profiles 是陈用林、郝凤军、韩广生、曲吉莲等人退党声明的**原话**。
+ * 和首页 voices 同一个道理：把真实人物说过的话转述成英文挂在他们名下，
+ * 等于替他们说话。清空，等编辑提供有出处的英文译文。
+ */
+const NEWS_NOTABLE_EN: Record<string, string | null> = {
+  title: "Notable withdrawals",
+  subtitle:
+    "Public statements by people who once served inside the CCP's institutions — in diplomacy, policing, the courts, the Party and government, the press and academia. Every statement is kept in full and made public.",
+  "filters[0]": "All",
+  "filters[1]": "Diplomacy and intelligence",
+  "filters[2]": "Police and courts",
+  "filters[3]": "Party and government",
+  "filters[4]": "Press",
+  "filters[5]": "Academia",
+  "pager[5]": "Next →",
+  "yearPanel.title": "By year",
+  "yearPanel.links[3].label": "2005–2023 archive",
+  "aboutPanel.title": "About this section",
+  "aboutPanel.body":
+    "What is collected here are statements the people concerned made publicly themselves. The wording is kept in full and unaltered. Positions held are as described by the person or as reported publicly.",
+  "relatedPanel.title": "Related",
+  "relatedPanel.links[0].label": "Tuidang news and stories",
+  "relatedPanel.links[1].label": "Interview films",
+  "relatedPanel.links[2].label": "I want to make a statement"
+};
+
+
+/* ── 新闻各栏目页（/news/*） ───────────────────────────────────── */
+
+/*
+ * 五页结构相近：标题、简介、筛选、按年份、一两个侧栏面板，加上一大片
+ * 具体的中文文章条目。条目一律清空 —— 英文站一篇都没有。
+ *
+ * 各页装文章的字段名不一样（items / noticeRows / docRows / profiles），
+ * clear 里把几种都列上，setAt 找不到就跳过。
+ */
+const NEWS_SECTION_PAGES: { path: string; en: Record<string, string | null> }[] = [
+  {
+    path: "pages/news-announcements.json",
+    en: {
+      title: "Announcements and statements",
+      subtitle:
+        "Formal announcements, statements, annual reports and register updates issued by the centre — including the record of threats made against us.",
+      "pager[5]": "Next →",
+      "yearPanel.title": "By year",
+      "yearPanel.links[3].label": "2005–2023 archive",
+      "subscribePanel.title": "Subscribe to announcements",
+      "subscribePanel.body": "Important announcements can reach you by email, without visiting the site.",
+      "subscribePanel.buttonLabel": "Subscribe by email",
+      "relatedPanel.title": "Related",
+      "relatedPanel.links[0].label": "How we count",
+      "relatedPanel.links[1].label": "Security incidents",
+      "relatedPanel.links[2].label": "Past annual reports"
+    }
+  },
+  {
+    path: "pages/news-investigations.json",
+    en: {
+      title: "WOIPFG investigation reports",
+      subtitle:
+        "Evidence reports, witness statements, recorded evidence and lists of those responsible, published by an independent investigative body. Each report states how its evidence was obtained and where it came from.",
+      "pager[5]": "Next →",
+      "yearPanel.title": "By year",
+      "yearPanel.links[3].label": "2005–2023 archive",
+      "introNotice.title": "About this section",
+      "introNotice.body":
+        "The reports below are published independently by the World Organization to Investigate the Persecution of Falun Gong (WOIPFG) and reposted here. WOIPFG has been gathering evidence since 2006 and has published 866 investigative recordings and more than 4,000 documents. Each report states how its evidence was obtained and where it came from.",
+      "evidencePanel.title": "Kinds of evidence",
+      "evidencePanel.items[0]": "Written reports",
+      "evidencePanel.items[1]": "Recorded evidence",
+      "evidencePanel.items[2]": "Film and documentary",
+      "evidencePanel.items[3]": "Database of those responsible",
+      "evidencePanel.items[4]": "Documentary evidence",
+      "reusePanel.title": "Free to cite",
+      "reusePanel.body":
+        "Every report may be downloaded, reposted, translated and re-edited, for the press, for researchers and for judicial bodies.",
+      "reusePanel.buttonLabel": "Press and media"
+    }
+  },
+  {
+    path: "pages/news-commentary.json",
+    en: {
+      title: "Features and commentary",
+      subtitle:
+        "Long features, special reports, commentary on current affairs and columns. On how events unfolded and what in the system produced them. Signed pieces carry their author's own views.",
+      "filters[0]": "All",
+      "filters[1]": "Features",
+      "filters[2]": "Current affairs",
+      "filters[3]": "Columns",
+      "filters[4]": "Special reports",
+      "pager[5]": "Next →",
+      "yearPanel.title": "By year",
+      "yearPanel.links[3].label": "2005–2023 archive",
+      "notePanel.title": "A note",
+      "notePanel.body":
+        "Signed commentary and columns carry their author's own views and do not represent the position of this centre. Features and special reports are the work of this site's editors.",
+      /* 作者名清空，不音译。这几位是中文站的专栏作者，英文站有没有专栏、
+         由谁来写，是内容组的事；替他们起一个英文名不是翻译。 */
+      "authorPanel.title": "Columnists",
+      "authorPanel.links[0].label": null,
+      "authorPanel.links[1].label": null,
+      "authorPanel.links[2].label": "More authors"
+    }
+  },
+  {
+    path: "pages/news-solidarity.json",
+    en: {
+      title: "International solidarity",
+      subtitle:
+        "Parliamentary resolutions, statements by public figures, support from civil-society groups, and a record of rallies and events — sorted by region and by kind.",
+      "filters[0]": "All",
+      "filters[1]": "Parliaments and resolutions",
+      "filters[2]": "Rallies and marches",
+      "filters[3]": "Conferences and forums",
+      "filters[4]": "North America",
+      "filters[5]": "Europe",
+      "filters[6]": "Asia-Pacific",
+      "pager[5]": "Next →",
+      "yearPanel.title": "By year",
+      "yearPanel.links[3].label": "2005–2023 archive",
+      "docsPanel.title": "Parliamentary documents",
+      "docsPanel.links[0].label": "United States House Resolution 444",
+      "docsPanel.links[1].label": "Commendation in the Congressional Record",
+      "docsPanel.links[2].label": "European Parliament resolution",
+      "docsPanel.links[3].label": "Parliamentary documents by year",
+      "ctaPanel.title": "Sign the petition",
+      "ctaPanel.body":
+        "The End CCP petition has 2.48 million signatures, across more than 90 countries and territories.",
+      "ctaPanel.buttonLabel": "About the petition"
+    }
+  },
+  {
+    path: "pages/news-stories.json",
+    en: {
+      title: "Tuidang news and stories",
+      subtitle:
+        "People in their own words, reports from the service points, the Voices of Tuidang audio series and related coverage. Includes everything from the former Tuidang News and Withdrawal Stories sections.",
+      "filters[0]": "All",
+      "filters[1]": "In their own words",
+      "filters[2]": "From the ground",
+      "filters[3]": "Voices of Tuidang",
+      "filters[4]": "Film",
+      "pager[5]": "Next →",
+      "yearPanel.title": "By year",
+      "yearPanel.links[3].label": "2005–2023 archive",
+      "ctaPanel.title": "You can make one too",
+      "ctaPanel.body":
+        "A statement takes about three minutes, can be entirely anonymous, and is free.",
+      "ctaPanel.buttonLabel": "Make a statement",
+      "ctaPanel.buttonStamp": "Quit",
+      "relatedPanel.title": "Related",
+      "relatedPanel.links[0].label": "Volunteer stories",
+      "relatedPanel.links[1].label": "Films and programmes",
+      "relatedPanel.links[2].label": "Global network"
+    }
+  }
+];
+
+
+/* ── 文章页版式参考（/news/article） ──────────────────────────── */
+
+/*
+ * 这一页是一篇样例文章（国会山那篇），当作文章版式的参考。界面部分照译；
+ * 文章本身 —— 标题、导语、正文、署名、配图说明、相关报导 —— 全部清空，
+ * 它是一篇具体的中文报导，不是版式的一部分。
+ */
+const NEWS_ARTICLE_EN: Record<string, string | null> = {
+  title: null,
+  dek: null,
+  tag: "International solidarity",
+  "breadcrumb.homeLabel": "Home",
+  "breadcrumb.sectionLabel": "News and reports",
+  "breadcrumb.current": "International solidarity",
+  "actionPills[0].label": "Copy link",
+  "actionPills[1].label": "Download PDF",
+  "actionPills[2].label": "About reposting",
+  "actionPills[3].label": "Print",
+  "sectionPanel.title": "This section",
+  "sectionPanel.links[0].label": "International solidarity",
+  "sectionPanel.links[1].label": "Announcements and statements",
+  "sectionPanel.links[2].label": "WOIPFG investigation reports",
+  "reusePanel.title": "Reposting",
+  "reusePanel.body":
+    "This piece may be reposted, translated and re-edited without permission in advance; just credit the source.",
+  "relatedSection.eyebrow": "Related coverage",
+  "ctaPanel.title": "You can make one too",
+  "ctaPanel.body": "A statement takes about three minutes, can be entirely anonymous, and is free.",
+  "ctaPanel.buttonLabel": "Make a statement",
+  "ctaPanel.buttonStamp": "Quit"
+};
+
+
+/* ── 移民相关政策（/services/immigration） ────────────────────── */
+
+/*
+ * 这一页反复强调「不是法律意见、不代办、不与中介合作」—— 那是在防一类真实的
+ * 伤害：冒用机构名义收费代办。英文照着这个分寸写，别把话说软。
+ */
+const SERVICES_IMMIGRATION_EN: Record<string, string | null> = {
+  title: "Immigration policy and questions",
+  subtitle:
+    "A guide to the published policy documents, with parliamentary action and reporting on individual cases. We do not give legal advice and we do not handle immigration applications for anyone.",
+  "pager[3]": "Next →",
+
+  "alertPanel.title": "This page is not legal advice",
+  "alertPanel.body":
+    "Policy changes quickly from country to country and cases differ widely. For an actual application, consult a licensed lawyer.",
+
+  "policySection.eyebrow": "Policy documents",
+  "policySection.title": "United States (USCIS) rules",
+  "policySection.items[0].tag": "Policy",
+  "policySection.items[0].title": "USCIS on immigration and Communist Party membership",
+  "policySection.items[0].body": "What it applies to, and the exceptions, set out from the published text.",
+  "policySection.items[1].tag": "Policy",
+  "policySection.items[1].title":
+    "USCIS discretionary considerations for applicants who were Party members",
+  "policySection.items[1].body":
+    "When a waiver can be argued for, and what an officer weighs in deciding.",
+  "policySection.items[2].tag": "Q&A",
+  "policySection.items[2].title": "Why to apply for a certificate early",
+  "policySection.items[2].body":
+    "Why timing matters, and the questions that come up when it is arranged at the last minute.",
+
+  "reportSection.eyebrow": "Related coverage",
+  "reportSection.title": "Parliamentary action and case reporting",
+
+  "policySourcePanel.title": "The policy documents",
+  "policySourcePanel.note": "Maintained on tuidang.org, which is the authoritative version.",
+  "policySourcePanel.links[0].label": "USCIS on immigration and Communist Party membership",
+  "policySourcePanel.links[1].label": "USCIS discretionary considerations",
+  "policySourcePanel.links[2].label":
+    "Former Party members emigrating to the US should provide a certificate of withdrawal",
+  "policySourcePanel.links[3].label": "Non-immigrant visas also ask about Party membership",
+  "policySourcePanel.links[4].label":
+    "Naturalised citizens may also face removal over Party membership",
+  "policySourcePanel.links[5].label": "Why to apply for a certificate early",
+
+  "countriesPanel.title": "Other countries",
+  "countriesPanel.items[0]": "Canada",
+  "countriesPanel.items[1]": "Australia and New Zealand",
+  "countriesPanel.items[2]": "Europe",
+  "countriesPanel.items[3]": "Japan and South Korea",
+
+  "proofPanel.title": "Need the document itself?",
+  "proofPanel.body":
+    "A certificate of withdrawal is issued in your real name, in Chinese and English, with a public way to verify it.",
+  "proofPanel.buttonLabel": "About applying",
+
+  "reminderPanel.title": "A reminder",
+  "reminderPanel.body":
+    "We do not handle immigration applications and we work with no immigration agent. A certificate of withdrawal is obtained only through our own official channels. Do not trust anyone — any firm or individual — claiming they can apply on your behalf, speed it up, or guarantee the result."
+};
+
 /* ── 页面清单 ─────────────────────────────────────────────────────── */
 
 const PAGES: PagePlan[] = [
@@ -1071,7 +2228,85 @@ const PAGES: PagePlan[] = [
   { path: "pages/involve-volunteer.json", en: INVOLVE_VOLUNTEER_EN },
   { path: "pages/services-cert.json", en: SERVICES_CERT_EN },
   { path: "pages/services-declare.json", en: SERVICES_DECLARE_EN },
-  { path: "pages/resources-culture.json", en: RESOURCES_CULTURE_EN, clear: ["items"] }
+  { path: "pages/resources-culture.json", en: RESOURCES_CULTURE_EN, clear: ["items"] },
+  { path: "pages/about-numbers.json", en: ABOUT_NUMBERS_EN },
+  { path: "pages/about-network.json", en: ABOUT_NETWORK_EN },
+  { path: "pages/involve-endccp.json", en: INVOLVE_ENDCCP_EN },
+  { path: "pages/involve-stories.json", en: INVOLVE_STORIES_EN },
+  { path: "pages/about-accountability.json", en: ABOUT_ACCOUNTABILITY_EN },
+  { path: "pages/involve-other-ways.json", en: INVOLVE_OTHER_WAYS_EN },
+  { path: "pages/services-privacy.json", en: SERVICES_PRIVACY_EN },
+  { path: "pages/services-verify.json", en: SERVICES_VERIFY_EN },
+  { path: "pages/services-contact.json", en: SERVICES_CONTACT_EN },
+  /*
+   * 七页同构，所以用同一份配方生出来。clear 把两种列表都算上 —— gridItems 是
+   * 卡片墙，episodes 是分集列表，不是每页都有，setAt 找不到就跳过，不会报错。
+   */
+  ...VIDEO_SECTION_PAGES.map((v) => ({
+    path: v.path,
+    en: {
+      title: v.title,
+      subtitle: v.subtitle,
+      ...(v.more ? { moreButtonLabel: v.more } : {}),
+      ...VIDEO_REUSE_EN,
+      ...(v.extra ?? {})
+    } as Record<string, string | null>,
+    drop: ["featured"],
+    clear: ["gridItems", "episodes"]
+  })),
+  ...MAGAZINE_ISSUES.map((m) => ({
+    path: m.path,
+    en: {
+      title: m.title,
+      subtitle: m.subtitle,
+      "sections[0].body": m.summary,
+      ...MAGAZINE_SHARED_EN
+    } as Record<string, string | null>
+  })),
+  ...BOOK_PAGES.map((b) => ({
+    path: b.path,
+    en: {
+      title: b.title,
+      subtitle: b.subtitle,
+      "sections[0].heading": "About the book",
+      "sections[0].body": b.about,
+      "sections[1].heading": "Reading and sharing",
+      "sections[1].body": b.reading,
+      "relatedLinks[0].label": b.links[0],
+      "relatedLinks[1].label": b.links[1],
+      "relatedLinks[2].label": b.links[2]
+    } as Record<string, string | null>
+  })),
+  { path: "pages/resources-tools.json", en: RESOURCES_TOOLS_EN },
+  { path: "pages/resources-magazine.json", en: RESOURCES_MAGAZINE_EN },
+  { path: "pages/resources-press.json", en: RESOURCES_PRESS_EN },
+  { path: "pages/legal-terms.json", en: LEGAL_TERMS_EN },
+  { path: "pages/legal-privacy.json", en: LEGAL_PRIVACY_EN },
+  {
+    path: "pages/news-index.json",
+    en: NEWS_INDEX_EN,
+    drop: ["frontLead"],
+    clear: [
+      "items", "briefItems", "frontList",
+      "announcementsSection.items", "investigationsSection.items", "commentarySection.items",
+      "solidaritySection.items", "storiesSection.items", "notableSection.items",
+      /* 真实人物退党声明的原话，和 voices 同一个道理 —— 不转述。 */
+      "notableSection.testimonials"
+    ]
+  },
+  { path: "pages/news-notable.json", en: NEWS_NOTABLE_EN, clear: ["profiles"] },
+  ...NEWS_SECTION_PAGES.map((n) => ({
+    path: n.path,
+    en: n.en,
+    clear: ["items", "noticeRows", "docRows", "profiles", "pages"]
+  })),
+  {
+    path: "pages/news-article.json",
+    en: NEWS_ARTICLE_EN,
+    drop: ["heroFigure", "inlineFigure", "bodyLink"],
+    clear: ["body", "byline", "relatedSection.items", "pages"]
+  },
+  { path: "pages/services-immigration.json", en: SERVICES_IMMIGRATION_EN, clear: ["items", "reportSection.items"] }
 ];
 
 /* ── 机械部分 ─────────────────────────────────────────────────────── */
