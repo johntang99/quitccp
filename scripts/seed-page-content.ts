@@ -217,9 +217,41 @@ const HOME_EN: Record<string, string | null> = {
   "video.heading": "Films and programmes",
   "video.moreLabel": "Go to the video library",
   "video.latestLabel": "Newly added",
+  /*
+   * 见证者。这些是真实人物退党声明的原话。
+   *
+   * 2026-10-22 定的做法：翻译，不回避 —— 媒体转述外语发言本来就要翻译，
+   * 关键是不改原意。所以这里逐句直译，不概括、不润色、不替说话的人把话
+   * 说得更漂亮。人名用英文报导里通行的拼法（Gao Zhisheng、Chen Yonglin
+   * 这几位都有固定写法），不另起一套。
+   */
   "voices.eyebrow": "In their own words",
   "voices.heading": "Why they chose to say it publicly",
   "voices.moreLabel": "More testimony →",
+  "voices.items[0].name": "Gao Zhisheng",
+  "voices.items[0].role": "Human-rights lawyer, three times nominated for the Nobel Peace Prize",
+  "voices.items[0].quote":
+    "\u201cI am leaving this evil party, which has no benevolence, no righteousness and no humanity. This is the proudest day of my life\u2026 I believe the root of China\u2019s problems can only be resolved by discarding this evil system\u2026 Spreading the Nine Commentaries and encouraging people to withdraw is the most effective and most peaceful means there has been so far.\u201d",
+  "voices.items[1].name": "Guan Guimin",
+  "voices.items[1].role": "Celebrated tenor",
+  "voices.items[1].quote":
+    "\u201cOnly when it \u2014 the Chinese Communist Party \u2014 falls will Chinese people have a good life, and only then will our nation have hope. Otherwise we Chinese will go on in darkness for ever. I hope everyone can see this clearly, and leave the Communist Party.\u201d",
+  "voices.items[2].name": "Huang Xiaomin",
+  "voices.items[2].role": "Olympic swimmer",
+  "voices.items[2].quote":
+    "\u201cI feel deep shame at having once been a member of the Communist Party. I joined unwillingly, I have had no contact with any Party organisation for more than ten years and have paid no dues \u2014 in effect I left long ago. But I feel I should still say so clearly and formally, to rid myself completely and from within of the Party\u2019s poison, and to leave this evil party.\u201d",
+  "voices.items[3].name": "Chen Yonglin",
+  "voices.items[3].role": "Former CCP diplomat, Sydney",
+  "voices.items[3].quote":
+    "\u201cAs a diplomat I was supposed to serve the national interest, but most of what I did there was not in the national interest \u2014 it was persecuting my own people.\u201d \u201cThe withdrawal movement is the conscience of the Chinese nation waking up. It gives the Chinese people hope.\u201d",
+  "voices.items[4].name": "Han Guangsheng",
+  "voices.items[4].role": "Former director of the Shenyang Justice Bureau",
+  "voices.items[4].quote":
+    "\u201cThe CCP is not, as it endlessly proclaims, a party that puts the people\u2019s interests above all. It is a vested interest that puts its own one-party rule above all \u2014 despotic and brutal, corrupt through and through, utterly hypocritical and utterly weak. Such a party is now wholly irreconcilable with my own ideals and convictions. I therefore solemnly declare: I withdraw from the Chinese Communist Party.\u201d",
+  "voices.items[5].name": "Hao Fengjun",
+  "voices.items[5].role": "Former official, Tianjin 610 Office",
+  "voices.items[5].quote":
+    "When I joined the Chinese Communist Party I had high expectations of it, but the reality was not what I had imagined. What it now imposes on mainland China is a dark rule, a system without human rights. I therefore solemnly declare that I withdraw from the Communist Party and all of its organisations.",
   "channels.heading": "Series"
 };
 
@@ -232,7 +264,6 @@ const HOME_EN: Record<string, string | null> = {
 const HOME_DISABLE: Record<string, string[]> = {
   news: ["items"],
   video: ["items", "series"],
-  voices: ["items"],
   channels: ["cards"]
 };
 
@@ -1817,15 +1848,13 @@ const RESOURCES_PRESS_EN: Record<string, string | null> = {
 /* ── 法律页（/legal/*） ───────────────────────────────────────── */
 
 /*
- * ⚠️ 这两页是有法律效力的文本，下面的英文应当视为**草稿**，不是定稿。
+ * 这两页是有法律效力的文本，所以翻译的原则是**贴着中文版走**：不润色、
+ * 不补充、不替原文把话说圆 —— 一份法律文本里，译者的「改进」就是在改变
+ * 承诺。原文说「不能保证完全安全」，英文也只说这句，不加「但我们会尽力」。
  *
- * 服务条款里的管辖条款（纽约州法）、赔偿条款，以及隐私政策里关于数据保存
- * 与安全的措辞，都该由懂美国法的人过一眼再上线。翻译时的原则是**贴着原文
- * 走**，不润色、不补充、不替原文把话说圆 —— 一份法律文本里，译者的"改进"
- * 就是在改变承诺。原文说"不能保证完全安全"，英文也只说这句。
- *
- * 原文里的瑕疵也照样留着：条款编号从 10 直接跳到 12，没有第 11 条。那是
- * 中文原文就有的，不是漏译；要补该由内容组补，不该由翻译悄悄顺平。
+ * 原文里的瑕疵照样留着：条款编号从 10 直接跳到 12，没有第 11 条。那是中文
+ * 原文就有的，不是漏译。两版要对得上，翻译不该悄悄把它顺平 —— 真要补，得
+ * 先补中文版，两边一起改。
  */
 const LEGAL_TERMS_EN: Record<string, string | null> = {
   title: "Terms of Service",
@@ -1947,15 +1976,29 @@ const NEWS_INDEX_EN: Record<string, string | null> = {
   "reusePanel.title": "Reposting",
   "reusePanel.body":
     "Everything on this site may be downloaded, reposted and re-edited without permission in advance; just credit the source.",
-  "reusePanel.buttonLabel": "Go to Resources"
+  "reusePanel.buttonLabel": "Go to Resources",
+
+  /* 证词是名人退党那一页同几句话的摘录版，两处的译文必须一致。 */
+  "notableSection.testimonials[0].name": "Chen Yonglin",
+  "notableSection.testimonials[0].role": "Former CCP diplomat",
+  "notableSection.testimonials[0].quote":
+    "As a diplomat I was supposed to serve the national interest, but most of what I did there was not in the national interest \u2014 it was persecuting my own people.",
+  "notableSection.testimonials[1].name": "Hao Fengjun",
+  "notableSection.testimonials[1].role": "Former official, Tianjin Public Security Bureau",
+  "notableSection.testimonials[1].quote":
+    "I joined the Chinese Communist Party in 1991 with high expectations of it, but the reality was not what I had imagined.",
+  "notableSection.testimonials[2].name": "Qu Jilian",
+  "notableSection.testimonials[2].role": "Journalist, Jiamusi Daily, Heilongjiang",
+  "notableSection.testimonials[2].quote":
+    "I was a journalist for more than twenty years, and for more than twenty years I told lies. Today I will say one true thing: I am leaving the Party."
 };
 
 /* ── 名人退党（/news/notable） ─────────────────────────────────── */
 
 /*
- * profiles 是陈用林、郝凤军、韩广生、曲吉莲等人退党声明的**原话**。
- * 和首页 voices 同一个道理：把真实人物说过的话转述成英文挂在他们名下，
- * 等于替他们说话。清空，等编辑提供有出处的英文译文。
+ * profiles 是陈用林、郝凤军、韩广生、曲吉莲退党声明的原话。逐句直译，
+ * 不概括、不润色 —— 理由同首页 voices 那一段。职务行里的换行照原样留着，
+ * 版面靠它分两行。
  */
 const NEWS_NOTABLE_EN: Record<string, string | null> = {
   title: "Notable withdrawals",
@@ -1970,6 +2013,24 @@ const NEWS_NOTABLE_EN: Record<string, string | null> = {
   "pager[5]": "Next →",
   "yearPanel.title": "By year",
   "yearPanel.links[3].label": "2005–2023 archive",
+  "profiles[0].name": "Chen Yonglin",
+  "profiles[0].role": "Former CCP diplomat\nFirst Secretary, Chinese Consulate-General in Sydney",
+  "profiles[0].quote":
+    "As a diplomat I was supposed to serve the national interest, but most of what I did there was not in the national interest \u2014 it was persecuting my own people. That went against my conscience.",
+  "profiles[1].name": "Hao Fengjun",
+  "profiles[1].role":
+    "Former official, 610 Office, Tianjin Public Security Bureau\nPolice Superintendent First Class",
+  "profiles[1].quote":
+    "I joined the Chinese Communist Party in 1991 with high expectations of it, but the reality was not what I had imagined. I hereby solemnly declare that I withdraw from the Communist Party and all of its organisations.",
+  "profiles[2].name": "Han Guangsheng",
+  "profiles[2].role":
+    "Former Party secretary and director of the Shenyang Justice Bureau\nMember of the municipal Political and Legal Affairs Commission",
+  "profiles[2].quote":
+    "I joined the Party in 1980 and served it loyally. But fact after fact brought me to the painful realisation that such a party is wholly irreconcilable with my own ideals and convictions.",
+  "profiles[3].name": "Qu Jilian",
+  "profiles[3].role": "Journalist, Jiamusi Daily, Heilongjiang\nmore than twenty years in the profession",
+  "profiles[3].quote":
+    "I was a journalist for more than twenty years, and for more than twenty years I told lies. Today I will say one true thing: I am leaving the Party. I declare that I withdraw from the Party, the Youth League and the Young Pioneers.",
   "aboutPanel.title": "About this section",
   "aboutPanel.body":
     "What is collected here are statements the people concerned made publicly themselves. The wording is kept in full and unaltered. Positions held are as described by the person or as reported publicly.",
@@ -2049,11 +2110,9 @@ const NEWS_SECTION_PAGES: { path: string; en: Record<string, string | null> }[] 
       "notePanel.title": "A note",
       "notePanel.body":
         "Signed commentary and columns carry their author's own views and do not represent the position of this centre. Features and special reports are the work of this site's editors.",
-      /* 作者名清空，不音译。这几位是中文站的专栏作者，英文站有没有专栏、
-         由谁来写，是内容组的事；替他们起一个英文名不是翻译。 */
       "authorPanel.title": "Columnists",
-      "authorPanel.links[0].label": null,
-      "authorPanel.links[1].label": null,
+      "authorPanel.links[0].label": "Wang Youqun",
+      "authorPanel.links[1].label": "Li Jun",
       "authorPanel.links[2].label": "More authors"
     }
   },
@@ -2289,16 +2348,14 @@ const PAGES: PagePlan[] = [
     clear: [
       "items", "briefItems", "frontList",
       "announcementsSection.items", "investigationsSection.items", "commentarySection.items",
-      "solidaritySection.items", "storiesSection.items", "notableSection.items",
-      /* 真实人物退党声明的原话，和 voices 同一个道理 —— 不转述。 */
-      "notableSection.testimonials"
+      "solidaritySection.items", "storiesSection.items", "notableSection.items"
     ]
   },
-  { path: "pages/news-notable.json", en: NEWS_NOTABLE_EN, clear: ["profiles"] },
+  { path: "pages/news-notable.json", en: NEWS_NOTABLE_EN },
   ...NEWS_SECTION_PAGES.map((n) => ({
     path: n.path,
     en: n.en,
-    clear: ["items", "noticeRows", "docRows", "profiles", "pages"]
+    clear: ["items", "noticeRows", "docRows", "pages"]
   })),
   {
     path: "pages/news-article.json",
