@@ -1416,7 +1416,16 @@ export const NEWS_CATEGORIES = [
   { slug: "worldwide-investigation", name: "追查国际调查报告", en: "INVESTIGATIONS" },
   { slug: "topics-commentary", name: "专题报导与时政评论", en: "COMMENTARY" },
   { slug: "withdrawal-stories", name: "退党纪实故事", en: "STORIES" },
-  { slug: "famous-quitccp", name: "名人退党", en: "NOTABLE" }
+  { slug: "famous-quitccp", name: "名人退党", en: "NOTABLE" },
+  /*
+   * 编辑后来自己开的栏目，这里补上英文眉题。
+   *
+   * 取不到 en 时的兜底是把 slug 大写（ccp-influence → CCP INFLUENCE），对
+   * 英文词的 slug 还说得过去，对拼音 slug 就成了 ZHENXIANG YUANDI —— 读者
+   * 看到的是一串没有意义的拼音。红色渗透和围堵中共的 slug 本来就是英文词，
+   * 兜底够用；真相园地不行，所以写在这儿。
+   */
+  { slug: "zhenxiang-yuandi", name: "真相园地", en: "TRUTH COLUMN" }
 ] as const;
 
 /** One tab: a public listing slug with the name an editor gave it. */

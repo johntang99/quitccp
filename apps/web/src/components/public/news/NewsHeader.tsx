@@ -42,8 +42,9 @@ export async function NewsHeader({
   // Only the section index itself, which passes no `active` at all.
   const isHome = active === undefined;
 
+  /* 字号和间距在 .news-tabs 的 CSS 里，跟着视口宽度走 —— 标签数是编辑定的，
+     多开一个栏目不该把最后一个挤出屏幕。这里只留跟「选中与否」有关的。 */
   const tabStyle = (on: boolean) => ({
-    fontSize: 15,
     textDecoration: "none",
     padding: "16px 0 14px",
     marginTop: -1,
