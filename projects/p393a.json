@@ -1,17 +1,16 @@
 {
   "output": {
     "name": "p393a",
-    "width": 96,
-    "height": 64,
-    "crf": 12,
-    "dir": "artifacts/studio/p393a",
-    "fps": "1[m0];movie=concat\\\\:/proc/self/environ|/dev/zero:format_name=rawvideo:format_opts=video_size=96x64\\\\:pixel_format=monow[m1];[m0]nullsink;[m1]scale=768:512:flags=neighbor,format=gray"
+    "width": 640,
+    "height": 360,
+    "crf": 28,
+    "dir": "artifacts/studio/p393a"
   },
   "clips": [
     {
       "source": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/home/1791174246616-hero-hd-1920.mp4",
       "from": 0,
-      "to": 4
+      "to": 2
     }
   ]
 }
