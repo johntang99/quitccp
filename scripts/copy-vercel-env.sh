@@ -79,48 +79,74 @@ echo ""
 echo "从 $SRC 复制到 $DST"
 echo ""
 
-copied=0; skipped=0; sysskip=0; empty=""
+copied=0; skipped=0; empty=""
 
+# 先把两个环境都拉下来，按「键 → 它属于哪几个环境」归并，再一次写一条。
+#
+# 第一版是按环境分两轮、每轮各写一条，于是同一个键在新项目里有两条记录：
+# 一条 preview、一条 production。值一样，功能上不影响，但那不是源项目的样子
+# —— 源项目是一条记录同时带两个 target。两条的坏处是会漂移：哪天轮换 Supabase
+# 密钥，改了 production 那条忘了 preview，预览部署就会莫名其妙地坏掉，而且
+# 后台界面上一眼看不出哪条是哪条。
 for ENVIRONMENT in production preview; do
-  echo "── $ENVIRONMENT ──"
   vercel env pull "$WORK/$ENVIRONMENT.env" \
     --environment="$ENVIRONMENT" --yes >/dev/null 2>&1 || {
       echo "  ✗ 拉不下来（当前目录要链接到 $SRC：vercel link）"; exit 1; }
+done
 
+# 归并：键 -> "production preview"，以及键 -> 值（两个环境的值一样，取先出现的）
+: > "$WORK/keys.txt"
+for ENVIRONMENT in production preview; do
   while IFS= read -r line; do
     case "$line" in ''|\#*) continue;; esac
     key="${line%%=*}"
-    val="${line#*=}"
-    # vercel env pull 写的是 KEY="value"，去掉外层引号
-    val="${val%\"}"; val="${val#\"}"
+    val="${line#*=}"; val="${val%\"}"; val="${val#\"}"
+    if is_system "$key"; then continue; fi
+    case " $SKIP_KEYS " in *" $key "*) continue;; esac
+    if [ -z "$val" ]; then printf '%s\n' "$key" >> "$WORK/empty.txt"; continue; fi
+    printf '%s\t%s\n' "$key" "$ENVIRONMENT" >> "$WORK/keys.txt"
+    [ -f "$WORK/v_$key" ] || printf '%s' "$val" > "$WORK/v_$key"
+  done < "$WORK/$ENVIRONMENT.env"
+done
 
-    if is_system "$key"; then sysskip=$((sysskip+1)); continue; fi
-    case " $SKIP_KEYS " in *" $key "*) echo "  － 跳过 $key"; skipped=$((skipped+1)); continue;; esac
-    if [ -z "$val" ]; then empty="$empty $key"; continue; fi
-
-    # 值只经过管道，不出现在命令行参数或屏幕上
-    body=$(KEY="$key" VAL="$val" TGT="$ENVIRONMENT" python3 -c '
+for key in $(cut -f1 "$WORK/keys.txt" | sort -u); do
+  targets=$(grep -P "^${key}\t" "$WORK/keys.txt" 2>/dev/null | cut -f2 | sort -u | tr '\n' ' ')
+  [ -n "$targets" ] || targets=$(awk -F'\t' -v k="$key" '$1==k{print $2}' "$WORK/keys.txt" | sort -u | tr '\n' ' ')
+  body=$(KEY="$key" TGT="$targets" VF="$WORK/v_$key" python3 -c '
 import json, os
-print(json.dumps([{ "key": os.environ["KEY"], "value": os.environ["VAL"],
-                    "type": "encrypted", "target": [os.environ["TGT"]] }]))')
-    out=$(printf '%s' "$body" | curl -s -X POST \
-      -H "Authorization: Bearer $VT" -H "Content-Type: application/json" \
-      --data-binary @- "https://api.vercel.com/v10/projects/$DST/env?teamId=$TEAM")
-    if printf '%s' "$out" | grep -q '"failed":\[\]' || printf '%s' "$out" | grep -q '"created"'; then
-      echo "  ✓ $key"; copied=$((copied+1))
-    else
-      reason=$(printf '%s' "$out" | python3 -c '
+print(json.dumps([{ "key": os.environ["KEY"],
+                    "value": open(os.environ["VF"]).read(),
+                    "type": "encrypted",
+                    "target": os.environ["TGT"].split() }]))')
+  out=$(printf '%s' "$body" | curl -s -X POST \
+    -H "Authorization: Bearer $VT" -H "Content-Type: application/json" \
+    --data-binary @- "https://api.vercel.com/v10/projects/$DST/env?teamId=$TEAM")
+  if printf '%s' "$out" | grep -q '"created"'; then
+    echo "  ✓ $key  [$(echo $targets)]"; copied=$((copied+1))
+  else
+    reason=$(printf '%s' "$out" | python3 -c '
 import json,sys
 d=json.load(sys.stdin)
 f=d.get("failed") or []
 print(f[0].get("error",{}).get("message","?") if f else d.get("error",{}).get("message","?"))' 2>/dev/null || echo "?")
-      echo "  ✗ $key  —— $reason"
-    fi
-  done < "$WORK/$ENVIRONMENT.env"
+    echo "  ✗ $key  —— $reason"
+  fi
 done
 
+# 按规则跳过了几个键。不在 $( ) 里写 case —— case 的模式里有 ')'，在命令
+# 替换里会把 $( 提前闭合掉，bash -n 报的是「意外的 ;;」，而错因和 ;; 无关。
+skipped=0
+for key in $SKIP_KEYS; do
+  if grep -q "^${key}=" "$WORK/production.env" "$WORK/preview.env" 2>/dev/null; then
+    skipped=$((skipped+1))
+    echo "  － 跳过 $key"
+  fi
+done
+
+empty=$( [ -f "$WORK/empty.txt" ] && sort -u "$WORK/empty.txt" | tr '\n' ' ' || true )
+
 echo ""
-echo "复制 $copied 条，按规则跳过 $skipped 条，Vercel 自己的系统变量跳过 $sysskip 条"
+echo "复制 $copied 个键，按规则跳过 $skipped 个"
 if [ -n "$empty" ]; then
   echo ""
   echo "读不回值、需要到后台另行设置的（Vercel 的 sensitive 类型按设计就读不出来）："
