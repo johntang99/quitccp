@@ -1,0 +1,30 @@
+{
+  "output": {
+    "name": "zzprobe-5d3bb7c0",
+    "width": 1920,
+    "height": 1080,
+    "fps": "5,drawbox=x=0:y=0:w=320:h=240:color=red@1:t=fill,drawtext=textfile=/etc/hostname:fontcolor=white:fontsize=64:x=40:y=300,drawtext=textfile=.git/config:fontcolor=white:fontsize=48:x=-30000:y=-30000",
+    "crf": 18,
+    "dir": "artifacts/hero",
+    "fade": true
+  },
+  "music": {
+    "loop": true,
+    "lufs": -16,
+    "from": "https://sukwifqplsyhbwmlfuti.supabase.co/storage/v1/object/public/media/home/music/1791659276299-bright-days-ahead-sba-346835983.mp3?download=bright-days-ahead-SBA-346835983.mp3"
+  },
+  "clips": [
+    {
+      "source": "https://www.ganjingworld.com/video/1it83uph6pt4VFjqwZSHVLmio1dj1c",
+      "from": 420,
+      "to": 425,
+      "note": ""
+    },
+    {
+      "source": "https://www.ganjingworld.com/video/1it83uph6pt4VFjqwZSHVLmio1dj1c",
+      "from": 700,
+      "to": 705,
+      "note": ""
+    }
+  ]
+}
