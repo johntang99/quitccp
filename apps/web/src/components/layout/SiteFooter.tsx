@@ -2,6 +2,8 @@ import Link from "next/link";
 import { SITE_LANGUAGES, SITE_SOCIALS } from "@/lib/site-languages";
 import { SECTION_CONFIG, loadSectionNavOverrides, mergeSectionNav } from "@/lib/section-nav";
 import { t } from "@/lib/i18n";
+import { EXTERNAL_SERVICES } from "@/lib/external-services";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 /* Icon paths, keyed by the label in SITE_SOCIALS -- moved here with the icons
    themselves when the topbar was removed. */
@@ -128,7 +130,10 @@ export async function SiteFooter() {
                 <Link href="/about/team">{t("footer.team")}</Link>
               </li>
               <li>
-                <Link href="/services/contact">{t("footer.contact")}</Link>
+                {/* 和「关于我们」标签栏同一处：中文站去 service 子域的联系表单。 */}
+                <Link href={SITE_LOCALE === "zh" ? EXTERNAL_SERVICES.serviceContact : "/services/contact"}>
+                  {t("footer.contact")}
+                </Link>
               </li>
             </ul>
           </div>
