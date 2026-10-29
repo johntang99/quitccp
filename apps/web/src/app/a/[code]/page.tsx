@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TemplateRenderer } from "@/components/templates/TemplateRenderer";
+import { articleShareMetadata } from "@/lib/article-share-metadata";
 import { getArticleSlugByShortCode, getRenderableArticle } from "@/lib/public-content";
 import { looksLikeShortCode } from "@/lib/short-code";
 
@@ -51,16 +52,10 @@ export async function generateMetadata({ params }: { params: Promise<{ code: str
   if (!slug) return {};
   const article = await getRenderableArticle(slug);
   if (!article) return {};
-  const content = (article.content ?? {}) as Record<string, unknown>;
-  const summary = typeof content.dek === "string" ? content.dek : "";
-  return {
-    title: article.title,
-    description: summary.slice(0, 180) || undefined,
-    /* 正主是长地址。两个地址渲染同一篇内容时，这一行是唯一告诉搜索引擎
-       「别当成两篇」的东西 —— 漏了它就是自己跟自己打架。 */
-    alternates: { canonical: `/news/${encodeURIComponent(slug)}` },
-    openGraph: { type: "article", title: article.title, description: summary.slice(0, 180) || undefined }
-  };
+  /* 正主是长地址（canonical）。两个地址渲染同一篇内容时，这是唯一告诉搜索引擎
+     「别当成两篇」的东西 —— 漏了它就是自己跟自己打架。og:url 则留短地址：
+     分享卡片上显示的就是人家转发的那条。 */
+  return articleShareMetadata(article, `/a/${code}`, `/news/${encodeURIComponent(slug)}`);
 }
 
 export default async function ShortArticlePage({ params }: { params: Promise<{ code: string }> }) {

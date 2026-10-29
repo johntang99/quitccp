@@ -5,6 +5,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { findSlugRedirect, publicPath } from "@/lib/slug-redirects";
 import { NewsListingPage } from "@/components/public/news/NewsListingPage";
 import { TemplateRenderer } from "@/components/templates/TemplateRenderer";
+import { articleShareMetadata } from "@/lib/article-share-metadata";
 import { getNewsListing, getRenderableArticle, isNewsListingSlug } from "@/lib/public-content";
 
 /**
@@ -97,27 +98,7 @@ export async function generateMetadata({
 
   const article = await getRenderableArticle(slug);
   if (!article) return {};
-  const content = (article.content ?? {}) as Record<string, unknown>;
-  const summary = typeof content.dek === "string" ? content.dek : "";
-  /* Signal, WhatsApp, Telegram and the rest build their link card from these
-     tags. Without og:image a shared article shows as a bare link. */
-  const hero = (content.heroFigure ?? {}) as { image?: unknown; alt?: unknown };
-  const image = typeof hero.image === "string" && hero.image ? hero.image : undefined;
-  const title = article.title.trim();
-  return {
-    title,
-    description: summary.slice(0, 180) || undefined,
-    alternates: { canonical: `/news/${slug}` },
-    openGraph: {
-      type: "article",
-      url: `/news/${slug}`,
-      siteName: t("site.name"),
-      title,
-      description: summary.slice(0, 180) || undefined,
-      images: image ? [{ url: image, alt: typeof hero.alt === "string" ? hero.alt : title }] : undefined
-    },
-    twitter: { card: image ? "summary_large_image" : "summary" }
-  };
+  return articleShareMetadata(article, `/news/${slug}`, `/news/${slug}`);
 }
 
 export default async function NewsSlugPage({ params }: { params: Promise<{ slug: string }> }) {
