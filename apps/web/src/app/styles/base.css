@@ -488,7 +488,7 @@ body > header{
 .prose-table tbody tr:nth-child(even){background:rgba(0,0,0,.015)}
 .prose a{color:var(--seal);border-bottom:1px solid rgba(74,60,150,.3)}
 .prose a:hover{border-bottom-color:var(--seal)}
-.dek{font-family:var(--sans);font-size:17.5px;line-height:var(--lh-body);color:var(--ink-soft);margin:0 0 30px}
+.dek{font-family:var(--sans);font-size:17.5px;line-height:var(--lh-body);color:var(--ink-soft);margin:0 0 30px;text-align:var(--align-body,justify);hyphens:auto}
 .byline{
   display:flex;flex-wrap:wrap;gap:16px;font-family:var(--sans);font-weight:500;font-size:13px;
   color:var(--muted);letter-spacing:0.05em;padding:16px 0;
