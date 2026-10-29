@@ -55,6 +55,7 @@ export function themeToCss(theme: Theme): string {
 --lh-item:${t.lineHeight.item};--lh-body:${t.lineHeight.body};
 --tr-heading:${t.tracking.heading};--tr-body:${t.tracking.body};--tr-label:${t.tracking.label};
 --measure-body:${t.measure.body};--measure-lede:${t.measure.lede};
+--align-body:${t.align?.body === "left" ? "left" : "justify"};
 --on-gold:${s.onGold};--band-deep:${s.bandDeep};--band-deepest:${s.bandDeepest};
 --ink-band:${s.inkBand};--ink-dim:${s.inkDim};--ink-mid:${s.inkMid};
 --gold-ink:${s.goldInk};--gold-muted:${s.goldMuted};

@@ -468,6 +468,9 @@ body > header{
 /* --- prose --- */
 .prose{font-family:var(--sans);font-size:var(--fs-body);line-height:var(--lh-body);color:var(--ink)}
 .prose p{max-width:var(--measure-body)}
+/* 正文两端对齐（末行仍靠左），后台「排版与主题」可改回左对齐。hyphens 只对英文等有断字词典的语言生效，
+   免得两端对齐在窄屏上把英文单词间距撑开；中文不受影响。 */
+.prose p{text-align:var(--align-body,justify);hyphens:auto}
 .prose p{margin:0 0 26px}
 .prose h2{font-family:var(--serif);font-weight:700;font-size:25px;line-height:var(--lh-heading);margin:48px 0 18px}
 .prose h3{font-family:var(--serif);font-weight:700;font-size:20px;margin:36px 0 14px}

@@ -99,6 +99,9 @@
     "measure": {
       "body": "38em",
       "lede": "32em"
+    },
+    "align": {
+      "body": "justify"
     }
   },
   "shape": {

@@ -42,7 +42,8 @@ const TR_LABELS: Record<string, string> = { heading: t("theme.tr.heading"), body
 function set(theme: Theme, path: string[], value: string): Theme {
   const next = structuredClone(theme) as Record<string, unknown>;
   let node = next;
-  for (const key of path.slice(0, -1)) node = node[key] as Record<string, unknown>;
+  // A theme cached before a group was added lacks it; create it rather than crash.
+  for (const key of path.slice(0, -1)) node = (node[key] ??= {}) as Record<string, unknown>;
   node[path[path.length - 1]] = value;
   return next as Theme;
 }
@@ -281,6 +282,16 @@ export function ThemeEditor({ initial }: { initial: Theme }) {
                 value={theme.typography.measure.body}
                 onChange={(e) => setTheme(set(theme, ["typography", "measure", "body"], e.target.value))}
               />
+            </label>
+            <label className="theme-field">
+              <span>{t("theme.align")}</span>
+              <select
+                value={theme.typography.align?.body ?? "justify"}
+                onChange={(e) => setTheme(set(theme, ["typography", "align", "body"], e.target.value))}
+              >
+                <option value="justify">{t("theme.align.justify")}</option>
+                <option value="left">{t("theme.align.left")}</option>
+              </select>
             </label>
           </div>
         </section>
