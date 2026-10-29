@@ -219,7 +219,13 @@ export const SECTION_CONFIG: Record<string, SectionNav> = {
          forgot, on purpose. The list here is the one that decides. */
       { slug: "team", label: "理事会与团队" },
       { slug: "history", label: "退党大事记" },
-      { slug: "contact", label: "联系我们", href: "/services/contact" }
+      /* 中文站指向 service 子域上的联系表单（2026-10-28 应要求改）；那个页面是
+         中文的，其他语言的站仍用本站的 /services/contact。 */
+      {
+        slug: "contact",
+        label: "联系我们",
+        href: SITE_LOCALE === "zh" ? EXTERNAL_SERVICES.serviceContact : "/services/contact"
+      }
     ]
   },
   involve: {

@@ -51,6 +51,9 @@ export const EXTERNAL_SERVICES = {
      the addresses 老网站管理员 still has to move. Prefer our own
      /services/contact wherever a reader just needs to reach us. */
   contact: "https://www.tuidang.org/contact-us/",
+  /* 联系表单在 service 子域上的新家（中文）。页面仿照本站，连「关于我们」那排
+     标签都一样，所以从本站跳过去用同一个窗口，不另开标签页。 */
+  serviceContact: "https://service.tuidang.org/contact/",
   /* Moved to its own subdomain 2026-10-07, ahead of the main-domain cutover:
      the donation site stays on the old server while tuidang.org moves to the
      new site. Verified serving the donation page before the switch. */
