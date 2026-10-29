@@ -1,0 +1,38 @@
+name = "quitccp-stats"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+# 读者的浏览器直接发到这里。用独立的 tdinfo.org 域名，不挂在 tuidang.org 下：
+# 统计请求和网站本身互不牵连，哪天这里被刷，主站的防火墙和配额都不受影响。
+routes = [{ pattern = "stats.tdinfo.org", custom_domain = true }]
+
+# 每次浏览一个数据点。Analytics Engine 只保留 3 个月 —— 长期数据靠中文站的
+# /api/cron/stats-rollup 每天汇总进 Supabase。
+[[analytics_engine_datasets]]
+binding = "HITS"
+dataset = "quitccp_hits"
+
+# 每日更换的盐。只存当天和前一天，过期自动删除 —— 盐没了，访客哈希就再也
+# 对不回任何 IP。见 src/index.js 里 dailySalt 的说明。
+[[kv_namespaces]]
+binding = "SALTS"
+id = "8e32aa77837f474a882422178326cf1d"
+
+# 同一来源反复刷同一页面只算前几次；超出的照样回 204，只是不记。
+[[ratelimits]]
+name = "PER_PAGE"
+namespace_id = "2901"
+simple = { limit = 5, period = 60 }
+
+[[ratelimits]]
+name = "PER_SOURCE"
+namespace_id = "2902"
+simple = { limit = 60, period = 60 }
+
+[vars]
+# 只收这些站点发来的统计，Origin → 站点。英文站暂不统计（2026-10-29 的决定），
+# 以后要开，在这里加上英文站的正式域名即可。
+SITES = '{"https://www.tuidang.org":"zh","https://tuidang.org":"zh"}'
+
+[observability]
+enabled = true

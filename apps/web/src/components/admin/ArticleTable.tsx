@@ -3,6 +3,8 @@ import { t } from "@/lib/i18n";
 import { actorLabel, listAdminDisplayNames } from "@/lib/admin/user-admin-repository";
 import type { ArticleRecord } from "@/lib/admin/types";
 import { ArticleDeleteButton } from "./ArticleDeleteButton";
+import { articleViews } from "@/lib/admin/site-stats";
+import { formatNumber } from "@/lib/format";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   published: { label: t("admin.status.published"), cls: "b-pub" },
@@ -36,7 +38,7 @@ export async function ArticleTable({
    */
   dateColumn?: "published" | "updated";
 }) {
-  const actorNames = await listAdminDisplayNames();
+  const [actorNames, views] = await Promise.all([listAdminDisplayNames(), articleViews(rows.map((row) => row.id))]);
   return (
     <div className="admin-table-wrap">
       <table className="admin-table">
@@ -57,13 +59,14 @@ export async function ArticleTable({
             </th>
             <th>{t("admin.art.col.editor")}</th>
             <th>{t(dateColumn === "updated" ? "admin.art.col.updated" : "admin.art.col.published")}</th>
+            <th style={{ textAlign: "right", whiteSpace: "nowrap" }}>{t("admin.art.col.views7")}</th>
             <th />
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={11} style={{ color: "#8a90a0", padding: 24, textAlign: "center" }}>
+              <td colSpan={12} style={{ color: "#8a90a0", padding: 24, textAlign: "center" }}>
                 {t("admin.art.empty")}
               </td>
             </tr>
@@ -143,6 +146,13 @@ export async function ArticleTable({
                 </td>
                 <td style={{ color: "#8a90a0", whiteSpace: "nowrap" }}>
                   {day(dateColumn === "updated" ? row.updatedAt : row.publishedAt)}
+                </td>
+                <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+                  {views.has(row.id) ? (
+                    <Link href={`/admin/stats/article/${row.id}?days=7`}>{formatNumber(views.get(row.id) ?? 0)}</Link>
+                  ) : (
+                    <span style={{ color: "#8a90a0" }}>—</span>
+                  )}
                 </td>
                 <td style={{ whiteSpace: "nowrap" }}>
                   <Link className="admin-btn admin-btn-sm" href={`/admin/articles/${row.id}`}>

@@ -107,6 +107,10 @@ export const ADMIN_NAV_LINKS: readonly AdminNavLink[] = [
   // privileged information, and a `reviewer` or `viewer` account created next
   // year should see it without anybody remembering to come back here.
   { href: "/admin/cert-stats", label: t("admin.nav.certStats") },
+  // The owner's decision, 2026-10-29: every editor sees this. Which pieces are
+  // read and where readers come from is editorial information, and nothing on
+  // the page can point at a person.
+  { href: "/admin/stats", label: t("admin.nav.traffic") },
   { href: "/admin/audit", label: t("admin.nav.audit"), needs: "audit.read" },
   // Next to 审计日志 because they are the two "what happened" screens, and
   // deliberately separate: that one is who did what inside the admin, this one

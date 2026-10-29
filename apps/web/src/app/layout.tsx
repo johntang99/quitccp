@@ -7,6 +7,9 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import "./globals.css";
 import { siteHtmlLang } from "@/lib/format";
 import { t } from "@/lib/i18n";
+import { PageViewBeacon } from "@/components/public/PageViewBeacon";
+import { STATS_LOCALES } from "@/lib/site-stats";
+import { SITE_LOCALE } from "@/lib/site-config";
 
 const SITE_ORIGIN = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.tuidang.org").replace(/\/$/, "");
 
@@ -70,6 +73,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <SiteHeader />
         <main className="mainContent">{children}</main>
         <SiteFooter />
+        {(STATS_LOCALES as readonly string[]).includes(SITE_LOCALE) ? <PageViewBeacon /> : null}
       </body>
     </html>
   );
