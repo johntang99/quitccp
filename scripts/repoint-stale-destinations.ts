@@ -64,7 +64,17 @@ async function main() {
            length(coalesce(a.body_markdown, '')) as article_len,
            v.slug as video_slug, v.status as video_status
     from stale s
-    left join cms_articles a on a.slug_legacy = s.stale_slug
+    /*
+     * 也配文章现在的 slug：视频转成文章时 slug 原样带过去，旧链接还写着
+     * /videos/<slug>。10-29 自检报出的 26 条就是这一类 —— slug_legacy 是
+     * 中文旧地址，配不上，但同名文章就在 /news/<slug>。两种都配上时取 slug 等值的。
+     */
+    left join lateral (
+      select * from cms_articles a
+      where a.slug = s.stale_slug or a.slug_legacy = s.stale_slug
+      order by (a.slug = s.stale_slug) desc
+      limit 1
+    ) a on true
     left join cms_videos   v on v.slug_legacy = s.stale_slug
     where a.id is not null or v.id is not null
   `);
